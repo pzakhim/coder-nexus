@@ -2,7 +2,7 @@
   "name": "coder-nexus",
   "displayName": "Coder Nexus",
   "description": "The hub for your AI Factory - agents, MCPs, and project scaffolding",
-  "version": "2.7.0",
+  "version": "2.7.1",
   "publisher": "IMP-AIFactory",
   "engines": {
     "vscode": "^1.75.0"

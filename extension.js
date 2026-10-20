@@ -160,6 +160,13 @@ function installAntigravityPlugin(context, targetWorkspace = null, silent = fals
         // Ensure bundled Ponytail plugin is installed if not already present on host/workspace
         ensurePonytailPlugin(context, targetWorkspace, silent);
 
+        const placeholders = Object.keys(spec.stubs || {});
+        if (!silent && spec.status === 'preview' && placeholders.length && typeof vscode.window.showWarningMessage === 'function') {
+            vscode.window.showWarningMessage(
+                `Coder Nexus: this stack is a preview pack. ${placeholders.length} skills are placeholders (${placeholders.join(', ')}); agents stop with BLOCKED at those steps instead of guessing.`
+            );
+        }
+
         const frameworkLabel = pluginName === 'coder-nexus-fe' ? (framework === 'frappe' ? 'Frappe UI' : 'Flutter') : 'Backend (BE)';
         if (!silent) {
             const msg = `✅ ${frameworkLabel} plugin synced to Antigravity (${destPath})`;
@@ -390,7 +397,7 @@ function activate(context) {
                 framework: 'flutter'
             },
             {
-                label: '🌐 Frappe UI (Frontend Desk)',
+                label: '🌐 Frappe UI (Frontend Desk, preview)',
                 description: detected === 'frappe' ? '⭐ Recommended (Detected Frappe)' : '',
                 pluginName: 'coder-nexus-fe',
                 framework: 'frappe'

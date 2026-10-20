@@ -1,0 +1,12 @@
+{
+  "description": "Stack knowledge slots. Core agents and skills refer to them as {{slot:<name>}}; every pack provides each slot, marks it not_applicable, or (preview packs only) gets a generated BLOCKED placeholder.",
+  "slots": {
+    "core-usage": "Which existing foundations, shared components and UI kit the Client reuses, and how to record reuse or gaps.",
+    "architecture-design": "Codebase scan, architectural options and the stack's design.md template for Gate 2.",
+    "clean-architecture": "Module structure, layer boundaries, contracts and dependency wiring for the stack.",
+    "unit-test": "Developer unit tests for the stack: tools, paths and required pass/fail cases.",
+    "code-review": "The stack's review rubric, validators and blocking rules.",
+    "verification": "The stack's analyzer, test, build and evidence commands for a reviewed revision.",
+    "visual-verification": "Launching UI targets and capturing revision-bound visual evidence."
+  }
+}

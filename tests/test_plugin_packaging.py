@@ -614,13 +614,39 @@ def test_framework_skills_are_prefixed_and_agent_skills_resolve(tmp_path):
                 assert name in names, (agent.name, name)
 
 
-def test_preview_pack_gaps_are_reported_not_hidden(tmp_path):
+def test_preview_pack_gaps_become_blocked_placeholders(tmp_path):
+    """2.7.1: every slot a preview pack lacks resolves to a BLOCKED placeholder skill."""
     from coder_nexus.plugin_build import build_variant
 
     target = build_variant("fe-frappe", "workspace", tmp_path)
-    problems = json.loads((target / "projection.json").read_text(encoding="utf-8"))["problems"]
-    assert any("declares missing skill frappe-" in p for p in problems)
-    assert (target / "files/.agents/plugins/coder-nexus-fe/skills/frappe-ui-catalog/SKILL.md").is_file()
+    spec = json.loads((target / "projection.json").read_text(encoding="utf-8"))
+    assert spec["status"] == "preview"
+    assert spec["problems"] == []
+    assert spec["stubs"]["frappe-unit-test"] == "blocked"
+    skills = target / "files/.agents/plugins/coder-nexus-fe/skills"
+    stub = (skills / "frappe-unit-test/SKILL.md").read_text(encoding="utf-8")
+    assert "name: frappe-unit-test" in stub and "BLOCKED" in stub
+    assert (skills / "frappe-ui-catalog/SKILL.md").is_file()
+    assert (skills / "frappe-clean-architecture/SKILL.md").is_file()
+
+
+def test_maintained_pack_cannot_ship_a_missing_slot(tmp_path):
+    from coder_nexus.plugin_build import build_variant
+
+    plugins = tmp_path / "plugins"
+    shutil.copytree(PLUGIN_DIR, plugins, ignore=shutil.ignore_patterns("dist"))
+    pack_file = plugins / "packs/flutter/pack.json"
+    pack = json.loads(pack_file.read_text(encoding="utf-8"))
+    del pack["slots"]["unit-test"]
+    pack_file.write_text(json.dumps(pack), encoding="utf-8")
+    with pytest.raises(ValueError, match="flutter-unit-test"):
+        build_variant("fe-flutter", "workspace", tmp_path / "out", plugins)
+
+    pack["not_applicable"] = ["unit-test"]
+    pack_file.write_text(json.dumps(pack), encoding="utf-8")
+    target = build_variant("fe-flutter", "workspace", tmp_path / "out", plugins)
+    stub = target / "files/.agents/plugins/coder-nexus-fe/skills/flutter-unit-test/SKILL.md"
+    assert "not applicable" in stub.read_text(encoding="utf-8")
 
 
 def test_core_and_frontend_layer_are_stack_neutral():

@@ -97,7 +97,54 @@ def load_pack(plugins_dir: Path, stack: str) -> dict:
     pack.setdefault("extra", [])
     pack.setdefault("layers", [])
     pack.setdefault("markers", [])
+    pack.setdefault("not_applicable", [])
     return pack
+
+
+def load_slots(plugins_dir: Path) -> dict[str, str]:
+    return _read_json(plugins_dir / "core" / "slots.json").get("slots", {})
+
+
+STUB_TEMPLATES = {
+    "not_applicable": (
+        "{title} does not use this step.",
+        "This slot is not applicable to {title}. When a process step asks for `{name}`, skip it, "
+        "record `N/A ({title})` with a one-line reason in the work item, and continue. "
+        "Never invent stack rules to fill the gap.",
+    ),
+    "blocked": (
+        "Not available yet for {title} (preview pack): stop and report BLOCKED.",
+        "{title} is a preview pack and does not provide `{name}` yet ({purpose}). When a process step needs it, "
+        "stop that step and report `BLOCKED: {name} is not available for {title}` to the coordinator, naming the "
+        "decision or rule the user must supply. Do not borrow another stack's rules and never mark the step PASS.",
+    ),
+}
+
+
+def _write_stub(skill_dir: Path, name: str, kind: str, title: str, purpose: str) -> None:
+    description, body = STUB_TEMPLATES[kind]
+    fields = {"name": name, "title": title, "purpose": purpose.rstrip(".").lower()}
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    (skill_dir / "SKILL.md").write_text(
+        f"---\nname: {name}\ndescription: {description.format(**fields)}\n---\n\n"
+        f"# {name}\n\n{body.format(**fields)}\n",
+        encoding="utf-8",
+    )
+
+
+def _slot_gaps(plugins_dir: Path, pack: dict) -> dict[str, str]:
+    """slot -> stub kind for every registered slot the pack does not implement."""
+    gaps = {}
+    for slot in load_slots(plugins_dir):
+        if slot in pack["slots"]:
+            continue
+        if slot in pack["not_applicable"]:
+            gaps[slot] = "not_applicable"
+        elif pack["status"] == "preview":
+            gaps[slot] = "blocked"
+        else:
+            gaps[slot] = "missing"
+    return gaps
 
 
 def _mapped(target: Path, path_map: dict[Path, Path]) -> Path | None:
@@ -241,6 +288,19 @@ def project_bundle(
     (out / "rules").mkdir(exist_ok=True)
     for src, dest in path_map.items():
         _copy_entry(src, dest)
+    slots = load_slots(plugins_dir)
+    stubs: dict[str, str] = {}
+    for pack in loaded:
+        for slot, kind in _slot_gaps(plugins_dir, pack).items():
+            name = f"{pack['stack']}-{slot}"
+            if kind == "missing":
+                continue  # reported by check_projection as missing skills
+            _write_stub(out / "skills" / name, name, kind, pack.get("title", pack["stack"]), slots[slot])
+            stubs[name] = kind
+    if stubs:
+        _write_json(out / "slot_stubs.json", stubs)
+    unknown = [f"packs/{pack['stack']}/pack.json: unknown slot {slot}"
+               for pack in loaded for slot in pack["slots"] if slot not in slots]
 
     # role agents: core + layer overlays + pack overlay, composed then rendered like any document
     agents_dest.mkdir(parents=True, exist_ok=True)
@@ -267,7 +327,7 @@ def project_bundle(
         if other["stack"] not in packs:
             foreign_markers.extend(other["markers"])
             foreign_stacks.add(other["stack"])
-    return check_projection(out, agents_dest, known, {p["stack"] for p in loaded}, foreign_markers, foreign_stacks)
+    return sorted(unknown + check_projection(out, agents_dest, known, {p["stack"] for p in loaded}, foreign_markers, foreign_stacks))
 
 
 def project_plugin(plugin_dir: Path, out: Path, include_agents: bool = True, agents_out: Path | None = None) -> list[str]:
@@ -370,6 +430,8 @@ def build_variant(variant: str, layout: str, out: Path, plugins_dir: Path = PLUG
         raise ValueError(f"{layout}-{variant} projection is incomplete:\n  " + "\n  ".join(problems))
     manifest = _read_json(files / managed[0] / "bundle_manifest.json")
     _write_json(target / "projection.json", {
+        "status": _variant_status(plugins_dir, variant) if spec["packs"] else "maintained",
+        "stubs": _read_json(files / managed[0] / "slot_stubs.json"),
         "problems": problems,
         "plugin_version": manifest.get("plugin_version", "UNKNOWN"),
         "variant": variant,
@@ -404,8 +466,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     args = parser.parse_args(argv)
     for target in build(args.out):
-        problems = _read_json(target / "projection.json").get("problems", [])
-        print(f"built {target}" + (f" ({len(problems)} known gaps, preview pack)" if problems else ""))
+        spec = _read_json(target / "projection.json")
+        notes = []
+        if spec.get("stubs"):
+            notes.append(f"{len(spec['stubs'])} placeholder slots")
+        if spec.get("problems"):
+            notes.append(f"{len(spec['problems'])} known gaps")
+        print(f"built {target}" + (f" ({spec.get('status')}: {', '.join(notes)})" if notes else ""))
     return 0
 
 

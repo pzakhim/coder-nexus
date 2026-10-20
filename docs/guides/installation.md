@@ -70,6 +70,8 @@ Plugin sources are split by responsibility and composed by `python -m coder_nexu
 
 Core files refer to stack knowledge as `{{slot:<name>}}`, rendered to `<stack>-<name>`. The build fails a maintained pack when an agent declares a skill that is not installed, a link is broken, or a file mentions another stack's markers (listed in each `pack.json`); preview packs list these gaps in `projection.json`.
 
+Every slot registered in `plugins/core/slots.json` resolves to an installed skill. A pack either implements it, lists it under `not_applicable` (the build installs a skill that tells agents to record `N/A` and continue), or, for a `preview` pack only, gets a generated placeholder that tells agents to stop with `BLOCKED` instead of borrowing another stack's rules. Frappe UI is currently a preview pack: it implements `clean-architecture` (plus `frappe-ui-catalog`) and receives placeholders for the other slots; the extension shows a warning listing them when you sync it. A maintained pack (Flutter) cannot ship with a missing slot.
+
 ## External versus iMESPro projects
 
 - **External Flutter:** install the Flutter FE bundle above. Both external profile references are included. There is no separate external distribution or `--profile` installer flag. Planning records the foundation profile and evidence in the approved design (brief for phase-free work); downstream agents pass it explicitly to both validators. External profiles require no company package setup. A real external feature replay remains unverified.
