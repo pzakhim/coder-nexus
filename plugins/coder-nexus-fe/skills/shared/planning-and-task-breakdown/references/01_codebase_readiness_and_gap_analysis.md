@@ -16,7 +16,7 @@ Planning must confirm three complete inputs before writing tasks:
 
 ### A. Flutter Client Scan
 1. **Core packages (BaseScreen, use cases, paging, DataState, ApiService, UI kit)**:
-   - Read the approved profile via `core-usage`: iMESPro runs setup and reads package guides; external-structured inspects Client mappings; external-standard inspects only needed framework/project APIs.
+   - Read the approved profile via `{{slot:core-usage}}`: iMESPro runs setup and reads package guides; external-structured inspects Client mappings; external-standard inspects only needed framework/project APIs.
    - Only an iMESPro setup failure blocks on company dependencies. External profiles never run company setup or require its GUIDE files. Do not invent required missing APIs.
 2. **Routing & Screen Registry**:
    - Check the Client's router configuration.
@@ -24,7 +24,7 @@ Planning must confirm three complete inputs before writing tasks:
 3. **State Management & DI**:
    - Verify active state management (Bloc/Cubit) and DI (`get_it`, `Provider`).
 4. **Reuse before build**:
-   - For each need, decide with `core-usage`: reuse a fitting core API, else the target module, else a Client shared folder when two or more modules need it. Record every gap in the `Core usage` table.
+   - For each need, decide with `{{slot:core-usage}}`: reuse a fitting core API, else the target module, else a Client shared folder when two or more modules need it. Record every gap in the `Core usage` table.
 
 ### B. Frappe UI Client Scan
 1. **Desk Page & Router**:

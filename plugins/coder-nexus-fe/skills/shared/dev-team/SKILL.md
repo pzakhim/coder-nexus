@@ -27,14 +27,14 @@ Call **Spec Writer** to engage the user as the primary conversational partner us
 
 1. **Step 0: Context Discovery & Framework Detection**:
    - Detect target platform and frontend framework:
-     - `Flutter`: `pubspec.yaml`, `lib/*.dart`; foundation/UI authority is resolved through `core-usage` from Client evidence.
+     - `Flutter`: `pubspec.yaml`, `lib/*.dart`; foundation/UI authority is resolved through `{{slot:core-usage}}` from Client evidence.
      - `Frappe UI` (TODO — not yet maintained): `package.json` with `"frappe-ui"`, `hooks.py`, UI Kit Authority: `frappe_ui_kit`.
      - `Web Standard` (TODO — not yet maintained): React/Next.js/Vue signatures.
    - If ambiguous, prompt user via `ask_question` (1 question, `(Recommended)` first). Record metadata in `codebase-notes.md` and `requirements.md`.
 2. **Step 1A: Three-Pillar Source Intake (`ask_question` if unspecified)**:
    - Confirm where to read the 3 core inputs before scanning or drafting:
      1. **PO/BA Requirements**: Huly task ID (via `huly_get_task_detail`), external PO/BA `.md` file, or direct user prompt.
-     2. **UI Screens, UX & Design System**: Screen flows, UX descriptions, and design system specs (typically Figma designs converted to `.md` files, plus workspace UI Kit authority via `core-usage`).
+     2. **UI Screens, UX & Design System**: Screen flows, UX descriptions, and design system specs (typically Figma designs converted to `.md` files, plus workspace UI Kit authority via `{{slot:core-usage}}`).
      3. **API Integration Source (Binary Check: Does BE API Exist?)**:
         - **Case 1 (BE API Exists — `BE_API_READY`)**: Request the user to provide the API specification (Huly BE task, Swagger/OpenAPI, or `.md` file) for integration.
         - **Case 2 (No BE API or Missing Endpoints — `MOCKOON_MOCKED`)**: Request the user to use **Mockoon** (`mocks/<feature>_mockoon.json`) so `spec_writer` locks in the business Input/Output in `requirements.md` + `codebase-notes.md` and `planning` designs the Mockoon data and allocates `PHASE-00` (`phase-00-prepare.md`) to prepare the Mockoon API mock. Only approved contract-derived Mockoon fixtures may support FE UI/contract checks; missing required schema remains `BLOCKED`, and live integration remains pending until a real endpoint is verified. FE fixture approval does not imply BE contract approval.
@@ -58,9 +58,9 @@ Call **Spec Writer** to engage the user as the primary conversational partner us
 Upon Gate 1 approval, call **Planning** (Tech Lead) for Gate 2 (design) and Gate 3 (plan):
 
 1. **Step 2A — Codebase Scan & Pre-Design Counter-Review / `grill-me` Loop (`ask_question` in Main Chat)**:
-   - Flutter: resolve and record the profile via `core-usage`, start from `requirements.md` and `codebase-notes.md`, and inspect the target module, router and DI. Only iMESPro runs company setup and reads `../app-*/guidance/GUIDE.md`; external profiles inspect Client foundations or standard Flutter.
+   - Flutter: resolve and record the profile via `{{slot:core-usage}}`, start from `requirements.md` and `codebase-notes.md`, and inspect the target module, router and DI. Only iMESPro runs company setup and reads `../app-*/guidance/GUIDE.md`; external profiles inspect Client foundations or standard Flutter.
    - Frappe UI: Scan `pages/*.vue`, router, and session/resource hooks.
-   - **Strict Boundary with `spec_writer`**: `spec_writer` owns business API Input/Output and screen UX requirements (from Figma `.md`). `planning` owns Data Pipeline architecture (`DataSource`/`Model`/`Repo`/`Cubit`/DI) and exact `core-usage` class/widget mapping.
+   - **Strict Boundary with `spec_writer`**: `spec_writer` owns business API Input/Output and screen UX requirements (from Figma `.md`). `planning` owns Data Pipeline architecture (`DataSource`/`Model`/`Repo`/`Cubit`/DI) and exact `{{slot:core-usage}}` class/widget mapping.
    - **Hub-and-Spoke Counter-Review Protocol (Before writing `design.md`)**:
      - The User interacts **exclusively in the Main Chat**; never require the user to switch between subagent conversations.
      - **Step 1 (Detect)**: If `planning` discovers a **Core Risk / Core Gap**, overlapping/conflicting logic with `requirements.md`, or trade-offs between viable approaches/widgets, `planning` queues `Q-NN` (`OPEN`) in `.superpowers/work-items/<slug>/vN/codebase-notes.md` and reports it to the Coordinator instead of writing `Option A / Option B` into `design.md`.
@@ -91,8 +91,8 @@ Execute approved ready phases in strict sequential order (`PHASE-01` $\to$ `PHAS
 ### Step 1: Implementation (`code_writer`)
 - Coordinator assigns the current ready phase (along with approved `brief.md`, `requirements.md`, `design.md`, and `phases/phase-NN-*.md`) to **one `code_writer` instance**.
 - **Code-Only Focus**: Implements working business logic and UI according to Clean Architecture / Frappe rules. Does not spend time writing long explanatory docstrings.
-- **Developer Unit Testing**: Writes unit tests following AAA pattern (`unit-test` skill) for all implemented UseCases, Mappers, and Cubits under `test/modules/<feature>/`.
-- **Screen Visual Baseline (when approved)**: Use the Client's approved golden harness and dependencies for stable applicable states; generate a baseline only for independent visual review. Follow `visual-verification`; goldens supplement the required runtime UI evidence.
+- **Developer Unit Testing**: Writes unit tests following AAA pattern (`{{slot:unit-test}}` skill) for all implemented UseCases, Mappers, and Cubits under `test/modules/<feature>/`.
+- **Screen Visual Baseline (when approved)**: Use the Client's approved golden harness and dependencies for stable applicable states; generate a baseline only for independent visual review. Follow `{{slot:visual-verification}}`; goldens supplement the required runtime UI evidence.
 - **Local Self-Verification**: Executes local linter, `flutter analyze`, and unit test suite via `run_command`. Must achieve 100% green before handing off as `READY_FOR_REVIEW`.
 - If `MOCKOON_MOCKED`: In `PHASE-01`, generates and validates `mocks/<feature>_mockoon.json` (`mockoon-cli` or JSON schema check). In feature phases (`PHASE-02`+), implements the real `RemoteDataSource` calling `ApiService` (`ApiConfig.domain`) — never fake `Mock<Feature>DataSource` classes in `lib/` and never touches Backend files.
 - **Sequential Task Execution & Plan Re-Grounding**: `code_writer` executes tasks in `phases/phase-NN-*.md` strictly in order from top to bottom (without spawning sub-agents for micro-tasks). After each micro-task's verification, `code_writer` returns to the phase plan file (`phase-NN-*.md`), marks the task done `- [x]`, and re-reads the plan and next task's specifications before writing code for the next task. Never implement multiple tasks in bulk without re-reading the plan.

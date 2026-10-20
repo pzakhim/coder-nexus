@@ -15,4 +15,4 @@ A feature may consume another module's published Domain use case, entity or para
 
 ## UI ownership
 
-Keep widgets used only by one feature under `lib/modules/<feature>/presentation/widgets/`. Move a widget to `lib/commons/widgets/` only when actual multiple-module reuse warrants it and the change is approved. Check the `app_ui_kit` GUIDE (via `core-usage`) and shared widgets before introducing a private widget.
+Keep widgets used only by one feature under `lib/modules/<feature>/presentation/widgets/`. Move a widget to `lib/commons/widgets/` only when actual multiple-module reuse warrants it and the change is approved. Check the `app_ui_kit` GUIDE (via `{{slot:core-usage}}`) and shared widgets before introducing a private widget.

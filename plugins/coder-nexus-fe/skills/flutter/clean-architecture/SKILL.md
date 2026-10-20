@@ -12,7 +12,7 @@ Use this skill when creating or extending a Flutter feature module, inspecting p
 ## Before writing code
 
 1. Confirm the same feature version's `requirements.md`, `design.md`, `implementation-plan.md` and linked phase have actual user approvals for their current revisions.
-2. Read the approved profile via `core-usage`. Only iMESPro runs company setup and reads company guides. Inspect Client dependencies, target module, router and DI; resolve real imports and APIs.
+2. Read the approved profile via `{{slot:core-usage}}`. Only iMESPro runs company setup and reads company guides. Inspect Client dependencies, target module, router and DI; resolve real imports and APIs.
 3. Distinguish `INIT` from `EXTEND`. For a new module, copy the Client's existing Cubit state and DI conventions from a sibling module; for an existing module, preserve its convention unless migration is approved. A UI-only extension does not need empty Domain, Data or DI classes.
 4. Call `get_project_structure` with `scope: "module"` and the real lower_snake_case feature name, or `scope: "root"` when root/boot structure is relevant. Compare the returned blueprint with the Client rather than copying it mechanically.
 5. Follow the approved UI mapping: fitting iMESPro Kit APIs, existing external Client components, or standard Flutter. Missing an API actually required by the mapping blocks its use; never copy package source.

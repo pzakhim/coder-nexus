@@ -5,13 +5,13 @@ description: Converts approved versioned requirements and architecture design in
 
 # Flutter Planning and Task Breakdown
 
-This skill guides the **Frontend Tech Lead (Planning Agent)** in converting an approved `requirements.md` (Gate 1) and `design.md` (Gate 2, authored via `architecture-design` skill) into an actionable `implement-plan.md` and discrete phase files (`phases/phase-NN-*.md`) in `.superpowers/work-items/<slug>/vN/` or `${workspaceFolder}/docs/features/<module>/<feature>/vN/`.
+This skill guides the **Frontend Tech Lead (Planning Agent)** in converting an approved `requirements.md` (Gate 1) and `design.md` (Gate 2, authored via `{{slot:architecture-design}}` skill) into an actionable `implement-plan.md` and discrete phase files (`phases/phase-NN-*.md`) in `.superpowers/work-items/<slug>/vN/` or `${workspaceFolder}/docs/features/<module>/<feature>/vN/`.
 
 ## 1. Input Verification
 
 Before formulating tasks, confirm:
 1. **Gate 1 Approval**: Actual user approval of `requirements.md` (authored by Spec Writer).
-2. **Gate 2 Approval**: Actual user approval of `design.md` (authored by Planning via `architecture-design`).
+2. **Gate 2 Approval**: Actual user approval of `design.md` (authored by Planning via `{{slot:architecture-design}}`).
 3. Check sibling files: Both `requirements.md` and `design.md` must be present in `docs/features/<module>/<feature>/vN/` or the work item directory.
 
 ## 2. Planning Protocol

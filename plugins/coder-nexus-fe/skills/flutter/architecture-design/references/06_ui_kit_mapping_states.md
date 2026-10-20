@@ -6,7 +6,7 @@ Guide for the `UI design system` section of `design.md`.
 
 ## 1. Read, then decide (Flutter)
 
-Source of truth: `../app-ui-kit/guidance/GUIDE.md` (decision table §1), read through the `core-usage` skill. Screen base, paged list and form label live in the app_core guide.
+Source of truth: `../app-ui-kit/guidance/GUIDE.md` (decision table §1), read through the `{{slot:core-usage}}` skill. Screen base, paged list and form label live in the app_core guide.
 
 For each UI element in the requirements:
 

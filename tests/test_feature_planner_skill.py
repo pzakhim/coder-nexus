@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN = ROOT / "plugins" / "coder-nexus-fe"
 SKILLS = PLUGIN / "skills"
-PLANNER = SKILLS / "flutter" / "feature-planner"
+PLANNER = SKILLS / "shared" / "feature-planner"
 FEATURE_PATH = "docs/features/<module>/<feature>/vN/"
 
 
@@ -16,11 +16,11 @@ def read(relative: str) -> str:
 
 
 def test_three_gates_and_versioned_handoff():
-    router = read("skills/flutter/feature-planner/SKILL.md")
+    router = read("skills/shared/feature-planner/SKILL.md")
     spec = read("agents/spec_writer.md")
-    brainstorm = read("skills/flutter/brainstorming/SKILL.md")
-    planning = read("skills/flutter/planning-and-task-breakdown/SKILL.md")
-    rubric = read("skills/flutter/feature-planner/references/02_interview_rubric_and_gates.md")
+    brainstorm = read("skills/shared/brainstorming/SKILL.md")
+    planning = read("skills/shared/planning-and-task-breakdown/SKILL.md")
+    rubric = read("skills/shared/feature-planner/references/02_interview_rubric_and_gates.md")
     for content in (router, brainstorm, planning, rubric):
         assert FEATURE_PATH in content
         assert "Gate 1" in content
@@ -36,14 +36,14 @@ def test_three_gates_and_versioned_handoff():
     for stage in ("1A", "1B", "1C", "Mockoon", "grill-me", "codebase-notes.md"):
         assert stage in spec
         assert stage in brainstorm
-        assert stage in read("skills/flutter/dev-team/SKILL.md")
+        assert stage in read("skills/shared/dev-team/SKILL.md")
         assert stage in read("skills/shared/work-items/SKILL.md")
     planning_agent = read("agents/planning.md")
     coder_agent = read("agents/code_writer.md")
     arch_design = read("skills/flutter/architecture-design/SKILL.md")
-    incremental = read("skills/flutter/incremental-implementation/SKILL.md")
-    phase_rules = read("skills/flutter/planning-and-task-breakdown/references/01_phase_slicing_rules.md")
-    phase_tpl = read("skills/flutter/feature-planner/templates/phase.md.tpl")
+    incremental = read("skills/shared/incremental-implementation/SKILL.md")
+    phase_rules = read("skills/shared/planning-and-task-breakdown/references/01_phase_slicing_rules.md")
+    phase_tpl = read("skills/shared/feature-planner/templates/phase.md.tpl")
     work_phase_tpl = read("skills/shared/work-items/templates/phase.md.tpl")
     assert "Pre-Design Counter-Review" in planning_agent
     assert "Pre-Design Counter-Review" in arch_design
@@ -105,7 +105,7 @@ def test_downstream_agents_read_same_version_and_write_actual_evidence():
         "agents/code_writer.md",
         "agents/test_runner.md",
         "agents/code_reviewer.md",
-        "skills/flutter/incremental-implementation/SKILL.md",
+        "skills/shared/incremental-implementation/SKILL.md",
         "skills/flutter/code-review/SKILL.md",
         "skills/flutter/verification/SKILL.md",
     ):
@@ -125,7 +125,7 @@ def test_pre_release_visual_cases_keep_real_data_and_reviewed_goldens():
     verification = read("skills/flutter/verification/SKILL.md")
     visual = read("skills/flutter/visual-verification/SKILL.md")
     report = read("skills/flutter/verification/templates/verification_report.md.tpl")
-    phase = read("skills/flutter/feature-planner/templates/phase.md.tpl")
+    phase = read("skills/shared/feature-planner/templates/phase.md.tpl")
     assert "Code Review report" in runner
     assert "test-case matrix" in runner
     assert "Remain read-only toward `lib/` and `test/`" in runner
@@ -139,9 +139,9 @@ def test_pre_release_visual_cases_keep_real_data_and_reviewed_goldens():
 
 
 def test_visual_intake_and_reuse_stay_bound_to_real_sources():
-    router = read("skills/flutter/feature-planner/SKILL.md")
-    brainstorm = read("skills/flutter/brainstorming/SKILL.md")
-    matrix = read("skills/flutter/feature-planner/references/03_ui_ux_intake_and_discovery_matrix.md")
+    router = read("skills/shared/feature-planner/SKILL.md")
+    brainstorm = read("skills/shared/brainstorming/SKILL.md")
+    matrix = read("skills/shared/feature-planner/references/03_ui_ux_intake_and_discovery_matrix.md")
     for content in (router, brainstorm, matrix):
         assert "Visual Intake Gate" in content
         assert "VISUAL_INPUT_MISSING" in content
@@ -156,7 +156,7 @@ def test_public_workflow_skills_are_portable():
         "planning-and-task-breakdown",
         "incremental-implementation",
     ):
-        content = (SKILLS / "flutter" / name / "SKILL.md").read_text(encoding="utf-8")
+        content = (SKILLS / "shared" / name / "SKILL.md").read_text(encoding="utf-8")
         assert content.startswith("---\n")
         assert f"name: {name}" in content
         assert "file:///Users/" not in content

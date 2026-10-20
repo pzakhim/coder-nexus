@@ -5,10 +5,10 @@ description: Review approved Flutter behavior phases across correctness, simplic
 
 # Flutter Code Review and Architecture Validation
 
-Reviewer stays read-only toward implementation and tests; write review artifacts only. Return necessary edits to Code Writer and require affected checks on the new revision. Read `core-usage` for the approved foundation policy; external Client conventions require source inspection, never inferred company bases.
+Reviewer stays read-only toward implementation and tests; write review artifacts only. Return necessary edits to Code Writer and require affected checks on the new revision. Read `{{slot:core-usage}}` for the approved foundation policy; external Client conventions require source inspection, never inferred company bases.
 
 
-For new Client work, review `.superpowers/work-items/<slug>/vN/brief.md`, optional design/plan/phase and Docs Writer output against the same code revision. Use `flutter-work-items` for type-specific evidence; a phase-free work item is valid. Run Flutter analyzer and visual checks when affected, not for a docs-only change. The `docs/features/` contract below applies to historical features.
+For new Client work, review `.superpowers/work-items/<slug>/vN/brief.md`, optional design/plan/phase and Docs Writer output against the same code revision. Use `work-items` for type-specific evidence; a phase-free work item is valid. Run Flutter analyzer and visual checks when affected, not for a docs-only change. The `docs/features/` contract below applies to historical features.
 
 ## Historical feature workflow
 
@@ -29,7 +29,7 @@ These are code-review checks after the three user approval gates for specificati
    - `gate_status: UNVERIFIED` means the lexical validator cannot prove syntax or integration; run the approved Client analyzer on the same tree. Investigate warnings in context and include `unsupported_checks` in the report. Supported lexical rules are listed in [the rule source matrix](references/02_rule_source_matrix.md).
 2. **Integrated behavior check:** Apply [the cross-branch checklist](references/03_cross_branch_checklist.md). Pass the same explicit `architecture_profile` to `validate_module_architecture` only when a complete module is affected. `FAILED` blocks; `UNVERIFIED` or warnings require explicit Client inspection and evidence before approval. For a scoped UI-only phase, record the full-module check `N/A` with reason and inspect affected boundaries directly.
    - **Reuse & Mockoon isolation audit**: every need in the approved `Core usage` / `Client Core Mapping` table uses its mapped component, shared widgets from earlier phases are reused, `lib/` contains zero `MockDataSource` classes, and Unit Tests cover both Pass/Default and Fail scenarios from `design.md`.
-   - For UI impact, use `flutter-visual-verification` on the approved target and inspect real screenshots/video and logs against Visual AC before approval. Code that compiles but materially deviates from the approved design requires changes.
+   - For UI impact, use `{{slot:visual-verification}}` on the approved target and inspect real screenshots/video and logs against Visual AC before approval. Code that compiles but materially deviates from the approved design requires changes.
 
 Do not demand empty Domain, Data or DI classes for a scoped UI-only phase. When a phase introduces a screen-scoped Cubit, review its factory lifetime and disposal. Do not treat a lexical pass as analyzer, test or runtime evidence. Reviewer owns analyzer, developer Unit Test grading, and applicable UI evidence needed for its decision; Test Runner runs UI/Widget/Visual acceptance checks and build after `APPROVED` on the same tree. This ordering avoids a review/verification dependency cycle.
 
@@ -51,6 +51,6 @@ Write a revision-bound report using [the report template](templates/code_review_
 
 Record approved document revisions and Gate 1–3 user response references, every AC's code/test/visual evidence or gap, planned checks, analyzer command/result, module gate resolution, full uncommitted scope and image inspection. `APPROVED` requires all applicable ACs traced and no unresolved required check; final phase `PASS` still depends on Test Runner evidence.
 
-- `APPROVED`: pass the same feature/version/phase and revision to `flutter-verification`; the coordinator records the verdict in `as-built.md`.
-- `CHANGES_REQUESTED`: provide specific findings to `flutter-incremental-implementation`. A fix creates a new revision and invalidates affected earlier evidence.
+- `APPROVED`: pass the same feature/version/phase and revision to `{{slot:verification}}`; the coordinator records the verdict in `as-built.md`.
+- `CHANGES_REQUESTED`: provide specific findings to `incremental-implementation`. A fix creates a new revision and invalidates affected earlier evidence.
 - `BLOCKED`: report the missing source, environment or target. Never claim PASS from `NOT_RUN` or stale evidence.

@@ -10,7 +10,7 @@ This profile activates when working on an **External Flutter Client** that has n
 ## 1. Activation Criteria
 
 A project qualifies for **Profile 3 (External-Standard)** if:
-1. The approved Client profile does not use company foundations; unrelated neighboring folders are irrelevant. Preserve an explicit approved selection and follow `core-usage` for evidence-based resolution.
+1. The approved Client profile does not use company foundations; unrelated neighboring folders are irrelevant. Preserve an explicit approved selection and follow `{{slot:core-usage}}` for evidence-based resolution.
 2. The workspace lacks established shared base abstractions or central design system libraries.
 
 ---

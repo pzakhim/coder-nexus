@@ -3,12 +3,12 @@ name: code_reviewer
 description: Reviews one approved versioned Frontend behavior phase against its AC, design, UI Kit and actual code revision.
 skills:
   - work-items
-  - code-review
+  - {{slot:code-review}}
   - code-simplification
-  - clean-architecture
-  - unit-test
-  - visual-verification
-  - core-usage
+  - {{slot:clean-architecture}}
+  - {{slot:unit-test}}
+  - {{slot:visual-verification}}
+  - {{slot:core-usage}}
 tools:
   - view_file
   - write_to_file
@@ -20,16 +20,16 @@ tools:
 
 MCP tools (e.g. `validate_architecture_code`, `validate_module_architecture`) are appraised by the Main Agent for quality gating, or invoked via CLI/scripts (`run_command`) without declaring them in `tools:` to prevent executor initialization crashes. When searching the codebase via `run_command`, always use Ripgrep (`rg -n "<pattern>" <path>` and `rg --files <path> -g "<glob>"`) instead of `grep` or `find`.
 
-Read the approved profile through `core-usage`. Company examples in the test audit (`parse_util`, `DataFailure`, `ListViewPagingCubit`) apply only when that API is actually used. External profiles test their own result/state/paging contracts and required failure paths.
+Read the approved profile through `{{slot:core-usage}}`. Company examples in the test audit (`parse_util`, `DataFailure`, `ListViewPagingCubit`) apply only when that API is actually used. External profiles test their own result/state/paging contracts and required failure paths.
 
 
-For new Client work, receive `.superpowers/work-items/<slug>/vN/brief.md`, optional design/plan/phase, Type, target framework (`flutter`, `frappe`, `web-standard`), accepted decisions, and code revision. Review AC against the actual diff and relevant existing callers; a small item may have no phase. Apply type-specific preservation or baseline evidence from `flutter-work-items`. Review Docs Writer changes against implemented source, including a documentation-only item. Require analyzer/runtime visual evidence only when that boundary applies; feature Gate 1–3 references remain mandatory. Preserve the revision-bound report and failure routing below. Legacy `docs/features/` contracts remain readable.
+For new Client work, receive `.superpowers/work-items/<slug>/vN/brief.md`, optional design/plan/phase, Type, target framework (`flutter`, `frappe`, `web-standard`), accepted decisions, and code revision. Review AC against the actual diff and relevant existing callers; a small item may have no phase. Apply type-specific preservation or baseline evidence from `work-items`. Review Docs Writer changes against implemented source, including a documentation-only item. Require analyzer/runtime visual evidence only when that boundary applies; feature Gate 1–3 references remain mandatory. Preserve the revision-bound report and failure routing below. Legacy `docs/features/` contracts remain readable.
 
 ## Framework and Architecture Checks
 
 ### Flutter Checks
 - Evaluate according to `architecture_profile.mode` specified in `design.md`:
-  - **Mode 1 (`imespro`)**: Apply `core-usage` Reviewer checks (every package's `guidance/GUIDE.md` review checklist): `setup --check` READY; no change under `../app-*`; no Client class reimplementing a core API; domain imports pure (no Flutter, no barrel); every screen extends `BaseScreen`, overrides `getScreen()`/`buildMobilePortrait()`, never `build()`; `Core usage` table matches the code. Any failure is **automatic `CHANGES_REQUESTED` (FAIL)**.
+  - **Mode 1 (`imespro`)**: Apply `{{slot:core-usage}}` Reviewer checks (every package's `guidance/GUIDE.md` review checklist): `setup --check` READY; no change under `../app-*`; no Client class reimplementing a core API; domain imports pure (no Flutter, no barrel); every screen extends `BaseScreen`, overrides `getScreen()`/`buildMobilePortrait()`, never `build()`; `Core usage` table matches the code. Any failure is **automatic `CHANGES_REQUESTED` (FAIL)**.
   - **Mode 2 (`external-structured`)**: Verify Coder inherited client's existing base classes and reused client's shared widgets per `Client Core Mapping`. Reject any new redundant/competing base classes.
   - **Mode 3 (`external-standard`)**: Verify Ponytail simplicity, Clean Architecture layer separation, and absence of speculative abstractions.
 - Map each applicable AC to implementation, executable test or required manual check, and evidence. Check code simplicity, Clean Architecture, UI Kit source, security, data safety, lifecycle, and cross-module effects.

@@ -8,7 +8,7 @@ Guide for Section 3 of `design.md`: **Screen, Routing & DI Contract**.
 Establishes the integration contracts for UI destinations, screen lifecycle, route arguments, navigation boundaries, and Dependency Injection registration scopes.
 
 ## 1. Screen Contract & BaseScreen Integration
-Read the `BaseScreen` contract in `../app-core/guidance/GUIDE.md` §2.1 (via `core-usage`) and confirm the signature in its source:
+Read the `BaseScreen` contract in `../app-core/guidance/GUIDE.md` §2.1 (via `{{slot:core-usage}}`) and confirm the signature in its source:
 - **Screen Class Naming**: File `*_screen.dart`, Class `*Screen`.
 - **Inheritance**: Extends `BaseScreen` (or `BaseStatefulWidget`) with `BaseScreenState<Screen>`.
 - **Hooks & Metadata**:

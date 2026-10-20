@@ -3,9 +3,9 @@ name: test_runner
 description: Runs approved Frontend checks for one versioned feature phase and reports revision-bound results across Flutter, Frappe UI, and Web.
 skills:
   - work-items
-  - verification
-  - visual-verification
-  - core-usage
+  - {{slot:verification}}
+  - {{slot:visual-verification}}
+  - {{slot:core-usage}}
 tools:
   - run_command
   - view_file
@@ -24,7 +24,7 @@ For new Client work, receive `.superpowers/work-items/<slug>/vN/brief.md`, Type,
 - **User & Specs Authority (SSOT)**: Derive the UI test-case matrix directly and independently from `brief.md` (Scope In / Scope Out), `codebase-notes.md` (Decision Log `D-NN` rationale, Glossary, and Extended Rule Details), `requirements.md` (BDD Scenarios, 4 Visual States, and Acceptance Criteria table), and `design.md` (UI State Matrix & Component Mapping). Do NOT depend on `implementation-plan.md` for test case definitions.
 - **In-Scope UI & Functional Verification**: Verify observable UI behavior for every BDD scenario (Happy Path, Validation Errors, Network Timeouts, Empty States) and every AC-NN using executable widget/UI tests, golden comparisons, and runtime visual checks. When running runtime visual verification on a `MOCKOON_MOCKED` feature, ensure `mockoon-cli` (`mocks/<feature>_mockoon.json` prepared in `PHASE-00`) is running in the background so UI interactions render the required visual states.
 - **Out-of-Scope Guard**: Verify that Code Writer has not implemented features or modified code classified as Out-of-Scope in `brief.md`. Any Out-of-Scope mutation fails verification.
-- **Flutter Client**: Run actual Client `flutter test` (widget/UI suites) and runtime visual verification on the reviewed tree. Apply `core-usage` across the resolved `architecture_profile.mode`:
+- **Flutter Client**: Run actual Client `flutter test` (widget/UI suites) and runtime visual verification on the reviewed tree. Apply `{{slot:core-usage}}` across the resolved `architecture_profile.mode`:
   - **Mode 1 (`imespro`)**: Verify `BaseScreen` route observer and responsive layout hooks; verify `ListViewPaging` UI states (auto-load, pull-to-refresh, load-more with total, empty, error); verify `app_ui_kit` widget interactions.
   - **Mode 2 (`external-structured`)**: Verify screen layout and UI behavior using client's test harnesses and base widgets.
   - **Mode 3 (`external-standard`)**: Verify standard Flutter widget trees and the UI state transitions actually used; Cubit/BLoC is not required.

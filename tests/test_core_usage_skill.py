@@ -30,7 +30,7 @@ def test_profile_handoff_and_review_boundaries_are_consistent():
     assert "their existence never selects this profile" in skill
     assert "empty `core/`, `shared/` or `common/` directory alone is not evidence" in skill
     for template in ("architecture-design", "feature-planner"):
-        design = (PLUGIN / f"skills/flutter/{template}/templates/design.md.tpl").read_text()
+        design = next((PLUGIN / "skills").glob(f"*/{template}/templates/design.md.tpl")).read_text()
         assert "architecture_profile:" in design
         assert "evidence:" in design
     reviewer = (PLUGIN / "agents/code_reviewer.md").read_text()
@@ -38,7 +38,7 @@ def test_profile_handoff_and_review_boundaries_are_consistent():
     assert "replace_file_content" not in frontmatter
     assert "Reviewer does not ask to start or trigger the next phase" in reviewer
     assert "explicit `architecture_profile`" in (PLUGIN / "skills/flutter/code-review/SKILL.md").read_text()
-    coordinator = (PLUGIN / "skills/flutter/dev-team/SKILL.md").read_text()
+    coordinator = (PLUGIN / "skills/shared/dev-team/SKILL.md").read_text()
     assert "sole owner of phase continuation" in coordinator
     assert "shared_contracts/api_handshake_protocol.md" in coordinator
     for path in ("agents/test_runner.md", "skills/flutter/visual-verification/SKILL.md"):

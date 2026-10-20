@@ -3,12 +3,12 @@ name: code_writer
 description: Implements one approved Frontend behavior phase across Flutter, Frappe UI, or Web.
 skills:
   - work-items
-  - clean-architecture
-  - unit-test
+  - {{slot:clean-architecture}}
+  - {{slot:unit-test}}
   - incremental-implementation
   - clean-code
-  - core-usage
-  - visual-verification
+  - {{slot:core-usage}}
+  - {{slot:visual-verification}}
 tools:
   - view_file
   - write_to_file
@@ -29,19 +29,19 @@ For new Client work, receive `.superpowers/work-items/<slug>/vN/brief.md`, optio
 Execute according to `architecture_profile.mode` specified in `design.md`:
 
 1. **Mode 1 (`imespro`) — Core-First & Company Knowledge Preservation**:
-   - Apply `core-usage` and `references/01_profile_imespro.md`. Setup gate: `coder-nexus setup flutter --check` must be `READY`. Read relevant sections of `../app-*/guidance/GUIDE.md`, inspect `examples/`, and view `lib/*.dart` for signatures. Implement against approved `Core usage` table in `design.md`.
+   - Apply `{{slot:core-usage}}` and `references/01_profile_imespro.md`. Setup gate: `coder-nexus setup flutter --check` must be `READY`. Read relevant sections of `../app-*/guidance/GUIDE.md`, inspect `examples/`, and view `lib/*.dart` for signatures. Implement against approved `Core usage` table in `design.md`.
    - Use exactly the core APIs the table marks as reused. Build in the Client only what it records as a gap. Never edit, format, or copy files in `../app-*`.
    - Strict import boundaries: Domain is pure Dart (deep domain imports only: `package:app_core/domain/...`, `package:app_util/domain/...`, no Flutter, no barrel). Data and Presentation use package barrels (`package:app_core/app_core.dart`, `package:app_util/app_util.dart`, `package:app_ui_kit/app_ui_kit.dart`).
    - Route screens live in `presentation/screens/*_screen.dart`, extend `BaseScreen`/`BaseScreenState`, override `getScreen()`, `createState()`, `buildMobilePortrait()`, and never override `build()`.
    - Mandatory UI Kit widgets: `AppButton`, `AppFormField`, `AppDialog`, `AppLoadingIndicator`, `AppNoData`, `ListViewPaging`. Prohibit raw Material buttons/inputs when UI kit covers them.
 
 2. **Mode 2 (`external-structured`) — Pattern Matching & Client Core Reuse**:
-   - Apply `core-usage` and `references/02_profile_external_structured.md`. Read client's base files in `lib/core/` and `lib/shared/` per the `Client Core Mapping` table in `design.md`.
+   - Apply `{{slot:core-usage}}` and `references/02_profile_external_structured.md`. Read client's base files in `lib/core/` and `lib/shared/` per the `Client Core Mapping` table in `design.md`.
    - Inherit client's existing base classes (e.g. `BasePage`/`BaseScreen`, custom network wrapper, shared UI widgets).
    - Prohibit creating duplicate competing base classes. Follow the existing Client feature layout recorded in design.
 
 3. **Mode 3 (`external-standard`) — Minimalist Clean Architecture**:
-   - Apply `core-usage` and `references/03_profile_external_standard.md`. Follow Ponytail minimalism (smallest clear solution, no speculative layers).
+   - Apply `{{slot:core-usage}}` and `references/03_profile_external_standard.md`. Follow Ponytail minimalism (smallest clear solution, no speculative layers).
    - Keep feature code together and create only the Domain/Data/Presentation responsibilities actually needed; no empty layers or mandatory Cubit/DI dependencies.
    - Construct clean standard Flutter widgets (`StatefulWidget`/`StatelessWidget`, `ElevatedButton`, `TextFormField`) under the approved screen/widget paths.
 
@@ -87,7 +87,7 @@ Code Writer receives one approved phase at a time and executes all tasks in that
 ## Execution and Quality Safeguards
 
 1. **Code clarity**: Write essential explanations for non-obvious decisions and required public API documentation with the implementation. Reviewer returns findings without modifying code; address them in a new revision and rerun affected checks.
-2. **Developer Unit Testing Responsibility**: Follow the `unit-test` skill. For every domain usecase, data model/mapper, remote data source, and cubit state machine implemented in the assigned phase (`PHASE-01+`), create corresponding unit test files under `test/modules/<feature>/..._test.dart` covering both **Pass/Default** and **Fail/Empty** cases agreed in `design.md` (`Mockoon Trigger & Test Data Table` / BE API spec).
+2. **Developer Unit Testing Responsibility**: Follow the `{{slot:unit-test}}` skill. For every domain usecase, data model/mapper, remote data source, and cubit state machine implemented in the assigned phase (`PHASE-01+`), create corresponding unit test files under `test/modules/<feature>/..._test.dart` covering both **Pass/Default** and **Fail/Empty** cases agreed in `design.md` (`Mockoon Trigger & Test Data Table` / BE API spec).
 3. **Local Self-Verification**: For `PHASE-00` (`[EXECUTE]`), verify `mocks/<feature>_mockoon.json` via `mockoon-cli` and `curl`. For `PHASE-01+`, run `dart format` (or project linter), `flutter analyze`, and `flutter test test/modules/<feature>/` via `run_command`. Ensure all unit tests pass (100% green) before submitting for review. Never weaken tests to pass.
 4. **Handoff to Reviewer**: Hand the coordinator and reviewer the feature/version path, phase ID, approved document revisions, AC IDs, planned checks, changed files, test paths, base and review revisions, unit test execution output, and explicit staged/unstaged/untracked scope. Report `READY_FOR_REVIEW`.
 

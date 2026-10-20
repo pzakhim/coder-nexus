@@ -1,6 +1,6 @@
 # 01 — Golden Screenshot Recipe and Visual Review Guide
 
-Use a golden harness only when approved and already available, or when its dependency addition is explicitly approved. Golden evidence supplements required runtime checks; it never proves live integration. Follow `visual-verification` and the shared handshake evidence policy.
+Use a golden harness only when approved and already available, or when its dependency addition is explicitly approved. Golden evidence supplements required runtime checks; it never proves live integration. Follow `{{slot:visual-verification}}` and the shared handshake evidence policy.
 
 
 Guide for using [`golden_screenshot`](https://pub.dev/packages/golden_screenshot) to generate realistic screen renders, review 4 visual states, and verify pixel fidelity without heavy device emulators.

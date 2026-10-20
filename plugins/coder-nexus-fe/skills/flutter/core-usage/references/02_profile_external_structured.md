@@ -10,7 +10,7 @@ This profile activates when working on an **External Flutter Client** (a third-p
 ## 1. Activation & Discovery Criteria
 
 A project qualifies for **Profile 2 (External-Structured)** if:
-1. The approved Client profile does not use company foundations; unrelated neighboring folders are irrelevant. Preserve an explicit approved selection and follow `core-usage` for evidence-based resolution.
+1. The approved Client profile does not use company foundations; unrelated neighboring folders are irrelevant. Preserve an explicit approved selection and follow `{{slot:core-usage}}` for evidence-based resolution.
 2. The codebase contains established shared directories or base modules such as:
    - `lib/core/` (base models, network clients, base use cases, storage services)
    - `lib/shared/` or `lib/common/` (reusable UI widgets, design tokens, helper utilities)

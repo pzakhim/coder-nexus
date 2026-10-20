@@ -64,7 +64,7 @@ for (const [command, plugin, framework] of [
                     }
                 }
                 for (const ref of ['01_profile_imespro.md', '02_profile_external_structured.md', '03_profile_external_standard.md']) {
-                    assert.ok(fs.existsSync(path.join(installed, 'skills/core-usage/references', ref)));
+                    assert.ok(fs.existsSync(path.join(installed, 'skills/flutter-core-usage/references', ref)));
                 }
             }
             assert.ok(fs.existsSync(path.join(workspace, '.agents/agents/code_reviewer.md')));

@@ -135,7 +135,7 @@ def test_flutter_core_usage_skill_structure():
 
 def test_flutter_feature_planner_skill_structure():
     """Verify flutter-feature-planner SKILL.md, manifest, and references packaging."""
-    skill_dir = PLUGIN_DIR / "skills" / "flutter" / "feature-planner"
+    skill_dir = PLUGIN_DIR / "skills" / "shared" / "feature-planner"
     skill_file = skill_dir / "SKILL.md"
     assert skill_file.exists(), f"Missing SKILL.md at {skill_file}"
 
@@ -179,7 +179,7 @@ def test_client_workflow_skills_are_packaged_and_portable():
         "code-review",
     }
     for name in expected:
-        skill_file = PLUGIN_DIR / "skills" / "flutter" / name / "SKILL.md"
+        skill_file = next((PLUGIN_DIR / "skills").glob(f"*/{name}/SKILL.md"), PLUGIN_DIR / "skills" / "flutter" / name / "SKILL.md")
         assert skill_file.exists(), f"Missing packaged skill: {name}"
         content = skill_file.read_text(encoding="utf-8")
         assert f"name: {name}" in content
@@ -382,8 +382,8 @@ def test_shared_contract_edit_and_framework_switch_refresh_projection(tmp_path):
     assert _install_plugin_projection(source, destination, REPO_ROOT) == "updated"
     assert (destination / "shared_contracts/api_handshake_protocol.md").read_bytes() == protocol.read_bytes()
     assert _install_plugin_projection(source, destination, REPO_ROOT, "frappe") == "updated"
-    assert not (destination / "skills/core-usage").exists()
-    assert (destination / "skills/ui-catalog/SKILL.md").is_file()
+    assert not (destination / "skills/flutter-core-usage").exists()
+    assert (destination / "skills/frappe-ui-catalog/SKILL.md").is_file()
 
 
 def test_flutter_code_review_skill_structure():
@@ -589,3 +589,36 @@ def test_built_projections_apply_identically_for_every_variant(tmp_path):
         home = tmp_path / f"home-{variant}"
         spec = apply_projection(out / f"global-{variant}", home)
         assert (home / plugin_name / "agents" / "code_writer.md").is_file()
+
+
+def test_framework_skills_are_prefixed_and_agent_skills_resolve(tmp_path):
+    """2.6.0: framework skills install as <stack>-<slot>; agents only declare installed skills."""
+    from coder_nexus.plugin_build import build_variant
+
+    target = build_variant("fe-flutter", "workspace", tmp_path)
+    spec = json.loads((target / "projection.json").read_text(encoding="utf-8"))
+    assert spec["problems"] == []
+    files = target / "files"
+    skills = files / ".agents/plugins/coder-nexus-fe/skills"
+    names = {p.name for p in skills.iterdir()}
+    assert {"flutter-core-usage", "flutter-clean-architecture", "work-items", "feature-planner"} <= names
+    assert "core-usage" not in names and "clean-architecture" not in names
+    assert "name: flutter-core-usage" in (skills / "flutter-core-usage/SKILL.md").read_text(encoding="utf-8")
+    for agent in (files / ".agents/agents").glob("*.md"):
+        text = agent.read_text(encoding="utf-8")
+        assert "{{slot:" not in text
+        frontmatter = text.split("---", 2)[1]
+        skill_block = frontmatter.split("skills:", 1)[1].split("tools:", 1)[0]
+        for line in skill_block.splitlines():
+            name = line.strip().removeprefix("- ").strip()
+            if name:
+                assert name in names, (agent.name, name)
+
+
+def test_preview_pack_gaps_are_reported_not_hidden(tmp_path):
+    from coder_nexus.plugin_build import build_variant
+
+    target = build_variant("fe-frappe", "workspace", tmp_path)
+    problems = json.loads((target / "projection.json").read_text(encoding="utf-8"))["problems"]
+    assert any("declares missing skill frappe-core-usage" in p for p in problems)
+    assert (target / "files/.agents/plugins/coder-nexus-fe/skills/frappe-ui-catalog/SKILL.md").is_file()

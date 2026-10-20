@@ -99,7 +99,9 @@ def _install_plugin_projection(
     backup = destination.parent / f".{destination.name}.backup"
     _remove_path(staging)
     _remove_path(backup)
-    project_plugin(plugin_dir, staging, framework if categorized else None, include_agents=not workspace_agents)
+    agents_out = destination.parent.parent / "agents" if workspace_agents else None
+    project_plugin(plugin_dir, staging, framework if categorized else None,
+                   include_agents=not workspace_agents, agents_out=agents_out)
 
     runtime_config = {
         "mcpServers": {
@@ -195,10 +197,6 @@ def cmd_install_plugin(args: argparse.Namespace) -> int:
         destination = ws_path / ".agents" / "plugins" / plugin_name
         _remove_legacy_workspace_entry(ws_path, plugin_dir, destination)
         destinations.append(destination)
-        ws_agents_dir = ws_path / ".agents" / "agents"
-        ws_agents_dir.mkdir(parents=True, exist_ok=True)
-        for agent_file in (plugin_dir / "agents").glob("*.md"):
-            shutil.copy2(agent_file, ws_agents_dir / agent_file.name)
 
     framework = getattr(args, "framework", "flutter") or "flutter"
     try:

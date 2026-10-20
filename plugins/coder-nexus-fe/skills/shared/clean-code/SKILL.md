@@ -15,4 +15,4 @@ Improve clarity without changing the approved architecture or inventing new abst
 - Do not broaden file scope, modernize adjacent code, add dependencies, or weaken validation/error handling.
 - Run formatter/analyzer and the task's targeted tests before claiming completion.
 
-Use `flutter-code-simplification` only when working behavior remains harder to understand than necessary.
+Use `code-simplification` only when working behavior remains harder to understand than necessary.

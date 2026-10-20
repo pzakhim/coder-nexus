@@ -1,6 +1,6 @@
 # 02 — Evidence-Based Socratic Interview (`grill-me`) and Three Approval Gates
 
-Resolve foundation evidence via `core-usage`. Planning records the profile at Gate 2. Kit-matching rules below apply to iMESPro or a verified Client design system; external-standard uses standard Flutter. Preserve the approved profile in downstream work.
+Resolve foundation evidence via `{{slot:core-usage}}`. Planning records the profile at Gate 2. Kit-matching rules below apply to iMESPro or a verified Client design system; external-standard uses standard Flutter. Preserve the approved profile in downstream work.
 
 ## Interview rule (`1A Source Intake` $\to$ `1B Gap Analysis & Turn-1 DRAFT` $\to$ `1C Grill 1-by-1 (Q-NN -> D-NN)` $\to$ `Lock In Specs`)
 
@@ -21,7 +21,7 @@ For a multi-screen flow, resolve applicable state ownership, navigation/back, un
 
 ## Visual Intake Gate
 
-For UI work, inspect a supplied Figma frame or image directly and derive layout, spacing, typography, tokens and required states. Lean mode controls inspection depth but does not skip a supplied visual. When none exists, record `VISUAL_INPUT_MISSING`, draft a minimal layout specification and ask for confirmation. Passing analyzer/tests while materially diverging from the approved design is `FAILED`. Read the selected profile’s UI guidance via `core-usage` and call `get_ux_error_patterns`. Select one viable Kit match automatically even when its styling differs from the visual; Kit styling governs Visual AC. Multiple viable Kit matches require a user choice. With none, inspect shared widgets and composition before planning a private widget. Only an iMESPro setup failure blocks on company packages; external profiles require no company setup or GUIDE.
+For UI work, inspect a supplied Figma frame or image directly and derive layout, spacing, typography, tokens and required states. Lean mode controls inspection depth but does not skip a supplied visual. When none exists, record `VISUAL_INPUT_MISSING`, draft a minimal layout specification and ask for confirmation. Passing analyzer/tests while materially diverging from the approved design is `FAILED`. Read the selected profile’s UI guidance via `{{slot:core-usage}}` and call `get_ux_error_patterns`. Select one viable Kit match automatically even when its styling differs from the visual; Kit styling governs Visual AC. Multiple viable Kit matches require a user choice. With none, inspect shared widgets and composition before planning a private widget. Only an iMESPro setup failure blocks on company packages; external profiles require no company setup or GUIDE.
 
 ## Three gates
 

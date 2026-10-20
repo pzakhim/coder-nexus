@@ -54,7 +54,7 @@ Always supply `--workspace` for workspace-only installation. Omitting it default
 
 The CLI projection records source/version metadata in `installed_version.json` and writes `mcp_config.json` with `uv run --offline coder-nexus serve` and the Hub checkout as `cwd`. Keep that checkout and its prepared environment available. The CLI installer does not perform the extension's Ponytail provisioning.
 
-Inspect the generated manifest, role files, skills, and MCP configuration. Confirm host discovery and tool invocation in the target IDE; copied files alone do not prove activation. Source paths such as `skills/flutter/core-usage/` become `skills/core-usage/` in the installed FE projection.
+Inspect the generated manifest, role files, skills, and MCP configuration. Confirm host discovery and tool invocation in the target IDE; copied files alone do not prove activation. Shared skills keep their name when installed (`skills/shared/work-items/` becomes `skills/work-items/`); framework skills get the stack prefix (`skills/flutter/core-usage/` becomes `skills/flutter-core-usage/`). Agents reference framework skills as `{{slot:<name>}}`, which the build renders to the installed name.
 
 ## External versus iMESPro projects
 

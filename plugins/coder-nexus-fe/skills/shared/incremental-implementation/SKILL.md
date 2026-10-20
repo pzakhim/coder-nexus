@@ -8,11 +8,11 @@ description: Implements an approved Flutter plan one dependency-ready slice at a
 Read plugin-root `shared_contracts/api_handshake_protocol.md`. Read consolidated Huly and API context from `phases/phase-00-prepare.md` (`PHASE-00`) and `design.md` — never re-query Huly or fabricate business records, services, or production fallbacks.
 
 
-For new Client work, use the approved `.superpowers/work-items/<slug>/vN/brief.md` with optional design/plan/phase. A small non-feature task can be executable from the brief alone; a feature still requires all three actual user gates. Follow the chosen type's checks in `flutter-work-items`. The versioned `docs/features/` preconditions below apply only to historical feature work.
+For new Client work, use the approved `.superpowers/work-items/<slug>/vN/brief.md` with optional design/plan/phase. A small non-feature task can be executable from the brief alone; a feature still requires all three actual user gates. Follow the chosen type's checks in `work-items`. The versioned `docs/features/` preconditions below apply only to historical feature work.
 
 ## Historical feature workflow
 
-Implement the smallest approved behavior that can be verified end to end. Apply `flutter-clean-architecture` for project conventions, `core-usage` for core and UI reuse, and `flutter-clean-code` while writing the task.
+Implement the smallest approved behavior that can be verified end to end. Apply `{{slot:clean-architecture}}` for project conventions, `{{slot:core-usage}}` for core and UI reuse, and `clean-code` while writing the task.
 
 ## Preconditions
 
@@ -45,14 +45,14 @@ Implement the smallest approved behavior that can be verified end to end. Apply 
 
 3. **Phase-Level Integration & Handoff**:
    - Once all tasks in the phase are `- [x]`, run the full phase verification suite (`flutter analyze`, `flutter test test/modules/<feature>/`).
-   - For UI impact, invoke `flutter-visual-verification` on the approved target/states.
+   - For UI impact, invoke `{{slot:visual-verification}}` on the approved target/states.
    - Report exact commands, revision, target and results to the coordinator for `as-built.md`; `NOT_RUN` and `BLOCKED` are not `PASS`.
    - If checks fail, fix within the approved scope. If the fix changes behavior, API, architecture, dependencies, or component contract, return to the relevant planning/design gate.
    - Coordinator marks the phase complete in `as-built.md` only when its AC, review and verification evidence pass.
 
 ## Simplicity pass
 
-After behavior passes, inspect only the changed code. Invoke `flutter-code-simplification` only when it identifies concrete complexity worth removing. Do not perform drive-by refactors, change tests to accommodate a simplification, or remove validation/error paths. Re-run affected checks after any simplification.
+After behavior passes, inspect only the changed code. Invoke `code-simplification` only when it identifies concrete complexity worth removing. Do not perform drive-by refactors, change tests to accommodate a simplification, or remove validation/error paths. Re-run affected checks after any simplification.
 
 ## Handoff
 

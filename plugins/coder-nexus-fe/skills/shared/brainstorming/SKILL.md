@@ -14,7 +14,7 @@ This skill guides the **Spec Writer Agent (Technical BA)** in discovering and co
 1. **Stage 1A — Three-Pillar Source Intake (`ask_question` when missing)**:
    - Confirm the exact sources for:
      1. **PO/BA Requirements**: Huly task (read once via `huly_get_task_detail`), external PO/BA specification file, or direct user prompt.
-     2. **UI Screens, UX & Design System**: Screen definitions, UX flows, and design system specs (typically converted from Figma into `.md` files or attached visuals). Execute the **Visual Intake Gate**: inspect supplied visual/Figma `.md` specs directly; if none exist, record `VISUAL_INPUT_MISSING` and confirm layout expectations (`planning` owns `core-usage` profile resolution and UI Kit component mapping at Gate 2).
+     2. **UI Screens, UX & Design System**: Screen definitions, UX flows, and design system specs (typically converted from Figma into `.md` files or attached visuals). Execute the **Visual Intake Gate**: inspect supplied visual/Figma `.md` specs directly; if none exist, record `VISUAL_INPUT_MISSING` and confirm layout expectations (`planning` owns `{{slot:core-usage}}` profile resolution and UI Kit component mapping at Gate 2).
      3. **API Integration Source (Binary Check: Does BE API Exist?)**:
         - **If BE API exists (`BE_API_READY`)**: Record the API specification (Huly BE task, Swagger/OpenAPI, or `.md` file) in `codebase-notes.md`.
         - **If BE API does not exist or has missing endpoints (`MOCKOON_MOCKED`)**: Request the user to use **Mockoon**; `spec_writer` defines the required business Input/Output in `requirements.md` and `codebase-notes.md`, and `planning` designs the Mockoon data (`mocks/<feature>_mockoon.json`) and allocates `PHASE-00` (`phase-00-prepare.md`) to prepare the Mockoon API mock so FE integrates via the real `RemoteDataSource` (`ApiService`).
@@ -35,4 +35,4 @@ This skill guides the **Spec Writer Agent (Technical BA)** in discovering and co
    - Never self-approve or mark `APPROVED_BY_SPEC`.
 6. **Handoff to Planning Agent (Tech Lead)**:
    - Upon Gate 1 user approval, hand off `requirements.md` and permanent `codebase-notes.md` to `planning` with `READY_FOR_PLANNING`.
-   - `planning` assumes technical ownership for **Gate 2 (Architecture Design via `architecture-design`)** and **Gate 3 (Execution Planning via `planning-and-task-breakdown`)**.
+   - `planning` assumes technical ownership for **Gate 2 (Architecture Design via `{{slot:architecture-design}}`)** and **Gate 3 (Execution Planning via `planning-and-task-breakdown`)**.

@@ -1,0 +1,10 @@
+{
+  "stack": "frappe",
+  "status": "preview",
+  "slots": {
+    "clean-architecture": "clean-architecture"
+  },
+  "extra": [
+    "ui-catalog"
+  ]
+}

@@ -18,13 +18,13 @@ When this skill is active, act as a rigorous Technical Business Analyst (`spec_w
 2. **Never Present `DRAFT` as Gate 1 Approval**: A `DRAFT` file is a working checkpoint so nothing is lost across turns. Gate 1 approval happens only when `## 0. Question Queue (Q-NN)` has **zero `OPEN` rows**, all `(Q-NN)` markers in `requirements.md` are replaced by `(D-NN)`, and `Status` transitions to `PENDING_REVIEW`.
 
 ### Law 2 — Confirm Every Inference (`Confirm Every Inference`)
-- **If a fact can be verified directly from the repository or supplied spec** (file paths, class names, `core-usage` package exports, existing route names): inspect it with `view_file` / `run_command` (`rg`) and record it in `codebase-notes.md` (`## 3. Verified Baseline Facts & Cross-Agent Notes`). Do not bother the user with questions the codebase already answers.
+- **If a fact can be verified directly from the repository or supplied spec** (file paths, class names, `{{slot:core-usage}}` package exports, existing route names): inspect it with `view_file` / `run_command` (`rg`) and record it in `codebase-notes.md` (`## 3. Verified Baseline Facts & Cross-Agent Notes`). Do not bother the user with questions the codebase already answers.
 - **If a behavior, business rule, UX state, API contract choice, or architectural trade-off is NOT explicitly stated by the user** (even if it looks "obvious" or can be guessed from similar screens): you **MUST NOT** silently write it as a settled rule. Log it as `Q-NN` (`OPEN`) in `codebase-notes.md` and ask the user via `ask_question`.
 
 ### Law 3 — Grill Until `0 Doubts` & Straight-Line Documents
 - Interview across all applicable dimensions until **`0 doubts, 0 open questions, 0 assumptions, 0 options`**:
   1. **Scope & Data/API Source**: In-scope vs out-of-scope boundaries, `BE_API_READY` vs `MOCKOON_MOCKED`, endpoint/payload mismatches.
-  2. **Happy Path & UX/Visual States**: Primary actor flow, 4 mandatory visual states (`Default/Content`, `Loading`, `Empty`, `Error`), Kit widget selection when multiple viable `core-usage` candidates exist.
+  2. **Happy Path & UX/Visual States**: Primary actor flow, 4 mandatory visual states (`Default/Content`, `Loading`, `Empty`, `Error`), Kit widget selection when multiple viable `{{slot:core-usage}}` candidates exist.
   3. **Clarification of Inferences**: Every point inferred from existing flows or partial prompts.
   4. **Negative, Boundary & Edge Cases**: Validation errors, network timeouts, duplicate clicks, empty lists, unauthorized states.
   5. **Multi-Screen / State Lifecycle**: Navigation/back behavior, state retention across steps, cache/list refresh after mutations.

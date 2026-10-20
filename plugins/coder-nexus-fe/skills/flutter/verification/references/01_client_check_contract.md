@@ -15,7 +15,7 @@ Use commands approved in the same feature version's `implementation-plan.md` and
 2. Run the narrowest analyzer command that proves the slice, then the workspace analyzer required by the plan.
 3. Run targeted behavior tests, followed by affected regression tests.
 4. Build the approved flavor/entrypoint/platform at its planned checkpoint.
-5. For UI impact, use `flutter-visual-verification` on the approved target and states.
+5. For UI impact, use `{{slot:visual-verification}}` on the approved target and states.
 
 Before running, enumerate test cases from approved ACs. For each case record its permitted real data source or safe input, expected observable result, target/state, test path and evidence. Missing test coverage goes back to Code Writer and review; a missing required live-data path is `BLOCKED`; approved fixture-backed UI/contract checks remain separately labeled.
 

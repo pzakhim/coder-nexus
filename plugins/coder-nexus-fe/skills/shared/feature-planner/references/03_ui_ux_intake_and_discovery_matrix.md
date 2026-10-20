@@ -1,6 +1,6 @@
 # 03 — UI/UX Intake and Sequential Component Discovery
 
-Apply the approved profile through [core-usage](../../core-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
+Apply the approved profile through [core-usage](../../../flutter/core-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
 
 ## Visual Intake Gate
 
@@ -16,7 +16,7 @@ A UI can pass analyzer and tests yet still be `FAILED` when it materially differ
 
 Check in order:
 
-1. The `app_ui_kit` GUIDE decision table (and app_core for `BaseScreen`, `ListViewPaging`, `LabelText`), read via `core-usage`.
+1. The `app_ui_kit` GUIDE decision table (and app_core for `BaseScreen`, `ListViewPaging`, `LabelText`), read via `{{slot:core-usage}}`.
 2. Shared Client widgets under the actual `lib/commons/widgets/` path.
 3. Composition of verified existing components.
 4. A feature-private widget under `lib/modules/<feature>/presentation/widgets/`, only after the approved design records the verified gap.

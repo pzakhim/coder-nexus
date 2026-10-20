@@ -1,6 +1,6 @@
 # 03 — Review Definition of Done (DoD) and Developer Testing
 
-Use a golden harness only when approved and already available, or when its dependency addition is explicitly approved. Golden evidence supplements required runtime checks; it never proves live integration. Follow `visual-verification` and the shared handshake evidence policy.
+Use a golden harness only when approved and already available, or when its dependency addition is explicitly approved. Golden evidence supplements required runtime checks; it never proves live integration. Follow `{{slot:visual-verification}}` and the shared handshake evidence policy.
 
 
 Guide for Verification and DoD design in `implement-plan.md`.

@@ -118,11 +118,7 @@ def cmd_setup_flutter(args: argparse.Namespace) -> int:
         if plugin_dir.exists():
             dest = project_path / ".agents" / "plugins" / "coder-nexus-fe"
             _remove_legacy_workspace_entry(project_path, plugin_dir, dest)
-            action = _install_plugin_projection(plugin_dir, dest, REPO_ROOT, framework="flutter")
-            ws_agents_dir = project_path / ".agents" / "agents"
-            ws_agents_dir.mkdir(parents=True, exist_ok=True)
-            for agent_file in (plugin_dir / "agents").glob("*.md"):
-                shutil.copy2(agent_file, ws_agents_dir / agent_file.name)
+            action = _install_plugin_projection(plugin_dir, dest, REPO_ROOT, framework="flutter", workspace_agents=True)
             print(f"      Workspace plugin {action} with mcp_config.json: {dest}")
     return code
 
