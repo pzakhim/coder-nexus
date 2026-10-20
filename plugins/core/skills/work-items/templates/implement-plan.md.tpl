@@ -3,7 +3,7 @@
 - **Brief:** [brief.md](brief.md)
 - **Design:** {{DesignLinkOrReasonedNA}}
 - **Target Platform:** {{Platform}}
-- **Frontend Framework:** {{Framework}}
+- **Stack / Framework:** {{Framework}}
 - **UI Kit Authority:** {{KitAuthority}}
 - **Accepted document revisions:** {{RealRevisionsAndApprovalReferences}}
 - **Status:** PENDING_REVIEW

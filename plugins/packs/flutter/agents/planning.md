@@ -4,6 +4,7 @@ skills:
 ---
 ## Flutter rules
 
+- **FE Data Pipeline**: `RemoteDataSource` calling `ApiService`, `Model.fromJson`, `RepoImpl`, `UseCase`, and DI — never creating fake `MockDataSource` classes inside `lib/`.
 - **UI & Design System**: `planning` performs **Codebase & UI Kit class mapping** via `{{slot:core-usage}}` (`app_core`, `app_util`, `app_ui_kit`), maps each UI need to exact widget/class names, records any `Core gap`, and specifies `BaseScreen`, `Router`, and `Cubit State` contracts.
 - **Flutter Client**: Apply `{{slot:core-usage}}` **first** to determine the `architecture_profile.mode`:
   1. **Mode 1 (`imespro`)**: Explicitly selected or supported by actual Client dependencies/consumers. Sibling folders alone never select it. Run company setup, read resolved package guides, and map fitting APIs or Core gaps.

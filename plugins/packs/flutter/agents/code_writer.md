@@ -24,7 +24,7 @@ Execute according to `architecture_profile.mode` specified in `design.md`:
    - Keep feature code together and create only the Domain/Data/Presentation responsibilities actually needed; no empty layers or mandatory Cubit/DI dependencies.
    - Construct clean standard Flutter widgets (`StatefulWidget`/`StatelessWidget`, `ElevatedButton`, `TextFormField`) under the approved screen/widget paths.
 
-- **Data layer**: In the Flutter Client (`lib/`), implement only the real **`RemoteDataSource`** calling `ApiService`; **never** create fake `Mock<Feature>DataSource` classes inside `lib/`.
+- **Data layer**: In the Flutter Client (`lib/`), implement only the real **`RemoteDataSource`** calling `ApiService` (`ApiConfig.domain` pointed to the BE server or local Mockoon server in `.env`); **never** create fake `Mock<Feature>DataSource` classes inside `lib/`. When BE delivers the real API, point `ApiConfig.domain` / `.env` to the live server.
 - **Mapping under `external-standard`**: there is no mapping and standard Flutter widgets are correct.
 - **No screen-contract bypass**: route screens follow the approved profile's screen contract (`imespro`: `BaseScreen`/`BaseScreenState`, `buildMobilePortrait()`, never `build()`).
 - **No construction in UI**: UI classes never construct data sources, repositories or use cases.

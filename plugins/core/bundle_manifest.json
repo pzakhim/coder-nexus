@@ -1,9 +1,16 @@
 {
   "schema_version": 1,
-  "plugin_version": "2.7.1",
+  "plugin_version": "2.8.0",
   "hub_version": "0.1.0",
   "source_revision_policy": "resolved_at_install",
   "public_skills": [
+    "backend/api-contracts",
+    "backend/architecture-design",
+    "backend/clean-architecture",
+    "backend/code-review",
+    "backend/unit-test",
+    "backend/verification",
+    "backend/work-items",
     "core/brainstorming",
     "core/clean-code",
     "core/code-simplification",
@@ -66,7 +73,10 @@
     "packs/flutter/skills/core-usage/SKILL.md",
     "packs/flutter/skills/core-usage/references/01_profile_imespro.md",
     "packs/flutter/skills/core-usage/references/02_profile_external_structured.md",
-    "packs/flutter/skills/core-usage/references/03_profile_external_standard.md"
+    "packs/flutter/skills/core-usage/references/03_profile_external_standard.md",
+    "packs/backend/rules/backend_clean_architecture_rules.md",
+    "packs/backend/skills/api-contracts/SKILL.md",
+    "packs/backend/skills/clean-architecture/SKILL.md"
   ],
   "resource_base": "plugins/"
 }

@@ -1,0 +1,16 @@
+{
+  "stack": "backend",
+  "title": "Backend",
+  "status": "preview",
+  "layers": [],
+  "slots": {
+    "architecture-design": "architecture-design",
+    "clean-architecture": "clean-architecture",
+    "unit-test": "unit-test",
+    "code-review": "code-review",
+    "verification": "verification"
+  },
+  "extra": ["api-contracts", "work-items"],
+  "not_applicable": ["core-usage", "visual-verification"],
+  "markers": ["pytest", "ORM", "ORMs", "SQLAlchemy", "Prisma", "GORM", "FastAPI", "gRPC"]
+}

@@ -1,5 +1,5 @@
 {
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
-  "name": "coder-nexus-fe",
-  "description": "Coder Nexus Frontend plugin for Flutter Client work items, Huly intake, specification, planning, implementation, documentation, code review, UI review, and verification"
+  "name": "coder-nexus",
+  "description": "Coder Nexus delivery plugin for Client and service work items: Huly intake, specification, planning, implementation, documentation, code review, and verification, with stack packs"
 }

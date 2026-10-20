@@ -47,62 +47,73 @@ function installedPluginVersion(pluginDir) {
     return null;
 }
 
+const BE_SIGNATURES = [
+    'go.mod', 'pom.xml', 'build.gradle', 'build.gradle.kts',
+    'requirements.txt', 'pyproject.toml', 'Cargo.toml',
+    'Dockerfile', 'docker-compose.yml'
+];
+// Folders that never hold a separate project root (platform shells, build output, tooling).
+const SCAN_SKIP = new Set([
+    'node_modules', '.git', '.agents', '.superpowers', '.dart_tool', '.idea', '.vscode', 'build', 'dist',
+    'ios', 'android', 'macos', 'linux', 'windows', 'web', 'test', 'tests', 'assets', 'docs',
+    'venv', '.venv', '__pycache__', 'coverage', 'target', 'vendor'
+]);
+
 /**
- * Detect project role ('flutter', 'frappe', or 'be') based on workspace root signatures.
+ * Detect the stack pack ('flutter', 'frappe' or 'backend') whose signature is in `dir`, else null.
+ */
+function detectStackAt(dir) {
+    if (fs.existsSync(path.join(dir, 'pubspec.yaml'))) return 'flutter';
+    const pkgPath = path.join(dir, 'package.json');
+    if (fs.existsSync(pkgPath)) {
+        try {
+            if (fs.readFileSync(pkgPath, 'utf8').includes('frappe-ui')) return 'frappe';
+        } catch (_) {}
+    }
+    if (fs.existsSync(path.join(dir, 'hooks.py'))) return 'frappe';
+    if (BE_SIGNATURES.some(sig => fs.existsSync(path.join(dir, sig)))) return 'backend';
+    return null;
+}
+
+/**
+ * Find project roots in the workspace (the root and up to two folder levels below it).
+ * Returns { stack: [relative paths] }; a folder that is a project root is not scanned further.
+ */
+function detectPacks(workspacePath) {
+    const found = {};
+    const visit = (dir, rel, depth) => {
+        const stack = detectStackAt(dir);
+        if (stack) {
+            (found[stack] = found[stack] || []).push(rel || '.');
+            if (rel) return;
+        }
+        if (depth >= 2) return;
+        let entries = [];
+        try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (_) { return; }
+        for (const entry of entries) {
+            if (!entry.isDirectory() || SCAN_SKIP.has(entry.name) || entry.name.startsWith('.')) continue;
+            visit(path.join(dir, entry.name), rel ? `${rel}/${entry.name}` : entry.name, depth + 1);
+        }
+    };
+    visit(workspacePath, '', 0);
+    return found;
+}
+
+/**
+ * Backward-compatible single answer: 'flutter', 'frappe' or 'be' for the workspace root.
  */
 function detectProjectRole(workspacePath) {
-    if (fs.existsSync(path.join(workspacePath, 'pubspec.yaml'))) {
-        return 'flutter';
-    }
-    const pkgPath = path.join(workspacePath, 'package.json');
-    if (fs.existsSync(pkgPath)) {
-        try {
-            const content = fs.readFileSync(pkgPath, 'utf8');
-            if (content.includes('frappe-ui')) {
-                return 'frappe';
-            }
-        } catch (_) {}
-    }
-    if (fs.existsSync(path.join(workspacePath, 'hooks.py'))) {
-        return 'frappe';
-    }
-    const beSignatures = [
-        'go.mod', 'pom.xml', 'build.gradle', 'build.gradle.kts',
-        'requirements.txt', 'pyproject.toml', 'Cargo.toml',
-        'Dockerfile', 'docker-compose.yml'
-    ];
-    for (const sig of beSignatures) {
-        if (fs.existsSync(path.join(workspacePath, sig))) {
-            return 'be';
-        }
-    }
-    return 'flutter';
+    const stack = detectStackAt(workspacePath);
+    return stack === 'backend' ? 'be' : stack || 'flutter';
 }
 
-/**
- * Check if the workspace contains recognized project signatures (Flutter, Frappe, or Backend).
- */
 function isRecognizedWorkspace(workspacePath) {
-    if (fs.existsSync(path.join(workspacePath, 'pubspec.yaml'))) return true;
-    const pkgPath = path.join(workspacePath, 'package.json');
-    if (fs.existsSync(pkgPath)) {
-        try {
-            const content = fs.readFileSync(pkgPath, 'utf8');
-            if (content.includes('frappe-ui')) return true;
-        } catch (_) {}
-    }
-    if (fs.existsSync(path.join(workspacePath, 'hooks.py'))) return true;
-    const beSignatures = [
-        'go.mod', 'pom.xml', 'build.gradle', 'build.gradle.kts',
-        'requirements.txt', 'pyproject.toml', 'Cargo.toml',
-        'Dockerfile', 'docker-compose.yml'
-    ];
-    return beSignatures.some(sig => fs.existsSync(path.join(workspacePath, sig)));
+    return Object.keys(detectPacks(workspacePath)).length > 0;
 }
 
 /**
- * Copy a projection built by `python -m coder_nexus.plugin_build` (plugins/dist/<layout>-<variant>).
- * All filtering/flattening happens at build time; this only replaces the managed paths.
+ * Copy a projection built by `python -m coder_nexus.plugin_build` (plugins/dist/<layout>-<packs>).
+ * All composition and filtering happens at build time; this only replaces the managed paths.
  */
 function applyProjection(projectionDir, destRoot) {
     const spec = JSON.parse(fs.readFileSync(path.join(projectionDir, 'projection.json'), 'utf8'));
@@ -125,27 +136,73 @@ function applyProjection(projectionDir, destRoot) {
     return spec;
 }
 
-function projectionVariant(pluginName, framework) {
-    return pluginName === 'coder-nexus-be' ? 'be' : `fe-${framework === 'frappe' ? 'frappe' : 'flutter'}`;
+function bundledPacks(context) {
+    try {
+        return JSON.parse(fs.readFileSync(path.join(context.extensionPath, 'plugins', 'dist', 'packs.json'), 'utf8')).packs || [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function readStackFile(workspacePath) {
+    try {
+        return JSON.parse(fs.readFileSync(path.join(workspacePath, '.agents', 'stack.json'), 'utf8'));
+    } catch (_) {
+        return { packs: [] };
+    }
+}
+
+function installedPacks(workspacePath) {
+    return (readStackFile(workspacePath).packs || []).map(pack => pack.stack).filter(Boolean);
 }
 
 /**
- * Install or update the Coder Nexus Antigravity plugin from its prebuilt projection.
+ * Record the installed packs and the workspace paths each owns (same schema as the CLI).
  */
-function installAntigravityPlugin(context, targetWorkspace = null, silent = false, pluginName = 'coder-nexus-fe', framework = 'flutter') {
+function writeStackFile(workspacePath, spec, paths) {
+    const data = {
+        plugin_version: spec.plugin_version || 'UNKNOWN',
+        packs: (spec.packs || []).map(pack => ({ ...pack, paths: (paths[pack.stack] && paths[pack.stack].length) ? paths[pack.stack] : ['.'] })),
+    };
+    const file = path.join(workspacePath, '.agents', 'stack.json');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n', 'utf8');
+    return data;
+}
+
+/**
+ * Paths for each pack: keep what stack.json already records, else what detection found.
+ */
+function packPaths(workspacePath, packs) {
+    const recorded = {};
+    for (const pack of readStackFile(workspacePath).packs || []) recorded[pack.stack] = pack.paths;
+    const detected = detectPacks(workspacePath);
+    const paths = {};
+    for (const stack of packs) paths[stack] = recorded[stack] || detected[stack] || ['.'];
+    return paths;
+}
+
+/**
+ * Install or update the Coder Nexus plugin from its prebuilt projection.
+ * Workspace: `packs` is the full set to install (any combination). Global: exactly one pack.
+ */
+function installAntigravityPlugin(context, targetWorkspace = null, silent = false, packs = ['flutter']) {
     const layout = targetWorkspace ? 'workspace' : 'global';
-    const projectionDir = path.join(context.extensionPath, 'plugins', 'dist', `${layout}-${projectionVariant(pluginName, framework)}`);
-    if (!fs.existsSync(path.join(projectionDir, 'projection.json'))) {
+    const selected = [...new Set(packs)].sort();
+    const projectionDir = path.join(context.extensionPath, 'plugins', 'dist', `${layout}-${selected.join('+')}`);
+    if (!selected.length || !fs.existsSync(path.join(projectionDir, 'projection.json'))) {
         if (!silent) {
-            vscode.window.showErrorMessage(`Coder Nexus plugin assets (${pluginName}) not found inside extension path.`);
+            vscode.window.showErrorMessage(`Coder Nexus plugin assets for ${selected.join(' + ') || 'no pack'} (${layout}) not found inside extension path.`);
         }
         return false;
     }
 
     try {
         const destRoot = targetWorkspace || path.join(os.homedir(), '.gemini', 'config', 'plugins');
+        const paths = targetWorkspace ? packPaths(targetWorkspace, selected) : {};
         const spec = applyProjection(projectionDir, destRoot);
         const destPath = path.join(destRoot, spec.managed[0]);
+        if (targetWorkspace) writeStackFile(targetWorkspace, spec, paths);
 
         // GUI-launched IDEs may not have ~/.local/bin in PATH; point MCP at the absolute CLI when present.
         const mcpConfigPath = path.join(destPath, 'mcp_config.json');
@@ -160,16 +217,17 @@ function installAntigravityPlugin(context, targetWorkspace = null, silent = fals
         // Ensure bundled Ponytail plugin is installed if not already present on host/workspace
         ensurePonytailPlugin(context, targetWorkspace, silent);
 
-        const placeholders = Object.keys(spec.stubs || {});
-        if (!silent && spec.status === 'preview' && placeholders.length && typeof vscode.window.showWarningMessage === 'function') {
+        const placeholders = Object.entries(spec.stubs || {}).filter(([, kind]) => kind === 'blocked').map(([name]) => name);
+        if (!silent && placeholders.length && typeof vscode.window.showWarningMessage === 'function') {
+            const preview = (spec.packs || []).filter(p => p.status === 'preview').map(p => p.title).join(', ');
             vscode.window.showWarningMessage(
-                `Coder Nexus: this stack is a preview pack. ${placeholders.length} skills are placeholders (${placeholders.join(', ')}); agents stop with BLOCKED at those steps instead of guessing.`
+                `Coder Nexus: ${preview} ${preview.includes(',') ? 'are preview packs' : 'is a preview pack'}. ${placeholders.length} skills are placeholders (${placeholders.join(', ')}); agents stop with BLOCKED at those steps instead of guessing.`
             );
         }
 
-        const frameworkLabel = pluginName === 'coder-nexus-fe' ? (framework === 'frappe' ? 'Frappe UI' : 'Flutter') : 'Backend (BE)';
+        const label = (spec.packs || []).map(p => p.title).join(' + ');
         if (!silent) {
-            const msg = `✅ ${frameworkLabel} plugin synced to Antigravity (${destPath})`;
+            const msg = `✅ Coder Nexus synced ${label} to Antigravity (${destPath})`;
             if (vscode.window && typeof vscode.window.showInformationMessage === 'function') {
                 const p = vscode.window.showInformationMessage(msg, 'Open Dashboard', 'Check Environment');
                 if (p && typeof p.then === 'function') {
@@ -186,7 +244,7 @@ function installAntigravityPlugin(context, targetWorkspace = null, silent = fals
         return true;
     } catch (err) {
         if (!silent) {
-            vscode.window.showErrorMessage(`❌ Failed to sync ${pluginName} plugin: ${err.message}`);
+            vscode.window.showErrorMessage(`❌ Failed to sync Coder Nexus (${selected.join(' + ')}): ${err.message}`);
         }
         return false;
     }
@@ -309,11 +367,11 @@ function checkFirstTimeWorkspacePrompt(context) {
     }
     const wsPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
 
-    // Do nothing if already synced
-    const fePath = path.join(wsPath, '.agents', 'plugins', 'coder-nexus-fe');
-    const bePath = path.join(wsPath, '.agents', 'plugins', 'coder-nexus-be');
-    if (fs.existsSync(fePath) || fs.existsSync(bePath)) {
-        warnIfStaleSync(context, fs.existsSync(fePath) ? fePath : bePath);
+    // Already synced: offer a re-sync when the projection is older (or uses the pre-2.8 layout)
+    const current = path.join(wsPath, '.agents', 'plugins', 'coder-nexus');
+    const legacy = ['coder-nexus-fe', 'coder-nexus-be'].map(name => path.join(wsPath, '.agents', 'plugins', name)).find(p => fs.existsSync(p));
+    if (fs.existsSync(current) || legacy) {
+        warnIfStaleSync(context, fs.existsSync(current) ? current : legacy);
         return;
     }
 
@@ -326,12 +384,13 @@ function checkFirstTimeWorkspacePrompt(context) {
         return;
     }
 
-    const role = detectProjectRole(wsPath);
-    const roleLabel = role === 'flutter' ? 'Flutter' : role === 'be' ? 'Backend' : 'Frappe UI';
+    const titles = Object.fromEntries(bundledPacks(context).map(pack => [pack.stack, pack.title]));
+    const detected = detectPacks(wsPath);
+    const roleLabel = Object.keys(detected).map(stack => titles[stack] || stack).join(' + ');
 
     if (vscode.window && typeof vscode.window.showInformationMessage === 'function') {
         const p = vscode.window.showInformationMessage(
-            `🚀 Coder Nexus: Detected a ${roleLabel} project. Sync AI delivery agents & skills into this workspace?`,
+            `🚀 Coder Nexus: Detected ${roleLabel} in this workspace. Sync AI delivery agents & skills?`,
             'Sync Now',
             'Show Architecture',
             "Don't Ask Again"
@@ -359,7 +418,7 @@ function warnIfStaleSync(context, pluginDir) {
     const pluginName = path.basename(pluginDir);
     const installed = installedPluginVersion(pluginDir);
     const bundled = bundledPluginVersion(context);
-    if (!bundled || installed === bundled) return;
+    if (!bundled || (installed === bundled && pluginName === 'coder-nexus')) return;
     if (!vscode.window || typeof vscode.window.showWarningMessage !== 'function') return;
     const p = vscode.window.showWarningMessage(
         `Coder Nexus: workspace has ${pluginName} ${installed || 'unknown'}, extension ships ${bundled}. Re-sync agents & skills?`,
@@ -377,89 +436,54 @@ function warnIfStaleSync(context, pluginDir) {
  */
 function activate(context) {
     const cmdGlobal = vscode.commands.registerCommand('coder-nexus.installGlobal', () => {
-        installAntigravityPlugin(context, null, false, 'coder-nexus-fe', 'flutter');
+        installAntigravityPlugin(context, null, false, ['flutter']);
     });
+
+    const currentWorkspace = () => {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            vscode.window.showWarningMessage('No workspace open to sync Coder Nexus plugin.');
+            return null;
+        }
+        return workspaceFolders[0].uri.fsPath;
+    };
 
     const cmdWorkspace = vscode.commands.registerCommand('coder-nexus.installWorkspace', async () => {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders || workspaceFolders.length === 0) {
-            vscode.window.showWarningMessage('No workspace open to sync Coder Nexus plugin.');
-            return;
-        }
-        const wsPath = workspaceFolders[0].uri.fsPath;
-        const detected = detectProjectRole(wsPath);
-
-        const items = [
-            {
-                label: '📱 Flutter (Frontend Client)',
-                description: detected === 'flutter' ? '⭐ Recommended (Detected pubspec.yaml)' : '',
-                pluginName: 'coder-nexus-fe',
-                framework: 'flutter'
-            },
-            {
-                label: '🌐 Frappe UI (Frontend Desk, preview)',
-                description: detected === 'frappe' ? '⭐ Recommended (Detected Frappe)' : '',
-                pluginName: 'coder-nexus-fe',
-                framework: 'frappe'
-            },
-            {
-                label: '🖥️ Backend (API / Service)',
-                description: detected === 'be' ? '⭐ Recommended (Detected backend files)' : '',
-                pluginName: 'coder-nexus-be',
-                framework: null
-            }
-        ];
-
-        const recommendedIdx = items.findIndex(item => item.description.includes('Recommended'));
-        if (recommendedIdx > 0) {
-            const [recItem] = items.splice(recommendedIdx, 1);
-            items.unshift(recItem);
-        }
-
-        const choice = await vscode.window.showQuickPick(items, {
-            placeHolder: 'Select Coder Nexus plugin to sync into this workspace'
+        const wsPath = currentWorkspace();
+        if (!wsPath) return;
+        const detected = detectPacks(wsPath);
+        const installed = installedPacks(wsPath);
+        const items = bundledPacks(context).map(pack => {
+            const found = detected[pack.stack];
+            const notes = [];
+            if (found) notes.push(`⭐ detected in ${found.join(', ')}`);
+            if (installed.includes(pack.stack)) notes.push('installed');
+            if (pack.status === 'preview') notes.push('preview');
+            return {
+                label: pack.title,
+                description: notes.join(' · '),
+                picked: Boolean(found) || installed.includes(pack.stack),
+                stack: pack.stack,
+            };
         });
-
-        if (choice) {
-            installAntigravityPlugin(context, wsPath, false, choice.pluginName, choice.framework || 'flutter');
+        const choice = await vscode.window.showQuickPick(items, {
+            canPickMany: true,
+            placeHolder: 'Select the stacks this workspace contains (several for a monorepo)'
+        });
+        if (choice && choice.length) {
+            installAntigravityPlugin(context, wsPath, false, choice.map(item => item.stack));
         }
     });
 
-    const cmdWorkspaceFlutter = vscode.commands.registerCommand('coder-nexus.installWorkspaceFlutter', () => {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders || workspaceFolders.length === 0) {
-            vscode.window.showWarningMessage('No workspace open to sync Coder Nexus plugin.');
-            return;
-        }
-        installAntigravityPlugin(context, workspaceFolders[0].uri.fsPath, false, 'coder-nexus-fe', 'flutter');
-    });
-
-    const cmdWorkspaceFrappe = vscode.commands.registerCommand('coder-nexus.installWorkspaceFrappe', () => {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders || workspaceFolders.length === 0) {
-            vscode.window.showWarningMessage('No workspace open to sync Coder Nexus plugin.');
-            return;
-        }
-        installAntigravityPlugin(context, workspaceFolders[0].uri.fsPath, false, 'coder-nexus-fe', 'frappe');
-    });
-
-    const cmdWorkspaceBE = vscode.commands.registerCommand('coder-nexus.installWorkspaceBE', () => {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders || workspaceFolders.length === 0) {
-            vscode.window.showWarningMessage('No workspace open to sync Coder Nexus plugin.');
-            return;
-        }
-        installAntigravityPlugin(context, workspaceFolders[0].uri.fsPath, false, 'coder-nexus-be', null);
-    });
-
-    const cmdWorkspaceFE = vscode.commands.registerCommand('coder-nexus.installWorkspaceFE', () => {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders || workspaceFolders.length === 0) {
-            vscode.window.showWarningMessage('No workspace open to sync Coder Nexus plugin.');
-            return;
-        }
-        installAntigravityPlugin(context, workspaceFolders[0].uri.fsPath, false, 'coder-nexus-fe', 'flutter');
-    });
+    // Force commands add one pack to the packs already installed in the workspace.
+    const addPack = stack => () => {
+        const wsPath = currentWorkspace();
+        if (wsPath) installAntigravityPlugin(context, wsPath, false, [...installedPacks(wsPath), stack]);
+    };
+    const cmdWorkspaceFlutter = vscode.commands.registerCommand('coder-nexus.installWorkspaceFlutter', addPack('flutter'));
+    const cmdWorkspaceFrappe = vscode.commands.registerCommand('coder-nexus.installWorkspaceFrappe', addPack('frappe'));
+    const cmdWorkspaceBE = vscode.commands.registerCommand('coder-nexus.installWorkspaceBE', addPack('backend'));
+    const cmdWorkspaceFE = vscode.commands.registerCommand('coder-nexus.installWorkspaceFE', addPack('flutter'));
 
     const cmdShowArch = vscode.commands.registerCommand('coder-nexus.showArchitecture', () => {
         const panel = vscode.window.createWebviewPanel(
@@ -484,18 +508,18 @@ function activate(context) {
 
         const items = [
             {
-                label: '$(sync) Sync Plugin to Workspace (Auto-Detect)',
-                description: 'Detects project stack and installs AI agents & skills',
+                label: '$(sync) Sync Stacks to Workspace (Auto-Detect)',
+                description: 'Detects Flutter / Frappe / Backend folders (monorepo too) and installs agents & skills',
                 action: () => vscode.commands.executeCommand('coder-nexus.installWorkspace')
             },
             {
-                label: '$(device-mobile) Force Sync Flutter Bundle',
-                description: 'Installs Flutter roles, clean architecture rules & skills',
+                label: '$(device-mobile) Add Flutter Pack',
+                description: 'Adds Flutter rules & skills to the stacks already installed',
                 action: () => vscode.commands.executeCommand('coder-nexus.installWorkspaceFlutter')
             },
             {
-                label: '$(server) Force Sync Backend (BE) Bundle',
-                description: 'Installs Backend roles & handshake contracts',
+                label: '$(server) Add Backend Pack',
+                description: 'Adds Backend rules & skills to the stacks already installed (preview)',
                 action: () => vscode.commands.executeCommand('coder-nexus.installWorkspaceBE')
             },
             {
@@ -569,5 +593,6 @@ function deactivate() {}
 module.exports = {
     activate,
     deactivate,
-    detectProjectRole
+    detectProjectRole,
+    detectPacks
 };

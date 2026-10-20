@@ -39,7 +39,7 @@
 
 ## 3. Verified Baseline Facts & Cross-Agent Notes
 
-- **Target Framework & Architecture Profile:** `{{FrontendFramework}}` (`{{imespro_or_external_structured_or_external_standard}}`)
+- **Target Framework & Architecture Profile:** `{{StackOrFramework}}` (`{{ArchitectureProfileDefinedByStackPack}}`)
 - **Verified Module & Routing Paths:** {{VerifiedPathsFromCodebaseScan}}
 - **Core / UI Kit Discovery (`core-usage`):** {{VerifiedCoreAndUiKitCandidates}}
 - **Cross-Agent Technical Consultation Notes (`planning` / `code_writer`):** {{VerifiedCrossAgentAnswersOrNone}}

@@ -1,14 +1,9 @@
 ---
-name: test_runner
-description: Executes API integration tests, contract compliance tests, and end-to-end backend tests independently of the Coder.
-skills:
-  - be-api-contracts
-tools:
-  - view_file
-  - run_command
+name: verification
+description: Independent backend verification — integration, contract compliance, business-rule scenarios, failure paths and database integrity, mapped to AC-NN.
 ---
 
-# Backend Test Runner Agent
+# Backend Verification
 
 Executes and verifies backend integration and system tests independently of `code_writer`.
 

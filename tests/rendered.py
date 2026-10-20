@@ -15,7 +15,7 @@ _TMP = tempfile.TemporaryDirectory()
 
 @lru_cache(maxsize=None)
 def flutter_workspace() -> Path:
-    return build_variant("fe-flutter", "workspace", Path(_TMP.name)) / "files"
+    return build_variant("flutter", "workspace", Path(_TMP.name)) / "files"
 
 
 def rendered_agent(name: str) -> str:

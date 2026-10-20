@@ -1,26 +1,31 @@
 """Build ready-to-copy plugin projections (`python -m coder_nexus.plugin_build`).
 
 All projection logic lives here. The VS Code extension and `coder-nexus install-plugin`
-only copy a built projection with `apply_projection`, so the two installers cannot drift.
+only copy a built projection with `apply_projection` and record the chosen packs in
+`.agents/stack.json`, so the two installers cannot drift.
 
 Source layout::
 
-    plugins/core/            agents/ (process-only roles), skills/ (stack-neutral), plugin files
-    plugins/layers/<layer>/  agents/<role>.md overlays shared by several packs (e.g. frontend)
-    plugins/packs/<stack>/   pack.json, skills/<slot>/, rules/, agents/<role>.md overlays
+    plugins/core/             agents/ (stack-neutral roles), skills/, slots.json, plugin files
+    plugins/layers/<layer>/   layer.json (markers), agents/<role>.md overlays shared by packs
+    plugins/packs/<stack>/    pack.json, skills/<slot>/, rules/, agents/<role>.md overlays
     plugins/shared_contracts/
 
-A pack skill installs as `<stack>-<slot>`; `{{slot:x}}` in any document renders to that name.
-Role agents are the core agent plus, in order, each layer overlay and the pack overlay.
+A pack skill installs as `<stack>-<name>`. `{{slot:x}}` renders to the installed name: in a
+pack file to that pack's skill, in core/layer files to the skill of every installed pack that
+the file serves. A workspace may install several packs (e.g. Flutter app + Backend service);
+role agents are the core agent followed by each layer overlay (once) and each pack overlay.
 
 Output layout (default `plugins/dist/`)::
 
-    <layout>-<variant>/
-        projection.json   {"plugin_version", "variant", "layout", "managed", "remove", "problems"}
-        files/            tree relative to the destination root
+    packs.json                  installable packs and their status
+    <layout>-<a+b+...>/
+        projection.json         {"packs", "status", "stubs", "problems", "managed", "remove", ...}
+        files/                  tree relative to the destination root
 
-`layout` is `workspace` (root = the workspace folder) or `global` (root = the host's global
-plugins folder). Installers delete every `remove` and `managed` path, then copy `managed`.
+`layout` is `workspace` (root = the workspace folder; every combination of packs) or `global`
+(root = the host's global plugins folder; one pack). Installers delete every `remove` and
+`managed` path, then copy `managed`.
 
 Standard library only: extension tests and CI run this without project dependencies.
 """
@@ -28,6 +33,7 @@ Standard library only: extension tests and CI run this without project dependenc
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 import os
 import re
@@ -38,22 +44,27 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 PLUGINS_DIR = REPO_ROOT / "plugins"
 DEFAULT_OUT = PLUGINS_DIR / "dist"
-
-# variant -> plugin name and packs (a pack-less variant projects a legacy plugin folder)
-VARIANTS: dict[str, dict] = {
-    "fe-flutter": {"plugin": "coder-nexus-fe", "packs": ["flutter"]},
-    "fe-frappe": {"plugin": "coder-nexus-fe", "packs": ["frappe"]},
-    "be": {"plugin": "coder-nexus-be", "packs": [], "legacy_dir": "coder-nexus-be"},
-}
+PLUGIN_NAME = "coder-nexus"
+LEGACY_PLUGINS = ("coder-nexus-fe", "coder-nexus-be")
 LAYOUTS = ("workspace", "global")
 
 SLOT_RE = re.compile(r"\{\{slot:([a-z0-9-]+)\}\}")
+TICKED_SLOT_RE = re.compile(r"`\{\{slot:([a-z0-9-]+)\}\}`")
 LINK_RE = re.compile(r"\]\(([^)#\s]+)(#[^)]*)?\)")
 NAME_RE = re.compile(r"^name:[^\n]*$", re.MULTILINE)
 FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n?", re.DOTALL)
 SKILLS_BLOCK_RE = re.compile(r"^skills:\n((?:[ \t]+-[ \t]+.*\n?)+)", re.MULTILINE)
 PREFIXED_REF_RE = re.compile(r"`([a-z]+)-([a-z0-9-]+)`")
 
+STACK_ROUTING = (
+    "## Stack rules\n\n"
+    "The sections below hold the rules of each installed stack. `.agents/stack.json` lists the installed "
+    "packs and the workspace paths each one owns; apply only the rules of the pack that owns the files "
+    "you are working on, and treat a path no pack owns as a question for the user."
+)
+
+
+# --------------------------------------------------------------------------- helpers
 
 def _read_json(path: Path) -> dict:
     try:
@@ -89,9 +100,16 @@ def _skill_dirs(directory: Path) -> list[Path]:
     return [p for p in sorted(directory.iterdir()) if p.is_dir() and (p / "SKILL.md").is_file()]
 
 
+# --------------------------------------------------------------------------- packs and slots
+
+def available_packs(plugins_dir: Path = PLUGINS_DIR) -> list[str]:
+    return sorted(p.parent.name for p in (plugins_dir / "packs").glob("*/pack.json"))
+
+
 def load_pack(plugins_dir: Path, stack: str) -> dict:
     pack = _read_json(plugins_dir / "packs" / stack / "pack.json")
     pack.setdefault("stack", stack)
+    pack.setdefault("title", stack)
     pack.setdefault("status", "maintained")
     pack.setdefault("slots", {})
     pack.setdefault("extra", [])
@@ -103,6 +121,15 @@ def load_pack(plugins_dir: Path, stack: str) -> dict:
 
 def load_slots(plugins_dir: Path) -> dict[str, str]:
     return _read_json(plugins_dir / "core" / "slots.json").get("slots", {})
+
+
+def combo_key(packs: list[str]) -> str:
+    return "+".join(sorted(set(packs)))
+
+
+def workspace_combos(plugins_dir: Path = PLUGINS_DIR) -> list[list[str]]:
+    packs = available_packs(plugins_dir)
+    return [list(c) for n in range(1, len(packs) + 1) for c in itertools.combinations(packs, n)]
 
 
 STUB_TEMPLATES = {
@@ -147,6 +174,8 @@ def _slot_gaps(plugins_dir: Path, pack: dict) -> dict[str, str]:
     return gaps
 
 
+# --------------------------------------------------------------------------- rendering
+
 def _mapped(target: Path, path_map: dict[Path, Path]) -> Path | None:
     for src, dest in path_map.items():
         if target == src or src in target.parents:
@@ -169,6 +198,14 @@ def _rewrite_links(text: str, source_doc: Path, dest_doc: Path, path_map: dict[P
     return LINK_RE.sub(sub, text)
 
 
+def render_slots(text: str, stacks: list[str]) -> str:
+    """`{{slot:x}}` -> `<stack>-x` for each stack the text serves."""
+    if not stacks:
+        return text
+    text = TICKED_SLOT_RE.sub(lambda m: " / ".join(f"`{s}-{m.group(1)}`" for s in stacks), text)
+    return SLOT_RE.sub(lambda m: " / ".join(f"{s}-{m.group(1)}" for s in stacks), text)
+
+
 def _split_frontmatter(text: str) -> tuple[str, str]:
     match = FRONTMATTER_RE.match(text)
     return (match.group(1), text[match.end():]) if match else ("", text)
@@ -186,17 +223,28 @@ def _frontmatter_skills(frontmatter: str) -> list[str]:
     return names
 
 
-def compose_agent(core_agent: Path, overlays: list[Path]) -> str:
-    """Core role agent + overlays. Overlay frontmatter `skills:` entries are appended."""
-    frontmatter, body = _split_frontmatter(core_agent.read_text(encoding="utf-8"))
-    skills = _frontmatter_skills(frontmatter)
-    sections = [body.rstrip("\n")]
-    for overlay in overlays:
+def _expand_skill(name: str, stacks: list[str]) -> list[str]:
+    match = SLOT_RE.fullmatch(name)
+    return [f"{s}-{match.group(1)}" for s in stacks] if match else [name]
+
+
+def compose_agent(parts: list[tuple[Path, list[str]]], dest: Path, path_map: dict[Path, Path]) -> str:
+    """Compose a role agent from (source file, stacks it serves) parts: the core agent first,
+    then overlays. Slots, links and the frontmatter `skills:` list are rendered per part."""
+    core_path, core_stacks = parts[0]
+    frontmatter, body = _split_frontmatter(core_path.read_text(encoding="utf-8"))
+    skills: list[str] = []
+    for name in _frontmatter_skills(frontmatter):
+        skills.extend(n for n in _expand_skill(name, core_stacks) if n not in skills)
+    sections = [_rewrite_links(render_slots(body, core_stacks), core_path, dest, path_map).rstrip("\n")]
+    if len(parts) > 1:
+        sections.append(STACK_ROUTING)
+    for overlay, stacks in parts[1:]:
         overlay_front, overlay_body = _split_frontmatter(overlay.read_text(encoding="utf-8"))
         for name in _frontmatter_skills(overlay_front):
-            if name not in skills:
-                skills.append(name)
-        sections.append(overlay_body.strip("\n"))
+            skills.extend(n for n in _expand_skill(name, stacks) if n not in skills)
+        sections.append(_rewrite_links(render_slots(overlay_body, stacks), overlay, dest, path_map).strip("\n"))
+    frontmatter = render_slots(frontmatter, core_stacks)
     if skills:
         listing = "skills:\n" + "".join(f"  - {name}\n" for name in skills)
         if SKILLS_BLOCK_RE.search(frontmatter + "\n"):
@@ -206,158 +254,152 @@ def compose_agent(core_agent: Path, overlays: list[Path]) -> str:
     return f"---\n{frontmatter}\n---\n" + "\n\n".join(sections) + "\n"
 
 
-def _render_documents(path_map: dict[Path, Path], skills_out: Path, stack: str | None) -> None:
+def _render_documents(path_map: dict[Path, Path], owners: dict[Path, list[str]], skills_out: Path) -> None:
     for src, dest in path_map.items():
+        if src not in owners:
+            continue
         documents = [dest] if dest.is_file() else [*dest.rglob("*.md"), *dest.rglob("*.tpl")]
         for document in documents:
             if document.suffix not in (".md", ".tpl"):
                 continue
             source_doc = src if src.is_file() else src / document.relative_to(dest)
             text = document.read_text(encoding="utf-8")
-            rewritten = _rewrite_links(text, source_doc, document, path_map)
-            if stack:
-                rewritten = SLOT_RE.sub(lambda m: f"{stack}-{m.group(1)}", rewritten)
+            rewritten = render_slots(_rewrite_links(text, source_doc, document, path_map), owners[src])
             if document.name == "SKILL.md" and document.parent.parent == skills_out:
                 rewritten = NAME_RE.sub(f"name: {document.parent.name}", rewritten, count=1)
             if rewritten != text:
                 document.write_text(rewritten, encoding="utf-8")
 
 
-def _finish_manifest(out: Path, plugins_dir: Path, path_map: dict[Path, Path], manifest_src: Path,
-                     framework: str | None, plugin_name: str | None = None) -> None:
-    manifest = _read_json(manifest_src)
-    base = plugins_dir if manifest.get("resource_base") == "plugins/" else manifest_src.parent
-    manifest.pop("resource_base", None)
-    skills_out = out / "skills"
-    if skills_out.is_dir():
-        manifest["public_skills"] = sorted(p.name for p in _skill_dirs(skills_out))
-    resources = []
-    for res in manifest.get("required_resources", []):
-        mapped = _mapped((base / res).resolve(), path_map)
-        if mapped is not None:
-            resources.append(os.path.relpath(mapped, out))
-    manifest["required_resources"] = resources
-    _write_json(out / "bundle_manifest.json", manifest)
-    stamp = {"plugin_version": manifest.get("plugin_version", "UNKNOWN"), "framework": framework}
-    _write_json(out / "installed_version.json", stamp)
-    if plugin_name:
-        plugin_json = _read_json(out / "plugin.json")
-        if plugin_json:
-            plugin_json["name"] = plugin_name
-            _write_json(out / "plugin.json", plugin_json)
+# --------------------------------------------------------------------------- projection
 
-
-def project_bundle(
-    plugins_dir: Path,
-    packs: list[str],
-    out: Path,
-    agents_out: Path | None = None,
-    plugin_name: str | None = None,
-) -> list[str]:
+def project_bundle(plugins_dir: Path, packs: list[str], out: Path, agents_out: Path | None = None) -> dict:
     """Install core + `packs` into the plugin folder `out` (must not exist).
 
-    Agents are written to `out/agents` unless `agents_out` is given. Returns check problems.
+    Agents are written to `out/agents` unless `agents_out` is given.
+    Returns {"problems": [...], "stubs": {...}}.
     """
     plugins_dir = plugins_dir.resolve()
     core = plugins_dir / "core"
     shared_contracts = plugins_dir / "shared_contracts"
     if not (shared_contracts / "api_handshake_protocol.md").is_file():
         raise FileNotFoundError("Missing shared API handshake protocol")
-    if len(packs) != 1:
-        raise ValueError("this release projects exactly one pack per plugin")
+    packs = sorted(set(packs))
+    unknown_packs = sorted(set(packs) - set(available_packs(plugins_dir)))
+    if not packs or unknown_packs:
+        raise ValueError(f"unknown or empty pack selection: {unknown_packs or packs}")
     out.mkdir(parents=True)
     agents_dest = agents_out or out / "agents"
     loaded = [load_pack(plugins_dir, stack) for stack in packs]
+    layer_users: dict[str, list[str]] = {}
+    for pack in loaded:
+        for layer in pack["layers"]:
+            layer_users.setdefault(layer, []).append(pack["stack"])
 
     path_map: dict[Path, Path] = {}
+    owners: dict[Path, list[str]] = {}
+    problems: list[str] = []
+
+    def place(src: Path, dest: Path, stacks: list[str]) -> None:
+        path_map[src] = dest
+        owners[src] = stacks
+
     for entry in sorted(core.iterdir()):
-        if entry.name in ("agents", "skills", "bundle_manifest.json"):
-            continue
-        path_map[entry] = out / entry.name
-    path_map[shared_contracts] = out / "shared_contracts"
+        if entry.name not in ("agents", "skills", "bundle_manifest.json", "slots.json"):
+            place(entry, out / entry.name, packs)
+    place(shared_contracts, out / "shared_contracts", packs)
     for skill in _skill_dirs(core / "skills"):
-        path_map[skill] = out / "skills" / skill.name
+        place(skill, out / "skills" / skill.name, packs)
     for pack in loaded:
         pack_dir = plugins_dir / "packs" / pack["stack"]
         units = {**pack["slots"], **{name: name for name in pack["extra"]}}
         for installed_as, source_name in units.items():
-            path_map[pack_dir / "skills" / source_name] = out / "skills" / f"{pack['stack']}-{installed_as}"
+            place(pack_dir / "skills" / source_name, out / "skills" / f"{pack['stack']}-{installed_as}", [pack["stack"]])
         for rule in sorted((pack_dir / "rules").glob("*.md")):
-            path_map[rule] = out / "rules" / rule.name
+            if out / "rules" / rule.name in path_map.values():
+                problems.append(f"packs/{pack['stack']}/rules/{rule.name}: rule file name clashes with another pack")
+            place(rule, out / "rules" / rule.name, [pack["stack"]])
     (out / "skills").mkdir(exist_ok=True)
     (out / "rules").mkdir(exist_ok=True)
     for src, dest in path_map.items():
         _copy_entry(src, dest)
+
     slots = load_slots(plugins_dir)
     stubs: dict[str, str] = {}
     for pack in loaded:
+        problems += [f"packs/{pack['stack']}/pack.json: unknown slot {slot}" for slot in pack["slots"] if slot not in slots]
         for slot, kind in _slot_gaps(plugins_dir, pack).items():
             name = f"{pack['stack']}-{slot}"
-            if kind == "missing":
-                continue  # reported by check_projection as missing skills
-            _write_stub(out / "skills" / name, name, kind, pack.get("title", pack["stack"]), slots[slot])
-            stubs[name] = kind
+            if kind != "missing":  # a missing maintained slot is reported by check_projection
+                _write_stub(out / "skills" / name, name, kind, pack["title"], slots[slot])
+                stubs[name] = kind
     if stubs:
         _write_json(out / "slot_stubs.json", stubs)
-    unknown = [f"packs/{pack['stack']}/pack.json: unknown slot {slot}"
-               for pack in loaded for slot in pack["slots"] if slot not in slots]
 
-    # role agents: core + layer overlays + pack overlay, composed then rendered like any document
+    # links into agents resolve to the installed agents folder
+    path_map[core / "agents"] = agents_dest
+    for layer in layer_users:
+        path_map[plugins_dir / "layers" / layer / "agents"] = agents_dest
+    for pack in loaded:
+        path_map[plugins_dir / "packs" / pack["stack"] / "agents"] = agents_dest
+    _render_documents(path_map, owners, out / "skills")
+
     agents_dest.mkdir(parents=True, exist_ok=True)
     for core_agent in sorted((core / "agents").glob("*.md")):
-        overlays = []
-        for pack in loaded:
+        parts = [(core_agent, packs)]
+        emitted_layers: set[str] = set()
+        for pack in loaded:  # each pack's layers (first use only), then the pack overlay
             for layer in pack["layers"]:
-                overlays.append(plugins_dir / "layers" / layer / "agents" / core_agent.name)
-            overlays.append(plugins_dir / "packs" / pack["stack"] / "agents" / core_agent.name)
-        composed = compose_agent(core_agent, [o for o in overlays if o.is_file()])
-        (agents_dest / core_agent.name).write_text(composed, encoding="utf-8")
-        path_map[core_agent] = agents_dest / core_agent.name
+                if layer not in emitted_layers:
+                    emitted_layers.add(layer)
+                    parts.append((plugins_dir / "layers" / layer / "agents" / core_agent.name, layer_users[layer]))
+            parts.append((plugins_dir / "packs" / pack["stack"] / "agents" / core_agent.name, [pack["stack"]]))
+        parts = [parts[0]] + [(path, stacks) for path, stacks in parts[1:] if path.is_file()]
+        dest = agents_dest / core_agent.name
+        dest.write_text(compose_agent(parts, dest, path_map), encoding="utf-8")
 
-    stack = loaded[0]["stack"]
-    _render_documents(path_map, out / "skills", stack)
-    _finish_manifest(out, plugins_dir, path_map, core / "bundle_manifest.json", stack, plugin_name)
+    _finish_manifest(out, plugins_dir, path_map, core / "bundle_manifest.json", loaded)
 
     known: set[str] = set()
     foreign_markers: list[str] = []
     foreign_stacks: set[str] = set()
-    for pack_file in sorted((plugins_dir / "packs").glob("*/pack.json")):
-        other = load_pack(plugins_dir, pack_file.parent.name)
-        known |= set(other["slots"]) | set(other["extra"])
-        if other["stack"] not in packs:
+    for stack in available_packs(plugins_dir):
+        other = load_pack(plugins_dir, stack)
+        known |= set(other["slots"]) | set(other["extra"]) | set(slots)
+        if stack not in packs:
             foreign_markers.extend(other["markers"])
-            foreign_stacks.add(other["stack"])
-    return sorted(unknown + check_projection(out, agents_dest, known, {p["stack"] for p in loaded}, foreign_markers, foreign_stacks))
+            foreign_stacks.add(stack)
+    for layer_file in sorted((plugins_dir / "layers").glob("*/layer.json")):
+        if layer_file.parent.name not in layer_users:
+            foreign_markers.extend(_read_json(layer_file).get("markers", []))
+    problems += check_projection(out, agents_dest, known, set(packs), foreign_markers, foreign_stacks)
+    return {"problems": sorted(set(problems)), "stubs": stubs}
 
 
-def project_plugin(plugin_dir: Path, out: Path, include_agents: bool = True, agents_out: Path | None = None) -> list[str]:
-    """Project a legacy, self-contained plugin folder (Backend until it becomes a pack)."""
-    plugin_dir = plugin_dir.resolve()
-    shared_contracts = plugin_dir.parent / "shared_contracts"
-    if not (shared_contracts / "api_handshake_protocol.md").is_file():
-        raise FileNotFoundError("Missing shared API handshake protocol")
-    out.mkdir(parents=True)
-    agents_dest = out / "agents" if include_agents else agents_out
-    path_map: dict[Path, Path] = {}
-    for entry in sorted(plugin_dir.iterdir()):
-        if entry.name == "agents":
-            if agents_dest is not None:
-                path_map[entry] = agents_dest
-            continue
-        path_map[entry] = out / entry.name
-    path_map[shared_contracts.resolve()] = out / "shared_contracts"
-    for src, dest in path_map.items():
-        _copy_entry(src, dest)
-    _render_documents(path_map, out / "skills", None)
-    _finish_manifest(out, plugin_dir.parent, path_map, plugin_dir / "bundle_manifest.json", None)
-    return check_projection(out, agents_dest)
+def _finish_manifest(out: Path, plugins_dir: Path, path_map: dict[Path, Path], manifest_src: Path,
+                     loaded: list[dict]) -> None:
+    manifest = _read_json(manifest_src)
+    manifest.pop("resource_base", None)
+    manifest["public_skills"] = sorted(p.name for p in _skill_dirs(out / "skills"))
+    resources = []
+    for res in manifest.get("required_resources", []):
+        mapped = _mapped((plugins_dir / res).resolve(), path_map)
+        if mapped is not None:
+            resources.append(os.path.relpath(mapped, out))
+    manifest["required_resources"] = resources
+    manifest["packs"] = [pack["stack"] for pack in loaded]
+    _write_json(out / "bundle_manifest.json", manifest)
+    _write_json(out / "installed_version.json", {
+        "plugin_version": manifest.get("plugin_version", "UNKNOWN"),
+        "packs": [pack["stack"] for pack in loaded],
+    })
 
 
 def check_projection(plugin_out: Path, agents_dir: Path | None, known: set[str] | None = None,
                      stacks: set[str] | None = None, foreign_markers: list[str] | None = None,
                      foreign_stacks: set[str] | None = None) -> list[str]:
     """Report unresolved slots, agent skills that are not installed, broken links and
-    instructions that belong to a stack that is not part of this projection."""
+    instructions that belong to a stack (or layer) that is not part of this projection."""
     problems: list[str] = []
     installed = {p.name for p in _skill_dirs(plugin_out / "skills")}
     documents = list(plugin_out.rglob("*.md")) + list(plugin_out.rglob("*.tpl"))
@@ -397,46 +439,42 @@ def check_projection(plugin_out: Path, agents_dir: Path | None, known: set[str] 
     return sorted(set(problems))
 
 
-def _variant_status(plugins_dir: Path, variant: str) -> str:
-    statuses = [load_pack(plugins_dir, stack)["status"] for stack in VARIANTS[variant]["packs"]]
-    return "preview" if "preview" in statuses else "maintained"
+def _status(loaded: list[dict]) -> str:
+    return "preview" if any(pack["status"] == "preview" for pack in loaded) else "maintained"
 
 
-def build_variant(variant: str, layout: str, out: Path, plugins_dir: Path = PLUGINS_DIR) -> Path:
-    spec = VARIANTS[variant]
-    plugin_name = spec["plugin"]
-    target = out / f"{layout}-{variant}"
+def build_variant(packs: list[str] | str, layout: str, out: Path, plugins_dir: Path = PLUGINS_DIR) -> Path:
+    """Build one projection. `packs` is a list or a combo key such as `flutter+backend`."""
+    packs = sorted(set(packs.split("+") if isinstance(packs, str) else packs))
+    if layout == "global" and len(packs) != 1:
+        raise ValueError("a global projection holds exactly one pack")
+    key = combo_key(packs)
+    target = out / f"{layout}-{key}"
     _remove(target)
     files = target / "files"
-    managed: list[str] = []
-    remove: list[str] = []
     if layout == "workspace":
-        plugin_rel = f".agents/plugins/{plugin_name}"
+        plugin_rel = f".agents/plugins/{PLUGIN_NAME}"
         agents_out = files / ".agents/agents"
-        if spec["packs"]:
-            problems = project_bundle(plugins_dir, spec["packs"], files / plugin_rel, agents_out, plugin_name)
-        else:
-            problems = project_plugin(plugins_dir / spec["legacy_dir"], files / plugin_rel, False, agents_out)
-        managed.append(plugin_rel)
-        managed.extend(f".agents/agents/{agent.name}" for agent in sorted(agents_out.glob("*.md")))
-        remove.extend(sorted({f".agents/plugins/{v['plugin']}" for v in VARIANTS.values()} - {plugin_rel}))
+        result = project_bundle(plugins_dir, packs, files / plugin_rel, agents_out)
+        managed = [plugin_rel, *(f".agents/agents/{a.name}" for a in sorted(agents_out.glob("*.md")))]
+        remove = [f".agents/plugins/{name}" for name in LEGACY_PLUGINS]
     else:
-        if spec["packs"]:
-            problems = project_bundle(plugins_dir, spec["packs"], files / plugin_name, None, plugin_name)
-        else:
-            problems = project_plugin(plugins_dir / spec["legacy_dir"], files / plugin_name, True)
-        managed.append(plugin_name)
-    if problems and _variant_status(plugins_dir, variant) == "maintained":
-        raise ValueError(f"{layout}-{variant} projection is incomplete:\n  " + "\n  ".join(problems))
-    manifest = _read_json(files / managed[0] / "bundle_manifest.json")
+        plugin_rel = PLUGIN_NAME
+        result = project_bundle(plugins_dir, packs, files / plugin_rel)
+        managed = [plugin_rel]
+        remove = list(LEGACY_PLUGINS)
+    loaded = [load_pack(plugins_dir, stack) for stack in packs]
+    status = _status(loaded)
+    if result["problems"] and status == "maintained":
+        raise ValueError(f"{layout}-{key} projection is incomplete:\n  " + "\n  ".join(result["problems"]))
+    manifest = _read_json(files / plugin_rel / "bundle_manifest.json")
     _write_json(target / "projection.json", {
-        "status": _variant_status(plugins_dir, variant) if spec["packs"] else "maintained",
-        "stubs": _read_json(files / managed[0] / "slot_stubs.json"),
-        "problems": problems,
         "plugin_version": manifest.get("plugin_version", "UNKNOWN"),
-        "variant": variant,
+        "packs": [{"stack": p["stack"], "title": p["title"], "status": p["status"]} for p in loaded],
         "layout": layout,
-        "plugin": plugin_name,
+        "status": status,
+        "stubs": result["stubs"],
+        "problems": result["problems"],
         "managed": managed,
         "remove": remove,
     })
@@ -444,8 +482,15 @@ def build_variant(variant: str, layout: str, out: Path, plugins_dir: Path = PLUG
 
 
 def build(out: Path = DEFAULT_OUT, plugins_dir: Path = PLUGINS_DIR) -> list[Path]:
-    out.mkdir(parents=True, exist_ok=True)
-    return [build_variant(v, layout, out, plugins_dir) for v in VARIANTS for layout in LAYOUTS]
+    _remove(out)
+    out.mkdir(parents=True)
+    targets = [build_variant(combo, "workspace", out, plugins_dir) for combo in workspace_combos(plugins_dir)]
+    targets += [build_variant([stack], "global", out, plugins_dir) for stack in available_packs(plugins_dir)]
+    _write_json(out / "packs.json", {"packs": [
+        {key: load_pack(plugins_dir, stack)[key] for key in ("stack", "title", "status")}
+        for stack in available_packs(plugins_dir)
+    ]})
+    return targets
 
 
 def apply_projection(projection_dir: Path, dest_root: Path) -> dict:
@@ -461,6 +506,24 @@ def apply_projection(projection_dir: Path, dest_root: Path) -> dict:
     return spec
 
 
+def write_stack_file(workspace: Path, spec: dict, paths: dict[str, list[str]] | None = None) -> dict:
+    """Record the installed packs (and the workspace paths each owns) in `.agents/stack.json`."""
+    paths = paths or {}
+    data = {
+        "plugin_version": spec.get("plugin_version", "UNKNOWN"),
+        "packs": [
+            {**pack, "paths": paths.get(pack["stack"]) or ["."]}
+            for pack in spec.get("packs", [])
+        ],
+    }
+    _write_json(workspace / ".agents" / "stack.json", data)
+    return data
+
+
+def read_stack_file(workspace: Path) -> dict:
+    return _read_json(workspace / ".agents" / "stack.json")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build Coder Nexus plugin projections.")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
@@ -469,10 +532,10 @@ def main(argv: list[str] | None = None) -> int:
         spec = _read_json(target / "projection.json")
         notes = []
         if spec.get("stubs"):
-            notes.append(f"{len(spec['stubs'])} placeholder slots")
+            notes.append(f"{len(spec['stubs'])} placeholder/N-A slots")
         if spec.get("problems"):
             notes.append(f"{len(spec['problems'])} known gaps")
-        print(f"built {target}" + (f" ({spec.get('status')}: {', '.join(notes)})" if notes else ""))
+        print(f"built {target.name}" + (f" ({spec.get('status')}: {', '.join(notes)})" if notes else ""))
     return 0
 
 

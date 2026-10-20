@@ -1,9 +1,11 @@
 ---
-name: be-work-items
-description: Standard routing and lifecycle workflow for Backend work items with grill-me Socratic interviewing and permanent codebase-notes.md.
+name: work-items
+description: Backend specifics for work items — service/endpoint/table scope, backend templates (brief, requirements, codebase-notes) and the backend work-item contract. Complements the core work-items lifecycle.
 ---
 
 # Backend Work Items
+
+The core `work-items` skill defines the lifecycle, gates and agent handoffs. For a backend service item, use the backend templates in `templates/` (`brief.md.tpl`, `requirements.md.tpl`, `codebase-notes.md.tpl`) and the [backend work-item contract](references/work-item-contract.md) instead of the generic Client templates.
 
 Work items reside at `.superpowers/work-items/<slug>/vN/`.
 Outcome types: `feature`, `bugfix`, `refactor`, `migration`, `maintenance`.

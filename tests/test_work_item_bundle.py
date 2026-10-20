@@ -44,4 +44,4 @@ def test_workspace_install_copies_all_six_profiles(tmp_path):
     bundled = {path.name for path in (PLUGIN / "core" / "agents").glob("*.md")}
     assert bundled == {"spec_writer.md", "planning.md", "code_writer.md", "code_reviewer.md", "test_runner.md", "docs_writer.md"}
     assert {path.name for path in client_agents.glob("*.md")} == bundled
-    assert (tmp_path / ".agents/plugins/coder-nexus-fe/skills/work-items/references/tool-usage.md").is_file()
+    assert (tmp_path / ".agents/plugins/coder-nexus/skills/work-items/references/tool-usage.md").is_file()

@@ -8,7 +8,7 @@ This reference guides the Planning Agent (Tech Lead) in executing the mandatory 
 ## 1. Three Input Verification Requirements
 
 Planning must confirm three complete inputs before writing tasks:
-1. **Feature Requirements & Scope**: Approved `brief.md` or `requirements.md` covering the 5 Frontend Pillars and Gate 1 approval.
+1. **Feature Requirements & Scope**: Approved `brief.md` or `requirements.md` covering the 5 intake pillars and Gate 1 approval.
 2. **UI/UX & Design System**: Approved visual source/layout, token definitions, and UI Kit candidate matching (Gate 2 approval).
 3. **Current Codebase Scan (Readiness & Gap Analysis)**: An active scan of the target repository to verify what exists and what is missing.
 

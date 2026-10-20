@@ -5,14 +5,14 @@ description: Relentless Socratic interviewing skill for spec_writer (Gate 1) and
 
 # Grill-Me — Socratic Interviewing & Decision-Log Protocol
 
-When this skill is active, act as a rigorous Technical Business Analyst (`spec_writer` at Gate 1) or Frontend Tech Lead (`planning` at Gate 2). Never let the user approve a document containing unverified inferences, unresolved options, or silent assumptions.
+When this skill is active, act as a rigorous Technical Business Analyst (`spec_writer` at Gate 1) or Tech Lead (`planning` at Gate 2). Never let the user approve a document containing unverified inferences, unresolved options, or silent assumptions.
 
 ---
 
 ## 1. The 4 Iron Laws of `grill-me`
 
 ### Law 1 — Draft First, Lock In Through Question Queue (`Q-NN` $\to$ `D-NN`)
-1. **Immediate Turn-1 Draft (`DRAFT`)**: On the first turn after scanning the request, Huly task (when provided), supplied visuals, and existing codebase context, immediately create or update both files in `.superpowers/work-items/<slug>/vN/` (or `docs/features/<module>/<feature>/vN/`):
+1. **Immediate Turn-1 Draft (`DRAFT`)**: On the first turn after scanning the request, Huly task (when provided), supplied visuals or API contracts, and existing codebase context, immediately create or update both files in `.superpowers/work-items/<slug>/vN/` (or `docs/features/<module>/<feature>/vN/`):
    - **`requirements.md`** (`Status: DRAFT`): Capture the explicitly confirmed scope, actors, business rules, and scenarios; mark any unresolved detail inline with `(Q-NN)`.
    - **`codebase-notes.md`**: Populate `## 0. Question Queue (Q-NN)` with every ambiguity, inference, API/UX gap, or edge case as an `OPEN` row, and record verified codebase/package facts in `## 3. Verified Baseline Facts & Cross-Agent Notes`.
 2. **Never Present `DRAFT` as Gate 1 Approval**: A `DRAFT` file is a working checkpoint so nothing is lost across turns. Gate 1 approval happens only when `## 0. Question Queue (Q-NN)` has **zero `OPEN` rows**, all `(Q-NN)` markers in `requirements.md` are replaced by `(D-NN)`, and `Status` transitions to `PENDING_REVIEW`.
@@ -23,11 +23,11 @@ When this skill is active, act as a rigorous Technical Business Analyst (`spec_w
 
 ### Law 3 — Grill Until `0 Doubts` & Straight-Line Documents
 - Interview across all applicable dimensions until **`0 doubts, 0 open questions, 0 assumptions, 0 options`**:
-  1. **Scope & Data/API Source**: In-scope vs out-of-scope boundaries, `BE_API_READY` vs `MOCKOON_MOCKED`, endpoint/payload mismatches.
-  2. **Happy Path & UX/Visual States**: Primary actor flow, 4 mandatory visual states (`Default/Content`, `Loading`, `Empty`, `Error`), Kit widget selection when multiple viable `{{slot:core-usage}}` candidates exist.
+  1. **Scope & Data/API Source**: In-scope vs out-of-scope boundaries, `BE_API_READY` vs `MOCKOON_MOCKED` for a consumer of an API, endpoint/payload mismatches.
+  2. **Happy Path & Observable States**: Primary actor flow; for UI work the 4 mandatory visual states (`Default/Content`, `Loading`, `Empty`, `Error`) and Kit widget selection when multiple viable `{{slot:core-usage}}` candidates exist; for a service, the contract responses (see the stack rules).
   3. **Clarification of Inferences**: Every point inferred from existing flows or partial prompts.
-  4. **Negative, Boundary & Edge Cases**: Validation errors, network timeouts, duplicate clicks, empty lists, unauthorized states.
-  5. **Multi-Screen / State Lifecycle**: Navigation/back behavior, state retention across steps, cache/list refresh after mutations.
+  4. **Negative, Boundary & Edge Cases**: Validation errors, network timeouts, duplicate requests or clicks, empty lists, unauthorized states.
+  5. **Multi-Step / State or Transaction Lifecycle**: Navigation/back behavior and state retention across steps for UI work; transaction boundaries and rollback for services; cache/list refresh after mutations.
 - **Straight-Line Final Documents**:
   - `requirements.md` and `design.md` must read in **one straight locked-in line**.
   - Never leave `Option A / Option B`, `Open Questions`, `Assumptions`, or `TBD` in `requirements.md`, `codebase-notes.md`, or `design.md`.

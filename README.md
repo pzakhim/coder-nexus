@@ -10,13 +10,13 @@ This extension copies Coder Nexus agent profiles, skills, and rules into the wor
 |---|---|
 | Agent roles | Spec Writer, Planning, Code Writer, Code Reviewer, Test Runner, and Docs Writer divide delivery responsibilities. |
 | Skills and rules | Guide discovery, design, implementation, review, and evidence collection for the target project. |
-| Frontend / Backend plugins | Install the appropriate instructions into the Client or service workspace. |
+| Stack packs | Flutter, Frappe UI and Backend packs add stack rules and skills on top of shared, stack-neutral roles. A workspace can hold several packs (e.g. a monorepo with an app and a service). |
 | Python MCP Hub | Provides read-only Huly intake, architecture guidance, UX patterns, and static validators. Install its runtime separately if you need these tools. |
 | Extension | Explicitly synchronizes plugins into workspace or global configuration and displays the architecture dashboard. |
 
 Feature work uses three actual user approvals: **requirements → design → implementation plan**. Delivery then implements bounded phases, reviews the code revision, records evidence, and performs independent acceptance verification. Work items live under `.superpowers/work-items/<slug>/vN/`; smaller work types have their own sequences.
 
-Frontend and Backend use separate bundles. Their API handshake is a documented contract workflow; agents exchange actual contract artifacts through their workspaces.
+All stacks share one set of role agents and process skills; each pack adds its own rules and `<stack>-<slot>` skills, and `.agents/stack.json` records which pack owns which paths. The Frontend–Backend API handshake is a documented contract workflow; in separate workspaces agents exchange contract artifacts, in a monorepo each side edits only the paths its pack owns.
 
 ## Architecture profiles
 
@@ -35,8 +35,9 @@ Validators accept the selected profile and reserve company-specific checks for i
 ## Current support
 
 - **Flutter:** the primary maintained delivery workflow, with the deepest guidance for iMESPro packages.
-- **Backend:** a separate scaffold of six roles and API/architecture skills; equivalent delivery acceptance has not been demonstrated.
-- **Frappe UI / general Web:** preliminary references; the coordinator marks these paths as not yet maintained.
+- **Backend:** a preview pack on the shared roles (clean architecture, API contracts, unit tests, review and verification skills); equivalent delivery acceptance has not been demonstrated.
+- **Frappe UI:** a preview pack (clean architecture and the Frappe UI catalog). Steps without Frappe guidance install as placeholders that make agents stop with `BLOCKED` instead of borrowing Flutter rules.
+- **General Web:** not a pack yet.
 
 The FE source manifest lists **19 public skills** across framework/shared folders and **8 MCP tools**. Installation selects shared skills plus the chosen framework; it does not install all 19 into every workspace.
 
@@ -61,9 +62,13 @@ coder-nexus --help
 After updating the extension, run **Install / Update CLI** again so the CLI matches. Run **Coder Nexus: Doctor** to check the CLI.
 
 ### 3. Sync agents into your project
-Open the project. For a recognized Flutter, Frappe or Backend project the extension offers **Sync Now**; otherwise run **Coder Nexus: Sync Plugin to Workspace (Auto-Detect)**. This writes `.agents/plugins/coder-nexus-fe/` (or `-be/`) and `.agents/agents/`. Sync again after the CLI is installed so `mcp_config.json` points at the absolute CLI path (IDEs launched from the Dock/Finder may not see `~/.local/bin`).
+Open the project. When the extension recognizes Flutter, Frappe or Backend folders (also in subfolders of a monorepo) it offers **Sync Now**; otherwise run **Coder Nexus: Sync Stacks to Workspace (Auto-Detect)** and tick the stacks the workspace contains. This writes:
 
-Workspace sync replaces the selected plugin projection and removes the alternative FE/BE projection from that workspace. Use separate workspaces when both are needed. **Sync Plugin to Antigravity Global Config** is an explicit, separate command.
+- `.agents/plugins/coder-nexus/`: the shared skills plus the `<stack>-*` skills of each selected pack,
+- `.agents/agents/`: the six roles, each followed by the rules of every selected pack,
+- `.agents/stack.json`: the selected packs and the paths each one owns (edit the paths if detection guessed wrong).
+
+**Add … Pack to Workspace** commands add one pack to the ones already installed. Re-syncing replaces only these generated files and removes the pre-2.8 `coder-nexus-fe` / `coder-nexus-be` folders. Sync again after the CLI is installed so `mcp_config.json` points at the absolute CLI path (IDEs launched from the Dock/Finder may not see `~/.local/bin`). **Sync Plugin to Antigravity Global Config** is an explicit, separate command (Flutter).
 
 ### 4. Connect Huly (optional, no agent needed)
 From the project folder:

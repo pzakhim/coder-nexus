@@ -1,5 +1,5 @@
 ---
-name: be-api-contracts
+name: api-contracts
 description: Contract-first API design, JSON Schema validation, and Frontend Handshake alignment.
 ---
 

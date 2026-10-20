@@ -1,14 +1,11 @@
 """Command Line Interface for AIFactory Coder (coder_nexus): argument parsing and dispatch only."""
 
 import argparse
-import shutil
 import sys
 from pathlib import Path
 
 from .plugin_install import (
     REPO_ROOT,
-    _install_plugin_projection,
-    _remove_legacy_workspace_entry,
     cmd_install_plugin,
 )
 from .setup.huly import cmd_login, cmd_my_tasks, cmd_setup_huly, cmd_status, cmd_task_detail
@@ -79,13 +76,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--plugin",
         default="fe",
         choices=["fe", "be"],
-        help="Target plugin to install: fe (coder-nexus-fe) or be (coder-nexus-be), default: fe",
+        help="Legacy shortcut: fe (pack from --framework) or be (backend pack), default: fe",
     )
     p_install.add_argument(
         "--framework",
         default="flutter",
         choices=["flutter", "frappe"],
         help="Target frontend framework: flutter or frappe (only used when plugin=fe), default: flutter",
+    )
+    p_install.add_argument(
+        "--pack",
+        action="append",
+        help="Stack pack to install (repeatable): flutter, frappe, backend. Overrides --plugin/--framework.",
+    )
+    p_install.add_argument(
+        "--replace",
+        action="store_true",
+        help="Install exactly the given packs instead of adding them to the packs in .agents/stack.json",
     )
     p_install.add_argument(
         "--global",
@@ -95,7 +102,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_install.add_argument(
         "--workspace",
-        help="Path to workspace where .agents/plugins/coder-nexus-<target> will be installed",
+        help="Workspace to install into (.agents/plugins/coder-nexus, .agents/agents, .agents/stack.json)",
     )
 
     return parser
@@ -113,13 +120,8 @@ def cmd_setup_flutter(args: argparse.Namespace) -> int:
         project_name=getattr(args, "project_name", None),
         profile=getattr(args, "profile", None),
     )
-    if code == 0 and not args.check:
-        plugin_dir = REPO_ROOT / "plugins" / "core"
-        if plugin_dir.exists():
-            dest = project_path / ".agents" / "plugins" / "coder-nexus-fe"
-            _remove_legacy_workspace_entry(project_path, plugin_dir, dest)
-            action = _install_plugin_projection("fe-flutter", dest, REPO_ROOT, workspace_agents=True)
-            print(f"      Workspace plugin {action} with mcp_config.json: {dest}")
+    if code == 0 and not args.check and (REPO_ROOT / "plugins" / "core").exists():
+        cmd_install_plugin(argparse.Namespace(workspace=str(project_path), pack=["flutter"], is_global=False, replace=False))
     return code
 
 

@@ -570,7 +570,7 @@
                 <!-- BE NEXUS REPO -->
                 <g class="graph-node node-handshake-item" id="node-be_nexus" onclick="inspectNode('be_nexus')" transform="translate(660, 40)">
                   <rect class="node-box" width="180" height="75" rx="10" fill="#0f172a" stroke="#64748b" stroke-width="2"/>
-                  <text x="15" y="24" fill="#cbd5e1" font-size="11" font-weight="700">🖥️ coder-nexus-be</text>
+                  <text x="15" y="24" fill="#cbd5e1" font-size="11" font-weight="700">🖥️ Backend pack</text>
                   <text x="15" y="38" fill="#94a3b8" font-size="9">Server Repo Workflow</text>
                   <line x1="15" y1="46" x2="165" y2="46" stroke="rgba(255,255,255,0.1)"/>
                   <text x="15" y="60" fill="#cbd5e1" font-size="9">• DB Schema & Migration</text>
@@ -815,7 +815,7 @@
       <div class="grid-2">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">📱 coder-nexus-fe (Frontend / Client)</div>
+            <div class="card-title">📱 Frontend packs: Flutter / Frappe UI (Client)</div>
             <span class="tag tag-blue">Client Workspace</span>
           </div>
           <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">
@@ -841,7 +841,7 @@
 
         <div class="card">
           <div class="card-header">
-            <div class="card-title">🖥️ coder-nexus-be (Backend / API Service)</div>
+            <div class="card-title">🖥️ Backend pack (API Service)</div>
             <span class="tag tag-purple">Server Workspace</span>
           </div>
           <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">
@@ -927,7 +927,7 @@
           <span class="tag tag-blue">Flutter & Frappe</span>
         </div>
         <p style="color:var(--text-muted); font-size:0.85rem;">
-          Mỗi Agent trong <code>coder-nexus-fe</code> sẽ kích hoạt bộ Skills, Rules và Logic xử lý chuyên biệt tùy theo Framework của dự án mà không gây thừa thãi:
+          Mỗi Agent dùng chung (core) cộng với rules của pack sẽ kích hoạt bộ Skills, Rules và Logic xử lý chuyên biệt tùy theo Framework của dự án mà không gây thừa thãi:
         </p>
 
         <div class="table-container">
@@ -1466,7 +1466,7 @@
       'be_nexus': {
         badge: 'badge-handshake',
         badgeText: '🖥️ BE Nexus Plugin',
-        title: 'coder-nexus-be (Backend Repo)',
+        title: 'Backend pack (service paths)',
         sub: 'Server API, DB Schemas & Endpoints',
         role: 'Plugin độc lập trong workspace Backend: triển khai DB Migration, Service Logic, Controller, Unit Tests và phát hành Mock / Live API cho FE.',
         artifact: 'DB Migrations, API Endpoints, Swagger Docs.',

@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "coder-nexus": {
-      "command": "coder-nexus",
-      "args": ["serve"]
-    }
-  }
-}

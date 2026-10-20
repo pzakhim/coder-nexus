@@ -9,8 +9,8 @@ Act as the **Lead Coordinator** for one Client work item (`.superpowers/work-ite
 
 Coordinate the 6 specialized agent profiles in `agents/`:
 - **Spec Writer** (Technical BA)
-- **Planning** (Frontend Tech Lead)
-- **Code Writer** (Senior Frontend Engineer)
+- **Planning** (Tech Lead)
+- **Code Writer** (Senior Engineer)
 - **Code Reviewer** (Independent Senior Reviewer)
 - **Test Runner** (Independent QA Engineer)
 - **Docs Writer** (Technical Writer)
@@ -31,12 +31,12 @@ Call **Spec Writer** to engage the user as the primary conversational partner us
 2. **Step 1A: Three-Pillar Source Intake (`ask_question` if unspecified)**:
    - Confirm where to read the 3 core inputs before scanning or drafting:
      1. **PO/BA Requirements**: Huly task ID (via `huly_get_task_detail`), external PO/BA `.md` file, or direct user prompt.
-     2. **UI Screens, UX & Design System**: Screen flows, UX descriptions, and design system specs (typically Figma designs converted to `.md` files, plus workspace UI Kit authority via `{{slot:core-usage}}`).
+     2. **UI Screens, UX & Design System**: Screen flows, UX descriptions, and design system specs (typically design-tool exports converted to `.md` files, plus workspace UI Kit authority via `{{slot:core-usage}}`).
      3. **API Integration Source (Binary Check: Does BE API Exist?)**:
         - **Case 1 (BE API Exists — `BE_API_READY`)**: Request the user to provide the API specification (Huly BE task, Swagger/OpenAPI, or `.md` file) for integration.
         - **Case 2 (No BE API or Missing Endpoints — `MOCKOON_MOCKED`)**: Request the user to use **Mockoon** (`mocks/<feature>_mockoon.json`) so `spec_writer` locks in the business Input/Output in `requirements.md` + `codebase-notes.md` and `planning` designs the Mockoon data and allocates `PHASE-00` (`phase-00-prepare.md`) to prepare the Mockoon API mock. Only approved contract-derived Mockoon fixtures may support FE UI/contract checks; missing required schema remains `BLOCKED`, and live integration remains pending until a real endpoint is verified. FE fixture approval does not imply BE contract approval.
 3. **Step 1B: Input & API Gap Analysis + Turn-1 Draft (`DRAFT`)**:
-   - Read the confirmed sources and compare PO/BA requirements + Figma `.md` UI flows against the provided/estimated APIs and existing codebase business flows.
+   - Read the confirmed sources and compare PO/BA requirements + design-export `.md` UI flows against the provided/estimated APIs and existing codebase business flows.
    - Identify API count or field discrepancies (e.g., user estimates 3 APIs, but the UX flow requires 4 APIs) and what needs adjustment in the current codebase flow.
    - Immediately draft **`requirements.md`** (`Status: DRAFT`, marking unresolved points with `(Q-NN)`) and **`codebase-notes.md`** (queueing every ambiguity, inference, or gap as `OPEN` `Q-NN` rows in `## 0. Question Queue (Q-NN)` and recording verified repo facts in `## 3. Verified Baseline Facts & Cross-Agent Notes`).
 4. **Step 1C: Interactive Open Questions & Cross-Agent Consultation (`grill-me` + `ask_question` 1-by-1)**:
@@ -56,7 +56,7 @@ Upon Gate 1 approval, call **Planning** (Tech Lead) for Gate 2 (design) and Gate
 
 1. **Step 2A — Codebase Scan & Pre-Design Counter-Review / `grill-me` Loop (`ask_question` in Main Chat)**:
    - Resolve and record the profile via `{{slot:core-usage}}`, start from `requirements.md` and `codebase-notes.md`, and inspect the target module, router, state and DI using the stack scan in `{{slot:architecture-design}}`. Company setup and package guides apply only to the company-foundation profile; other profiles inspect Client foundations or the framework's standard components.
-   - **Strict Boundary with `spec_writer`**: `spec_writer` owns business API Input/Output and screen UX requirements (from Figma `.md`). `planning` owns Data Pipeline architecture (`DataSource`/`Model`/`Repo`/state holder/DI) and exact `{{slot:core-usage}}` class/component mapping.
+   - **Strict Boundary with `spec_writer`**: `spec_writer` owns business API Input/Output and screen UX requirements (from design-export `.md`). `planning` owns Data Pipeline architecture (`DataSource`/`Model`/`Repo`/state holder/DI) and exact `{{slot:core-usage}}` class/component mapping.
    - **Hub-and-Spoke Counter-Review Protocol (Before writing `design.md`)**:
      - The User interacts **exclusively in the Main Chat**; never require the user to switch between subagent conversations.
      - **Step 1 (Detect)**: If `planning` discovers a **Core Risk / Core Gap**, overlapping/conflicting logic with `requirements.md`, or trade-offs between viable approaches/widgets, `planning` queues `Q-NN` (`OPEN`) in `.superpowers/work-items/<slug>/vN/codebase-notes.md` and reports it to the Coordinator instead of writing `Option A / Option B` into `design.md`.

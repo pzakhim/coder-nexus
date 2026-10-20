@@ -17,7 +17,7 @@ def sync_version(version_str: str) -> None:
         sys.exit(1)
 
     # 1. Update bundle manifests (Single Source of Truth)
-    for plugin_name in ("core", "coder-nexus-be"):
+    for plugin_name in ("core",):
         manifest_path = REPO_ROOT / "plugins" / plugin_name / "bundle_manifest.json"
         if manifest_path.exists():
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

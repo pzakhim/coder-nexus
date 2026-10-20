@@ -27,7 +27,7 @@ If a planned core API or base class does not fit, stop and return to Planning.
 - **Single Source Context (`PHASE-00` & `design.md`)**: Always read `phases/phase-00-prepare.md` (`PHASE-00`) and `design.md` for all consolidated Huly context and API specifications — never re-query Huly or search for scattered API specs.
 - **When assigned `PHASE-00` (`[EXECUTE]`)**: Execute its preparation tasks exactly as specified (see the stack rules), verify them, tick **`[x] PREPARED / COMPLETED`** in `phases/phase-00-prepare.md` and hand off `PHASE-00` for Reviewer confirmation so `PHASE-01, 02, 03...` can proceed without getting stuck on missing data.
 - **When assigned `PHASE-01, 02, 03...`**: Confirm `phases/phase-00-prepare.md` is already ticked **`[x] PREPARED / COMPLETED`** (or **`[x] PREPARED (INFO_READY)`** when `PHASE-00` is `[INFO_NOTE]`).
-- **Zero cross-repo writes**: NEVER modify other repositories, server code, or DB schemas from this agent.
+- **Zero cross-repo writes**: NEVER modify other repositories, or files outside the paths that the workspace's packs own in `.agents/stack.json`.
 
 ## Task-by-Task Grounding Protocol (Sequential Single-Agent Execution, No Bulk Coding)
 

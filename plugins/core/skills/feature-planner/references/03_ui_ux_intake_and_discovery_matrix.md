@@ -4,7 +4,7 @@ Apply the approved profile through `{{slot:core-usage}}`. Company setup and pack
 
 ## Visual Intake Gate
 
-For UI-affecting work, inspect the supplied Figma frame, screenshot, PDF or local design asset directly before choosing components or writing the plan. A text description alone does not replace an available visual. If no visual source exists, record `VISUAL_INPUT_MISSING`, draft a minimal layout specification, and request user confirmation at Gate 2. Never invent a generic screen as a fallback.
+For UI-affecting work, inspect the supplied design frame, screenshot, PDF or local design asset directly before choosing components or writing the plan. A text description alone does not replace an available visual. If no visual source exists, record `VISUAL_INPUT_MISSING`, draft a minimal layout specification, and request user confirmation at Gate 2. Never invent a generic screen as a fallback.
 
 ## Visual deconstruction and Visual AC
 

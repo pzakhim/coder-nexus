@@ -29,7 +29,7 @@ For new Client work, receive `.superpowers/work-items/<slug>/vN/brief.md`, optio
 ### No Reviewer Waivers
 - The Reviewer audits against the approved design; it has **no authority to excuse a rule violation**, however reasonable the technical argument (runtime dependency, test convenience, missing host setup, etc.).
   - A real incompatibility between an approved foundation API and the Client is a **Core gap / BLOCKER**: return `CHANGES_REQUESTED` (or `BLOCKED`) and route it to Planning for a Gate 2 decision. Never record it as an approved deviation inside the review.
-- **Validator is a hard gate**: run the stack's architecture validator on every changed source file with the approved profile. Any `ERROR` violation means the verdict cannot be `APPROVED`.
+- **Validator is a hard gate where the stack defines one**: run the stack's architecture validator on every changed source file with the approved profile. Any `ERROR` violation means the verdict cannot be `APPROVED`. A stack without a validator records `N/A` and relies on the review checks of its `{{slot:code-review}}` skill.
 - **Reuse audit (per approved profile)**:
   - Verify each need mapped in the design's `Core usage` / `Client Core Mapping` table is implemented with the mapped component, not a raw-framework substitute.
   - Verify shared components/helpers created by earlier phases of the same work item are reused, not re-implemented privately.
@@ -40,7 +40,7 @@ For new Client work, receive `.superpowers/work-items/<slug>/vN/brief.md`, optio
 - **Single Source Context (`PHASE-00` & `design.md`)**: Read consolidated Huly and API context from `phases/phase-00-prepare.md` (`PHASE-00`) and `design.md` — never re-query Huly.
 - **When reviewing `PHASE-00` (`[EXECUTE]`)**: Verify every preparation task matches `design.md` exactly, run its smoke checks, and confirm `phases/phase-00-prepare.md` (and `implement-plan.md`) is ticked **`[x] PREPARED / COMPLETED`** before approving `PHASE-00` to unlock `PHASE-01, 02, 03...`.
 - **When reviewing `PHASE-01, 02, 03...`**: Confirm `phases/phase-00-prepare.md` is ticked **`[x] PREPARED / COMPLETED`** (or **`[x] PREPARED (INFO_READY)`**).
-- **Zero cross-repo mutations**: Verify that no other repositories, server code, or database schemas have been touched or modified. Any cross-repo mutation is an automatic rejection (`CHANGES_REQUESTED`).
+- **Zero cross-repo mutations**: Verify that no other repositories, and no files outside the paths that the workspace's packs own in `.agents/stack.json`, have been touched or modified. Any cross-repo mutation is an automatic rejection (`CHANGES_REQUESTED`).
 
 ### Adversarial Unit Test & Bias Evaluation (`PHASE-01+`)
 - **Detect Test Bias & Tautological Tests**:
@@ -60,7 +60,7 @@ For new Client work, receive `.superpowers/work-items/<slug>/vN/brief.md`, optio
 
 Receive feature/version path, phase ID, `BASE_REVISION`, `REVIEW_REVISION`, full uncommitted scope, approved document revisions, Gate 1–3 approval references, AC IDs, planned checks, and required visual states. Read the same version's `codebase-notes.md` (for locked `D-NN` decisions, Glossary, and baseline facts), `requirements.md`, `design.md`, `implementation-plan.md`, linked phase, and v2+ `change-impact.md`. Verify implementation conforms to all recorded `D-NN` decisions without contradiction. Review the actual diff and existing test evidence for those revisions.
 
-Write revision-bound findings under `.superpowers/work-items/<slug>/vN/reviews/review_<phase-id>_<revision>.md` and report verdict to coordinator for `as-built.md`. `APPROVED` requires every applicable AC traced, no blocking finding, analyzer evidence, unit test pass, and required UI review; it hands the same tree to Docs Writer for phase evidence recording (or Test Runner during final feature E2E QA verification). `CHANGES_REQUESTED` returns to Code Writer. Any fix invalidates affected review/evidence. `BLOCKED` and `NOT_RUN` never become PASS.
+Write revision-bound findings under `.superpowers/work-items/<slug>/vN/reviews/review_<phase-id>_<revision>.md` and report verdict to coordinator for `as-built.md`. `APPROVED` requires every applicable AC traced, no blocking finding, analyzer evidence (where the stack defines an analyzer), unit test pass, and UI review when the change has a UI; it hands the same tree to Docs Writer for phase evidence recording (or Test Runner during final feature E2E QA verification). `CHANGES_REQUESTED` returns to Code Writer. Any fix invalidates affected review/evidence. `BLOCKED` and `NOT_RUN` never become PASS.
 
 ### Phase Done Artifact & Coordinator Handoff
 When a phase is `APPROVED`, generate a Phase Summary Artifact detailing:
