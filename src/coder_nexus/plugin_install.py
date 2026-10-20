@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from .plugin_build import project_plugin
+
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
@@ -64,24 +66,6 @@ def _read_json(path: Path) -> dict:
         return {}
 
 
-def _top_level_ignore(root: Path, names: tuple[str, ...]):
-    """Ignore the given entries only at the top level of `root` (nested skills may reuse the names)."""
-    root = root.resolve()
-
-    def ignore(directory: str, entries: list[str]) -> set[str]:
-        return {name for name in entries if name in names} if Path(directory).resolve() == root else set()
-
-    return ignore
-
-
-def _project_resource(resource: str, workspace_agents: bool) -> str:
-    if resource.startswith("../shared_contracts/"):
-        return resource.removeprefix("../")
-    if workspace_agents and resource.startswith("agents/"):
-        return f"../../{resource}"
-    return resource
-
-
 def _install_plugin_projection(
     plugin_dir: Path,
     destination: Path,
@@ -89,11 +73,12 @@ def _install_plugin_projection(
     framework: str = "flutter",
     workspace_agents: bool = False,
 ) -> str:
-    """Project a plugin; with workspace_agents, agents live only in <workspace>/.agents/agents."""
+    """Install one plugin from source via the shared builder; agents stay out when workspace_agents."""
     manifest = _read_json(plugin_dir / "bundle_manifest.json")
     shared_contracts = plugin_dir.parent / "shared_contracts"
     if not (shared_contracts / "api_handshake_protocol.md").is_file():
         raise FileNotFoundError("Missing shared API handshake protocol")
+    categorized = (plugin_dir / "skills/flutter").is_dir()
     metadata = {
         "plugin_version": manifest.get("plugin_version", "UNKNOWN"),
         "hub_version": manifest.get("hub_version", "UNKNOWN"),
@@ -102,7 +87,7 @@ def _install_plugin_projection(
         "bundle_digest": _bundle_digest(plugin_dir),
         "hub_digest": _hub_digest(repo_root),
         "shared_contracts_digest": _bundle_digest(shared_contracts),
-        "framework": framework if (plugin_dir / "skills/flutter").is_dir() else None,
+        "framework": framework if categorized else None,
         "agents_location": "workspace" if workspace_agents else "plugin",
     }
     existing = _read_json(destination / "installed_version.json") if destination.is_dir() else {}
@@ -114,69 +99,7 @@ def _install_plugin_projection(
     backup = destination.parent / f".{destination.name}.backup"
     _remove_path(staging)
     _remove_path(backup)
-
-    skills_src = plugin_dir / "skills"
-    has_categories = (skills_src / "flutter").is_dir() or (skills_src / "frappe").is_dir()
-    excluded = ("agents",) if workspace_agents else ()
-
-    if has_categories:
-        shutil.copytree(plugin_dir, staging, ignore=_top_level_ignore(plugin_dir, ("skills", *excluded)))
-        staging_skills = staging / "skills"
-        staging_skills.mkdir(parents=True, exist_ok=True)
-
-        rules_dest = staging / "rules"
-        if framework == "frappe":
-            (rules_dest / "clean_architecture_rules.md").unlink(missing_ok=True)
-        else:
-            (rules_dest / "frappe_specific_rules.md").unlink(missing_ok=True)
-
-        shared_dir = skills_src / "shared"
-        if shared_dir.is_dir():
-            for skill_path in shared_dir.iterdir():
-                if skill_path.is_dir() and (skill_path / "SKILL.md").exists():
-                    shutil.copytree(skill_path, staging_skills / skill_path.name)
-        fw_dir = skills_src / framework
-        if fw_dir.is_dir():
-            for skill_path in fw_dir.iterdir():
-                if skill_path.is_dir() and (skill_path / "SKILL.md").exists():
-                    shutil.copytree(skill_path, staging_skills / skill_path.name)
-
-        manifest_path = staging / "bundle_manifest.json"
-        if manifest_path.exists():
-            manifest_data = _read_json(manifest_path)
-            manifest_data["public_skills"] = sorted(
-                p.name for p in staging_skills.iterdir() if p.is_dir() and (p / "SKILL.md").exists()
-            )
-            if "required_resources" in manifest_data:
-                rewritten_resources = []
-                for res in manifest_data["required_resources"]:
-                    if res.startswith(f"skills/{'flutter' if framework == 'frappe' else 'frappe'}/"):
-                        continue
-                    if res == f"rules/{'clean_architecture_rules.md' if framework == 'frappe' else 'frappe_specific_rules.md'}":
-                        continue
-                    for prefix in ("skills/shared/", "skills/flutter/", "skills/frappe/"):
-                        if res.startswith(prefix):
-                            res = "skills/" + res[len(prefix):]
-                            break
-                    rewritten_resources.append(res)
-                manifest_data["required_resources"] = rewritten_resources
-            manifest_path.write_text(json.dumps(manifest_data, indent=2) + "\n", encoding="utf-8")
-    else:
-        shutil.copytree(plugin_dir, staging, ignore=_top_level_ignore(plugin_dir, excluded))
-
-    shutil.copytree(shared_contracts, staging / "shared_contracts")
-    if has_categories:
-        for document in staging.rglob("*.md"):
-            text = document.read_text(encoding="utf-8")
-            rewritten = text.replace("(../../flutter/", "(../").replace("(../skills/flutter/", "(../skills/")
-            if rewritten != text:
-                document.write_text(rewritten, encoding="utf-8")
-    projected_manifest = _read_json(staging / "bundle_manifest.json")
-    projected_manifest["required_resources"] = [
-        _project_resource(resource, workspace_agents)
-        for resource in projected_manifest.get("required_resources", [])
-    ]
-    (staging / "bundle_manifest.json").write_text(json.dumps(projected_manifest, indent=2) + "\n", encoding="utf-8")
+    project_plugin(plugin_dir, staging, framework if categorized else None, include_agents=not workspace_agents)
 
     runtime_config = {
         "mcpServers": {

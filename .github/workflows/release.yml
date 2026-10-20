@@ -53,6 +53,10 @@ jobs:
           uv sync
           uv run pytest -q
 
+      - name: Build plugin projections
+        run: |
+          uv run python -m coder_nexus.plugin_build
+
       - name: Package VS Code Extension (.vsix)
         run: |
           npx -y @vscode/vsce package --no-dependencies -o "coder-nexus-${VERSION}.vsix"

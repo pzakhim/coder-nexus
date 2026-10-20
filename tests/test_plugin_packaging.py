@@ -566,3 +566,26 @@ def test_shared_contracts_protocol_and_templates():
     assert "DRAFT_BY_FE" in protocol
     assert "APPROVED_BY_BE" in protocol
 
+
+
+def test_built_projections_apply_identically_for_every_variant(tmp_path):
+    """Both installers copy the same built projection; workspace layouts keep one agent copy."""
+    from coder_nexus.plugin_build import VARIANTS, apply_projection, build
+
+    out = tmp_path / "dist"
+    build(out)
+    for variant, (plugin_name, _framework) in VARIANTS.items():
+        workspace = tmp_path / f"ws-{variant}"
+        (workspace / ".agents/plugins/coder-nexus-fe" if plugin_name == "coder-nexus-be" else workspace / ".agents/plugins/coder-nexus-be").mkdir(parents=True)
+        spec = apply_projection(out / f"workspace-{variant}", workspace)
+        installed = workspace / spec["managed"][0]
+        assert not (installed / "agents").exists()
+        assert len(list((workspace / ".agents/agents").glob("*.md"))) == 6
+        assert not any((workspace / rel).exists() for rel in spec["remove"]), "the other plugin must be removed"
+        manifest = json.loads((installed / "bundle_manifest.json").read_text(encoding="utf-8"))
+        for resource in manifest["required_resources"]:
+            assert (installed / resource).is_file(), (variant, resource)
+
+        home = tmp_path / f"home-{variant}"
+        spec = apply_projection(out / f"global-{variant}", home)
+        assert (home / plugin_name / "agents" / "code_writer.md").is_file()

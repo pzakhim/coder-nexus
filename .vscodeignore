@@ -15,3 +15,6 @@ scratch/**
 *.vsix
 app_core/
 template/
+plugins/coder-nexus-fe/**
+plugins/coder-nexus-be/**
+plugins/shared_contracts/**

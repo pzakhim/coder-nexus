@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "plugin_version": "2.5.1",
+  "plugin_version": "2.5.2",
   "hub_version": "0.1.0",
   "source_revision_policy": "resolved_at_install",
   "public_skills": [

@@ -23,19 +23,6 @@ function copyFolderSync(from, to) {
     }
 }
 
-function rewriteFlattenedLinks(directory) {
-    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-        const file = path.join(directory, entry.name);
-        if (entry.isDirectory()) {
-            rewriteFlattenedLinks(file);
-        } else if (entry.name.endsWith('.md')) {
-            const text = fs.readFileSync(file, 'utf8');
-            const rewritten = text.replaceAll('(../../flutter/', '(../').replaceAll('(../skills/flutter/', '(../skills/');
-            if (rewritten !== text) fs.writeFileSync(file, rewritten, 'utf8');
-        }
-    }
-}
-
 function extensionVersion(context) {
     try {
         return JSON.parse(fs.readFileSync(path.join(context.extensionPath, 'package.json'), 'utf8')).version || 'UNKNOWN';
@@ -44,13 +31,10 @@ function extensionVersion(context) {
     }
 }
 
-function bundledPluginVersion(context, pluginName) {
-    try {
-        const manifest = path.join(context.extensionPath, 'plugins', pluginName, 'bundle_manifest.json');
-        return JSON.parse(fs.readFileSync(manifest, 'utf8')).plugin_version || null;
-    } catch (_) {
-        return null;
-    }
+function bundledPluginVersion(context) {
+    // plugin_version and the extension version are kept identical by scripts/sync_version.py.
+    const version = extensionVersion(context);
+    return version === 'UNKNOWN' ? null : version;
 }
 
 function installedPluginVersion(pluginDir) {
@@ -117,131 +101,52 @@ function isRecognizedWorkspace(workspacePath) {
 }
 
 /**
- * Install or update Coder Nexus Antigravity plugin with flattened skills.
+ * Copy a projection built by `python -m coder_nexus.plugin_build` (plugins/dist/<layout>-<variant>).
+ * All filtering/flattening happens at build time; this only replaces the managed paths.
+ */
+function applyProjection(projectionDir, destRoot) {
+    const spec = JSON.parse(fs.readFileSync(path.join(projectionDir, 'projection.json'), 'utf8'));
+    if (!Array.isArray(spec.managed) || spec.managed.length === 0) {
+        throw new Error(`Invalid projection: ${projectionDir}`);
+    }
+    for (const rel of [...(spec.remove || []), ...spec.managed]) {
+        fs.rmSync(path.join(destRoot, rel), { recursive: true, force: true });
+    }
+    for (const rel of spec.managed) {
+        const src = path.join(projectionDir, 'files', rel);
+        const dest = path.join(destRoot, rel);
+        if (fs.statSync(src).isDirectory()) {
+            copyFolderSync(src, dest);
+        } else {
+            fs.mkdirSync(path.dirname(dest), { recursive: true });
+            fs.copyFileSync(src, dest);
+        }
+    }
+    return spec;
+}
+
+function projectionVariant(pluginName, framework) {
+    return pluginName === 'coder-nexus-be' ? 'be' : `fe-${framework === 'frappe' ? 'frappe' : 'flutter'}`;
+}
+
+/**
+ * Install or update the Coder Nexus Antigravity plugin from its prebuilt projection.
  */
 function installAntigravityPlugin(context, targetWorkspace = null, silent = false, pluginName = 'coder-nexus-fe', framework = 'flutter') {
-    const pluginSource = path.join(context.extensionPath, 'plugins', pluginName);
-    const sharedContracts = path.join(context.extensionPath, 'plugins', 'shared_contracts');
-    if (!fs.existsSync(pluginSource) || !fs.existsSync(path.join(sharedContracts, 'api_handshake_protocol.md'))) {
+    const layout = targetWorkspace ? 'workspace' : 'global';
+    const projectionDir = path.join(context.extensionPath, 'plugins', 'dist', `${layout}-${projectionVariant(pluginName, framework)}`);
+    if (!fs.existsSync(path.join(projectionDir, 'projection.json'))) {
         if (!silent) {
-            vscode.window.showErrorMessage(`Coder Nexus plugin assets (${pluginName}) or shared handshake protocol not found inside extension path.`);
+            vscode.window.showErrorMessage(`Coder Nexus plugin assets (${pluginName}) not found inside extension path.`);
         }
         return false;
     }
 
     try {
-        let destPath;
-        if (targetWorkspace) {
-            destPath = path.join(targetWorkspace, '.agents', 'plugins', pluginName);
-        } else {
-            const home = os.homedir();
-            destPath = path.join(home, '.gemini', 'config', 'plugins', pluginName);
-        }
+        const destRoot = targetWorkspace || path.join(os.homedir(), '.gemini', 'config', 'plugins');
+        const spec = applyProjection(projectionDir, destRoot);
+        const destPath = path.join(destRoot, spec.managed[0]);
 
-        if (fs.existsSync(destPath)) {
-            fs.rmSync(destPath, { recursive: true, force: true });
-        }
-        fs.mkdirSync(destPath, { recursive: true });
-
-        if (pluginName === 'coder-nexus-fe') {
-            const entries = fs.readdirSync(pluginSource, { withFileTypes: true });
-            for (const entry of entries) {
-                if (entry.name === 'skills' || entry.name === 'rules') {
-                    continue;
-                }
-                // Workspace agents live only in .agents/agents (single copy the host reads).
-                if (entry.name === 'agents' && targetWorkspace) {
-                    continue;
-                }
-                const src = path.join(pluginSource, entry.name);
-                const dest = path.join(destPath, entry.name);
-                if (entry.isDirectory()) {
-                    copyFolderSync(src, dest);
-                } else {
-                    fs.copyFileSync(src, dest);
-                }
-            }
-
-            const rulesDest = path.join(destPath, 'rules');
-            fs.mkdirSync(rulesDest, { recursive: true });
-            const rulesSource = path.join(pluginSource, 'rules');
-            if (framework === 'frappe') {
-                const frappeRule = path.join(rulesSource, 'frappe_specific_rules.md');
-                if (fs.existsSync(frappeRule)) {
-                    fs.copyFileSync(frappeRule, path.join(rulesDest, 'frappe_specific_rules.md'));
-                }
-            } else {
-                const flutterRule = path.join(rulesSource, 'clean_architecture_rules.md');
-                if (fs.existsSync(flutterRule)) {
-                    fs.copyFileSync(flutterRule, path.join(rulesDest, 'clean_architecture_rules.md'));
-                }
-            }
-
-            const skillsDest = path.join(destPath, 'skills');
-            fs.mkdirSync(skillsDest, { recursive: true });
-            const skillsSource = path.join(pluginSource, 'skills');
-
-            // Shared skills
-            const sharedDir = path.join(skillsSource, 'shared');
-            if (fs.existsSync(sharedDir)) {
-                for (const item of fs.readdirSync(sharedDir, { withFileTypes: true })) {
-                    if (item.isDirectory() && fs.existsSync(path.join(sharedDir, item.name, 'SKILL.md'))) {
-                        copyFolderSync(path.join(sharedDir, item.name), path.join(skillsDest, item.name));
-                    }
-                }
-            }
-
-            // Framework skills (flutter or frappe)
-            const fwDir = path.join(skillsSource, framework);
-            if (fs.existsSync(fwDir)) {
-                for (const item of fs.readdirSync(fwDir, { withFileTypes: true })) {
-                    if (item.isDirectory() && fs.existsSync(path.join(fwDir, item.name, 'SKILL.md'))) {
-                        copyFolderSync(path.join(fwDir, item.name), path.join(skillsDest, item.name));
-                    }
-                }
-            }
-
-            // Rewrite manifest to reflect flattened skills
-            const manifestPath = path.join(destPath, 'bundle_manifest.json');
-            if (fs.existsSync(manifestPath)) {
-                try {
-                    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-                    const installedSkills = fs.readdirSync(skillsDest, { withFileTypes: true })
-                        .filter(e => e.isDirectory() && fs.existsSync(path.join(skillsDest, e.name, 'SKILL.md')))
-                        .map(e => e.name)
-                        .sort();
-                    manifest.public_skills = installedSkills;
-
-                    if (Array.isArray(manifest.required_resources)) {
-                        const excludedFramework = framework === 'frappe' ? 'flutter' : 'frappe';
-                        const excludedRule = framework === 'frappe' ? 'clean_architecture_rules.md' : 'frappe_specific_rules.md';
-                        manifest.required_resources = manifest.required_resources.filter(res =>
-                            !res.startsWith(`skills/${excludedFramework}/`) && res !== `rules/${excludedRule}`
-                        ).map(res => {
-                            for (const prefix of ['skills/shared/', 'skills/flutter/', 'skills/frappe/']) {
-                                if (res.startsWith(prefix)) {
-                                    return 'skills/' + res.slice(prefix.length);
-                                }
-                            }
-                            return res;
-                        });
-                    }
-                    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
-                } catch (e) {
-                    console.error('Failed to update bundle_manifest.json:', e);
-                }
-            }
-        } else {
-            // Backend plugin is already flat; workspace agents live only in .agents/agents.
-            for (const entry of fs.readdirSync(pluginSource, { withFileTypes: true })) {
-                if (entry.name === 'agents' && targetWorkspace) continue;
-                const src = path.join(pluginSource, entry.name);
-                const dest = path.join(destPath, entry.name);
-                if (entry.isDirectory()) copyFolderSync(src, dest); else fs.copyFileSync(src, dest);
-            }
-        }
-
-        copyFolderSync(sharedContracts, path.join(destPath, 'shared_contracts'));
         // GUI-launched IDEs may not have ~/.local/bin in PATH; point MCP at the absolute CLI when present.
         const mcpConfigPath = path.join(destPath, 'mcp_config.json');
         if (fs.existsSync(mcpConfigPath) && fs.existsSync(localCliPath())) {
@@ -249,40 +154,6 @@ function installAntigravityPlugin(context, targetWorkspace = null, silent = fals
             if (mcp.mcpServers && mcp.mcpServers['coder-nexus']) {
                 mcp.mcpServers['coder-nexus'].command = localCliPath();
                 fs.writeFileSync(mcpConfigPath, JSON.stringify(mcp, null, 2) + '\n', 'utf8');
-            }
-        }
-        if (pluginName === 'coder-nexus-fe') rewriteFlattenedLinks(destPath);
-        const projectedManifestPath = path.join(destPath, 'bundle_manifest.json');
-        const projectedManifest = JSON.parse(fs.readFileSync(projectedManifestPath, 'utf8'));
-        projectedManifest.required_resources = (projectedManifest.required_resources || []).map(res => {
-            if (res.startsWith('../shared_contracts/')) return res.slice(3);
-            if (targetWorkspace && res.startsWith('agents/')) return `../../${res}`;
-            return res;
-        });
-        fs.writeFileSync(projectedManifestPath, JSON.stringify(projectedManifest, null, 2) + '\n', 'utf8');
-        fs.writeFileSync(path.join(destPath, 'installed_version.json'), JSON.stringify({
-            plugin_version: projectedManifest.plugin_version || 'UNKNOWN',
-            extension_version: extensionVersion(context),
-            framework: pluginName === 'coder-nexus-fe' ? framework : null,
-            synced_at: new Date().toISOString(),
-        }, null, 2) + '\n', 'utf8');
-
-        if (targetWorkspace) {
-            // Sync corresponding agents to .agents/agents
-            const agentsSource = path.join(pluginSource, 'agents');
-            const agentsDest = path.join(targetWorkspace, '.agents', 'agents');
-            if (fs.existsSync(agentsSource)) {
-                copyFolderSync(agentsSource, agentsDest);
-            }
-
-            // Remove a stale agents/ copy left inside the plugin by older syncs.
-            fs.rmSync(path.join(destPath, 'agents'), { recursive: true, force: true });
-
-            // Clean up the alternative plugin directory if present to avoid role confusion
-            const otherPlugin = pluginName === 'coder-nexus-fe' ? 'coder-nexus-be' : 'coder-nexus-fe';
-            const otherDest = path.join(targetWorkspace, '.agents', 'plugins', otherPlugin);
-            if (fs.existsSync(otherDest)) {
-                fs.rmSync(otherDest, { recursive: true, force: true });
             }
         }
 
@@ -480,7 +351,7 @@ function checkFirstTimeWorkspacePrompt(context) {
 function warnIfStaleSync(context, pluginDir) {
     const pluginName = path.basename(pluginDir);
     const installed = installedPluginVersion(pluginDir);
-    const bundled = bundledPluginVersion(context, pluginName);
+    const bundled = bundledPluginVersion(context);
     if (!bundled || installed === bundled) return;
     if (!vscode.window || typeof vscode.window.showWarningMessage !== 'function') return;
     const p = vscode.window.showWarningMessage(

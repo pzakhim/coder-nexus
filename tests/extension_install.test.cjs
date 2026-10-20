@@ -6,6 +6,13 @@ const vm = require('node:vm');
 const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
+
+// The extension only copies prebuilt projections; build them from source first.
+const built = require('node:child_process').spawnSync(
+    process.env.PYTHON || 'python3', ['-m', 'coder_nexus.plugin_build'],
+    { cwd: root, env: { ...process.env, PYTHONPATH: path.join(root, 'src') }, encoding: 'utf8' },
+);
+if (built.status !== 0) throw new Error(`plugin_build failed: ${built.stderr}`);
 const source = fs.readFileSync(path.join(root, 'extension.js'), 'utf8');
 
 function host(workspace, home, extensionPath = root) {
