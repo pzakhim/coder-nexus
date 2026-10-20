@@ -114,11 +114,11 @@ def cmd_setup_flutter(args: argparse.Namespace) -> int:
         profile=getattr(args, "profile", None),
     )
     if code == 0 and not args.check:
-        plugin_dir = REPO_ROOT / "plugins" / "coder-nexus-fe"
+        plugin_dir = REPO_ROOT / "plugins" / "core"
         if plugin_dir.exists():
             dest = project_path / ".agents" / "plugins" / "coder-nexus-fe"
             _remove_legacy_workspace_entry(project_path, plugin_dir, dest)
-            action = _install_plugin_projection(plugin_dir, dest, REPO_ROOT, framework="flutter", workspace_agents=True)
+            action = _install_plugin_projection("fe-flutter", dest, REPO_ROOT, workspace_agents=True)
             print(f"      Workspace plugin {action} with mcp_config.json: {dest}")
     return code
 

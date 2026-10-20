@@ -54,7 +54,21 @@ Always supply `--workspace` for workspace-only installation. Omitting it default
 
 The CLI projection records source/version metadata in `installed_version.json` and writes `mcp_config.json` with `uv run --offline coder-nexus serve` and the Hub checkout as `cwd`. Keep that checkout and its prepared environment available. The CLI installer does not perform the extension's Ponytail provisioning.
 
-Inspect the generated manifest, role files, skills, and MCP configuration. Confirm host discovery and tool invocation in the target IDE; copied files alone do not prove activation. Shared skills keep their name when installed (`skills/shared/work-items/` becomes `skills/work-items/`); framework skills get the stack prefix (`skills/flutter/core-usage/` becomes `skills/flutter-core-usage/`). Agents reference framework skills as `{{slot:<name>}}`, which the build renders to the installed name.
+Inspect the generated manifest, role files, skills, and MCP configuration. Confirm host discovery and tool invocation in the target IDE; copied files alone do not prove activation.
+
+### How a projection is built
+
+Plugin sources are split by responsibility and composed by `python -m coder_nexus.plugin_build` (the extension ships the built `plugins/dist/`; the CLI builds from the checkout):
+
+| Source | Holds | Installed as |
+|---|---|---|
+| `plugins/core/agents/` | Stack-neutral role process (gates, handoffs, task loop) | `.agents/agents/<role>.md`, followed by overlays |
+| `plugins/layers/frontend/agents/` | Frontend-shared rules (visual input, 4 visual states, Mockoon, API handshake) | appended to each role for Flutter and Frappe |
+| `plugins/packs/<stack>/agents/` | Stack rules (Flutter profiles, BaseScreen, analyzer commands; Frappe resources) | appended last |
+| `plugins/core/skills/` | Stack-neutral process skills | `skills/<name>/` |
+| `plugins/packs/<stack>/skills/<slot>/` | Stack knowledge for a slot (`core-usage`, `clean-architecture`, `unit-test`, …) | `skills/<stack>-<slot>/` |
+
+Core files refer to stack knowledge as `{{slot:<name>}}`, rendered to `<stack>-<name>`. The build fails a maintained pack when an agent declares a skill that is not installed, a link is broken, or a file mentions another stack's markers (listed in each `pack.json`); preview packs list these gaps in `projection.json`.
 
 ## External versus iMESPro projects
 

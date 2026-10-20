@@ -1,0 +1,36 @@
+{
+  "stack": "flutter",
+  "status": "maintained",
+  "slots": {
+    "core-usage": "core-usage",
+    "architecture-design": "architecture-design",
+    "clean-architecture": "clean-architecture",
+    "unit-test": "unit-test",
+    "code-review": "code-review",
+    "verification": "verification",
+    "visual-verification": "visual-verification"
+  },
+  "extra": [],
+  "title": "Flutter",
+  "layers": [
+    "frontend"
+  ],
+  "markers": [
+    "Flutter",
+    "flutter",
+    "Dart",
+    "dart",
+    "Cubit",
+    "BLoC",
+    "BaseScreen",
+    "BaseScreenState",
+    "app_ui_kit",
+    "app_core",
+    "app_util",
+    "pubspec.yaml",
+    "iMESPro",
+    "imespro",
+    "golden",
+    "goldens"
+  ]
+}

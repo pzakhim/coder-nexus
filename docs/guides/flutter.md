@@ -6,10 +6,10 @@ Flutter is the primary maintained delivery workflow. The same six roles serve th
 
 | Source | Purpose |
 |---|---|
-| [core-usage](../../plugins/coder-nexus-fe/skills/flutter/core-usage/SKILL.md) | Profile discovery and per-role reuse instructions. |
-| [iMESPro profile](../../plugins/coder-nexus-fe/skills/flutter/core-usage/references/01_profile_imespro.md) | Company package setup, imports, and reuse rules. |
-| [External structured profile](../../plugins/coder-nexus-fe/skills/flutter/core-usage/references/02_profile_external_structured.md) | Existing Client foundations and design system reuse. |
-| [External standard profile](../../plugins/coder-nexus-fe/skills/flutter/core-usage/references/03_profile_external_standard.md) | Minimal Flutter implementation without a pre-existing core. |
+| [core-usage](../../plugins/packs/flutter/skills/core-usage/SKILL.md) | Profile discovery and per-role reuse instructions. |
+| [iMESPro profile](../../plugins/packs/flutter/skills/core-usage/references/01_profile_imespro.md) | Company package setup, imports, and reuse rules. |
+| [External structured profile](../../plugins/packs/flutter/skills/core-usage/references/02_profile_external_structured.md) | Existing Client foundations and design system reuse. |
+| [External standard profile](../../plugins/packs/flutter/skills/core-usage/references/03_profile_external_standard.md) | Minimal Flutter implementation without a pre-existing core. |
 | Each resolved package's `guidance/GUIDE.md` | API selection, “Use when” / “Do not use when”, and linked examples. |
 | Each resolved package's `lib/` source | Actual signatures and implementation evidence. |
 

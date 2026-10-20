@@ -103,8 +103,8 @@ def _build_root_blueprint() -> dict[str, Any]:
             "4. Root App: MaterialApp with routeObserver and AppLocalization inside EasyLocalization",
         ],
         "sources": [
-            "plugins/coder-nexus-fe/rules/clean_architecture_rules.md",
-            "plugins/coder-nexus-fe/skills/flutter/core-usage/SKILL.md",
+            "plugins/packs/flutter/rules/clean_architecture_rules.md",
+            "plugins/packs/flutter/skills/core-usage/SKILL.md",
             "../app-core/guidance/GUIDE.md",
             "../app-util/guidance/GUIDE.md",
             "../app-ui-kit/guidance/GUIDE.md",
@@ -156,8 +156,8 @@ def _build_module_blueprint(feature: str) -> dict[str, Any]:
         ],
         "composition_root": "Must be registered in lib/modules/modules_di.dart",
         "sources": [
-            "plugins/coder-nexus-fe/rules/clean_architecture_rules.md",
-            "plugins/coder-nexus-fe/skills/flutter/core-usage/SKILL.md",
+            "plugins/packs/flutter/rules/clean_architecture_rules.md",
+            "plugins/packs/flutter/skills/core-usage/SKILL.md",
             "../app-core/guidance/GUIDE.md",
             "../app-util/guidance/GUIDE.md",
             "../app-ui-kit/guidance/GUIDE.md",

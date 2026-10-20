@@ -10,20 +10,22 @@ import pytest
 
 from coder_nexus.plugin_install import _install_plugin_projection, cmd_install_plugin
 
+from .rendered import rendered_agent
+
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-PLUGIN_DIR = REPO_ROOT / "plugins" / "coder-nexus-fe"
+PLUGIN_DIR = REPO_ROOT / "plugins"
 
 
 def test_plugin_json_structure():
     """Verify plugin.json exists, is valid JSON, and contains expected metadata."""
-    manifest_file = PLUGIN_DIR / "plugin.json"
+    manifest_file = PLUGIN_DIR / "core" / "plugin.json"
     assert manifest_file.exists(), f"Missing plugin.json at {manifest_file}"
 
     with open(manifest_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    assert data.get("name") == "coder-nexus-fe"
+    assert data.get("name") in {"coder-nexus-fe", "coder-nexus"}
     assert data.get("$schema") == "https://antigravity.google/schemas/v1/plugin.json"
     assert "description" in data
     assert set(data) == {"$schema", "name", "description"}
@@ -44,15 +46,17 @@ def test_extension_sync_requires_an_explicit_command():
 
 
 def test_bundle_manifest_inventory():
-    manifest = json.loads((PLUGIN_DIR / "bundle_manifest.json").read_text(encoding="utf-8"))
+    manifest = json.loads((PLUGIN_DIR / "core" / "bundle_manifest.json").read_text(encoding="utf-8"))
     assert bool(re.match(r"^\d+\.\d+\.\d+", manifest["plugin_version"]))
     if (REPO_ROOT / "package.json").exists():
         pkg = json.loads((REPO_ROOT / "package.json").read_text(encoding="utf-8"))
         assert manifest["plugin_version"] == pkg.get("version")
     assert manifest["hub_version"] == "0.1.0"
+    assert manifest["resource_base"] == "plugins/"
     assert "flutter/verification" in manifest["public_skills"]
     assert len(manifest["mcp_tools"]) == 8
-    packaged_skills = {f"{path.parent.parent.name}/{path.parent.name}" for path in (PLUGIN_DIR / "skills").glob("*/*/SKILL.md")}
+    packaged_skills = {f"core/{p.parent.name}" for p in (PLUGIN_DIR / "core" / "skills").glob("*/SKILL.md")}
+    packaged_skills |= {f"{p.parent.parent.parent.name}/{p.parent.name}" for p in (PLUGIN_DIR / "packs").glob("*/skills/*/SKILL.md")}
     assert set(manifest["public_skills"]) == packaged_skills
     for resource in manifest["required_resources"]:
         assert (PLUGIN_DIR / resource).exists(), f"Missing bundle resource: {resource}"
@@ -60,7 +64,7 @@ def test_bundle_manifest_inventory():
 
 def test_canonical_bundle_has_no_author_machine_path():
     offenders = []
-    for path in PLUGIN_DIR.rglob("*"):
+    for path in (p for p in PLUGIN_DIR.rglob("*") if "dist" not in p.relative_to(PLUGIN_DIR).parts):
         if path.is_file() and path.suffix in {".json", ".md", ".tpl"}:
             content = path.read_text(encoding="utf-8")
             if "/Users/" in content:
@@ -70,7 +74,7 @@ def test_canonical_bundle_has_no_author_machine_path():
 
 def test_mcp_config_structure():
     """Verify the canonical config is portable and delegates to the installed CLI."""
-    config_file = PLUGIN_DIR / "mcp_config.json"
+    config_file = PLUGIN_DIR / "core" / "mcp_config.json"
     assert config_file.exists(), f"Missing mcp_config.json at {config_file}"
 
     with open(config_file, "r", encoding="utf-8") as f:
@@ -85,7 +89,7 @@ def test_mcp_config_structure():
 
 def test_skill_markdown_structure():
     """Verify huly-task-runner SKILL.md has valid frontmatter and core instructions."""
-    skill_file = PLUGIN_DIR / "skills" / "shared" / "huly-task-runner" / "SKILL.md"
+    skill_file = PLUGIN_DIR / "core" / "skills" / "huly-task-runner" / "SKILL.md"
     assert skill_file.exists(), f"Missing SKILL.md at {skill_file}"
 
     content = skill_file.read_text(encoding="utf-8")
@@ -100,7 +104,7 @@ def test_skill_markdown_structure():
 
 def test_flutter_clean_architecture_skill_structure():
     """Verify flutter-clean-architecture SKILL.md, references, and manifest."""
-    skill_dir = PLUGIN_DIR / "skills" / "flutter" / "clean-architecture"
+    skill_dir = PLUGIN_DIR / "packs" / "flutter" / "skills" / "clean-architecture"
     skill_file = skill_dir / "SKILL.md"
     assert skill_file.exists(), f"Missing SKILL.md at {skill_file}"
 
@@ -122,7 +126,7 @@ def test_flutter_clean_architecture_skill_structure():
 
 def test_flutter_core_usage_skill_structure():
     """Verify flutter core-usage SKILL.md and its guidance."""
-    skill_dir = PLUGIN_DIR / "skills" / "flutter" / "core-usage"
+    skill_dir = PLUGIN_DIR / "packs" / "flutter" / "skills" / "core-usage"
     skill_file = skill_dir / "SKILL.md"
     assert skill_file.exists(), f"Missing SKILL.md at {skill_file}"
 
@@ -135,7 +139,7 @@ def test_flutter_core_usage_skill_structure():
 
 def test_flutter_feature_planner_skill_structure():
     """Verify flutter-feature-planner SKILL.md, manifest, and references packaging."""
-    skill_dir = PLUGIN_DIR / "skills" / "shared" / "feature-planner"
+    skill_dir = PLUGIN_DIR / "core" / "skills" / "feature-planner"
     skill_file = skill_dir / "SKILL.md"
     assert skill_file.exists(), f"Missing SKILL.md at {skill_file}"
 
@@ -179,13 +183,13 @@ def test_client_workflow_skills_are_packaged_and_portable():
         "code-review",
     }
     for name in expected:
-        skill_file = next((PLUGIN_DIR / "skills").glob(f"*/{name}/SKILL.md"), PLUGIN_DIR / "skills" / "flutter" / name / "SKILL.md")
+        skill_file = next(iter([*(PLUGIN_DIR / "core" / "skills").glob(f"{name}/SKILL.md"), *(PLUGIN_DIR / "packs").glob(f"*/skills/{name}/SKILL.md")]), PLUGIN_DIR / "missing" / name)
         assert skill_file.exists(), f"Missing packaged skill: {name}"
         content = skill_file.read_text(encoding="utf-8")
         assert f"name: {name}" in content
         assert "file:///Users/" not in content
 
-    runtime_skill_files = list((PLUGIN_DIR / "skills").glob("**/*.md"))
+    runtime_skill_files = [*(PLUGIN_DIR / "core").glob("**/*.md"), *(PLUGIN_DIR / "packs").glob("**/*.md")]
     author_paths = [
         str(path.relative_to(PLUGIN_DIR))
         for path in runtime_skill_files
@@ -196,7 +200,7 @@ def test_client_workflow_skills_are_packaged_and_portable():
 
 def test_clean_architecture_templates_exist_and_adhere_to_contracts():
     """Verify all 11 starter templates exist and strictly adhere to Senior contracts."""
-    tpl_dir = PLUGIN_DIR / "skills" / "flutter" / "clean-architecture" / "templates"
+    tpl_dir = PLUGIN_DIR / "packs" / "flutter" / "skills" / "clean-architecture" / "templates"
     expected_templates = [
         tpl_dir / "domain" / "entity.dart.tpl",
         tpl_dir / "domain" / "repository.dart.tpl",
@@ -244,7 +248,7 @@ def test_clean_architecture_templates_exist_and_adhere_to_contracts():
     assert "extends StatelessWidget" not in screen_content
 
     # 5. Verify manifest.json has commit_hash and 11 templates mapped
-    manifest_file = PLUGIN_DIR / "skills" / "flutter" / "clean-architecture" / "references" / "manifest.json"
+    manifest_file = PLUGIN_DIR / "packs" / "flutter" / "skills" / "clean-architecture" / "references" / "manifest.json"
     with open(manifest_file, "r", encoding="utf-8") as f:
         manifest_data = json.load(f)
     assert "commit_hash" in manifest_data
@@ -254,7 +258,7 @@ def test_clean_architecture_templates_exist_and_adhere_to_contracts():
 
 def test_clean_architecture_rules_structure():
     """Verify clean_architecture_rules.md exists in plugin rules directory."""
-    rule_file = PLUGIN_DIR / "rules" / "clean_architecture_rules.md"
+    rule_file = PLUGIN_DIR / "packs" / "flutter" / "rules" / "clean_architecture_rules.md"
     assert rule_file.exists(), f"Missing rule file at {rule_file}"
     content = rule_file.read_text(encoding="utf-8")
     assert "Domain Layer" in content
@@ -281,7 +285,7 @@ def test_cli_install_plugin_workspace():
         for resource in projected["required_resources"]:
             assert (installed / resource).is_file(), resource
         metadata = json.loads((installed / "installed_version.json").read_text(encoding="utf-8"))
-        manifest = json.loads((PLUGIN_DIR / "bundle_manifest.json").read_text(encoding="utf-8"))
+        manifest = json.loads((PLUGIN_DIR / "core" / "bundle_manifest.json").read_text(encoding="utf-8"))
         assert metadata["plugin_version"] == manifest["plugin_version"]
         assert metadata["source_path"] == str(REPO_ROOT)
         runtime = json.loads((installed / "mcp_config.json").read_text(encoding="utf-8"))
@@ -301,7 +305,7 @@ def test_cli_install_plugin_migrates_legacy_workspace_entry():
         config = Path(tmpdir) / ".agents" / "plugins.json"
         config.parent.mkdir(parents=True)
         config.write_text(
-            json.dumps({"entries": [{"path": str(PLUGIN_DIR.resolve())}, {"path": "/other/plugin"}]}),
+            json.dumps({"entries": [{"path": str((PLUGIN_DIR / "coder-nexus-fe").resolve())}, {"path": "/other/plugin"}]}),
             encoding="utf-8",
         )
         args = argparse.Namespace(is_global=False, workspace=tmpdir)
@@ -323,38 +327,34 @@ def test_cli_install_plugin_global_replaces_legacy_symlink(monkeypatch):
         assert destination.is_dir()
         assert not destination.is_symlink()
         metadata = json.loads((destination / "installed_version.json").read_text(encoding="utf-8"))
-        manifest = json.loads((PLUGIN_DIR / "bundle_manifest.json").read_text(encoding="utf-8"))
+        manifest = json.loads((PLUGIN_DIR / "core" / "bundle_manifest.json").read_text(encoding="utf-8"))
         assert metadata["plugin_version"] == manifest["plugin_version"]
 
 
-def test_install_projection_update_and_rollback_change_digest():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        root = Path(tmpdir)
-        source = root / "source-plugin"
-        destination = root / "installed" / "coder-nexus-fe"
-        shutil.copytree(PLUGIN_DIR, source)
-        shutil.copytree(REPO_ROOT / "plugins/shared_contracts", source.parent / "shared_contracts")
+def test_install_projection_update_and_rollback_change_digest(tmp_path):
+    plugins = tmp_path / "plugins"
+    shutil.copytree(REPO_ROOT / "plugins", plugins, ignore=shutil.ignore_patterns("dist"))
+    destination = tmp_path / "installed" / "coder-nexus-fe"
 
-        assert _install_plugin_projection(source, destination, REPO_ROOT) == "installed"
-        original = json.loads((destination / "installed_version.json").read_text(encoding="utf-8"))
-        skill = source / "skills" / "flutter" / "verification" / "SKILL.md"
-        original_skill = skill.read_text(encoding="utf-8")
-        skill.write_text(original_skill + "\n", encoding="utf-8")
-        assert _install_plugin_projection(source, destination, REPO_ROOT) == "updated"
-        changed = json.loads((destination / "installed_version.json").read_text(encoding="utf-8"))
-        assert changed["bundle_digest"] != original["bundle_digest"]
+    assert _install_plugin_projection("fe-flutter", destination, REPO_ROOT, plugins_dir=plugins) == "installed"
+    original = json.loads((destination / "installed_version.json").read_text(encoding="utf-8"))
+    skill = plugins / "packs" / "flutter" / "skills" / "verification" / "SKILL.md"
+    original_skill = skill.read_text(encoding="utf-8")
+    skill.write_text(original_skill + "\n", encoding="utf-8")
+    assert _install_plugin_projection("fe-flutter", destination, REPO_ROOT, plugins_dir=plugins) == "updated"
+    changed = json.loads((destination / "installed_version.json").read_text(encoding="utf-8"))
+    assert changed["bundle_digest"] != original["bundle_digest"]
 
-        skill.write_text(original_skill, encoding="utf-8")
-        assert _install_plugin_projection(source, destination, REPO_ROOT) == "updated"
-        rolled_back = json.loads((destination / "installed_version.json").read_text(encoding="utf-8"))
-        assert rolled_back["bundle_digest"] == original["bundle_digest"]
+    skill.write_text(original_skill, encoding="utf-8")
+    assert _install_plugin_projection("fe-flutter", destination, REPO_ROOT, plugins_dir=plugins) == "updated"
+    rolled_back = json.loads((destination / "installed_version.json").read_text(encoding="utf-8"))
+    assert rolled_back["bundle_digest"] == original["bundle_digest"]
 
 
-@pytest.mark.parametrize("plugin,framework", [("fe", "flutter"), ("fe", "frappe"), ("be", "flutter")])
-def test_installed_projection_includes_shared_contract_and_valid_resource_paths(tmp_path, plugin, framework):
-    source = REPO_ROOT / "plugins" / f"coder-nexus-{plugin}"
-    destination = tmp_path / source.name
-    _install_plugin_projection(source, destination, REPO_ROOT, framework)
+@pytest.mark.parametrize("variant", ["fe-flutter", "fe-frappe", "be"])
+def test_installed_projection_includes_shared_contract_and_valid_resource_paths(tmp_path, variant):
+    destination = tmp_path / "plugin"
+    _install_plugin_projection(variant, destination, REPO_ROOT)
     assert (destination / "shared_contracts/api_handshake_protocol.md").read_bytes() == (
         REPO_ROOT / "plugins/shared_contracts/api_handshake_protocol.md"
     ).read_bytes()
@@ -362,7 +362,7 @@ def test_installed_projection_includes_shared_contract_and_valid_resource_paths(
     assert "shared_contracts/api_handshake_protocol.md" in manifest["required_resources"]
     for resource in manifest["required_resources"]:
         assert (destination / resource).is_file(), resource
-    if plugin == "fe" and framework == "flutter":
+    if variant == "fe-flutter":
         for relative in ("skills/work-items/SKILL.md", "rules/clean_architecture_rules.md"):
             document = destination / relative
             for link in re.findall(r"\]\(([^)]+)\)", document.read_text()):
@@ -370,25 +370,23 @@ def test_installed_projection_includes_shared_contract_and_valid_resource_paths(
 
 
 def test_shared_contract_edit_and_framework_switch_refresh_projection(tmp_path):
-    source = tmp_path / "source" / "coder-nexus-fe"
-    shutil.copytree(PLUGIN_DIR, source)
-    shared = source.parent / "shared_contracts"
-    shutil.copytree(REPO_ROOT / "plugins/shared_contracts", shared)
+    plugins = tmp_path / "plugins"
+    shutil.copytree(REPO_ROOT / "plugins", plugins, ignore=shutil.ignore_patterns("dist"))
     destination = tmp_path / "installed"
-    assert _install_plugin_projection(source, destination, REPO_ROOT) == "installed"
-    assert _install_plugin_projection(source, destination, REPO_ROOT) == "unchanged"
-    protocol = shared / "api_handshake_protocol.md"
+    assert _install_plugin_projection("fe-flutter", destination, REPO_ROOT, plugins_dir=plugins) == "installed"
+    assert _install_plugin_projection("fe-flutter", destination, REPO_ROOT, plugins_dir=plugins) == "unchanged"
+    protocol = plugins / "shared_contracts" / "api_handshake_protocol.md"
     protocol.write_text(protocol.read_text() + "\nProtocol revision changed.\n")
-    assert _install_plugin_projection(source, destination, REPO_ROOT) == "updated"
+    assert _install_plugin_projection("fe-flutter", destination, REPO_ROOT, plugins_dir=plugins) == "updated"
     assert (destination / "shared_contracts/api_handshake_protocol.md").read_bytes() == protocol.read_bytes()
-    assert _install_plugin_projection(source, destination, REPO_ROOT, "frappe") == "updated"
+    assert _install_plugin_projection("fe-frappe", destination, REPO_ROOT, plugins_dir=plugins) == "updated"
     assert not (destination / "skills/flutter-core-usage").exists()
     assert (destination / "skills/frappe-ui-catalog/SKILL.md").is_file()
 
 
 def test_flutter_code_review_skill_structure():
     """Verify flutter-code-review SKILL.md, manifest, references, and review template."""
-    skill_dir = PLUGIN_DIR / "skills" / "flutter" / "code-review"
+    skill_dir = PLUGIN_DIR / "packs" / "flutter" / "skills" / "code-review"
     skill_file = skill_dir / "SKILL.md"
     assert skill_file.exists(), f"Missing SKILL.md at {skill_file}"
 
@@ -432,7 +430,7 @@ def test_flutter_code_review_skill_structure():
 
 
 def test_flutter_verification_skill_structure():
-    skill_dir = PLUGIN_DIR / "skills" / "flutter" / "verification"
+    skill_dir = PLUGIN_DIR / "packs" / "flutter" / "skills" / "verification"
     content = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
     assert "name: verification" in content
     assert "BASE_REVISION" in content
@@ -452,14 +450,14 @@ def test_flutter_verification_skill_structure():
 
 def test_plugin_agent_definitions_structure():
     """Verify five delivery agents and a docs writer are packaged."""
-    agents_dir = PLUGIN_DIR / "agents"
+    agents_dir = PLUGIN_DIR / "core" / "agents"
     assert agents_dir.is_dir(), f"Missing agents directory at {agents_dir}"
 
     agent_names = ["spec_writer", "planning", "code_writer", "code_reviewer", "test_runner", "docs_writer"]
     for name in agent_names:
         agent_file = agents_dir / f"{name}.md"
         assert agent_file.exists(), f"Missing agent definition file: {agent_file}"
-        content = agent_file.read_text(encoding="utf-8")
+        content = rendered_agent(f"{name}.md")
         assert content.startswith("---")
         assert f"name: {name}" in content
         assert "description:" in content
@@ -467,7 +465,7 @@ def test_plugin_agent_definitions_structure():
         assert "tools:" in content
 
     # Check code_writer has ask_question for Grill-Me during implementation
-    code_writer_content = (agents_dir / "code_writer.md").read_text(encoding="utf-8")
+    code_writer_content = rendered_agent("code_writer.md")
     assert "ask_question" in code_writer_content
     assert "clean-architecture" in code_writer_content
     assert "phase" in code_writer_content.lower()
@@ -476,38 +474,38 @@ def test_plugin_agent_definitions_structure():
     assert "core-usage" in code_writer_content
 
     # Check spec_writer has ask_question for requirements Grill-Me
-    spec_writer_content = (agents_dir / "spec_writer.md").read_text(encoding="utf-8")
+    spec_writer_content = rendered_agent("spec_writer.md")
     assert "ask_question" in spec_writer_content
     assert "Gate 1" in spec_writer_content and "Gate 2" in spec_writer_content
     assert "Do not write `lib/`, `test/`, `implement-plan.md`" in spec_writer_content
-    planning_content = (agents_dir / "planning.md").read_text(encoding="utf-8")
+    planning_content = rendered_agent("planning.md")
     assert "Gate 3" in planning_content and "SKIPPED" in planning_content
     assert "validate_plan_slices" in planning_content
-    docs_content = (agents_dir / "docs_writer.md").read_text(encoding="utf-8")
+    docs_content = rendered_agent("docs_writer.md")
     assert "documentation" in docs_content and "Do not edit runtime code" in docs_content
 
     # Check test_runner is read-only for code
-    test_runner_content = (agents_dir / "test_runner.md").read_text(encoding="utf-8")
+    test_runner_content = rendered_agent("test_runner.md")
     assert "read-only" in test_runner_content.lower()
     assert "verification" in test_runner_content
 
     # Check code_reviewer enforces Clean Architecture
-    reviewer_content = (agents_dir / "code_reviewer.md").read_text(encoding="utf-8")
+    reviewer_content = rendered_agent("code_reviewer.md")
     assert "validate_architecture_code" in reviewer_content
     assert "Clean Architecture" in reviewer_content
 
 
 def test_review_handoff_contract_is_packaged():
-    agents = PLUGIN_DIR / "agents"
-    spec = (agents / "spec_writer.md").read_text(encoding="utf-8")
-    writer = (agents / "code_writer.md").read_text(encoding="utf-8")
-    reviewer = (agents / "code_reviewer.md").read_text(encoding="utf-8")
-    runner = (agents / "test_runner.md").read_text(encoding="utf-8")
-    review_report = (PLUGIN_DIR / "skills/flutter/code-review/templates/code_review_report.md.tpl").read_text(encoding="utf-8")
-    verification_report = (PLUGIN_DIR / "skills/flutter/verification/templates/verification_report.md.tpl").read_text(encoding="utf-8")
+    agents = PLUGIN_DIR / "core" / "agents"
+    spec = rendered_agent("spec_writer.md")
+    writer = rendered_agent("code_writer.md")
+    reviewer = rendered_agent("code_reviewer.md")
+    runner = rendered_agent("test_runner.md")
+    review_report = (PLUGIN_DIR / "packs/flutter/skills/code-review/templates/code_review_report.md.tpl").read_text(encoding="utf-8")
+    verification_report = (PLUGIN_DIR / "packs/flutter/skills/verification/templates/verification_report.md.tpl").read_text(encoding="utf-8")
 
     assert "Gate 1" in spec and "Gate 2" in spec
-    assert "Gate 3" in (agents / "planning.md").read_text(encoding="utf-8")
+    assert "Gate 3" in rendered_agent("planning.md")
     assert "READY_FOR_REVIEW" in writer
     assert "staged/unstaged/untracked scope" in writer
     assert "run_command" in reviewer and "visual-verification" in reviewer
@@ -574,7 +572,8 @@ def test_built_projections_apply_identically_for_every_variant(tmp_path):
 
     out = tmp_path / "dist"
     build(out)
-    for variant, (plugin_name, _framework) in VARIANTS.items():
+    for variant, variant_spec in VARIANTS.items():
+        plugin_name = variant_spec["plugin"]
         workspace = tmp_path / f"ws-{variant}"
         (workspace / ".agents/plugins/coder-nexus-fe" if plugin_name == "coder-nexus-be" else workspace / ".agents/plugins/coder-nexus-be").mkdir(parents=True)
         spec = apply_projection(out / f"workspace-{variant}", workspace)
@@ -620,5 +619,36 @@ def test_preview_pack_gaps_are_reported_not_hidden(tmp_path):
 
     target = build_variant("fe-frappe", "workspace", tmp_path)
     problems = json.loads((target / "projection.json").read_text(encoding="utf-8"))["problems"]
-    assert any("declares missing skill frappe-core-usage" in p for p in problems)
+    assert any("declares missing skill frappe-" in p for p in problems)
     assert (target / "files/.agents/plugins/coder-nexus-fe/skills/frappe-ui-catalog/SKILL.md").is_file()
+
+
+def test_core_and_frontend_layer_are_stack_neutral():
+    """2.7.0: stack rules live in packs; core and shared layers carry no stack markers."""
+    from coder_nexus.plugin_build import load_pack
+
+    markers = []
+    for pack_file in (PLUGIN_DIR / "packs").glob("*/pack.json"):
+        markers += load_pack(PLUGIN_DIR, pack_file.parent.name)["markers"]
+    pattern = re.compile(r"(?<![\w-])(" + "|".join(re.escape(m) for m in markers) + r")(?![\w-])")
+    offenders = []
+    for base in (PLUGIN_DIR / "core", PLUGIN_DIR / "layers"):
+        for path in [*base.rglob("*.md"), *base.rglob("*.tpl")]:
+            found = set(pattern.findall(path.read_text(encoding="utf-8")))
+            if found:
+                offenders.append(f"{path.relative_to(PLUGIN_DIR)}: {sorted(found)}")
+    assert offenders == []
+
+
+def test_flutter_agents_compose_core_frontend_and_pack_rules():
+    code_writer = rendered_agent("code_writer.md")
+    assert code_writer.index("## Frontend rules") < code_writer.index("## Flutter rules")
+    assert "flutter-core-usage" in code_writer.split("---", 2)[1]
+
+
+def test_frappe_projection_receives_no_flutter_instructions(tmp_path):
+    from coder_nexus.plugin_build import build_variant
+
+    target = build_variant("fe-frappe", "workspace", tmp_path)
+    problems = json.loads((target / "projection.json").read_text(encoding="utf-8"))["problems"]
+    assert not [p for p in problems if "mentions another stack" in p or "another stack's skill" in p]

@@ -3,24 +3,28 @@
 import json
 from pathlib import Path
 
+from .rendered import rendered_agent
+
 
 ROOT = Path(__file__).resolve().parent.parent
-PLUGIN = ROOT / "plugins" / "coder-nexus-fe"
-SKILLS = PLUGIN / "skills"
-PLANNER = SKILLS / "shared" / "feature-planner"
+PLUGIN = ROOT / "plugins"
+SKILLS = PLUGIN / "core" / "skills"
+PLANNER = SKILLS / "feature-planner"
 FEATURE_PATH = "docs/features/<module>/<feature>/vN/"
 
 
 def read(relative: str) -> str:
+    if relative.startswith("core/agents/"):
+        return rendered_agent(relative.removeprefix("core/agents/"))
     return (PLUGIN / relative).read_text(encoding="utf-8")
 
 
 def test_three_gates_and_versioned_handoff():
-    router = read("skills/shared/feature-planner/SKILL.md")
-    spec = read("agents/spec_writer.md")
-    brainstorm = read("skills/shared/brainstorming/SKILL.md")
-    planning = read("skills/shared/planning-and-task-breakdown/SKILL.md")
-    rubric = read("skills/shared/feature-planner/references/02_interview_rubric_and_gates.md")
+    router = read("core/skills/feature-planner/SKILL.md")
+    spec = read("core/agents/spec_writer.md")
+    brainstorm = read("core/skills/brainstorming/SKILL.md")
+    planning = read("core/skills/planning-and-task-breakdown/SKILL.md")
+    rubric = read("core/skills/feature-planner/references/02_interview_rubric_and_gates.md")
     for content in (router, brainstorm, planning, rubric):
         assert FEATURE_PATH in content
         assert "Gate 1" in content
@@ -36,21 +40,21 @@ def test_three_gates_and_versioned_handoff():
     for stage in ("1A", "1B", "1C", "Mockoon", "grill-me", "codebase-notes.md"):
         assert stage in spec
         assert stage in brainstorm
-        assert stage in read("skills/shared/dev-team/SKILL.md")
-        assert stage in read("skills/shared/work-items/SKILL.md")
-    planning_agent = read("agents/planning.md")
-    coder_agent = read("agents/code_writer.md")
-    arch_design = read("skills/flutter/architecture-design/SKILL.md")
-    incremental = read("skills/shared/incremental-implementation/SKILL.md")
-    phase_rules = read("skills/shared/planning-and-task-breakdown/references/01_phase_slicing_rules.md")
-    phase_tpl = read("skills/shared/feature-planner/templates/phase.md.tpl")
-    work_phase_tpl = read("skills/shared/work-items/templates/phase.md.tpl")
+        assert stage in read("core/skills/dev-team/SKILL.md")
+        assert stage in read("core/skills/work-items/SKILL.md")
+    planning_agent = read("core/agents/planning.md")
+    coder_agent = read("core/agents/code_writer.md")
+    arch_design = read("packs/flutter/skills/architecture-design/SKILL.md")
+    incremental = read("core/skills/incremental-implementation/SKILL.md")
+    phase_rules = read("core/skills/planning-and-task-breakdown/references/01_phase_slicing_rules.md")
+    phase_tpl = read("core/skills/feature-planner/templates/phase.md.tpl")
+    work_phase_tpl = read("core/skills/work-items/templates/phase.md.tpl")
     assert "Pre-Design Counter-Review" in planning_agent
     assert "Pre-Design Counter-Review" in arch_design
-    reviewer_agent = read("agents/code_reviewer.md")
-    runner_agent = read("agents/test_runner.md")
-    api_mocking_ref = read("skills/flutter/architecture-design/references/05_api_mocking_strategy.md")
-    arch_design_tpl = read("skills/flutter/architecture-design/templates/design.md.tpl")
+    reviewer_agent = read("core/agents/code_reviewer.md")
+    runner_agent = read("core/agents/test_runner.md")
+    api_mocking_ref = read("packs/flutter/skills/architecture-design/references/05_api_mocking_strategy.md")
+    arch_design_tpl = read("packs/flutter/skills/architecture-design/templates/design.md.tpl")
     for target in (planning_agent, coder_agent, reviewer_agent, api_mocking_ref, arch_design_tpl):
         assert "Mockoon Trigger & Test Data Table" in target
     for target in (planning_agent, planning, phase_rules, coder_agent, reviewer_agent, runner_agent):
@@ -102,30 +106,30 @@ def test_templates_cover_version_impact_ac_and_real_evidence():
 
 def test_downstream_agents_read_same_version_and_write_actual_evidence():
     for relative in (
-        "agents/code_writer.md",
-        "agents/test_runner.md",
-        "agents/code_reviewer.md",
-        "skills/shared/incremental-implementation/SKILL.md",
-        "skills/flutter/code-review/SKILL.md",
-        "skills/flutter/verification/SKILL.md",
+        "core/agents/code_writer.md",
+        "core/agents/test_runner.md",
+        "core/agents/code_reviewer.md",
+        "core/skills/incremental-implementation/SKILL.md",
+        "packs/flutter/skills/code-review/SKILL.md",
+        "packs/flutter/skills/verification/SKILL.md",
     ):
         content = read(relative)
         assert "vN/" in content or "version" in content.lower()
         assert "phase" in content.lower()
         assert "as-built.md" in content or "revision" in content.lower()
-    runner = read("agents/test_runner.md")
+    runner = read("core/agents/test_runner.md")
     assert "read-only" in runner.lower()
     assert "NOT_RUN" in runner and "BLOCKED" in runner
-    reviewer = read("agents/code_reviewer.md")
+    reviewer = read("core/agents/code_reviewer.md")
     assert "validate_architecture_code" in reviewer
 
 
 def test_pre_release_visual_cases_keep_real_data_and_reviewed_goldens():
-    runner = read("agents/test_runner.md")
-    verification = read("skills/flutter/verification/SKILL.md")
-    visual = read("skills/flutter/visual-verification/SKILL.md")
-    report = read("skills/flutter/verification/templates/verification_report.md.tpl")
-    phase = read("skills/shared/feature-planner/templates/phase.md.tpl")
+    runner = read("core/agents/test_runner.md")
+    verification = read("packs/flutter/skills/verification/SKILL.md")
+    visual = read("packs/flutter/skills/visual-verification/SKILL.md")
+    report = read("packs/flutter/skills/verification/templates/verification_report.md.tpl")
+    phase = read("core/skills/feature-planner/templates/phase.md.tpl")
     assert "Code Review report" in runner
     assert "test-case matrix" in runner
     assert "Remain read-only toward `lib/` and `test/`" in runner
@@ -139,9 +143,9 @@ def test_pre_release_visual_cases_keep_real_data_and_reviewed_goldens():
 
 
 def test_visual_intake_and_reuse_stay_bound_to_real_sources():
-    router = read("skills/shared/feature-planner/SKILL.md")
-    brainstorm = read("skills/shared/brainstorming/SKILL.md")
-    matrix = read("skills/shared/feature-planner/references/03_ui_ux_intake_and_discovery_matrix.md")
+    router = read("core/skills/feature-planner/SKILL.md")
+    brainstorm = read("core/skills/brainstorming/SKILL.md")
+    matrix = read("core/skills/feature-planner/references/03_ui_ux_intake_and_discovery_matrix.md")
     for content in (router, brainstorm, matrix):
         assert "Visual Intake Gate" in content
         assert "VISUAL_INPUT_MISSING" in content
@@ -156,7 +160,7 @@ def test_public_workflow_skills_are_portable():
         "planning-and-task-breakdown",
         "incremental-implementation",
     ):
-        content = (SKILLS / "shared" / name / "SKILL.md").read_text(encoding="utf-8")
+        content = (SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
         assert content.startswith("---\n")
         assert f"name: {name}" in content
         assert "file:///Users/" not in content
