@@ -2,6 +2,10 @@
 
 Guide for Phase Order and task breakdown in `implement-plan.md`.
 
+## 0. Huly sub-issues are not phases
+
+When the spec comes from a Huly parent issue, its sub-issues are planning **input**. They are often split by role (API, UI, design) or by whoever filed them, which produces horizontal phases if copied 1:1. Re-cut them with the rules below. Keep traceability in `implement-plan.md` as `| Huly ID | AC-NN | Phase |`: every in-scope child appears in at least one phase, and closed children are listed as out of scope.
+
 ## 1. A phase is a thin vertical slice
 
 A phase delivers one behavior a user (or a test) can observe end to end. It cuts through every layer the behavior needs, and only as much of each layer as that behavior needs.

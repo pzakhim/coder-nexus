@@ -162,6 +162,31 @@ CODEBASE_NOTES_SECTIONS = [
 
 D_ID_RE = re.compile(r"\bD-\d+\b", re.IGNORECASE)
 Q_ID_RE = re.compile(r"\bQ-\d+\b", re.IGNORECASE)
+G_ID_RE = re.compile(r"\bG-\d+\b", re.IGNORECASE)
+MAX_GOALS = 3
+
+
+def _table_rows(body: str, id_pattern: str) -> dict[str, list[str]]:
+    """Rows of a Markdown table whose first cell is an ID like G-01 / AC-01 / BR-01."""
+    rows: dict[str, list[str]] = {}
+    for line in body.splitlines():
+        m = re.match(rf"^\|\s*(?:\*\*|`)?({id_pattern})(?:\*\*|`)?\s*\|", line.strip(), re.IGNORECASE)
+        if m:
+            rows[m.group(1).upper()] = [c.strip().strip("*`").strip() for c in line.strip().strip("|").split("|")]
+    return rows
+
+
+def goal_rows(requirements: str) -> dict[str, list[str]]:
+    """`## 0. Goals` rows: | G-NN | Goal (outcome) | Success signal | Source | Status |."""
+    body = _section_body(_strip_html_comments(requirements), "Goals") or _section_body(_strip_html_comments(requirements), "Mục Tiêu")
+    return _table_rows(body, r"G-\d+")
+
+
+def ac_goal_map(requirements: str) -> dict[str, set[str]]:
+    """AC-NN -> goals cited in its row (Goal column)."""
+    cleaned = _strip_html_comments(requirements)
+    body = _section_body(cleaned, "Acceptance criteria") or _section_body(cleaned, "Tiêu Chí Nghiệm Thu")
+    return {ac: {g.upper() for g in G_ID_RE.findall(" | ".join(cells[1:]))} for ac, cells in _table_rows(body, r"AC-\d+").items()}
 
 
 def _strip_html_comments(text: str) -> str:
@@ -540,6 +565,8 @@ class SpecValidator:
                         )
                     )
 
+            self._check_goals(cleaned, violations)
+
             cited_decisions = {m.upper() for m in D_ID_RE.findall(cleaned)}
             notes_ref = _document_field(cleaned, "Codebase Notes") or _document_field(cleaned, "Context")
             if proposal_path:
@@ -611,8 +638,68 @@ class SpecValidator:
             "errors_count": sum(item.severity == "ERROR" for item in violations),
             "warnings_count": sum(item.severity == "WARNING" for item in violations),
             "violations": [item.to_dict() for item in violations],
-            "checked_rules": ["REQ-001", "REQ-002", "REQ-003", "REQ-004", "NOTES-001", "IMPACT-001", "IMPACT-002", "IMPACT-003"],
+            "checked_rules": ["REQ-001", "REQ-002", "REQ-003", "REQ-004", "REQ-005", "NOTES-001", "IMPACT-001", "IMPACT-002", "IMPACT-003"],
         }
+
+    @staticmethod
+    def _check_goals(cleaned: str, violations: list[SpecViolation]) -> None:
+        """Goals are confirmed outcomes; every BR and AC must serve one, every goal needs an AC."""
+        goals = goal_rows(cleaned)
+        if not goals:
+            violations.append(SpecViolation(
+                "REQ-005-NO-GOALS", "ERROR", None,
+                "requirements.md has no confirmed goals in '## 0. Goals' (| G-NN | Goal | Success signal | Source | Status |).",
+                "Draft 1-3 outcome goals from the sources, confirm them with the user via ask_question, record D-NN.",
+            ))
+            return
+        if len(goals) > MAX_GOALS:
+            violations.append(SpecViolation(
+                "REQ-005-TOO-MANY-GOALS", "WARNING", None,
+                f"{len(goals)} goals; more than {MAX_GOALS} usually means the batch is several features.",
+                "Ask the user to pick the goals for this vN and move the rest to Non-goals or a later version.",
+            ))
+        confirmed: set[str] = set()
+        for gid, cells in goals.items():
+            if (
+                len(cells) < 5
+                or not all(_has_content(c) for c in cells[:5])
+                or cells[4].upper() != "CONFIRMED"
+                or not D_ID_RE.search(cells[3])
+            ):
+                violations.append(SpecViolation(
+                    "REQ-005-GOAL-ROW", "ERROR", None,
+                    f"{gid} needs a goal, an observable success signal, a source citing the user-confirmed D-NN, and Status CONFIRMED.",
+                    "Confirm the goal with the user (ask_question) and cite the resulting D-NN.",
+                ))
+            else:
+                confirmed.add(gid)
+
+        acs = ac_goal_map(cleaned)
+        for ac_id, cited in acs.items():
+            if not cited:
+                violations.append(SpecViolation(
+                    "REQ-005-AC-GOAL", "ERROR", None, f"{ac_id} serves no goal.",
+                    "Add the G-NN it serves in the Goal column, or move the behavior to Scope out / Non-goals.",
+                ))
+            elif cited - goals.keys():
+                violations.append(SpecViolation(
+                    "REQ-005-AC-GOAL", "ERROR", None, f"{ac_id} cites unknown goal(s) {sorted(cited - goals.keys())}.",
+                    "Cite only goals listed in '## 0. Goals'.",
+                ))
+        served = set().union(*acs.values()) if acs else set()
+        for gid in sorted(confirmed - served):
+            violations.append(SpecViolation(
+                "REQ-005-GOAL-UNCOVERED", "ERROR", None, f"{gid} has no acceptance criterion.",
+                "Add at least one observable AC for the goal, or ask the user to drop it.",
+            ))
+
+        br_body = _section_body(cleaned, "Business Rules") or _section_body(cleaned, "Luật Nghiệp Vụ")
+        for br_id, cells in _table_rows(br_body, r"BR-\d+").items():
+            if not G_ID_RE.search(" | ".join(cells[1:])):
+                violations.append(SpecViolation(
+                    "REQ-005-BR-GOAL", "ERROR", None, f"{br_id} serves no goal.",
+                    "Add the G-NN it serves, or remove the rule as out of scope.",
+                ))
 
     def _validate_feature_design(self, content: str, proposal_path: str, feature_name: str) -> dict[str, Any]:
         violations: list[SpecViolation] = []
@@ -697,6 +784,21 @@ class SpecValidator:
             design_dir = Path(proposal_path).resolve().parent
             if not (design_dir / "requirements.md").is_file():
                 violations.append(SpecViolation("DESIGN-003-REQUIREMENTS", "ERROR", None, "Sibling requirements.md is missing.", "Complete Gate 1 in the same version directory."))
+            else:
+                goals = set(goal_rows((design_dir / "requirements.md").read_text(encoding="utf-8")))
+                alignment = _section_body(cleaned, "Goal alignment") or _section_body(cleaned, "Bám Mục Tiêu")
+                if goals and not _has_content(alignment):
+                    violations.append(SpecViolation(
+                        "DESIGN-007-GOALS", "ERROR", None, "design.md has no '## Goal alignment' section.",
+                        "Show how the design delivers each confirmed G-NN; drop or justify elements that serve none.",
+                    ))
+                elif goals:
+                    missing = sorted(goals - {g.upper() for g in G_ID_RE.findall(alignment)})
+                    if missing:
+                        violations.append(SpecViolation(
+                            "DESIGN-007-GOALS", "ERROR", None, f"Goal alignment does not cover {missing}.",
+                            "Name the design elements that deliver each goal.",
+                        ))
             notes_path = design_dir / "codebase-notes.md"
             if not notes_path.is_file() and (design_dir / "context.md").is_file():
                 notes_path = design_dir / "context.md"
@@ -719,7 +821,7 @@ class SpecValidator:
             "errors_count": sum(item.severity == "ERROR" for item in violations),
             "warnings_count": sum(item.severity == "WARNING" for item in violations),
             "violations": [item.to_dict() for item in violations],
-            "checked_rules": ["DESIGN-001", "DESIGN-002", "DESIGN-003", "DESIGN-004", "DESIGN-005", "DESIGN-006"],
+            "checked_rules": ["DESIGN-001", "DESIGN-002", "DESIGN-003", "DESIGN-004", "DESIGN-005", "DESIGN-006", "DESIGN-007"],
         }
 
     def _check_anti_self_approval(
@@ -1085,6 +1187,12 @@ class SpecValidator:
             phase_ac_ids[phase_id] = set(re.findall(r"AC-\d+", _bullet_field(phase, "AC IDs")))
             phase_dependencies[phase_id] = set(re.findall(r"PHASE-\d+", _bullet_field(phase, "Depends on")))
 
+        goals = set(goal_rows(req_text))
+        if goals:
+            ac_goals = ac_goal_map(req_text)
+            reached = {g for ac, phase_id in coverage.items() if phase_id in phase_ac_ids for g in ac_goals.get(ac, set())}
+            for gid in sorted(goals - reached):
+                issue("PLAN-V-010-GOAL-COVERAGE", f"{gid} is not delivered by any phase.", "Map the goal's ACs to phases, or ask the user to drop the goal at Gate 1.")
         for ac_id, phase_id in coverage.items():
             if ac_id not in phase_ac_ids.get(phase_id, set()):
                 issue("PLAN-V-006-AC-MISMATCH", f"{ac_id} is not owned by {phase_id}'s file.", "Keep plan coverage and phase AC IDs consistent.")

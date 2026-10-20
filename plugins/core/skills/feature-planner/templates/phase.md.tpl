@@ -13,6 +13,7 @@
 - **Readiness / Completion Tick**: {{ReadinessCheckboxPreparedOrCompleted}}
 - **Behavior**: {{ObservableBehavior}}
 - **AC IDs**: {{AcIds}}
+- **Goals**: {{GoalIdsServedByTheseAcs}}
 - **Depends on**: {{PhaseDependenciesOrNone}}
 - **READY when**: {{ReadinessAndBlockers}}
 - **Files**: {{CreateModifyReusePathsAndOwner}}

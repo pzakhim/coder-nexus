@@ -18,6 +18,7 @@
     "core/docs",
     "core/feature-planner",
     "core/grill-me",
+    "core/huly-setup",
     "core/huly-task-runner",
     "core/incremental-implementation",
     "core/planning-and-task-breakdown",
@@ -76,7 +77,9 @@
     "packs/flutter/skills/core-usage/references/03_profile_external_standard.md",
     "packs/backend/rules/backend_clean_architecture_rules.md",
     "packs/backend/skills/api-contracts/SKILL.md",
-    "packs/backend/skills/clean-architecture/SKILL.md"
+    "packs/backend/skills/clean-architecture/SKILL.md",
+    "core/skills/huly-task-runner/references/parent-and-sub-issues.md",
+    "core/skills/feature-planner/references/03_goal_framing.md"
   ],
   "resource_base": "plugins/"
 }

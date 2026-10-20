@@ -48,4 +48,4 @@ out/
 Thumbs.db
 *.log
 app_core/
-template/
+template/huly-debug-*.json

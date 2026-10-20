@@ -11,6 +11,16 @@
 > **Status**: PENDING_REVIEW
 > **Approval reference**: NONE
 
+## 0. Goals
+
+> Confirmed with the user before any other question ([goal framing](../references/03_goal_framing.md)). Every BR, AC, design element and phase serves one of these. Anything else is a non-goal.
+
+| Goal ID | Goal (outcome: actor + result) | Success signal (observable) | Source | Status |
+|---|---|---|---|---|
+| G-01 | {{OutcomeGoal}} | {{ObservableSuccessSignal}} | {{SourcesAndConfirmingDecision_D-NN}} | CONFIRMED |
+
+- **Non-goals**: {{NonGoalsWithReasonOrNone}}
+
 ## 1. Scope & Alignment
 
 - **Current baseline & problem**: {{ObservedBaselineAndDesiredResult}}
@@ -24,9 +34,9 @@
 
 ## 3. Business Rules
 
-| Rule ID | Business / UX Rule Description | Decision Ref |
-|---|---|---|
-| **BR-01** | {{ConciseBusinessOrUxRule}} | `D-01` |
+| Rule ID | Business / UX Rule Description | Goal | Decision Ref |
+|---|---|---|---|
+| **BR-01** | {{ConciseBusinessOrUxRule}} | G-01 | `D-01` |
 
 ## 4. Behavioral Scenarios & Visual States
 
@@ -48,8 +58,8 @@
 
 ## 5. Acceptance criteria
 
-| AC ID | Observable behavior | Source | Status |
-|---|---|---|---|
+| AC ID | Observable behavior | Source | Status | Goal |
+|---|---|---|---|---|
 {{AcceptanceCriteriaRows}}
 
 ## 6. Gate 1 approval

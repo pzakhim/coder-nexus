@@ -33,11 +33,13 @@ Never create fake `Mock<Feature>DataSource` classes in `lib/`.
 
 ## 3. AC coverage examples
 
-| AC ID | Phase ID | Decisive check | Evidence target |
-|---|---|---|---|
-| AC-01 | PHASE-01 | Unit test validates DTO parsing and mapper | `test/modules/<feature>/data/mapper_test.dart` |
-| AC-02 | PHASE-02 | Widget test validates EmptyStateView rendered on empty list | `test/modules/<feature>/presentation/empty_test.dart` |
-| AC-03 | PHASE-03 | Bloc test validates error message emitted on 400 failure | `test/modules/<feature>/presentation/cubit_test.dart` |
+| AC ID | Phase ID | Decisive check | Evidence target | Goal |
+|---|---|---|---|---|
+| AC-01 | PHASE-01 | Unit test validates DTO parsing and mapper | `test/modules/<feature>/data/mapper_test.dart` | G-NN |
+| AC-02 | PHASE-02 | Widget test validates EmptyStateView rendered on empty list | `test/modules/<feature>/presentation/empty_test.dart` | G-NN |
+| AC-03 | PHASE-03 | Bloc test validates error message emitted on 400 failure | `test/modules/<feature>/presentation/cubit_test.dart` | G-NN |
+
+Every confirmed goal from `requirements.md` → `## 0. Goals` must reach at least one phase through its ACs (validator `PLAN-V-010`).
 
 ## 4. Review Definition of Done (Flutter)
 

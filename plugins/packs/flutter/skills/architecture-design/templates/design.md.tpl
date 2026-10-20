@@ -25,6 +25,14 @@ architecture_profile:
 - **Selection rationale / existing approval**: {{ProfileEvidenceAndApprovalReference}}
 - Company setup/GUIDEs apply only to iMESPro. External profiles use Client mappings or standard Flutter; create only necessary layers.
 
+## Goal alignment
+
+| Goal | Design elements that deliver it | Decision |
+|---|---|---|
+| G-01 | {{ModulesScreensContractsThatDeliverTheGoal}} | `D-NN` |
+
+Every element in this design serves a goal from `requirements.md` → `## 0. Goals`. Elements that serve none are removed or recorded in `codebase-notes.md` with a reason.
+
 ## Architectural decision
 
 - **Confirmed architecture (`D-NN`)**: {{ConfirmedArchitecturalDecisionAndRationale}}

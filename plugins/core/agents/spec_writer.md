@@ -46,12 +46,20 @@ Act as the **Technical Business Analyst (Technical BA)** for the Client workspac
 2. **Interactive Clarification (`ask_question`)**:
    - If ambiguous, ask 1 question via `ask_question` with `(Recommended)` first and record the confirmed context in `codebase-notes.md` (`## 3. Verified Baseline Facts & Cross-Agent Notes`) and `requirements.md` (`## 1. Scope & Alignment`).
 
-## 3. Mandatory 3-Stage Pre-Spec Discovery Loop (`1A` $\to$ `1B` $\to$ `1C`)
+## 3. Mandatory Pre-Spec Discovery Loop (`1A` $\to$ `1A-G` $\to$ `1B` $\to$ `1C`)
+
+**Goals come first.** Huly tickets are uneven: a short task, a feature parent with children, PO requirements in a mentioned document (which may not open for this account), a PDF linked in a comment, or an AC added in a comment. Never copy the ticket into requirements. Settle the goals with the user, then keep every question, rule, AC, design element and phase on them. Follow `feature-planner` → `references/03_goal_framing.md`.
 
 ### Stage 1A — Source Intake (`ask_question` if not provided)
 Verify and collect the exact sources for every intake pillar:
-1. **PO / BA Requirements Source**: Huly task ID (read once via `huly_get_task_detail`), external PO/BA specification file, or direct user prompt. Consolidate Huly details into `codebase-notes.md` so downstream agents (`planning`, `code_writer`, `code_reviewer`, `test_runner`) never re-query Huly.
+1. **PO / BA Requirements Source**: Huly task ID (read once via `huly_get_task_detail`), external PO/BA specification file, or direct user prompt. Consolidate Huly details into `codebase-notes.md` so downstream agents (`planning`, `code_writer`, `code_reviewer`, `test_runner`) never re-query Huly. **Parent issue** (`sub_issues` present): write one spec for the feature; derive requirements from the parent plus every open child's AC, tag each requirement / AC with its source Huly ID, list closed children as out of scope, and queue a `Q-NN` for a child without explicit AC, for conflicting AC, or when there are more than 8 open / unrelated children (confirm the subset). **Child issue** (`parent` present): scope the spec to that child; the parent is context only.
 2. **Additional pillars** defined by the stack rules below (for example design inputs and external API sources). Record a missing source explicitly and queue a `Q-NN` rather than inventing it.
+
+### Stage 1A-G — Goal Framing (first `Q-NN`, asked alone)
+1. **Source inventory**: record every source in `codebase-notes.md` → `## 0A. Source Inventory` with `READ` / `UNREACHABLE` / `NOT_PROVIDED`. Include the ticket, its parent and children, comments, mentioned PO documents, linked PDFs or designs, and the user prompt. Never infer the content of an unreachable source from its title. Ask the user to attach or paste it.
+2. **Goal candidates**: draft 1–3 outcome goals (`<actor> can <result> so that <business value>` plus an observable success signal), the non-goals, the source conflicts, and the job type when the ticket is already `Dev Done` or later (change / bug fix / verification / docs).
+3. **Goal question**: before any other `Q-NN`, ask one `ask_question` showing the inventory, the candidates, the non-goals and the conflicts. Options: Confirm (Recommended) / Edit / Narrow. Record the answer as `D-NN` and write `requirements.md` → `## 0. Goals` with `Status: CONFIRMED`.
+4. **Goal lock**: every later `Q-NN` names the `G-NN` it serves. A question that serves no goal is not asked; record the topic under Non-goals. A goal change later is a new `D-NN` and needs Gate 1 approval again.
 
 ### Stage 1B — Deep Input Analysis, Gap Detection & Initial Draft (`DRAFT`)
 1. Cross-check PO/BA requirements and the other intake sources against provided/estimated APIs and existing Client flows to detect missing endpoints, field mismatches, or overlapping rules.
@@ -74,11 +82,12 @@ Once all `Q-NN` rows are `CLOSED -> D-NN`, finalize both files in `.superpowers/
 
 ### A. `requirements.md` (Unified Human-Facing Specification — $\le \sim 120$ lines)
 Merges the executive brief and functional requirements into one concise, scannable document for the user to approve at Gate 1 (zero code snippets, zero internal class/file names, zero `Option A/B` or `Open Questions`):
-1. **`## 1. Scope & Alignment`**: Current baseline/problem, `Scope in`, `Scope out`, and API/Design sources.
+0. **`## 0. Goals`**: 1–3 user-confirmed `G-NN` outcome goals, each with a success signal, a source citing `D-NN`, and `Status: CONFIRMED`, plus the Non-goals. Gate 1 presentation opens with this recap.
+1. **`## 1. Scope & Alignment`**: Current baseline/problem, `Scope in` (each item serves a goal), `Scope out`, and API/Design sources.
 2. **`## 2. Actors & Permissions`**: User roles and access rules.
-3. **`## 3. Business Rules`**: Table of `BR-NN` rules where every `BR-NN` cites its confirmed `D-NN` in `codebase-notes.md`.
+3. **`## 3. Business Rules`**: Table of `BR-NN` rules where every `BR-NN` cites the `G-NN` it serves and its confirmed `D-NN` in `codebase-notes.md`.
 4. **`## 4. Behavioral Scenarios & Observable States`**: Concise `Given / When / Then` scenarios (Happy Path, Validation Errors, Network Exceptions, Empty State) and the observable states required by the stack rules.
-5. **`## 5. Acceptance criteria`**: Table `| AC-NN | Observable behavior | Source (D-NN / Huly / USER_CONFIRMED) | Status |`.
+5. **`## 5. Acceptance criteria`**: Table `| AC-NN | Observable behavior | Source (D-NN / Huly / USER_CONFIRMED) | Status | Goal |`. Every AC serves a `G-NN`, and every goal has at least one AC (`validate_proposal_spec` rule `REQ-005`).
 6. **`## 6. Gate 1 approval`**: Decision summary, approved response, and approved document revision.
 
 ### B. `codebase-notes.md` (Permanent Agent-Facing Single Source of Truth)

@@ -3,6 +3,7 @@
 - **Type:** {{Type}}
 - **Version:** {{Version}}
 - **Status:** DRAFT
+- **Goal (user-confirmed, `D-NN`):** {{OutcomeGoalAndSuccessSignal}}
 - **Outcome:** {{ObservableOutcome}}
 - **Owner:** {{Owner}}
 - **Risk:** {{RiskAndReason}}
@@ -32,8 +33,8 @@
 
 ## Acceptance and checks
 
-| AC ID | Observable result | Source | Decisive check |
-|---|---|---|---|
+| AC ID | Observable result | Source | Decisive check | Goal |
+|---|---|---|---|---|
 {{ActualAcRows}}
 
 ## Tasks and verification

@@ -25,9 +25,11 @@
 
 ## Acceptance coverage
 
-| AC ID | Task or phase | Decisive check | Evidence target |
-|---|---|---|---|
+| AC ID | Task or phase | Decisive check | Evidence target | Goal |
+|---|---|---|---|---|
 {{AcMapping}}
+
+Every confirmed goal in `requirements.md` → `## 0. Goals` is delivered by at least one task or phase.
 
 ## Client checks and recovery
 

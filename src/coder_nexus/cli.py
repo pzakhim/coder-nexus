@@ -12,9 +12,13 @@ from .setup.huly import cmd_login, cmd_my_tasks, cmd_setup_huly, cmd_status, cmd
 
 
 def _add_huly_login_args(parser: argparse.ArgumentParser, path_flag: str) -> None:
-    parser.add_argument("--url", default="https://huly.app", help="Huly instance URL (default: https://huly.app)")
+    parser.add_argument("--url", default=None, help="Huly instance URL (asked if missing; suggested: https://huly.app)")
     parser.add_argument("--email", help="Huly user email or username")
-    parser.add_argument("--password", help="Huly user password")
+    pw = parser.add_mutually_exclusive_group()
+    pw.add_argument("--password", help="Huly user password (prefer --password-stdin: argv is visible in ps/history)")
+    pw.add_argument("--password-stdin", action="store_true", help="Read the password from the first line of stdin (non-interactive)")
+    parser.add_argument("--reset", action="store_true", help="Ignore saved .env values and ask for URL and account again")
+    parser.add_argument("--json", action="store_true", help="Print one JSON result on stdout (for agents); progress goes to stderr")
     parser.add_argument(path_flag, dest="workspace_path", help="Path to client project workspace containing .env")
 
 
@@ -42,8 +46,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Architecture profile (imespro, external-structured, external-standard)",
     )
 
-    p_huly = setup_sub.add_parser("huly", help="Log in to Huly and save credentials to the project .env")
-    p_huly.add_argument("--check", action="store_true", help="Read-only status; exit 0 only when authenticated")
+    p_huly = setup_sub.add_parser("huly", help="Guided Huly setup: check .env, ping URL, log in, save to the project .env (dev only)")
+    p_huly.add_argument("--check", action="store_true", help="Read-only: exit 0 only when URL, email, password, session and workspace ID are all in .env")
     _add_huly_login_args(p_huly, "--project")
 
     # doctor
@@ -63,9 +67,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     # task-detail
     p_detail = subparsers.add_parser("task-detail", help="Get full details and acceptance criteria for a task")
-    p_detail.add_argument("task_id", help="Task ID (e.g. AUTH-101)")
+    p_detail.add_argument("task_id", help="Issue ID (AUTH-101), unique number, Huly _id, or a Huly issue link")
     p_detail.add_argument("--workspace-path", help="Path to client project workspace containing .env")
     p_detail.add_argument("--json", action="store_true", help="Output in raw JSON format")
+    p_detail.add_argument("--download", action="store_true", help="Save files/images/attachments/readable docs to .superpowers/sources/<ID>/")
+
+    # huly-debug (read-only diagnostics)
+    p_dbg = subparsers.add_parser("huly-debug", help="Read-only: dump raw Huly responses for one issue to a JSON file (no tokens)")
+    p_dbg.add_argument("task_id", help="Issue ID or Huly issue link")
+    p_dbg.add_argument("--workspace-path", help="Path to client project workspace containing .env")
+    p_dbg.add_argument("--out", help="Output file (default: ./huly-debug-<ID>.json)")
 
     # serve
     subparsers.add_parser("serve", help="Start the AIFactory MCP Server listening on stdio")
@@ -136,6 +147,17 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return run_setup(Path(args.project).resolve(), check_only=True)
 
 
+def cmd_huly_debug(args: argparse.Namespace) -> int:
+    from .huly.debug import write_debug
+    try:
+        path = write_debug(args.task_id, args.workspace_path, args.out)
+    except Exception as exc:  # noqa: BLE001
+        print(f"❌ huly-debug failed: {exc}", file=sys.stderr)
+        return 1
+    print(f"✅ Wrote {path} (no tokens or passwords inside). Share this file to align the client with your server.")
+    return 0
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
     """Handle `coder_nexus serve` command to start MCP server over stdio."""
     from .server import run_server
@@ -145,6 +167,9 @@ def cmd_serve(args: argparse.Namespace) -> int:
 
 def main() -> int:
     """Entry point for CLI execution."""
+    import logging
+    for noisy in ("httpx", "httpcore"):  # per-request INFO lines drown the CLI output
+        logging.getLogger(noisy).setLevel(logging.WARNING)
     parser = build_parser()
     args = parser.parse_args()
 
@@ -160,6 +185,7 @@ def main() -> int:
         "my-tasks": cmd_my_tasks,
         "task-detail": cmd_task_detail,
         "serve": cmd_serve,
+        "huly-debug": cmd_huly_debug,
         "install-plugin": cmd_install_plugin,
     }
 

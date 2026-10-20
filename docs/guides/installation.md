@@ -92,6 +92,6 @@ Every slot registered in `plugins/core/slots.json` resolves to an installed skil
 - **iMESPro Flutter:** install the same bundle, then follow the [package setup and knowledge guide](flutter.md).
 - **Backend:** install the BE bundle in its own workspace. Both installers project the canonical handshake guide into each selected plugin at `shared_contracts/api_handshake_protocol.md`. Share actual project API contract artifacts and their revisions explicitly between workspaces.
 
-Huly is optional. If used, keep authentication in the target Client's untracked `.env`, not in the Hub checkout or plugin files. A user-supplied request can provide requirements without Huly.
+Huly is optional. If used, run `coder-nexus setup huly` in the target Client (or ask the agent to use the `huly-setup` skill). Authentication stays in that Client's untracked, development-only `.env`, never in the Hub checkout or plugin files. A user-supplied request can provide requirements without Huly.
 
 See [README](../../README.md) for current support and verification limits.

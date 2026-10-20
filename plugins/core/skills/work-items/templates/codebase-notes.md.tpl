@@ -23,6 +23,16 @@
 
 ---
 
+## 0A. Source Inventory
+
+> Every source read or missing for this work item ([goal framing](../../feature-planner/references/03_goal_framing.md)). Never infer the content of an `UNREACHABLE` / `NOT_PROVIDED` source from its title.
+
+| Source | Kind | Read status (`READ` \| `UNREACHABLE` \| `NOT_PROVIDED`) | What it contributes / conflicts |
+|---|---|---|---|
+| {{HulyIdOrDocOrFile}} | {{Kind}} | {{ReadStatus}} | {{ContributionOrConflict}} |
+
+---
+
 ## 1. Decision Log (D-NN)
 
 > Single Source of Truth for every decision confirmed by the user during `grill-me` rounds (Gate 1 `spec_writer` and Gate 2 `planning`). Options considered and ruled out live here, never as `Option A / Option B` headings in `requirements.md` or `design.md`.

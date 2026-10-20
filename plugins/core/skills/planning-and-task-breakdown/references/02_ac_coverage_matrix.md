@@ -9,11 +9,13 @@ Every Acceptance Criteria (`AC-01`, `AC-02`, etc.) defined in `requirements.md` 
 ```markdown
 ## AC coverage
 
-| AC ID | Phase ID | Decisive check | Evidence target |
-|---|---|---|---|
-| AC-01 | PHASE-01 | Unit test validates DTO parsing and mapper | `<stack test path>/<feature>/data/mapper_test` |
-| AC-02 | PHASE-02 | Component test validates the empty state rendered on empty list | `<stack test path>/<feature>/presentation/empty_test` |
-| AC-03 | PHASE-03 | State test validates error message emitted on 400 failure | `<stack test path>/<feature>/presentation/state_test` |
+| AC ID | Phase ID | Decisive check | Evidence target | Goal |
+|---|---|---|---|---|
+| AC-01 | PHASE-01 | Unit test validates DTO parsing and mapper | `<stack test path>/<feature>/data/mapper_test` | G-NN |
+| AC-02 | PHASE-02 | Component test validates the empty state rendered on empty list | `<stack test path>/<feature>/presentation/empty_test` | G-NN |
+| AC-03 | PHASE-03 | State test validates error message emitted on 400 failure | `<stack test path>/<feature>/presentation/state_test` | G-NN |
+
+Every confirmed goal from `requirements.md` → `## 0. Goals` must reach at least one phase through its ACs (validator `PLAN-V-010`).
 ```
 
 Use the stack's test path convention from `{{slot:unit-test}}` (concrete examples in `{{slot:verification}}`).

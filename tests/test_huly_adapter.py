@@ -92,10 +92,12 @@ class TestHulyParsers:
         assert _format_status("") == "TODO"
 
     def test_format_priority(self):
-        assert _format_priority(0) == "LOW"
-        assert _format_priority(1) == "MEDIUM"
+        # Huly IssuePriority enum
+        assert _format_priority(0) == "NO_PRIORITY"
+        assert _format_priority(1) == "URGENT"
         assert _format_priority(2) == "HIGH"
-        assert _format_priority(3) == "URGENT"
+        assert _format_priority(3) == "MEDIUM"
+        assert _format_priority(4) == "LOW"
         assert _format_priority("2") == "HIGH"
 
     def test_extract_tiptap_text_and_checklists(self):
@@ -187,3 +189,43 @@ class TestCLIReadOnlyCommands:
             json=False,
         )
         assert cmd_task_detail(args) == 1
+
+
+class TestIssueReferenceAndCriteria:
+    """User-named issues: links, IDs, assignee names and explicit acceptance criteria."""
+
+    def test_parse_task_ref_variants(self):
+        from coder_nexus.huly.client import parse_task_ref
+        assert parse_task_ref("app-123") == "APP-123"
+        assert parse_task_ref(" APP-7 ") == "APP-7"
+        assert parse_task_ref("42") == "42"
+        assert parse_task_ref("https://huly.imespro.ai/workbench/imes/tracker/MOB-15") == "MOB-15"
+        assert parse_task_ref("https://huly.app/workbench/acme/tracker/APP-9?space=x#top") == "APP-9"
+        assert parse_task_ref("https://huly.app/workbench/acme/tracker/65f0c1d2e3a4b5c6d7e8f901") == "65f0c1d2e3a4b5c6d7e8f901"
+        with pytest.raises(ValueError):
+            parse_task_ref("https://huly.app/workbench/acme/tracker/")
+
+    def test_person_display_name(self):
+        from coder_nexus.huly.client import _person_display_name
+        assert _person_display_name({"name": "Pham,Khiem"}) == "Khiem Pham"
+        assert _person_display_name({"name": "Jane"}) == "Jane"
+        assert _person_display_name({}) is None
+
+    def test_ac_section_wins(self):
+        from coder_nexus.huly.client import extract_acceptance_criteria
+        desc = "Context line\n- not an AC\n\nAcceptance Criteria:\nGiven the list below\n- Shows error on 401\n- Retries on 500\n\nNotes:\n- ignore me"
+        assert extract_acceptance_criteria(desc) == (["Shows error on 401", "Retries on 500"], "ac_section")
+
+    def test_tiptap_checklist_is_recognized(self):
+        from coder_nexus.huly.client import extract_acceptance_criteria
+        desc = "\n".join(_extract_text_from_tiptap({"type": "doc", "content": [
+            {"type": "paragraph", "content": [{"type": "text", "text": "Overview"}]},
+            {"type": "taskItem", "attrs": {"checked": False}, "content": [{"type": "text", "text": "Handle 401"}]},
+        ]}))
+        assert extract_acceptance_criteria(desc) == (["Handle 401"], "checklist")
+
+    def test_prose_is_not_turned_into_criteria(self):
+        from coder_nexus.huly.client import extract_acceptance_criteria
+        assert extract_acceptance_criteria("Build the login screen.\nUse the design system.") == ([], "none")
+
+

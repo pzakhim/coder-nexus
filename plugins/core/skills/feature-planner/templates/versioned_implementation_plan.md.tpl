@@ -13,9 +13,11 @@
 
 ## AC coverage
 
-| AC ID | Phase ID | Verification evidence required |
-|---|---|---|
+| AC ID | Phase ID | Verification evidence required | Goal |
+|---|---|---|---|
 {{AcToPhaseRows}}
+
+Every confirmed goal in `requirements.md` → `## 0. Goals` is delivered by at least one phase (validator `PLAN-V-010`).
 
 ## Phase order (Starting with `PHASE-00` Prepare Phase)
 

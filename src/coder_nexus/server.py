@@ -4,6 +4,7 @@ Exposes Model Context Protocol (MCP) tools over stdio transport.
 Adheres strictly to Read-Only operations and Zero Mock Data.
 """
 
+from pathlib import Path
 import os
 from typing import Any, Optional
 from mcp.server.mcpserver import MCPServer
@@ -25,6 +26,9 @@ async def huly_get_my_tasks(workspace_path: str = "") -> dict[str, Any]:
     Zero Mock Data: Fails fast if credentials are not configured or network error occurs.
 
     Args:
+        include_sub_issues: Also return direct child issues (one level) with their own criteria.
+                            A parent issue is one feature: write one spec and use the children as
+                            planning input. A child issue: scope the spec to it; parent is context only.
         workspace_path: Path to the Flutter developer workspace containing .env file.
                        Defaults to current working directory if empty.
 
@@ -56,50 +60,84 @@ async def huly_get_my_tasks(workspace_path: str = "") -> dict[str, Any]:
             "error": str(exc),
             "hint": (
                 "Ensure your Flutter workspace has a valid .env file with HULY_WORKSPACE_URL, "
-                "HULY_EMAIL, and HULY_PASSWORD, or run 'coder-nexus login' in your workspace."
+                "HULY_EMAIL, and HULY_PASSWORD, or run 'coder-nexus setup huly' in your workspace."
             ),
         }
 
 
-@app.tool()
-async def huly_get_task_detail(task_id: str, workspace_path: str = "") -> dict[str, Any]:
-    """Fetch full details, rich-text description, acceptance criteria, and Figma URL of a specific Huly task.
+def default_sources_dir(workspace_path: Optional[str], task_id: str) -> Path:
+    """Where `download=True` saves ticket sources: <workspace>/.superpowers/sources/<ISSUE-ID>/."""
+    from .huly.client import parse_task_ref
+    base = Path(workspace_path).resolve() if workspace_path else Path.cwd()
+    return base / ".superpowers" / "sources" / parse_task_ref(task_id).replace("/", "_")
 
-    Strictly READ-ONLY: Never modifies tasks on Huly.
-    Zero Mock Data: Fails fast if task does not exist or credentials are not configured.
+
+SOURCES_GITIGNORE = "# Downloaded Huly sources (PDFs, images, PO docs): local only, never committed.\n*\n"
+
+
+def ensure_sources_ignored(sources_dir: Path) -> None:
+    """Keep `.superpowers/sources/` out of Git without touching the project's own .gitignore."""
+    root = sources_dir.parent
+    root.mkdir(parents=True, exist_ok=True)
+    marker = root / ".gitignore"
+    if not marker.exists():
+        marker.write_text(SOURCES_GITIGNORE, encoding="utf-8")
+
+
+@app.tool()
+async def huly_get_task_detail(
+    task_id: str,
+    workspace_path: str = "",
+    include_sub_issues: bool = True,
+    download: bool = False,
+) -> dict[str, Any]:
+    """Read the FULL context of one Huly issue the user names (READ-ONLY on Huly).
+
+    Returns: title, description text, status name + category, priority, assignee name, due date,
+    explicit acceptance criteria (with source), parent, direct sub-issues (status, assignee, AC),
+    comments (author, time, text) and `sources`: every PO document mention, image, attachment,
+    file link (e.g. a PDF linked in a comment) and external link the ticket points to, each with
+    a status: READ (document text included), DOWNLOADED (saved file path), AVAILABLE (call again
+    with download=true), UNREACHABLE (this account cannot open it: ask the user) or EXTERNAL.
 
     Args:
-        task_id: The identifier of the task (e.g., 'GAME-1', 'HULY-101', '1').
-        workspace_path: Path to the Flutter developer workspace containing .env file.
-                       Defaults to current working directory if empty.
-
-    Returns:
-        A dictionary containing full task details, acceptance criteria checklist, and any Figma link.
+        task_id: The issue the user named: an ID ('APP-123'), a number ('123', only if unique),
+                 a Huly _id, or a Huly issue link pasted from the browser.
+        workspace_path: Client workspace containing the .env with Huly credentials.
+        include_sub_issues: Also return direct child issues (one level) with their own criteria.
+                            A parent issue is one feature: write one spec and use the children as
+                            planning input. A child issue: scope the spec to it; parent is context only.
+        download: Save files, images, attachments and readable documents to
+                  <workspace>/.superpowers/sources/<ISSUE-ID>/ so they can be opened and read
+                  (PDF, images). Use it before writing requirements.
     """
     clean_task_id = task_id.strip()
     if not clean_task_id:
-        return {
-            "status": "error",
-            "error": "task_id is required.",
-        }
+        return {"status": "error", "error": "task_id is required."}
 
     path = workspace_path.strip() or None
     try:
         client = HulyClient.from_workspace(path)
-        detail = await client.get_task_detail(clean_task_id, path)
-        return {
-            "status": "success",
-            "task": {
-                "id": detail.id,
-                "title": detail.title,
-                "status": detail.status,
-                "priority": detail.priority,
-                "assignee": detail.assignee,
-                "description": detail.description,
-                "acceptance_criteria": detail.acceptance_criteria,
-                "figma_url": detail.figma_url,
-            },
+        target_dir = None
+        if download:
+            sources_dir = default_sources_dir(path, clean_task_id)
+            ensure_sources_ignored(sources_dir)
+            target_dir = str(sources_dir)
+        detail = await client.get_task_detail(clean_task_id, path, include_sub_issues=include_sub_issues, download_dir=target_dir)
+        task = detail.model_dump()
+        task["sub_issue_summary"] = {
+            "total": len(detail.sub_issues),
+            "open": sum(1 for c in detail.sub_issues if not c.is_closed),
+            "closed": sum(1 for c in detail.sub_issues if c.is_closed),
         }
+        task["source_summary"] = {
+            st: sum(1 for x in detail.sources if x.status == st)
+            for st in ("READ", "DOWNLOADED", "AVAILABLE", "UNREACHABLE", "EXTERNAL")
+        }
+        result: dict[str, Any] = {"status": "success", "task": task}
+        if target_dir:
+            result["sources_dir"] = target_dir
+        return result
     except Exception as exc:
         return {
             "status": "error",

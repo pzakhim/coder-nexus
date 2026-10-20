@@ -1,13 +1,25 @@
 """Real HTTP and RPC client for Huly (ReadOnly: Query Tasks & Criteria)."""
 
+import asyncio
 import json
 import logging
+from datetime import datetime, timezone
+from pathlib import Path
 import re
 import urllib.parse
 from typing import Any, Optional
 import httpx
 
-from .models import HulyCredentials, HulyTaskSummary, HulyTaskDetail
+from .markup import Markup, blob_id_from_url, file_name_from_url, parse_markup
+from .models import (
+    HulyComment,
+    HulyCredentials,
+    HulyIssueRef,
+    HulySource,
+    HulySubIssue,
+    HulyTaskDetail,
+    HulyTaskSummary,
+)
 from .auth import load_client_credentials, save_client_credentials
 
 logger = logging.getLogger(__name__)
@@ -54,15 +66,115 @@ def _format_status(raw_status: str) -> str:
 
 
 def _format_priority(raw_priority: Any) -> str:
-    """Map Huly priority integer or string to readable level."""
-    mapping = {0: "LOW", 1: "MEDIUM", 2: "HIGH", 3: "URGENT"}
+    """Huly IssuePriority: 0 NoPriority, 1 Urgent, 2 High, 3 Medium, 4 Low."""
+    mapping = {0: "NO_PRIORITY", 1: "URGENT", 2: "HIGH", 3: "MEDIUM", 4: "LOW"}
     if isinstance(raw_priority, int):
-        return mapping.get(raw_priority, "MEDIUM")
+        return mapping.get(raw_priority, "NO_PRIORITY")
     if isinstance(raw_priority, str):
         if raw_priority.isdigit():
-            return mapping.get(int(raw_priority), "MEDIUM")
+            return mapping.get(int(raw_priority), "NO_PRIORITY")
         return raw_priority.upper()
-    return "MEDIUM"
+    return "NO_PRIORITY"
+
+
+NO_PARENT = "tracker:ids:NoParent"
+CLOSED_STATUSES = {"DONE", "COMPLETED", "CANCELLED", "CANCELED", "CLOSED", "ARCHIVED"}
+CLOSED_CATEGORIES = {"WON", "LOST"}
+MAX_DOWNLOAD_BYTES = 30 * 1024 * 1024
+DOC_TEXT_LIMIT = 20000
+MAX_SUB_ISSUES = 100
+
+_ISSUE_IDENT_RE = re.compile(r"\b([A-Za-z][A-Za-z0-9]{0,15}-\d+)\b")
+_OBJECT_ID_RE = re.compile(r"^[0-9a-f]{24}$", re.IGNORECASE)
+
+
+def parse_task_ref(raw: str) -> str:
+    """Normalize what a user pastes into an issue reference.
+
+    Accepts 'APP-123', 'app-123', '123', a Huly '_id', or a Huly link such as
+    'https://huly.app/workbench/acme/tracker/APP-123' (query/fragment ignored).
+    """
+    ref = (raw or "").strip().strip("<>'\"")
+    if "://" in ref or ref.startswith("/"):
+        parsed = urllib.parse.urlparse(ref)
+        path = urllib.parse.unquote(parsed.path)
+        found = _ISSUE_IDENT_RE.findall(path)
+        if found:
+            return found[-1].upper()
+        last = [seg for seg in path.split("/") if seg]
+        if last and _OBJECT_ID_RE.match(last[-1]):
+            return last[-1]
+        # Some links carry the issue in the query string / fragment
+        found = _ISSUE_IDENT_RE.findall(urllib.parse.unquote(parsed.query + " " + parsed.fragment))
+        if found:
+            return found[-1].upper()
+        raise ValueError(f"Could not find an issue ID (like APP-123) in link: {raw}")
+    m = _ISSUE_IDENT_RE.fullmatch(ref)
+    return m.group(1).upper() if m else ref
+
+
+def _person_display_name(person: dict) -> Optional[str]:
+    """Huly stores Person.name as 'Last,First' -> 'First Last'."""
+    name = str(person.get("name") or "").strip()
+    if not name:
+        return None
+    if "," in name:
+        last, first = name.split(",", 1)
+        return f"{first.strip()} {last.strip()}".strip()
+    return name
+
+
+_AC_HEADING_RE = re.compile(r"^(#+\s*)?(acceptance\s+criteria|ac|ti[eê]u\s+ch[ií](\s+ch[aấ]p\s+nh[aậ]n)?)\s*:?\s*$", re.IGNORECASE)
+_CHECKBOX_RE = re.compile(r"^(?:[-*+]\s*)?\[( |x|X)\]\s+(.*)$")
+_NUMBERED_RE = re.compile(r"^\d+[.)]\s+(.*)$")
+_BULLET_RE = re.compile(r"^[-*+•]\s+(.*)$")
+
+
+def extract_acceptance_criteria(description: str) -> tuple[list[str], str]:
+    """Return (criteria, source). Never invents criteria from plain prose.
+
+    source:
+      'ac_section' - bullets/numbers/checkboxes under an 'Acceptance Criteria' / 'AC' / 'Tiêu chí' heading
+      'checklist'  - checkbox items anywhere in the description
+      'numbered'   - numbered list items anywhere in the description
+      'none'       - nothing explicit; ask the user instead of guessing
+    """
+    lines = [l.strip() for l in (description or "").splitlines()]
+
+    # 1. Explicit AC section
+    section: list[str] = []
+    in_section = False
+    for line in lines:
+        if not line:
+            continue
+        if _AC_HEADING_RE.match(line):
+            in_section = True
+            continue
+        if in_section:
+            item = None
+            for rx in (_CHECKBOX_RE, _NUMBERED_RE, _BULLET_RE):
+                m = rx.match(line)
+                if m:
+                    item = m.group(m.lastindex)
+                    break
+            if item is None:
+                if section:
+                    break  # first non-list line after the items ends the section
+                continue  # intro text right under the heading
+            section.append(item.strip())
+    if section:
+        return section, "ac_section"
+
+    # 2. Checklist anywhere
+    checks = [m.group(2).strip() for l in lines if (m := _CHECKBOX_RE.match(l))]
+    if checks:
+        return checks, "checklist"
+
+    # 3. Numbered list anywhere
+    numbered = [m.group(1).strip() for l in lines if (m := _NUMBERED_RE.match(l))]
+    if numbered:
+        return numbered, "numbered"
+    return [], "none"
 
 
 class HulyClient:
@@ -235,169 +347,422 @@ class HulyClient:
                 if ws_id:
                     self.credentials.workspace_id = ws_id
                     return ws_id
-        raise RuntimeError("Could not resolve Huly workspace ID. Please re-run 'coder-nexus login'.")
+        raise RuntimeError("Could not resolve Huly workspace ID. Please re-run 'coder-nexus setup huly --reset'.")
+
+    # ------------------------------------------------------------------ low-level reads
+
+    async def _ensure_session(self, workspace_path: Optional[str] = None) -> str:
+        """Load credentials, log in if only email/password are present, return workspace ID."""
+        if workspace_path and not self.credentials.is_authenticated:
+            self.credentials = load_client_credentials(workspace_path)
+        if not self.credentials.session_token:
+            if self.credentials.email and self.credentials.password:
+                await self.login(workspace_path=workspace_path)
+            else:
+                raise ValueError("Not authenticated. Please run 'coder-nexus setup huly' first.")
+        return await self._resolve_workspace_id()
+
+    def _auth(self) -> dict[str, str]:
+        return {"Authorization": f"Bearer {self.credentials.session_token}"}
+
+    @property
+    def _base(self) -> str:
+        return self.credentials.workspace_url.rstrip("/")
+
+    async def _find_all(
+        self,
+        http: httpx.AsyncClient,
+        workspace_id: str,
+        cls: str,
+        query: Optional[dict] = None,
+        limit: Optional[int] = None,
+    ) -> list[dict]:
+        """GET /_transactor/api/v1/find-all with an optional server-side query (Huly REST API).
+
+        The server omits the queried attributes from each returned row (e.g. a query on
+        `identifier` returns rows without `identifier`), so they are put back here.
+        """
+        params: dict[str, str] = {"class": cls}
+        if query:
+            params["query"] = json.dumps(query)
+        if limit:
+            params["options"] = json.dumps({"limit": limit})
+        res = await http.get(f"{self._base}/_transactor/api/v1/find-all/{workspace_id}", params=params,
+                             headers={**self._auth(), "Content-Type": "application/json"})
+        if res.status_code != 200:
+            raise RuntimeError(f"Huly error querying {cls} ({res.status_code}): {res.text[:200]}")
+        data = res.json()
+        rows = data.get("value", []) if isinstance(data, dict) else list(data or [])
+        for row in rows:
+            for key, val in (query or {}).items():
+                if isinstance(val, (str, int, float, bool)) and "." not in key:
+                    row.setdefault(key, val)
+        return rows
+
+    async def _fetch_blob(self, http: httpx.AsyncClient, workspace_id: str, blob_id: str) -> httpx.Response:
+        return await http.get(f"{self._base}/files/{workspace_id}", params={"file": blob_id, "workspace": workspace_id},
+                              headers=self._auth())
+
+    async def _fetch_markup(self, http: httpx.AsyncClient, workspace_id: str, blob_id: Any) -> Markup:
+        """Rich text (description / document body) stored as a blob: GET /files/<ws>?file=<blob>.
+
+        Note: the collaborator RPC is not used; on this server it returns unrelated sample content.
+        """
+        if not blob_id or not isinstance(blob_id, str):
+            return Markup()
+        try:
+            res = await self._fetch_blob(http, workspace_id, blob_id)
+            if res.status_code == 200:
+                return parse_markup(res.text)
+            logger.warning("Markup blob %s returned %s", blob_id, res.status_code)
+        except httpx.HTTPError as exc:
+            logger.warning("Markup blob %s failed: %s", blob_id, exc)
+        return Markup()
+
+    # ------------------------------------------------------------------ lookups (cached)
+
+    async def _status_map(self, http: httpx.AsyncClient, workspace_id: str) -> dict[str, tuple[str, str]]:
+        """status id -> (name, category: BACKLOG|TODO|ACTIVE|WON|LOST)."""
+        if getattr(self, "_statuses", None) is None:
+            self._statuses = {}
+            try:
+                for row in await self._find_all(http, workspace_id, "tracker:class:IssueStatus"):
+                    cat = str(row.get("category") or "").split(":")[-1].upper()
+                    cat = {"UNSTARTED": "BACKLOG"}.get(cat, cat)
+                    if row.get("_id"):
+                        self._statuses[row["_id"]] = (row.get("name") or _format_status(row["_id"]), cat)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Could not load issue statuses: %s", exc)
+        return self._statuses
+
+    async def _status(self, http: httpx.AsyncClient, workspace_id: str, status_id: Any) -> tuple[str, Optional[str]]:
+        name, cat = (await self._status_map(http, workspace_id)).get(status_id, (None, None))
+        if name is None:
+            name = _format_status(str(status_id or ""))
+            cat = "WON" if name.upper() in {"DONE", "COMPLETED"} else "LOST" if name.upper() in {"CANCELED", "CANCELLED"} else None
+        return name, cat
+
+    async def _resolve_person_name(self, http: httpx.AsyncClient, workspace_id: str, person_id: Any) -> Optional[str]:
+        if not person_id:
+            return None
+        cache = self.__dict__.setdefault("_people", {})
+        if person_id not in cache:
+            cache[person_id] = None
+            try:
+                rows = await self._find_all(http, workspace_id, "contact:class:Person", {"_id": person_id}, limit=1)
+                if rows:
+                    cache[person_id] = _person_display_name(rows[0])
+            except Exception as exc:  # noqa: BLE001 - name is a nice-to-have
+                logger.warning("Could not resolve person %s: %s", person_id, exc)
+        return cache[person_id]
+
+    async def _resolve_account_name(self, http: httpx.AsyncClient, workspace_id: str, social_id: Any) -> Optional[str]:
+        """`createdBy` is a social identity id; map it to the person's name when the server allows."""
+        if not social_id:
+            return None
+        cache = self.__dict__.setdefault("_accounts", {})
+        if social_id not in cache:
+            cache[social_id] = None
+            try:
+                rows = await self._find_all(http, workspace_id, "contact:class:SocialIdentity", {"_id": social_id}, limit=1)
+                if rows and rows[0].get("attachedTo"):
+                    cache[social_id] = await self._resolve_person_name(http, workspace_id, rows[0]["attachedTo"])
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("Could not resolve account %s: %s", social_id, exc)
+        return cache[social_id]
+
+    # ------------------------------------------------------------------ issues
+
+    @staticmethod
+    def _issue_matches(issue: dict, ref: str) -> bool:
+        norm = ref.upper()
+        ident = str(issue.get("identifier") or "").upper()
+        num = str(issue.get("number") or "")
+        raw_id = str(issue.get("_id") or "").upper()
+        return norm in (ident, f"TASK-{num}", raw_id, num)
+
+    async def _find_issue(self, http: httpx.AsyncClient, workspace_id: str, ref: str) -> dict:
+        """Look up one issue by identifier / number / _id, filtering on the server first."""
+        if ref.isdigit():
+            query: dict = {"number": int(ref)}
+        elif _OBJECT_ID_RE.match(ref):
+            query = {"_id": ref}
+        else:
+            query = {"identifier": ref.upper()}
+
+        matches: list[dict] = []
+        try:
+            matches = [i for i in await self._find_all(http, workspace_id, "tracker:class:Issue", query, limit=20)
+                       if self._issue_matches(i, ref)]
+        except RuntimeError as exc:
+            logger.warning("Server-side issue filter failed, falling back to full scan: %s", exc)
+        if not matches:
+            matches = [i for i in await self._find_all(http, workspace_id, "tracker:class:Issue") if self._issue_matches(i, ref)]
+        if not matches:
+            raise ValueError(f"Task '{ref}' not found in Huly workspace '{workspace_id}'.")
+        if ref.isdigit() and len(matches) > 1:
+            ids = ", ".join(sorted(str(m.get("identifier")) for m in matches))
+            raise ValueError(f"Number '{ref}' matches several issues ({ids}). Use the full ID, e.g. {matches[0].get('identifier')}.")
+        return matches[0]
 
     async def get_my_uncompleted_tasks(self, workspace_path: Optional[str] = None) -> list[HulyTaskSummary]:
-        """Fetch real uncompleted tasks from Huly Transactor API.
-        
-        Strictly READ-ONLY: Never creates, updates, or mocks tasks.
-        """
-        if workspace_path and not self.credentials.is_authenticated:
-            self.credentials = load_client_credentials(workspace_path)
-
-        if not self.credentials.session_token:
-            if self.credentials.email and self.credentials.password:
-                await self.login(workspace_path=workspace_path)
-            else:
-                raise ValueError("Not authenticated. Please run 'coder-nexus login' first.")
-
-        workspace_id = await self._resolve_workspace_id()
-        base_url = self.credentials.workspace_url.rstrip("/")
-        transactor_url = f"{base_url}/_transactor/api/v1/find-all/{workspace_id}?class=tracker:class:Issue"
-        headers = {
-            "Authorization": f"Bearer {self.credentials.session_token}",
-            "Content-Type": "application/json",
-        }
-
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            res = await client.get(transactor_url, headers=headers)
-            if res.status_code != 200:
-                raise RuntimeError(f"Failed to query Huly tasks ({res.status_code}): {res.text[:200]}")
-
-            data = res.json()
-            raw_issues = data.get("value", [])
-
+        """Open issues (status category not WON/LOST). Strictly READ-ONLY."""
+        workspace_id = await self._ensure_session(workspace_path)
+        async with httpx.AsyncClient(timeout=self.timeout) as http:
+            issues = await self._find_all(http, workspace_id, "tracker:class:Issue")
             tasks: list[HulyTaskSummary] = []
-            for issue in raw_issues:
-                status_raw = issue.get("status", "")
-                status_clean = _format_status(status_raw)
-                # Filter uncompleted tasks
-                if status_clean in ("DONE", "COMPLETED", "CANCELLED", "CLOSED", "ARCHIVED"):
+            for issue in issues:
+                name, cat = await self._status(http, workspace_id, issue.get("status"))
+                if cat in CLOSED_CATEGORIES or (cat is None and name.upper() in CLOSED_STATUSES):
                     continue
-
-                task_id = issue.get("identifier") or f"TASK-{issue.get('number', issue.get('_id', ''))}"
-                tasks.append(
-                    HulyTaskSummary(
-                        id=task_id,
-                        title=issue.get("title", "Untitled Task"),
-                        status=status_clean,
-                        priority=_format_priority(issue.get("priority")),
-                        assignee=issue.get("assignee"),
-                        due_date=issue.get("dueDate"),
-                    )
-                )
-
+                tasks.append(HulyTaskSummary(
+                    id=issue.get("identifier") or f"TASK-{issue.get('number', issue.get('_id', ''))}",
+                    title=issue.get("title", "Untitled Task"),
+                    status=name,
+                    priority=_format_priority(issue.get("priority")),
+                    assignee=issue.get("assignee"),
+                    due_date=_iso_date(issue.get("dueDate")),
+                ))
             return tasks
 
-    async def _fetch_markup_content(self, workspace_id: str, description_id: str) -> str:
-        """Fetch rich-text document content from Huly Collaborator RPC."""
-        base_url = self.credentials.workspace_url.rstrip("/")
-        collab_url = f"{base_url}/_collaborator/rpc/{workspace_id}"
-        headers = {
-            "Authorization": f"Bearer {self.credentials.session_token}",
-            "Content-Type": "application/json",
-        }
-        payload = {"method": "getContent", "payload": {"source": description_id}}
-
+    async def _resolve_parent(self, http: httpx.AsyncClient, workspace_id: str, issue: dict) -> Optional[HulyIssueRef]:
+        parent_id = issue.get("attachedTo")
+        if not parent_id or parent_id == NO_PARENT:
+            return None
+        info = (issue.get("parents") or [{}])[-1] or {}
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                res = await client.post(collab_url, headers=headers, json=payload)
-                if res.status_code == 200:
-                    body = res.json()
-                    content_str = body.get("content", {}).get("", "")
-                    if content_str and isinstance(content_str, str):
-                        try:
-                            tiptap_doc = json.loads(content_str)
-                            extracted = _extract_text_from_tiptap(tiptap_doc)
-                            return "\n".join(extracted)
-                        except json.JSONDecodeError:
-                            return content_str
-                    elif isinstance(content_str, dict):
-                        return "\n".join(_extract_text_from_tiptap(content_str))
-        except Exception as exc:
-            logger.debug("Failed to fetch markup content: %s", exc)
-        return ""
+            rows = await self._find_all(http, workspace_id, "tracker:class:Issue", {"_id": parent_id}, limit=1)
+            if rows:
+                name, _ = await self._status(http, workspace_id, rows[0].get("status"))
+                return HulyIssueRef(id=rows[0].get("identifier") or info.get("identifier") or str(parent_id),
+                                    title=rows[0].get("title", ""), status=name)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not fetch parent issue %s: %s", parent_id, exc)
+        return HulyIssueRef(id=info.get("identifier") or str(parent_id), title=info.get("parentTitle", ""))
 
-    async def get_task_detail(self, task_id: str, workspace_path: Optional[str] = None) -> HulyTaskDetail:
-        """Fetch full details and acceptance criteria for a real task from Huly.
-        
-        Strictly READ-ONLY. Ném ngoại lệ Fail-Fast nếu không tìm thấy.
+    async def _resolve_sub_issues(self, http: httpx.AsyncClient, workspace_id: str, issue: dict) -> list[HulySubIssue]:
+        """Direct children (one level) with their own criteria, sorted by number."""
+        if issue.get("subIssues") == 0:
+            return []
+        children = await self._find_all(http, workspace_id, "tracker:class:Issue",
+                                         {"attachedTo": issue.get("_id")}, limit=MAX_SUB_ISSUES)
+        children.sort(key=lambda c: (c.get("number") is None, c.get("number") or 0))
+        sem = asyncio.Semaphore(5)
+
+        async def build(child: dict) -> HulySubIssue:
+            async with sem:
+                markup = await self._fetch_markup(http, workspace_id, child.get("description"))
+                name = await self._resolve_person_name(http, workspace_id, child.get("assignee"))
+                status, cat = await self._status(http, workspace_id, child.get("status"))
+            criteria, source = extract_acceptance_criteria(markup.text)
+            return HulySubIssue(
+                id=child.get("identifier") or f"TASK-{child.get('number', child.get('_id'))}",
+                title=child.get("title", "Untitled Task"),
+                status=status,
+                status_category=cat,
+                priority=_format_priority(child.get("priority")),
+                assignee=child.get("assignee"),
+                assignee_name=name,
+                is_closed=cat in CLOSED_CATEGORIES,
+                acceptance_criteria=criteria,
+                acceptance_criteria_source=source,
+                sub_issue_count=int(child.get("subIssues") or 0),
+            )
+
+        return list(await asyncio.gather(*(build(c) for c in children)))
+
+    # ------------------------------------------------------------------ sources
+
+    async def _comments(self, http: httpx.AsyncClient, workspace_id: str, issue: dict) -> list[tuple[HulyComment, Markup, dict]]:
+        if not issue.get("comments"):
+            return []
+        rows = await self._find_all(http, workspace_id, "chunter:class:ChatMessage", {"attachedTo": issue.get("_id")}, limit=200)
+        rows.sort(key=lambda r: r.get("createdOn") or 0)
+        out = []
+        for row in rows:
+            markup = parse_markup(row.get("message", ""))
+            author = await self._resolve_account_name(http, workspace_id, row.get("createdBy"))
+            out.append((HulyComment(author=author, created_at=_iso_datetime(row.get("createdOn")), text=markup.text), markup, row))
+        return out
+
+    async def _document_source(self, http: httpx.AsyncClient, workspace_id: str, ref, origin: str) -> HulySource:
+        """A mentioned Huly document (PO requirements). UNREACHABLE when this account cannot read it."""
+        src = HulySource(kind="document", title=ref.label or ref.object_id, origin=origin, status="UNREACHABLE",
+                         object_id=ref.object_id)
+        try:
+            rows = await self._find_all(http, workspace_id, ref.object_class or "document:class:Document", {"_id": ref.object_id}, limit=1)
+        except Exception as exc:  # noqa: BLE001
+            src.note = f"Query failed: {exc}"
+            return src
+        if not rows:
+            src.note = ("This Huly account cannot see the document (no access to its teamspace, or it was deleted). "
+                        "Ask the PO to share it, or attach/paste its content.")
+            return src
+        doc = rows[0]
+        src.title = doc.get("title") or doc.get("name") or src.title
+        body = doc.get("content") or doc.get("description")
+        markup = await self._fetch_markup(http, workspace_id, body)
+        if markup.text:
+            src.status = "READ"
+            src.text = markup.text[:DOC_TEXT_LIMIT] + ("\n…[truncated]" if len(markup.text) > DOC_TEXT_LIMIT else "")
+        else:
+            src.note = "Document found but its content could not be read."
+        return src
+
+    async def _collect_sources(self, http: httpx.AsyncClient, workspace_id: str, issue: dict, description: Markup,
+                               comments: list[tuple[HulyComment, Markup, dict]]) -> list[HulySource]:
+        sources: list[HulySource] = []
+        seen: set[str] = set()
+
+        def add(src: HulySource, key: str) -> None:
+            if key and key not in seen:
+                seen.add(key)
+                sources.append(src)
+
+        async def from_markup(markup: Markup, origin: str) -> None:
+            for ref in markup.references:
+                if ref.object_class and ref.object_class not in ("contact:class:Person", "tracker:class:Issue"):
+                    if ref.object_id not in seen:
+                        add(await self._document_source(http, workspace_id, ref, origin), ref.object_id)
+            for img in markup.images:
+                add(HulySource(kind="image", title=img.name, origin=origin, mime=img.mime, status="AVAILABLE", blob_id=img.blob_id), img.blob_id)
+            for link in markup.links:
+                href = link.href
+                blob = blob_id_from_url(href) if "/files/" in href else None
+                if blob and urllib.parse.urlparse(href).netloc in ("", urllib.parse.urlparse(self._base).netloc):
+                    add(HulySource(kind="file", title=file_name_from_url(href), origin=origin, url=href, status="AVAILABLE", blob_id=blob), blob)
+                else:
+                    add(HulySource(kind="link", title=link.text or href, origin=origin, url=href, status="EXTERNAL"), href)
+
+        await from_markup(description, "description")
+        if issue.get("attachments"):
+            try:
+                for att in await self._find_all(http, workspace_id, "attachment:class:Attachment", {"attachedTo": issue.get("_id")}, limit=100):
+                    add(HulySource(kind="attachment", title=att.get("name") or att.get("file"), origin="attachments",
+                                   mime=att.get("type"), status="AVAILABLE", blob_id=att.get("file"),
+                                   note=f"{att.get('size')} bytes" if att.get("size") else None), att.get("file"))
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Could not list attachments: %s", exc)
+        for comment, markup, row in comments:
+            origin = f"comment {comment.created_at or ''} by {comment.author or 'unknown'}".strip()
+            await from_markup(markup, origin)
+            if row.get("attachments"):
+                try:
+                    for att in await self._find_all(http, workspace_id, "attachment:class:Attachment", {"attachedTo": row.get("_id")}, limit=50):
+                        add(HulySource(kind="attachment", title=att.get("name") or att.get("file"), origin=origin,
+                                       mime=att.get("type"), status="AVAILABLE", blob_id=att.get("file")), att.get("file"))
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning("Could not list comment attachments: %s", exc)
+        return sources
+
+    async def _download_sources(self, http: httpx.AsyncClient, workspace_id: str, sources: list[HulySource], target: Path) -> None:
+        """Save files/images/attachments and readable documents into `target` (read-only on Huly)."""
+        target.mkdir(parents=True, exist_ok=True)
+        used: set[str] = set()
+
+        def safe_name(name: str) -> str:
+            base = re.sub(r"[^\w.\-]+", "_", name, flags=re.UNICODE).strip("._") or "file"
+            candidate, n = base, 1
+            while candidate.lower() in used:
+                stem, dot, ext = base.rpartition(".")
+                candidate = f"{stem}-{n}.{ext}" if dot else f"{base}-{n}"
+                n += 1
+            used.add(candidate.lower())
+            return candidate
+
+        for src in sources:
+            if src.kind == "document" and src.status == "READ" and src.text:
+                path = target / safe_name(f"{src.title}.md")
+                path.write_text(f"# {src.title}\n\n> Source: Huly document ({src.origin})\n\n{src.text}\n", encoding="utf-8")
+                src.local_path = str(path)
+                continue
+            if not src.blob_id or src.status != "AVAILABLE":
+                continue
+            try:
+                res = await self._fetch_blob(http, workspace_id, src.blob_id)
+                if res.status_code != 200:
+                    src.status, src.note = "UNREACHABLE", f"Download returned HTTP {res.status_code}"
+                    continue
+                if len(res.content) > MAX_DOWNLOAD_BYTES:
+                    src.note = f"Skipped: {len(res.content)} bytes exceeds {MAX_DOWNLOAD_BYTES}"
+                    continue
+                name = src.title
+                if "." not in name and res.headers.get("content-type", "").startswith("image/"):
+                    name += "." + res.headers["content-type"].split("/")[1].split(";")[0]
+                path = target / safe_name(name)
+                path.write_bytes(res.content)
+                src.local_path, src.status = str(path), "DOWNLOADED"
+                src.mime = src.mime or res.headers.get("content-type")
+            except httpx.HTTPError as exc:
+                src.status, src.note = "UNREACHABLE", f"Download failed: {exc}"
+
+    # ------------------------------------------------------------------ public
+
+    async def get_task_detail(
+        self,
+        task_id: str,
+        workspace_path: Optional[str] = None,
+        include_sub_issues: bool = True,
+        download_dir: Optional[str] = None,
+    ) -> HulyTaskDetail:
+        """Full context for one Huly issue: description, status, people, parent, children,
+        comments and every source it points to (documents, images, attachments, files, links).
+
+        `task_id` may be 'APP-123', '123', a Huly _id or a Huly issue link. With `download_dir`,
+        files and readable documents are saved there. Strictly READ-ONLY on Huly.
         """
-        if workspace_path and not self.credentials.is_authenticated:
-            self.credentials = load_client_credentials(workspace_path)
+        ref = parse_task_ref(task_id)
+        workspace_id = await self._ensure_session(workspace_path)
 
-        if not self.credentials.session_token:
-            if self.credentials.email and self.credentials.password:
-                await self.login(workspace_path=workspace_path)
-            else:
-                raise ValueError("Not authenticated. Please run 'coder-nexus login' first.")
+        async with httpx.AsyncClient(timeout=max(self.timeout, 20.0), follow_redirects=True) as http:
+            target = await self._find_issue(http, workspace_id, ref)
+            description = await self._fetch_markup(http, workspace_id, target.get("description"))
+            text = description.text
 
-        workspace_id = await self._resolve_workspace_id()
-        base_url = self.credentials.workspace_url.rstrip("/")
-        transactor_url = f"{base_url}/_transactor/api/v1/find-all/{workspace_id}?class=tracker:class:Issue"
-        headers = {
-            "Authorization": f"Bearer {self.credentials.session_token}",
-            "Content-Type": "application/json",
-        }
+            figma_url = next((l.href for l in description.links if "figma.com" in l.href), None)
+            if not figma_url:
+                fig = re.search(r"(https://[^\s]*figma\.com[^\s\)\]]+)", text)
+                figma_url = fig.group(1) if fig else None
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            res = await client.get(transactor_url, headers=headers)
-            if res.status_code != 200:
-                raise RuntimeError(f"Huly error fetching task list ({res.status_code}): {res.text[:200]}")
-
-            data = res.json()
-            raw_issues = data.get("value", [])
-
-            target = None
-            norm_id = task_id.strip().upper()
-            for issue in raw_issues:
-                ident = str(issue.get("identifier") or "").upper()
-                num = str(issue.get("number") or "")
-                raw_id = str(issue.get("_id") or "").upper()
-                if norm_id in (ident, f"TASK-{num}", raw_id, num):
-                    target = issue
-                    break
-
-            if not target:
-                raise ValueError(f"Task '{task_id}' not found in Huly workspace '{workspace_id}'.")
-
-            # Resolve description text
-            desc_val = target.get("description", "")
-            description_text = ""
-            if desc_val:
-                # If description is a reference ID, fetch markup
-                if isinstance(desc_val, str) and "-" in desc_val and len(desc_val) > 20:
-                    description_text = await self._fetch_markup_content(workspace_id, desc_val)
-                if not description_text:
-                    description_text = str(desc_val)
-
-            # Extract acceptance criteria from description
-            acceptance_criteria: list[str] = []
-            figma_url = None
-            for line in description_text.splitlines():
-                stripped = line.strip()
-                if "figma.com" in stripped and not figma_url:
-                    fig_match = re.search(r"(https://[^\s]+figma\.com[^\s\)]+)", stripped)
-                    if fig_match:
-                        figma_url = fig_match.group(1)
-
-                # Checklist or numbered bullet points
-                if stripped.startswith(("- [ ]", "- [x]", "* [ ]", "* [x]")):
-                    acceptance_criteria.append(stripped[5:].strip())
-                elif re.match(r"^\d+\.\s+", stripped):
-                    acceptance_criteria.append(re.sub(r"^\d+\.\s+", "", stripped))
-
-            if not acceptance_criteria and description_text:
-                # If no explicit checklist, use the description sentences as criteria
-                acceptance_criteria = [p.strip() for p in description_text.splitlines() if p.strip()]
+            acceptance_criteria, ac_source = extract_acceptance_criteria(text)
+            status, category = await self._status(http, workspace_id, target.get("status"))
+            assignee_name = await self._resolve_person_name(http, workspace_id, target.get("assignee"))
+            parent = await self._resolve_parent(http, workspace_id, target)
+            sub_issues = await self._resolve_sub_issues(http, workspace_id, target) if include_sub_issues else []
+            comments = await self._comments(http, workspace_id, target)
+            sources = await self._collect_sources(http, workspace_id, target, description, comments)
+            if download_dir:
+                await self._download_sources(http, workspace_id, sources, Path(download_dir))
 
             return HulyTaskDetail(
-                id=target.get("identifier") or f"TASK-{target.get('number', target.get('_id'))}",
+                id=target.get("identifier") or ref,
                 title=target.get("title", "Untitled Task"),
-                description=description_text,
-                status=_format_status(target.get("status", "")),
+                description=text,
+                status=status,
+                status_category=category,
+                is_closed=category in CLOSED_CATEGORIES,
                 priority=_format_priority(target.get("priority")),
                 assignee=target.get("assignee"),
+                assignee_name=assignee_name,
+                due_date=_iso_date(target.get("dueDate")),
                 acceptance_criteria=acceptance_criteria,
+                acceptance_criteria_source=ac_source,
                 figma_url=figma_url,
+                attachments=[s.title for s in sources if s.kind == "attachment"],
+                comments=[c for c, _, _ in comments],
+                sources=sources,
+                parent=parent,
+                sub_issues=sub_issues,
             )
+
+
+def _iso_datetime(ms: Any) -> Optional[str]:
+    if not isinstance(ms, (int, float)) or ms <= 0:
+        return None
+    return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).isoformat(timespec="minutes")
+
+
+def _iso_date(ms: Any) -> Optional[str]:
+    if not isinstance(ms, (int, float)) or ms <= 0:
+        return None
+    return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).date().isoformat()

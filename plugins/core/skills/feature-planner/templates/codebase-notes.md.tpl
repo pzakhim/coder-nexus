@@ -21,6 +21,16 @@
 
 ---
 
+## 0A. Source Inventory
+
+> Every source read or missing for this work item ([goal framing](../references/03_goal_framing.md)). Never infer the content of an `UNREACHABLE` / `NOT_PROVIDED` source from its title.
+
+| Source | Kind | Read status (`READ` \| `UNREACHABLE` \| `NOT_PROVIDED`) | What it contributes / conflicts |
+|---|---|---|---|
+| {{HulyIdOrDocOrFile}} | {{Kind}} | {{ReadStatus}} | {{ContributionOrConflict}} |
+
+---
+
 ## 1. Decision Log (D-NN)
 
 | ID | Round | Dimension | Question Asked | Options Considered | User Confirmed Decision | Impacted `BR` / `AC` / Design | Owner |

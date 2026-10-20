@@ -6,7 +6,7 @@ The architecture validators are stack-specific: read the approved design (brief 
 
 | Tool | When and input | Required interpretation |
 |---|---|---|
-| `huly_get_my_tasks`, `huly_get_task_detail` | Spec Writer reads real Huly tasks when referenced or requested; detail uses a real ID | Read-only. A missing Huly task may be replaced by actual user requirements, never an invented ticket |
+| `huly_get_my_tasks`, `huly_get_task_detail` | Spec Writer reads real Huly tasks when referenced or requested; detail takes an ID or a pasted Huly link and returns status, people, parent, sub-issues, comments and `sources`. Use `download: true` to save PDFs, images, attachments and readable PO documents to `.superpowers/sources/<ISSUE-ID>/` (Git-ignored, local only), then open them | Read-only. `UNREACHABLE` sources are reported to the user, never guessed. A missing Huly task may be replaced by actual user requirements, never an invented ticket |
 | `get_project_structure` | Spec Writer/Planning/Writer compare a root or module blueprint with the actual Client | Blueprint is guidance; inspect Client routing, state, DI and files before naming paths |
 | `get_ux_error_patterns` | When loading, empty, auth, timeout or validation states apply | Use only relevant patterns; derive Visual AC from real visual and product decisions |
 | `validate_proposal_spec` | Saved feature `requirements.md`, `codebase-notes.md`, `change-impact.md`, or `design.md` | Enforces straight-line docs (zero `Option A/B`, `Open Questions`, `TBD`, or `OPEN` `Q-NN` rows) and `D-NN` traceability; `valid: true` is structural only; generic `brief.md` uses the work-item contract checklist |

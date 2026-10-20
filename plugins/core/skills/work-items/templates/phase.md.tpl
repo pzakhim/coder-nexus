@@ -4,6 +4,7 @@
 - **Execution Mode:** {{EXECUTE_OR_INFO_NOTE}}
 - **Readiness / Completion Tick:** {{ReadinessCheckboxPreparedOrCompleted}}
 - **AC IDs:** {{AcIds}}
+- **Goals:** {{GoalIdsServedByTheseAcs}}
 - **Depends on:** {{EarlierPassedPhasesOrNone}}
 - **Input/output contract:** {{VerifiedInputAndObservableOutput}}
 - **Owned files:** {{BoundedClientPaths}}

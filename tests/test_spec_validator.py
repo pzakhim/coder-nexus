@@ -316,6 +316,11 @@ SPEC_WRITER_REQUIREMENTS = """# Requirements: Versioned Spec Writer
 > **Status**: PENDING_REVIEW
 > **Approval reference**: NONE
 
+## 0. Goals
+| Goal ID | Goal (outcome) | Success signal | Source | Status |
+|---|---|---|---|---|
+| G-01 | Each feature keeps its own approved spec without collisions | Two features keep separate requirements files after both are approved | User decision 2026-10-06 (D-01) | CONFIRMED |
+
 ## 1. Scope & Alignment
 - **Current baseline & problem**: Global spec files collide across features.
 - **Scope in**: Discover requirements, design, and plan in three stages (`D-01`).
@@ -325,17 +330,17 @@ SPEC_WRITER_REQUIREMENTS = """# Requirements: Versioned Spec Writer
 Developer approves each stage; the Hub reads Huly only.
 
 ## 3. Business Rules
-| Rule ID | Business Rule Description | Decision Ref |
-|---|---|---|
-| **BR-01** | Developer confirms requirements and `codebase-notes.md` before design begins. | `D-01` |
+| Rule ID | Business Rule Description | Goal | Decision Ref |
+|---|---|---|---|
+| **BR-01** | Developer confirms requirements and `codebase-notes.md` before design begins. | G-01 | `D-01` |
 
 ## 4. Behavioral Scenarios
 - **Given** a new feature request, **When** `spec_writer` runs `grill-me`, **Then** each open `Q-NN` is asked one at a time and locked into `D-NN` (`AC-01`, `D-01`).
 
 ## 5. Acceptance criteria
-| AC ID | Observable behavior | Source | Status |
-|---|---|---|---|
-| AC-01 | Developer confirms requirements before design begins | USER_CONFIRMED 2026-10-06 (D-01) | VERIFIED |
+| AC ID | Observable behavior | Source | Status | Goal |
+|---|---|---|---|---|
+| AC-01 | Developer confirms requirements before design begins | USER_CONFIRMED 2026-10-06 (D-01) | VERIFIED | G-01 |
 
 ## 6. Gate 1 approval
 - **Decision summary**: Awaiting confirmation for this document revision.
@@ -541,3 +546,70 @@ def test_versioned_plan_rejects_phase_link_outside_version(tmp_path):
     result = spec_validator.validate_plan(plan_path=str(plan_path))
     assert result["valid"] is False
     assert any(item["rule_id"] == "PLAN-V-007-TRAVERSAL" for item in result["violations"])
+
+
+# ---------------------------------------------------------------- Goals (REQ-005 / DESIGN-007 / PLAN-V-010)
+
+def _violation_ids(result):
+    return {v["rule_id"] for v in result["violations"]}
+
+
+def test_requirements_without_goals_are_rejected():
+    no_goals = SPEC_WRITER_REQUIREMENTS.split("## 0. Goals")[0] + "## 1. Scope & Alignment" + SPEC_WRITER_REQUIREMENTS.split("## 1. Scope & Alignment", 1)[1]
+    result = spec_validator.validate_proposal(proposal_content=no_goals)
+    assert result["valid"] is False
+    assert "REQ-005-NO-GOALS" in _violation_ids(result)
+
+
+def test_goal_must_be_user_confirmed():
+    unconfirmed = SPEC_WRITER_REQUIREMENTS.replace("(D-01) | CONFIRMED |", "(agent inference) | PROPOSED |")
+    result = spec_validator.validate_proposal(proposal_content=unconfirmed)
+    assert "REQ-005-GOAL-ROW" in _violation_ids(result)
+
+
+def test_ac_and_br_must_serve_a_goal():
+    orphan = SPEC_WRITER_REQUIREMENTS.replace("| VERIFIED | G-01 |", "| VERIFIED | — |").replace("| G-01 | `D-01` |", "| — | `D-01` |")
+    ids = _violation_ids(spec_validator.validate_proposal(proposal_content=orphan))
+    assert {"REQ-005-AC-GOAL", "REQ-005-BR-GOAL", "REQ-005-GOAL-UNCOVERED"} <= ids
+
+
+def test_ac_citing_unknown_goal_is_rejected():
+    bad = SPEC_WRITER_REQUIREMENTS.replace("| VERIFIED | G-01 |", "| VERIFIED | G-09 |")
+    assert "REQ-005-AC-GOAL" in _violation_ids(spec_validator.validate_proposal(proposal_content=bad))
+
+
+def test_design_must_align_with_every_goal(tmp_path):
+    (tmp_path / "requirements.md").write_text(SPEC_WRITER_REQUIREMENTS, encoding="utf-8")
+    design_path = tmp_path / "design.md"
+    design_path.write_text("> **Document type**: DESIGN\n", encoding="utf-8")
+    result = spec_validator.validate_proposal(
+        proposal_content="> **Document type**: DESIGN\n> **Feature**: a/b\n> **Version**: v1\n> **Status**: PENDING_REVIEW\n",
+        proposal_path=str(design_path),
+    )
+    assert "DESIGN-007-GOALS" in _violation_ids(result)
+    aligned = spec_validator.validate_proposal(
+        proposal_content="> **Document type**: DESIGN\n> **Feature**: a/b\n> **Version**: v1\n> **Status**: PENDING_REVIEW\n\n## Goal alignment\n| Goal | Delivered by |\n|---|---|\n| G-01 | Versioned docs folder per feature |\n",
+        proposal_path=str(design_path),
+    )
+    assert "DESIGN-007-GOALS" not in _violation_ids(aligned)
+
+
+def test_plan_must_deliver_every_goal(tmp_path):
+    version_dir = tmp_path / "v1"
+    phase_dir = version_dir / "phases"
+    phase_dir.mkdir(parents=True)
+    two_goals = SPEC_WRITER_REQUIREMENTS.replace(
+        "| CONFIRMED |\n\n## 1.",
+        "| CONFIRMED |\n| G-02 | Reviewers see one source of truth | Reviewer opens one versioned folder | User decision 2026-10-06 (D-01) | CONFIRMED |\n\n## 1.",
+    ).replace(
+        "| VERIFIED | G-01 |",
+        "| VERIFIED | G-01 |\n| AC-02 | Reviewer opens one folder | USER_CONFIRMED 2026-10-06 (D-01) | PENDING | G-02 |",
+    )
+    (version_dir / "codebase-notes.md").write_text(SPEC_WRITER_CODEBASE_NOTES, encoding="utf-8")
+    (version_dir / "requirements.md").write_text(two_goals, encoding="utf-8")
+    (version_dir / "design.md").write_text(SPEC_WRITER_DESIGN, encoding="utf-8")
+    (phase_dir / "phase-01-requirements.md").write_text(VERSIONED_PHASE, encoding="utf-8")
+    plan_path = version_dir / "implementation-plan.md"
+    plan_path.write_text(VERSIONED_PLAN, encoding="utf-8")
+    ids = _violation_ids(spec_validator.validate_plan(plan_path=str(plan_path)))
+    assert "PLAN-V-010-GOAL-COVERAGE" in ids

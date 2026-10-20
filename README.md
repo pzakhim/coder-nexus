@@ -70,17 +70,24 @@ Open the project. When the extension recognizes Flutter, Frappe or Backend folde
 
 **Add … Pack to Workspace** commands add one pack to the ones already installed. Re-syncing replaces only these generated files and removes the pre-2.8 `coder-nexus-fe` / `coder-nexus-be` folders. Sync again after the CLI is installed so `mcp_config.json` points at the absolute CLI path (IDEs launched from the Dock/Finder may not see `~/.local/bin`). **Sync Plugin to Antigravity Global Config** is an explicit, separate command (Flutter).
 
-### 4. Connect Huly (optional, no agent needed)
-From the project folder:
+### 4. Connect Huly (optional)
+Huly settings live in the project's **development-only** `.env` (`HULY_WORKSPACE_URL`, `HULY_EMAIL`, `HULY_PASSWORD`, `HULY_SESSION_TOKEN`, `HULY_WORKSPACE_ID`).
+
+**Terminal.** From the project folder:
 
 ```sh
-coder-nexus setup huly           # prompts for email/password (add --url for self-hosted Huly), writes ./.env
-coder-nexus setup huly --check   # authentication status; exit 0 only when logged in
-coder-nexus my-tasks     # lists your open tasks: proves the connection works
+coder-nexus setup huly           # guided: check .env → Step 1 URL (ping, saved) → Step 2 email/password (retries until login works) → shows 1 open task
+coder-nexus setup huly --check   # read-only; exit 0 only when all five values are in .env
+coder-nexus setup huly --reset   # ignore saved values and start again (e.g. expired session, new server)
+coder-nexus my-tasks             # list your open tasks
 coder-nexus task-detail AUTH-101
 ```
 
-> **Make sure `.env` is in your project's `.gitignore`.** `setup huly` stores the password and session token in plain text there.
+If the URL cannot be reached, setup stops and nothing is saved. Once it is reachable, the URL is saved before the login step.
+
+**Agent (Antigravity).** Ask the agent to "set up Huly". The `huly-setup` skill drives the same command with `--json`, asks you for the URL and then the account (or lets you type the password in your own terminal), and ends by showing one of your open tasks. Non-interactive flags: `--url`, `--email`, `--password-stdin`, `--json`. Exit codes: `0` ok, `1` login failed, `2` URL unreachable, `3` needs input, `4` verify failed.
+
+> **Make sure `.env` is in your project's `.gitignore`.** `setup huly` warns when it is not. It stores the password and session token in plain text.
 
 To exercise the MCP tools without an agent: `npx @modelcontextprotocol/inspector coder-nexus serve`.
 
