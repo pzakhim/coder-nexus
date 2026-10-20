@@ -1,0 +1,5 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "coder-nexus-be",
+  "description": "Coder Nexus Backend plugin for API service work items, database modeling, Clean Architecture backend, and contract-driven verification"
+}

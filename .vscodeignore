@@ -1,0 +1,17 @@
+.git/**
+.github/**
+.agents/**
+.venv/**
+.pytest_cache/**
+.env*
+*.py
+*.lock
+uv.lock
+pyproject.toml
+src/**
+tests/**
+docs/**
+scratch/**
+*.vsix
+app_core/
+template/

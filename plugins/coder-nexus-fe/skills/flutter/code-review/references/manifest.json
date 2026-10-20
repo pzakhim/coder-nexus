@@ -1,0 +1,35 @@
+{
+  "version": "1.2.0",
+  "updated_at": "2026-10-07",
+  "skill_name": "flutter-code-review",
+  "description": "Five-axis code review and Clean Architecture validation workflow with runtime visual verification gate",
+  "phases_integrated": [
+    "Phase 2.1 (Clean Architecture Standards)",
+    "Phase 2.2 (Component Catalog & Discovery)",
+    "Phase 2.3 (Feature Planning & Behavioral Slices)",
+    "Phase 2.4 (Architecture Validation & Code Review)"
+  ],
+  "gates": [
+    "Gate 1: Pre-Write / File-Level Architecture Check (validate_architecture_code MCP tool)",
+    "Gate 2: Vertical Slice Integration Check (CRX-001..004, static analysis, tests, visual review)"
+  ],
+  "five_axes": [
+    "Correctness",
+    "Readability & Simplicity",
+    "Clean Architecture & DI Boundaries",
+    "Security & Data Safety",
+    "Performance & Lifecycle"
+  ],
+  "references": [
+    "references/01_five_axis_rubric.md",
+    "references/02_rule_source_matrix.md",
+    "references/03_cross_branch_checklist.md"
+  ],
+  "templates": [
+    "templates/code_review_report.md.tpl"
+  ],
+  "mcp_tools_used": [
+    "validate_architecture_code"
+  ],
+  "handoff_target": "flutter-incremental-implementation"
+}

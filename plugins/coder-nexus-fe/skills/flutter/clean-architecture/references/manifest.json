@@ -1,0 +1,154 @@
+{
+  "version": "1.2.0",
+  "updated_at": "2026-10-11",
+  "commit_hash": "2.0.2",
+  "source_directory": "skills/flutter/clean-architecture",
+  "references": [
+    {
+      "id": "root_level",
+      "target_file": "01_project_root.md",
+      "sources": [
+        {
+          "file": "standards/architecture.md",
+          "sections": ["Directory Structure", "Boundaries"]
+        },
+        {
+          "file": "standards/build-flavors.md",
+          "sections": ["Flutter Version Management", "Three Flavors", "AppConfig", "Boot Sequence"]
+        }
+      ]
+    },
+    {
+      "id": "core_subsystems",
+      "target_file": "02_core_subsystem.md",
+      "sources": [
+        {
+          "file": "standards/api-data-layer.md",
+          "sections": ["Network Stack", "DataSource Pattern", "API Endpoints", "Error Handling"]
+        },
+        {
+          "file": "standards/di-architecture.md",
+          "sections": ["DI Container Access", "Boot Sequence"]
+        },
+        {
+          "file": "standards/clean-architecture-guide.md",
+          "sections": ["Core Auth & Network Contracts"]
+        }
+      ]
+    },
+    {
+      "id": "feature_module",
+      "target_file": "03_feature_module.md",
+      "sources": [
+        {
+          "file": "standards/clean-architecture-guide.md",
+          "sections": ["Three Layers", "Contracts", "Best Practices"]
+        },
+        {
+          "file": "standards/state-management.md",
+          "sections": ["Pattern A/B", "Cubit Rules", "Widget Consumption"]
+        },
+        {
+          "file": "standards/di-architecture.md",
+          "sections": ["Module DI Registration Order", "Registration Types"]
+        }
+      ]
+    },
+    {
+      "id": "screen_contract",
+      "target_file": "05_screen_contract.md",
+      "sources": [
+        {
+          "file": "standards/screen-contract.md",
+          "sections": ["Screen naming, BaseScreen, dialog exception, tracking and responsive layout"]
+        },
+        {
+          "file": "standards/base-screen.md",
+          "sections": ["BaseScreen contract; verify resolved Client source"]
+        }
+      ]
+    },
+    {
+      "id": "cross_boundaries",
+      "target_file": "04_cross_boundaries.md",
+      "sources": [
+        {
+          "file": "standards/architecture.md",
+          "sections": ["Cross-Module Boundaries", "Composition Root"]
+        },
+        {
+          "file": "standards/routing.md",
+          "sections": ["Adding a New Route", "Auth Guard", "Navigation Rules"]
+        }
+      ]
+    }
+  ],
+  "templates": [
+    {
+      "id": "domain_entity",
+      "target_file": "templates/domain/entity.dart.tpl",
+      "sources": ["standards/clean-architecture-guide.md#domain-entity"],
+      "contract": "Pure Dart, immutable final fields, Equatable"
+    },
+    {
+      "id": "domain_repository",
+      "target_file": "templates/domain/repository.dart.tpl",
+      "sources": ["standards/clean-architecture-guide.md#domain-repository"],
+      "contract": "Abstract contract returning Future<DataState<T>>"
+    },
+    {
+      "id": "domain_usecase",
+      "target_file": "templates/domain/usecase.dart.tpl",
+      "sources": ["standards/clean-architecture-guide.md#domain-usecase"],
+      "contract": "Callable UseCase<DataState<T>, Params>"
+    },
+    {
+      "id": "data_data_source",
+      "target_file": "templates/data/data_source.dart.tpl",
+      "sources": ["standards/api-data-layer.md#DataSource Pattern"],
+      "contract": "Extends base data source, uses endpoint constants"
+    },
+    {
+      "id": "data_model",
+      "target_file": "templates/data/model.dart.tpl",
+      "sources": ["standards/api-data-layer.md#Model Pattern"],
+      "contract": "Safe parsing, fail-fast on missing mandatory fields"
+    },
+    {
+      "id": "data_mapper",
+      "target_file": "templates/data/mapper.dart.tpl",
+      "sources": ["standards/clean-architecture-guide.md#data-mapper"],
+      "contract": "Model ↔ Entity bidirectional mapping"
+    },
+    {
+      "id": "data_repo_impl",
+      "target_file": "templates/data/repo_impl.dart.tpl",
+      "sources": ["standards/api-data-layer.md#Repository Implementation Pattern"],
+      "contract": "wraps tryCatchAsync or try-catch, returns DataSuccess or DataFailure, zero fake fallback"
+    },
+    {
+      "id": "presentation_state",
+      "target_file": "templates/presentation/state.dart.tpl",
+      "sources": ["standards/state-management.md#Pattern A: BaseBlocState"],
+      "contract": "sealed class BaseBlocState, overrides equatableProps"
+    },
+    {
+      "id": "presentation_cubit",
+      "target_file": "templates/presentation/cubit.dart.tpl",
+      "sources": ["standards/state-management.md#Cubit Pattern"],
+      "contract": "Injects UseCase, emits states, handles errors"
+    },
+    {
+      "id": "presentation_screen",
+      "target_file": "templates/presentation/screen.dart.tpl",
+      "sources": ["standards/state-management.md#Widget Consumption"],
+      "contract": "Verified active BaseScreen/BaseScreenState, screen metadata and layout hook; router and Cubit ownership from Client"
+    },
+    {
+      "id": "di_module_di",
+      "target_file": "templates/di/module_di.dart.tpl",
+      "sources": ["standards/di-architecture.md#Module DI Registration Order"],
+      "contract": "Relative intra-module imports, strict 5-step registration order"
+    }
+  ]
+}

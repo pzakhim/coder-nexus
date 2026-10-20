@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "plugin_version": "2.3.0",
+  "hub_version": "0.1.0",
+  "source_revision_policy": "resolved_at_install",
+  "public_skills": [
+    "be-work-items",
+    "be-clean-architecture",
+    "be-api-contracts",
+    "grill-me",
+    "huly-task-runner"
+  ],
+  "mcp_tools": [
+    "huly_get_my_tasks",
+    "huly_get_task_detail"
+  ],
+  "required_resources": [
+    "../shared_contracts/api_handshake_protocol.md",
+    "plugin.json",
+    "mcp_config.json",
+    "rules/backend_clean_architecture_rules.md",
+    "agents/spec_writer.md",
+    "agents/planning.md",
+    "agents/code_writer.md",
+    "agents/test_runner.md",
+    "agents/code_reviewer.md",
+    "agents/docs_writer.md",
+    "skills/grill-me/SKILL.md",
+    "skills/be-work-items/references/work-item-contract.md",
+    "skills/be-work-items/templates/brief.md.tpl",
+    "skills/be-work-items/templates/requirements.md.tpl",
+    "skills/be-work-items/templates/codebase-notes.md.tpl",
+    "skills/be-clean-architecture/SKILL.md",
+    "skills/be-api-contracts/SKILL.md",
+    "skills/huly-task-runner/SKILL.md"
+  ]
+}

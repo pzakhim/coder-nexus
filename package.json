@@ -1,0 +1,76 @@
+{
+  "name": "coder-nexus",
+  "displayName": "Coder Nexus",
+  "description": "The hub for your AI Factory - agents, MCPs, and project scaffolding",
+  "version": "2.3.0",
+  "publisher": "IMP-AIFactory",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "antigravity",
+    "flutter",
+    "frappe",
+    "backend",
+    "clean-architecture",
+    "huly",
+    "mcp"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pzakhim/coder-nexus"
+  },
+  "main": "./extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "coder-nexus.quickActions",
+        "title": "Coder Nexus: Quick Actions Menu"
+      },
+      {
+        "command": "coder-nexus.installCli",
+        "title": "Coder Nexus: Install / Update CLI"
+      },
+      {
+        "command": "coder-nexus.checkHealth",
+        "title": "Coder Nexus: Doctor / Check Environment & CLI"
+      },
+      {
+        "command": "coder-nexus.installWorkspace",
+        "title": "Coder Nexus: Sync Plugin to Workspace (Auto-Detect)"
+      },
+      {
+        "command": "coder-nexus.installWorkspaceFlutter",
+        "title": "Coder Nexus: Force Sync Flutter to Workspace"
+      },
+      {
+        "command": "coder-nexus.installWorkspaceFrappe",
+        "title": "Coder Nexus: Force Sync Frappe UI to Workspace"
+      },
+      {
+        "command": "coder-nexus.installWorkspaceBE",
+        "title": "Coder Nexus: Force Sync Backend (BE) to Workspace"
+      },
+      {
+        "command": "coder-nexus.installWorkspaceFE",
+        "title": "Coder Nexus: Force Sync Frontend (FE) to Workspace"
+      },
+      {
+        "command": "coder-nexus.installGlobal",
+        "title": "Coder Nexus: Sync Plugin to Antigravity Global Config"
+      },
+      {
+        "command": "coder-nexus.showArchitecture",
+        "title": "Coder Nexus: Show Architecture Dashboard"
+      }
+    ]
+  }
+}

@@ -1,0 +1,51 @@
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# AI Agents & Scratch
+.agents
+.claude
+.gemini
+scratch/
+
+# Python & Testing
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+*.egg-info/
+
+# Node / VS Code Extension
+node_modules/
+out/
+*.vsix
+.vscode-test/
+
+# Flutter & Dart (Library Package)
+.dart_tool/
+**/.dart_tool/
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+
+# IDE & Editor files
+.idea/
+**/.idea/
+*.iml
+**/*.iml
+
+# Operating System & Logs
+.DS_Store
+Thumbs.db
+*.log
+app_core/
+template/

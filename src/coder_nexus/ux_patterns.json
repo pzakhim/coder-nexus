@@ -1,0 +1,49 @@
+[
+  {
+    "scenario": "auth_failure",
+    "title": "Authentication Failure Handling",
+    "ui_behavior": "Show the error inline via errorText on the password AppFormField and keep focus there. Keep the entered email/username; never clear it.",
+    "bloc_state_pattern": "Follow the Client's Cubit state convention. Add a failure state carrying the server message (DataFailure.error.message); keep the typed credentials in the form controllers, not in state.",
+    "suggested_components": ["AppFormField"],
+    "anti_patterns": [
+      "Popping up a full-screen blocking dialog for wrong credentials.",
+      "Clearing the email/username input field on authentication error.",
+      "Resetting password without notifying the user inline."
+    ]
+  },
+  {
+    "scenario": "network_timeout",
+    "title": "Network Disconnection & Timeout Handling",
+    "ui_behavior": "Show the error with a clear retry action: inline error view with an AppButton retry for page loads, or AppDialog.show for a failed submit. Keep all form input in its controllers so no work is lost.",
+    "bloc_state_pattern": "Follow the Client's Cubit state convention. Map DataFailure to a failure state with the message; the retry calls the same Cubit method again.",
+    "suggested_components": ["AppButton", "AppDialog"],
+    "anti_patterns": [
+      "Wiping form controllers or resetting draft state upon network drop.",
+      "Crashing or freezing the interface without communicating with the user.",
+      "Infinite loading spinner without timeout feedback."
+    ]
+  },
+  {
+    "scenario": "form_validation",
+    "title": "Real-time Field Validation",
+    "ui_behavior": "Validate on blur or while typing. Show inline errorText under invalid AppFormField inputs (pass a validator whenever isRequired is true). Disable the submit AppButton until mandatory fields are valid.",
+    "bloc_state_pattern": "Follow the Client's Cubit state convention. Keep isValid and per-field errors in state only if the screen needs them beyond the Form's own validation.",
+    "suggested_components": ["AppFormField", "AppButton"],
+    "anti_patterns": [
+      "Showing dialogs for field-level validation errors.",
+      "Waiting until submit to show all errors in one popup.",
+      "Permitting submit when mandatory fields are empty."
+    ]
+  },
+  {
+    "scenario": "empty_state",
+    "title": "Empty Data / No Records State",
+    "ui_behavior": "Show AppNoData with an explanatory text, plus an AppButton when the user can create the first record. With ListViewPaging, pass it as noDataBuilder.",
+    "bloc_state_pattern": "Follow the Client's Cubit state convention. A success state with an empty list renders the empty view; it is not an error.",
+    "suggested_components": ["AppNoData", "AppButton"],
+    "anti_patterns": [
+      "Showing a completely blank screen when the list is empty.",
+      "Showing an error when 0 records are returned normally."
+    ]
+  }
+]

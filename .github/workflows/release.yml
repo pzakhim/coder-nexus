@@ -1,0 +1,80 @@
+name: Release & Publish Extension
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g. 1.9.5)'
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Resolve Version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Building and publishing version: $VERSION"
+
+      - name: Sync Version across Manifest and Package
+        run: |
+          python3 scripts/sync_version.py "$VERSION"
+
+      - name: Run Test Suite
+        run: |
+          uv sync
+          uv run pytest -q
+
+      - name: Package VS Code Extension (.vsix)
+        run: |
+          npx -y @vscode/vsce package --no-dependencies -o "coder-nexus-${VERSION}.vsix"
+
+      - name: Publish to Open VSX
+        env:
+          OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
+        run: |
+          if [ -z "$OPEN_VSX_TOKEN" ]; then
+            echo "❌ Error: OPEN_VSX_TOKEN secret is not set in GitHub repository settings."
+            exit 1
+          fi
+          STATUS=$(curl -sS -o /dev/null -w '%{http_code}' "https://open-vsx.org/api/IMP-AIFactory/coder-nexus/${VERSION}")
+          case "$STATUS" in
+            200) echo "Version ${VERSION} is already on Open VSX; continuing to GitHub Release." ;;
+            404) npx -y ovsx publish "coder-nexus-${VERSION}.vsix" -p "$OPEN_VSX_TOKEN" ;;
+            *) echo "Open VSX version lookup failed with HTTP ${STATUS}."; exit 1 ;;
+          esac
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: coder-nexus-${{ env.VERSION }}.vsix
+          generate_release_notes: true

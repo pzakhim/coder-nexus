@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coder Nexus: Unified DAG Tree (Color-Coded: Clarification vs Milestone Report)</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(22, 27, 46, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #38bdf8;
+      --primary-glow: rgba(56, 189, 248, 0.25);
+      --accent: #818cf8;
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.35);
+      --warning: #f59e0b;
+      --warning-glow: rgba(245, 158, 11, 0.35);
+      --danger: #ef4444;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: radial-gradient(circle at top, #1e293b 0%, var(--bg) 100%);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      padding: 1.25rem 2rem;
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(11, 15, 25, 0.92);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+    .brand-title h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #38bdf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-title p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 0.3rem;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      overflow-x: auto;
+    }
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      border-radius: 7px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .nav-btn:hover { color: var(--text); background: rgba(255, 255, 255, 0.05); }
+    .nav-btn.active {
+      color: #fff;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(129, 140, 248, 0.3));
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      box-shadow: 0 0 12px var(--primary-glow);
+    }
+
+    main {
+      flex: 1;
+      padding: 1.5rem 2rem;
+      max-width: 1750px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Graph Canvas & Container */
+    .graph-layout {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 1.5rem;
+      height: calc(100vh - 150px);
+      min-height: 720px;
+    }
+    @media (max-width: 1300px) {
+      .graph-layout { grid-template-columns: 1fr; height: auto; }
+    }
+
+    .graph-viewport-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .graph-toolbar {
+      padding: 0.75rem 1.25rem;
+      background: rgba(15, 23, 42, 0.85);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .graph-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .btn-tool {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s;
+    }
+    .btn-tool:hover { background: rgba(56, 189, 248, 0.2); border-color: var(--primary); }
+    .btn-tool.active-filter { background: rgba(56, 189, 248, 0.35); border-color: var(--primary); font-weight: 700; }
+
+    .graph-legend {
+      display: flex;
+      gap: 1.25rem;
+      font-size: 0.75rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .legend-item { display: flex; align-items: center; gap: 0.4rem; font-weight: 500; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 4px; }
+
+    .svg-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background: radial-gradient(circle at center, #131b2e 0%, #0b0f19 100%);
+      position: relative;
+      cursor: grab;
+    }
+    .svg-container:active { cursor: grabbing; }
+
+    /* Node details panel */
+    .node-inspector {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-y: auto;
+      max-height: calc(100vh - 150px);
+    }
+    .inspector-header {
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+    .badge-agent { background: rgba(56, 189, 248, 0.2); color: var(--primary); border: 1px solid rgba(56, 189, 248, 0.4); }
+    .badge-clarify { background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.6); }
+    .badge-report { background: rgba(16, 185, 129, 0.25); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.6); }
+    .badge-alert { background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.6); }
+    .badge-handshake { background: rgba(129, 140, 248, 0.2); color: #a5b4fc; border: 1px solid rgba(129, 140, 248, 0.4); }
+
+    .inspector-title { font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; }
+    .inspector-subtitle { font-size: 0.8rem; color: var(--text-muted); }
+
+    .inspector-section {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .inspector-section h4 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .inspector-section p, .inspector-section li {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+    .inspector-section ul { padding-left: 1.25rem; margin-top: 0.35rem; }
+
+    /* SVG Styling */
+    svg text { user-select: none; }
+    .graph-node {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .graph-node:hover rect.node-box {
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));
+      stroke-width: 2.5px;
+    }
+    .graph-node.active rect.node-box {
+      stroke: #38bdf8 !important;
+      stroke-width: 3px !important;
+      filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.8)) !important;
+    }
+
+    /* Pulsing animations */
+    .pulse-amber {
+      animation: pulseAmberGlow 2s infinite;
+    }
+    @keyframes pulseAmberGlow {
+      0%, 100% { filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.7)); }
+      50% { filter: drop-shadow(0 0 16px rgba(245, 158, 11, 1)); }
+    }
+
+    .pulse-green {
+      animation: pulseGreenGlow 2s infinite;
+    }
+    @keyframes pulseGreenGlow {
+      0%, 100% { filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.7)); }
+      50% { filter: drop-shadow(0 0 16px rgba(16, 185, 129, 1)); }
+    }
+
+    .pulse-red {
+      animation: pulseRedGlow 2s infinite;
+    }
+    @keyframes pulseRedGlow {
+      0%, 100% { filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.7)); }
+      50% { filter: drop-shadow(0 0 16px rgba(239, 68, 68, 1)); }
+    }
+
+    .edge-line {
+      stroke: #475569;
+      stroke-width: 2px;
+      fill: none;
+      transition: all 0.2s;
+    }
+
+    /* Cards & Grids for Other Tabs */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+      gap: 1.5rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.75rem;
+    }
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Table Styles */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      margin-top: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+    th {
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--primary);
+      padding: 0.85rem 1rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--card-border);
+      white-space: nowrap;
+    }
+    td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #cbd5e1;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: rgba(255, 255, 255, 0.02); }
+    tr:hover td { background: rgba(56, 189, 248, 0.04); }
+
+    .tag {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-family: monospace;
+      margin: 0.15rem;
+    }
+    .tag-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .tag-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .tag-yellow { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .tag-purple { background: rgba(192, 132, 252, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3); }
+    .tag-red { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+    /* Steps list for Handshake */
+    .step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .step-item {
+      display: flex;
+      gap: 1rem;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 1rem;
+      border-radius: 8px;
+      border-left: 3px solid var(--primary);
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #0b0f19;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .step-content h4 {
+      font-size: 0.95rem;
+      color: #fff;
+      margin-bottom: 0.25rem;
+    }
+    .step-content p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🌐</div>
+      <div class="brand-title">
+        <h1>Coder Nexus: Unified Architecture DAG Tree</h1>
+        <p>Phân loại màu trực quan: ⚠️ Dừng vì thiếu data/hỏi ý kiến (Màu Cam) • 🟢 Dừng để Báo cáo/Report (Màu Xanh Lá)</p>
+      </div>
+    </div>
+
+    <nav class="nav-tabs">
+      <button class="nav-btn active" onclick="switchTab('tab-graph')">🌳 Interactive DAG Tree (Màu theo mục đích)</button>
+      <button class="nav-btn" onclick="switchTab('tab-fe-be')">⚡ FE vs BE Handshake</button>
+      <button class="nav-btn" onclick="switchTab('tab-frameworks')">📱 FE Framework Matrix</button>
+      <button class="nav-btn" onclick="switchTab('tab-touchpoints')">🛑 6 Unified Touchpoints</button>
+      <button class="nav-btn" onclick="switchTab('tab-testing')">🧪 Testing Strategy</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- TAB 1: INTERACTIVE DAG TREE -->
+    <div id="tab-graph" class="tab-content active">
+      <div class="graph-layout">
+        <!-- SVG Canvas Card -->
+        <div class="graph-viewport-card">
+          <div class="graph-toolbar">
+            <div class="graph-controls">
+              <button class="btn-tool" onclick="resetZoom()">⟲ Reset Zoom</button>
+              <button class="btn-tool" onclick="zoomIn()">➕ Zoom In</button>
+              <button class="btn-tool" onclick="zoomOut()">➖ Zoom Out</button>
+              <button class="btn-tool active-filter" id="btn-f-all" onclick="filterGraph('all')">👁️ Tất cả</button>
+              <button class="btn-tool" id="btn-f-clarify" onclick="filterGraph('clarify')">⚠️ Chỉ điểm hỏi ý kiến / Thiếu data (Cam)</button>
+              <button class="btn-tool" id="btn-f-report" onclick="filterGraph('report')">🟢 Chỉ điểm Báo cáo / Report (Xanh lá)</button>
+              <button class="btn-tool" id="btn-f-agents" onclick="filterGraph('agents')">🤖 Chỉ 6 Agents Thực thi</button>
+            </div>
+            <div class="graph-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#38bdf8;"></div> 🤖 Agent Thực thi</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div> ⚠️ Dừng hỏi ý kiến / Thiếu data (Cam)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#10b981;"></div> 🟢 Dừng để Báo cáo / Report (Xanh lá)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div> 🛑 Báo động lỗi sửa chữa (Đỏ)</div>
+            </div>
+          </div>
+
+          <div class="svg-container" id="svgContainer">
+            <svg id="architectureSvg" width="1680" height="980" viewBox="0 0 1680 980" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 9 5 L 0 9 z" fill="#64748b" />
+                </marker>
+                <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 9 5 L 0 9 z" fill="#38bdf8" />
+                </marker>
+                <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 9 5 L 0 9 z" fill="#c084fc" />
+                </marker>
+                <marker id="arrow-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 9 5 L 0 9 z" fill="#f59e0b" />
+                </marker>
+                <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 9 5 L 0 9 z" fill="#10b981" />
+                </marker>
+                <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 9 5 L 0 9 z" fill="#ef4444" />
+                </marker>
+              </defs>
+
+              <g id="zoomGroup">
+                <!-- GRID PATTERN -->
+                <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                  <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255, 255, 255, 0.02)" stroke-width="1"/>
+                </pattern>
+                <rect width="100%" height="100%" fill="url(#grid)" />
+
+                <!-- ================= PIPELINE EDGES ================= -->
+
+                <!-- Start to BA & Planning -->
+                <path class="edge-line" d="M 105 270 L 160 210" marker-end="url(#arrow)" />
+                <path class="edge-line" d="M 105 290 L 160 390" marker-end="url(#arrow)" />
+                
+                <!-- BA // Planning Peer Sync -->
+                <path class="edge-line" stroke-dasharray="4" d="M 250 260 L 250 340" marker-end="url(#arrow-purple)" marker-start="url(#arrow-purple)" />
+
+                <!-- BA to Handshake -->
+                <path class="edge-line" stroke-dasharray="4" d="M 250 160 L 250 80 L 390 80" marker-end="url(#arrow-purple)" />
+                <path class="edge-line" stroke-dasharray="4" d="M 590 80 L 660 80" marker-end="url(#arrow-purple)" />
+
+                <!-- BA to TP-1 (Gate 1: Clarification) -->
+                <path class="edge-line" d="M 340 210 L 400 210" marker-end="url(#arrow-orange)" />
+                <!-- TP-1 to TP-2 (Gate 2: Design alignment) -->
+                <path class="edge-line" d="M 640 210 L 700 210" marker-end="url(#arrow-orange)" />
+
+                <!-- Planning to TP-3 (Gate 3: Plan confirmation) -->
+                <path class="edge-line" d="M 340 390 L 700 390" marker-end="url(#arrow-orange)" />
+                <!-- TP-2 to TP-3 sequence -->
+                <path class="edge-line" d="M 820 270 L 820 330" marker-end="url(#arrow)" />
+
+                <!-- TP-3 to Code Writer (Phase Loop starts) -->
+                <path class="edge-line" d="M 940 390 L 1000 390" marker-end="url(#arrow-blue)" />
+
+                <!-- Code Writer to Reviewer -->
+                <path class="edge-line" d="M 1170 390 L 1230 390" marker-end="url(#arrow-blue)" />
+                
+                <!-- Reviewer Fail -> Feedback loop back to Coder -->
+                <path class="edge-line" stroke-dasharray="5" d="M 1315 335 C 1315 280, 1085 280, 1085 335" marker-end="url(#arrow-red)" />
+                
+                <!-- Reviewer Pass -> Produces TP-4 (GREEN: MILESTONE REPORT) -->
+                <path class="edge-line" d="M 1400 390 L 1460 390" marker-end="url(#arrow-green)" />
+
+                <!-- TP-4 Next Phase Choice -> Loop back to Coder -->
+                <path class="edge-line" stroke-dasharray="6" d="M 1520 460 C 1520 540, 1085 540, 1085 450" marker-end="url(#arrow-blue)" />
+
+                <!-- TP-4 All Phases Done -> Proceed to Test Runner (QA) -->
+                <path class="edge-line" d="M 1580 460 L 1580 610" marker-end="url(#arrow-blue)" />
+
+                <!-- Test Runner Fail -> Produces TP-5 (RED: DEFECT REMEDIATION) -->
+                <path class="edge-line" stroke-dasharray="5" d="M 1490 660 L 1400 660" marker-end="url(#arrow-red)" />
+                <!-- TP-5 User Proceeds -> Coder fixes -->
+                <path class="edge-line" stroke-dasharray="6" d="M 1160 660 C 1040 660, 1040 470, 1040 450" marker-end="url(#arrow-blue)" />
+
+                <!-- Test Runner Pass -> Docs Writer -->
+                <path class="edge-line" d="M 1580 715 L 1580 790" marker-end="url(#arrow-blue)" />
+                
+                <!-- Docs Writer to TP-6 (GREEN: FINAL REPORT & SIGN-OFF) -->
+                <path class="edge-line" d="M 1490 840 L 1400 840" marker-end="url(#arrow-green)" />
+
+                <!-- TP-6 Approved -> Release Published -->
+                <path class="edge-line" d="M 1160 840 L 1070 840" marker-end="url(#arrow-blue)" />
+
+
+                <!-- ================= NODES ================= -->
+
+                <!-- START -->
+                <g class="graph-node node-agent-item" id="node-start" onclick="inspectNode('start')" transform="translate(15, 245)">
+                  <rect class="node-box" width="90" height="75" rx="10" fill="#0f172a" stroke="#64748b" stroke-width="2"/>
+                  <text x="45" y="32" font-size="18" text-anchor="middle">🎯</text>
+                  <text x="45" y="52" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">User Goal</text>
+                  <text x="45" y="66" fill="#94a3b8" font-size="9" text-anchor="middle">Huly / Prompt</text>
+                </g>
+
+                <!-- BE HANDSHAKE BRIDGE -->
+                <g class="graph-node node-handshake-item" id="node-handshake" onclick="inspectNode('handshake')" transform="translate(390, 40)">
+                  <rect class="node-box" width="200" height="75" rx="10" fill="#1e1b4b" stroke="#818cf8" stroke-width="2" stroke-dasharray="4"/>
+                  <text x="15" y="24" fill="#a5b4fc" font-size="11" font-weight="700">🤝 FE-BE Handshake</text>
+                  <text x="15" y="38" fill="#e0e7ff" font-size="9">shared_contracts/ drafts</text>
+                  <line x1="15" y1="46" x2="185" y2="46" stroke="rgba(255,255,255,0.1)"/>
+                  <text x="15" y="60" fill="#38bdf8" font-size="9">• DRAFT_BY_FE contract</text>
+                  <text x="15" y="71" fill="#34d399" font-size="9">• READY_FOR_MOCK URL</text>
+                </g>
+
+                <!-- BE NEXUS REPO -->
+                <g class="graph-node node-handshake-item" id="node-be_nexus" onclick="inspectNode('be_nexus')" transform="translate(660, 40)">
+                  <rect class="node-box" width="180" height="75" rx="10" fill="#0f172a" stroke="#64748b" stroke-width="2"/>
+                  <text x="15" y="24" fill="#cbd5e1" font-size="11" font-weight="700">🖥️ coder-nexus-be</text>
+                  <text x="15" y="38" fill="#94a3b8" font-size="9">Server Repo Workflow</text>
+                  <line x1="15" y1="46" x2="165" y2="46" stroke="rgba(255,255,255,0.1)"/>
+                  <text x="15" y="60" fill="#cbd5e1" font-size="9">• DB Schema & Migration</text>
+                  <text x="15" y="71" fill="#cbd5e1" font-size="9">• API Endpoints + Tests</text>
+                </g>
+
+                <!-- 1. AGENT: SPEC WRITER -->
+                <g class="graph-node node-agent-item" id="node-spec_writer" onclick="inspectNode('spec_writer')" transform="translate(160, 160)">
+                  <rect class="node-box" width="180" height="95" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+                  <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(56, 189, 248, 0.2)"/>
+                  <text x="24" y="29" font-size="14" text-anchor="middle">📋</text>
+                  <text x="48" y="24" fill="#38bdf8" font-size="12" font-weight="700">Spec Writer</text>
+                  <text x="48" y="37" fill="#94a3b8" font-size="9">Technical BA Agent</text>
+                  <line x1="10" y1="46" x2="170" y2="46" stroke="rgba(255,255,255,0.08)"/>
+                  <text x="12" y="62" fill="#cbd5e1" font-size="9.5">• Khảo sát UI Kit & API</text>
+                  <text x="12" y="75" fill="#cbd5e1" font-size="9.5">• Viết brief.md & req.md</text>
+                  <text x="12" y="88" fill="#c084fc" font-size="9.5">• Soạn thảo design.md</text>
+                </g>
+
+                <!-- 2. AGENT: PLANNING AGENT -->
+                <g class="graph-node node-agent-item" id="node-planning" onclick="inspectNode('planning')" transform="translate(160, 340)">
+                  <rect class="node-box" width="180" height="95" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+                  <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(56, 189, 248, 0.2)"/>
+                  <text x="24" y="29" font-size="14" text-anchor="middle">🗺️</text>
+                  <text x="48" y="24" fill="#38bdf8" font-size="12" font-weight="700">Planning Agent</text>
+                  <text x="48" y="37" fill="#94a3b8" font-size="9">Tech Lead Agent</text>
+                  <line x1="10" y1="46" x2="170" y2="46" stroke="rgba(255,255,255,0.08)"/>
+                  <text x="12" y="62" fill="#cbd5e1" font-size="9.5">• Quét nhanh context (Zero-wait)</text>
+                  <text x="12" y="75" fill="#cbd5e1" font-size="9.5">• Phân rã Phase slices</text>
+                  <text x="12" y="88" fill="#34d399" font-size="9.5">• Định nghĩa DoD Unit Test</text>
+                </g>
+
+                <!-- ================= TOUCHPOINTS ================= -->
+
+                <!-- TP-1: [CAM/HỔ PHÁCH] DỪNG DO THIẾU DATA / HỎI Ý KIẾN CHƯA RÕ VỀ API -->
+                <g class="graph-node pulse-amber node-clarify-item" id="node-tp1" onclick="inspectNode('tp1')" transform="translate(400, 145)">
+                  <rect class="node-box" width="240" height="125" rx="12" fill="#3b1f0b" stroke="#f59e0b" stroke-width="2.5"/>
+                  <!-- TP Header -->
+                  <rect x="10" y="8" width="22" height="22" rx="4" fill="#f59e0b"/>
+                  <text x="21" y="23" font-size="11" text-anchor="middle" fill="#000">⚠️</text>
+                  <text x="38" y="23" fill="#f59e0b" font-size="11" font-weight="700">TP-1: LÀM RÕ YÊU CẦU & CHỌN API</text>
+                  <line x1="10" y1="36" x2="230" y2="36" stroke="rgba(255,255,255,0.1)"/>
+                  <!-- Sub-box 1: Reason / Missing Data -->
+                  <rect x="10" y="44" width="220" height="34" rx="6" fill="rgba(245, 158, 11, 0.15)" stroke="rgba(245, 158, 11, 0.35)"/>
+                  <text x="18" y="58" fill="#fbbf24" font-size="9.5" font-weight="700">⚠️ DỪNG VÌ THIẾU DATA & LÀM RÕ:</text>
+                  <text x="18" y="71" fill="#fde68a" font-size="9">Chưa rõ Live API, Swagger hay FE tự Mock?</text>
+                  <!-- Sub-box 2: User Decision Request -->
+                  <rect x="10" y="83" width="220" height="34" rx="6" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.1)"/>
+                  <text x="18" y="97" fill="#fff" font-size="9.5" font-weight="700">❓ HỎI Ý KIẾN USER (ask_question):</text>
+                  <text x="18" y="110" fill="#cbd5e1" font-size="9">Duyệt brief.md & Chốt 1 phương án API</text>
+                </g>
+
+                <!-- TP-2: [CAM/HỔ PHÁCH] DỪNG DO HỎI Ý KIẾN THIẾT KẾ UI/UX -->
+                <g class="graph-node pulse-amber node-clarify-item" id="node-tp2" onclick="inspectNode('tp2')" transform="translate(700, 145)">
+                  <rect class="node-box" width="240" height="125" rx="12" fill="#3b1f0b" stroke="#f59e0b" stroke-width="2.5"/>
+                  <!-- TP Header -->
+                  <rect x="10" y="8" width="22" height="22" rx="4" fill="#f59e0b"/>
+                  <text x="21" y="23" font-size="11" text-anchor="middle" fill="#000">⚠️</text>
+                  <text x="38" y="23" fill="#f59e0b" font-size="11" font-weight="700">TP-2: HỎI Ý KIẾN THIẾT KẾ UI/UX</text>
+                  <line x1="10" y1="36" x2="230" y2="36" stroke="rgba(255,255,255,0.1)"/>
+                  <!-- Sub-box 1: Reason / Ambiguity -->
+                  <rect x="10" y="44" width="220" height="34" rx="6" fill="rgba(245, 158, 11, 0.15)" stroke="rgba(245, 158, 11, 0.35)"/>
+                  <text x="18" y="58" fill="#fbbf24" font-size="9.5" font-weight="700">⚠️ DỪNG ĐỂ THAM VẤN USER:</text>
+                  <text x="18" y="71" fill="#fde68a" font-size="9">Nhiều widget UI Kit tương thích / Chưa rõ style</text>
+                  <!-- Sub-box 2: User Decision Request -->
+                  <rect x="10" y="83" width="220" height="34" rx="6" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.1)"/>
+                  <text x="18" y="97" fill="#fff" font-size="9.5" font-weight="700">❓ HỎI Ý KIẾN USER (ask_question):</text>
+                  <text x="18" y="110" fill="#cbd5e1" font-size="9">Xác nhận design.md & Component UI Kit</text>
+                </g>
+
+                <!-- TP-3: [CAM/HỔ PHÁCH] DỪNG DO HỎI DUYỆT KẾ HOẠCH & TIÊU CHUẨN TEST -->
+                <g class="graph-node pulse-amber node-clarify-item" id="node-tp3" onclick="inspectNode('tp3')" transform="translate(700, 325)">
+                  <rect class="node-box" width="240" height="125" rx="12" fill="#3b1f0b" stroke="#f59e0b" stroke-width="2.5"/>
+                  <!-- TP Header -->
+                  <rect x="10" y="8" width="22" height="22" rx="4" fill="#f59e0b"/>
+                  <text x="21" y="23" font-size="11" text-anchor="middle" fill="#000">⚠️</text>
+                  <text x="38" y="23" fill="#f59e0b" font-size="11" font-weight="700">TP-3: DUYỆT KẾ HOẠCH PHÂN RÃ</text>
+                  <line x1="10" y1="36" x2="230" y2="36" stroke="rgba(255,255,255,0.1)"/>
+                  <!-- Sub-box 1: Reason -->
+                  <rect x="10" y="44" width="220" height="34" rx="6" fill="rgba(245, 158, 11, 0.15)" stroke="rgba(245, 158, 11, 0.35)"/>
+                  <text x="18" y="58" fill="#fbbf24" font-size="9.5" font-weight="700">⚠️ DỪNG XÁC NHẬN PHẠM VI CODE:</text>
+                  <text x="18" y="71" fill="#fde68a" font-size="9">Chốt lát cắt Phase & Definition of Done Unit Test</text>
+                  <!-- Sub-box 2: User Action -->
+                  <rect x="10" y="83" width="220" height="34" rx="6" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.1)"/>
+                  <text x="18" y="97" fill="#fff" font-size="9.5" font-weight="700">❓ HỎI Ý KIẾN USER (ask_question):</text>
+                  <text x="18" y="110" fill="#cbd5e1" font-size="9">Bấm Proceed để Coder bắt đầu viết code Phase 1</text>
+                </g>
+
+                <!-- 3. AGENT: CODE WRITER -->
+                <g class="graph-node node-agent-item" id="node-code_writer" onclick="inspectNode('code_writer')" transform="translate(1000, 335)">
+                  <rect class="node-box" width="170" height="105" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+                  <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(56, 189, 248, 0.2)"/>
+                  <text x="24" y="29" font-size="14" text-anchor="middle">💻</text>
+                  <text x="48" y="24" fill="#38bdf8" font-size="12" font-weight="700">Code Writer</text>
+                  <text x="48" y="37" fill="#94a3b8" font-size="9">Senior Developer</text>
+                  <line x1="10" y1="46" x2="160" y2="46" stroke="rgba(255,255,255,0.08)"/>
+                  <text x="12" y="62" fill="#38bdf8" font-size="9.5">• Code ONLY (No comments)</text>
+                  <text x="12" y="75" fill="#34d399" font-size="9.5">• Tự viết Developer Unit Test</text>
+                  <text x="12" y="88" fill="#f87171" font-size="9.5">• flutter test pass 100% Green</text>
+                </g>
+
+                <!-- 4. AGENT: CODE REVIEWER -->
+                <g class="graph-node node-agent-item" id="node-code_reviewer" onclick="inspectNode('code_reviewer')" transform="translate(1230, 335)">
+                  <rect class="node-box" width="170" height="105" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+                  <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(56, 189, 248, 0.2)"/>
+                  <text x="24" y="29" font-size="14" text-anchor="middle">🔍</text>
+                  <text x="48" y="24" fill="#38bdf8" font-size="12" font-weight="700">Code Reviewer</text>
+                  <text x="48" y="37" fill="#94a3b8" font-size="9">Quality Gatekeeper</text>
+                  <line x1="10" y1="46" x2="160" y2="46" stroke="rgba(255,255,255,0.08)"/>
+                  <text x="12" y="62" fill="#cbd5e1" font-size="9.5">• 5-Axis Clean Arch check</text>
+                  <text x="12" y="75" fill="#cbd5e1" font-size="9.5">• Audit tính khách quan test</text>
+                  <text x="12" y="88" fill="#38bdf8" font-size="9.5">• Tự viết docstrings/comments</text>
+                </g>
+
+                <!-- TP-4: [XANH LÁ] DỪNG ĐỂ REPORT BÁO CÁO THÀNH QUẢ PHASE -->
+                <g class="graph-node pulse-green node-report-item" id="node-tp4" onclick="inspectNode('tp4')" transform="translate(1460, 325)">
+                  <rect class="node-box" width="210" height="135" rx="12" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+                  <!-- TP Header -->
+                  <rect x="10" y="8" width="22" height="22" rx="4" fill="#10b981"/>
+                  <text x="21" y="23" font-size="11" text-anchor="middle" fill="#000">🟢</text>
+                  <text x="38" y="23" fill="#34d399" font-size="10.5" font-weight="700">TP-4: BÁO CÁO THÀNH QUẢ PHASE</text>
+                  <line x1="10" y1="36" x2="200" y2="36" stroke="rgba(255,255,255,0.15)"/>
+                  <!-- Sub-box 1: Milestone Report Artifact -->
+                  <rect x="10" y="44" width="190" height="42" rx="6" fill="rgba(16, 185, 129, 0.2)" stroke="rgba(16, 185, 129, 0.4)"/>
+                  <text x="16" y="58" fill="#34d399" font-size="9.5" font-weight="700">🟢 BÁO CÁO THÀNH QUẢ (REPORT):</text>
+                  <text x="16" y="71" fill="#fff" font-size="8.5">phase_K_done_report.md (Code diff,</text>
+                  <text x="16" y="81" fill="#fff" font-size="8.5">Test 100% Green, Docstrings đã thêm)</text>
+                  <!-- Sub-box 2: User Decision Next -->
+                  <rect x="10" y="91" width="190" height="34" rx="6" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.1)"/>
+                  <text x="16" y="104" fill="#a7f3d0" font-size="8.5" font-weight="600">Quyết định: [1] Làm tiếp Phase K+1</text>
+                  <text x="16" y="116" fill="#a7f3d0" font-size="8.5" font-weight="600">hoặc [2] Tạm dừng chạy Preview UI</text>
+                </g>
+
+                <!-- 5. AGENT: TEST RUNNER (INDEPENDENT QA) -->
+                <g class="graph-node node-agent-item" id="node-test_runner" onclick="inspectNode('test_runner')" transform="translate(1480, 610)">
+                  <rect class="node-box" width="180" height="105" rx="10" fill="#1e293b" stroke="#34d399" stroke-width="2"/>
+                  <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(52, 211, 153, 0.2)"/>
+                  <text x="24" y="29" font-size="14" text-anchor="middle">🧪</text>
+                  <text x="48" y="24" fill="#34d399" font-size="12" font-weight="700">Test Runner (QA)</text>
+                  <text x="48" y="37" fill="#94a3b8" font-size="9">Independent QA (No Plan)</text>
+                  <line x1="10" y1="46" x2="170" y2="46" stroke="rgba(255,255,255,0.08)"/>
+                  <text x="12" y="62" fill="#cbd5e1" font-size="9.5">• SSOT: brief.md & req.md</text>
+                  <text x="12" y="75" fill="#cbd5e1" font-size="9.5">• Chạy flutter test & analyze</text>
+                  <text x="12" y="88" fill="#34d399" font-size="9.5">• Nghiệm thu BDD độc lập</text>
+                </g>
+
+                <!-- TP-5: [ĐỎ/CẢNH BÁO] DỪNG DO BÁO ĐỘNG LỖI CẦN SỬA CHỮA -->
+                <g class="graph-node pulse-red node-clarify-item" id="node-tp5" onclick="inspectNode('tp5')" transform="translate(1160, 600)">
+                  <rect class="node-box" width="240" height="125" rx="12" fill="#380d0d" stroke="#ef4444" stroke-width="2.5"/>
+                  <!-- TP Header -->
+                  <rect x="10" y="8" width="22" height="22" rx="4" fill="#ef4444"/>
+                  <text x="21" y="23" font-size="11" text-anchor="middle" fill="#fff">🛑</text>
+                  <text x="38" y="23" fill="#f87171" font-size="11" font-weight="700">TP-5: BÁO ĐỘNG LỖI QA & SỬA LỖI</text>
+                  <line x1="10" y1="36" x2="230" y2="36" stroke="rgba(255,255,255,0.1)"/>
+                  <!-- Sub-box 1: Alert Defect Artifact -->
+                  <rect x="10" y="44" width="220" height="34" rx="6" fill="rgba(239, 68, 68, 0.2)" stroke="rgba(239, 68, 68, 0.4)"/>
+                  <text x="18" y="58" fill="#fca5a5" font-size="9.5" font-weight="700">🛑 DỪNG DO TEST FAILED / BUG BDD:</text>
+                  <text x="18" y="71" fill="#fff" font-size="9">defect_remediation_report.md (Log lỗi chi tiết)</text>
+                  <!-- Sub-box 2: User Action -->
+                  <rect x="10" y="83" width="220" height="34" rx="6" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.1)"/>
+                  <text x="18" y="97" fill="#fca5a5" font-size="9.5" font-weight="700">❓ HỎI LỆNH USER (ask_question):</text>
+                  <text x="18" y="110" fill="#fde68a" font-size="9">Bấm "Proceed" bắt Coder sửa lại code</text>
+                </g>
+
+                <!-- 6. AGENT: DOCS WRITER -->
+                <g class="graph-node node-agent-item" id="node-docs_writer" onclick="inspectNode('docs_writer')" transform="translate(1490, 790)">
+                  <rect class="node-box" width="170" height="95" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+                  <rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(56, 189, 248, 0.2)"/>
+                  <text x="24" y="29" font-size="14" text-anchor="middle">📚</text>
+                  <text x="48" y="24" fill="#38bdf8" font-size="12" font-weight="700">Docs Writer</text>
+                  <text x="48" y="37" fill="#94a3b8" font-size="9">Technical Writer</text>
+                  <line x1="10" y1="46" x2="160" y2="46" stroke="rgba(255,255,255,0.08)"/>
+                  <text x="12" y="62" fill="#cbd5e1" font-size="9.5">• Viết docs/as_built.md</text>
+                  <text x="12" y="75" fill="#cbd5e1" font-size="9.5">• Cập nhật Feature README</text>
+                  <text x="12" y="88" fill="#94a3b8" font-size="9.5">• Không sửa code runtime</text>
+                </g>
+
+                <!-- TP-6: [XANH LÁ] DỪNG ĐỂ BÁO CÁO NGHIỆM THU CUỐI CÙNG & RELEASE -->
+                <g class="graph-node pulse-green node-report-item" id="node-tp6" onclick="inspectNode('tp6')" transform="translate(1160, 780)">
+                  <rect class="node-box" width="240" height="125" rx="12" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+                  <!-- TP Header -->
+                  <rect x="10" y="8" width="22" height="22" rx="4" fill="#10b981"/>
+                  <text x="21" y="23" font-size="11" text-anchor="middle" fill="#000">🟢</text>
+                  <text x="38" y="23" fill="#34d399" font-size="11" font-weight="700">TP-6: BÁO CÁO NGHIỆM THU CUỐI</text>
+                  <line x1="10" y1="36" x2="230" y2="36" stroke="rgba(255,255,255,0.15)"/>
+                  <!-- Sub-box 1: Final Deliverable Artifact -->
+                  <rect x="10" y="44" width="220" height="34" rx="6" fill="rgba(16, 185, 129, 0.2)" stroke="rgba(16, 185, 129, 0.4)"/>
+                  <text x="18" y="58" fill="#34d399" font-size="9.5" font-weight="700">🟢 BÁO CÁO HOÀN TẤT (REPORT):</text>
+                  <text x="18" y="71" fill="#fff" font-size="9">verification_report.md (100% Green) & as_built.md</text>
+                  <!-- Sub-box 2: Release Authorization -->
+                  <rect x="10" y="83" width="220" height="34" rx="6" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.1)"/>
+                  <text x="18" y="97" fill="#a7f3d0" font-size="9.5" font-weight="700">❓ ỦY QUYỀN USER (ask_question):</text>
+                  <text x="18" y="110" fill="#fff" font-size="9">Xác nhận nghiệm thu & Cấp quyền gắn Git Tag</text>
+                </g>
+
+                <!-- FINAL RELEASE PUBLISHED -->
+                <g class="graph-node node-agent-item" id="node-release" onclick="inspectNode('release')" transform="translate(950, 805)">
+                  <rect class="node-box" width="120" height="75" rx="10" fill="#064e3b" stroke="#34d399" stroke-width="2"/>
+                  <text x="60" y="32" font-size="18" text-anchor="middle">🚀</text>
+                  <text x="60" y="52" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">Release Done</text>
+                  <text x="60" y="66" fill="#a7f3d0" font-size="9" text-anchor="middle">Git Tag & VSIX</text>
+                </g>
+
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Node Inspector Drawer -->
+        <div class="node-inspector" id="nodeInspector">
+          <div class="inspector-header">
+            <span class="badge badge-report" id="inspBadge">🟢 DỪNG ĐỂ REPORT BÁO CÁO</span>
+            <h3 class="inspector-title" id="inspTitle">TP-4: Báo cáo thành quả Phase</h3>
+            <p class="inspector-subtitle" id="inspSub">Bấm vào bất kỳ Node nào trên DAG Tree để xem chi tiết</p>
+          </div>
+
+          <div class="inspector-section" id="inspSec1">
+            <h4>🎯 Mục tiêu & Vai trò</h4>
+            <p id="inspRole">Đã hoàn thành xong 1 Phase lát cắt. AI dừng lại để báo cáo tổng kết thành quả cụ thể (Report Artifact) cho User đọc và nghiệm thu trước khi chuyển tiếp.</p>
+          </div>
+
+          <div class="inspector-section" id="inspSec2">
+            <h4>📄 Nội Dung Report Báo Cáo</h4>
+            <p id="inspArtifact"><strong>docs/features/.../phase_K_done_report.md</strong>:<br>• Tóm tắt các file và dòng code đã viết<br>• Kết quả chạy <code>flutter test</code> nội bộ (100% Green)<br>• Các docstrings và comments Reviewer đã bổ sung<br>• Ảnh chụp màn hình kết quả UI</p>
+          </div>
+
+          <div class="inspector-section" id="inspSec3">
+            <h4>🛑 Quyết Định Của User</h4>
+            <p id="inspRequest"><strong>Hộp thoại ask_question</strong>:<br>User đọc báo cáo và chọn bước đi tiếp theo:<br>• [Option 1] Tiếp tục sang Phase K+1 ngay<br>• [Option 2] Tạm dừng chạy preview xem màn hình app</p>
+          </div>
+
+          <div class="inspector-section" id="inspSec4">
+            <h4>➡️ Bước Tiếp Theo</h4>
+            <p id="inspNext">Nếu còn Phase -> Tiếp tục lặp lại Code Writer. Nếu đã xong hết các Phase -> Chuyển sang <strong>Test Runner (QA Độc lập)</strong>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: FE VS BE HANDSHAKE -->
+    <div id="tab-fe-be" class="tab-content">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📱 coder-nexus-fe (Frontend / Client)</div>
+            <span class="tag tag-blue">Client Workspace</span>
+          </div>
+          <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">
+            Chuyên trách toàn bộ tầng Client (Flutter / Frappe UI), quản lý State, UI Kit Components, Presentation Clean Architecture, và Developer Unit Test.
+          </p>
+          <div class="inspector-section" style="margin-bottom:0.75rem;">
+            <h4>Cấu trúc Phân lớp FE:</h4>
+            <ul>
+              <li><strong>Domain Layer</strong>: Entities, Repository Contracts, Usecases (Độc lập 100% với UI và Data).</li>
+              <li><strong>Data Layer</strong>: Models, Data Sources (Remote/Local), Mappers, Repo Implementations.</li>
+              <li><strong>Presentation Layer</strong>: Cubit/BLoC, UI States (Freezed/Equatables), BaseScreen, Widgets.</li>
+            </ul>
+          </div>
+          <div class="inspector-section">
+            <h4>Tools & Skills riêng biệt:</h4>
+            <span class="tag tag-blue">core-usage</span>
+            <span class="tag tag-blue">get_ux_error_patterns</span>
+            <span class="tag tag-blue">validate_architecture_code</span>
+            <span class="tag tag-green">flutter/unit-test</span>
+            <span class="tag tag-green">flutter/clean-architecture</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🖥️ coder-nexus-be (Backend / API Service)</div>
+            <span class="tag tag-purple">Server Workspace</span>
+          </div>
+          <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">
+            Chuyên trách Server API, Database Schemas, Migrations, Backend Clean Architecture (Controller, Service, Repository) và Swagger/OpenAPI Specs.
+          </p>
+          <div class="inspector-section" style="margin-bottom:0.75rem;">
+            <h4>Cấu trúc Phân lớp BE:</h4>
+            <ul>
+              <li><strong>Controller / Router Layer</strong>: HTTP Handlers, Request Validation, Authentication Middleware.</li>
+              <li><strong>Service / Business Logic Layer</strong>: Core Domain Rules, Transactions, External Integrations.</li>
+              <li><strong>Repository / Persistence Layer</strong>: ORM Entities, DB Migrations, Query Optimizations.</li>
+            </ul>
+          </div>
+          <div class="inspector-section">
+            <h4>Tools & Skills riêng biệt:</h4>
+            <span class="tag tag-purple">huly_get_my_tasks</span>
+            <span class="tag tag-purple">huly_get_task_detail</span>
+            <span class="tag tag-green">be-work-items</span>
+            <span class="tag tag-green">be-clean-architecture</span>
+            <span class="tag tag-green">be-api-contracts</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1.5rem;">
+        <div class="card-header">
+          <div class="card-title">🤝 Quy trình FE-BE API Handshake 5 Bước (shared_contracts)</div>
+          <span class="tag tag-green">SSOT Contract-First</span>
+        </div>
+        <p style="color:var(--text-muted); font-size:0.85rem;">
+          Được quy định trong <code>plugins/shared_contracts/api_handshake_protocol.md</code>. FE không bao giờ tự bịa API hay đoán mò. Khi thiếu endpoint, quy trình Handshake sau được tự động kích hoạt:
+        </p>
+
+        <div class="step-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>Phát hiện GAP & Dự thảo Schema (DRAFT_BY_FE)</h4>
+              <p>Spec Writer (FE) phân tích tính năng, nhận diện endpoint chưa tồn tại trên Server. Xuất file hợp đồng nháp: <code>contracts/drafts/&lt;feature&gt;_api.json</code> và <code>contracts/drafts/api_gap_report.md</code>.</p>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>Thẩm định Kỹ thuật BE (IN_BE_REVIEW & APPROVED_BY_BE)</h4>
+              <p>Spec Writer & Planning (BE) tiếp nhận contract draft, đối soát tính khả thi với Database Schema, Authentication và Performance. Phê duyệt trạng thái sang <code>APPROVED_BY_BE</code>.</p>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>Cung cấp Mock Server / Swagger (READY_FOR_MOCK)</h4>
+              <p>BE tạo Mock URL hoặc mock data fixture theo schema đã chốt. FE Coder ngay lập tức có thể triển khai Data Source & Cubit với mock mà không bị block.</p>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <h4>BE Code & Deploy Staging (LIVE_DEPLOYED)</h4>
+              <p>BE Coder triển khai code controller, repository, DB migration và unit test. Deploy endpoint thật lên môi trường Dev/Staging.</p>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <h4>Tích hợp & Đóng Hợp đồng (VERIFIED_CLOSED)</h4>
+              <p>FE Tester & Coder chuyển Data Source từ Mock sang Live Endpoint. Chạy kiểm thử End-to-End, xác nhận dữ liệu chính xác và đóng Ticket Handshake.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: FE FRAMEWORK MATRIX -->
+    <div id="tab-frameworks" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📱 Ma trận Các Dạng Framework FE & Logic Xử Lý Từng Agent</div>
+          <span class="tag tag-blue">Flutter & Frappe</span>
+        </div>
+        <p style="color:var(--text-muted); font-size:0.85rem;">
+          Mỗi Agent trong <code>coder-nexus-fe</code> sẽ kích hoạt bộ Skills, Rules và Logic xử lý chuyên biệt tùy theo Framework của dự án mà không gây thừa thãi:
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Agent</th>
+                <th>Dạng Framework</th>
+                <th>Skills Được Nạp</th>
+                <th>Tools Được Dùng</th>
+                <th>Logic Xử Lý Cốt Lõi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td rowspan="2"><strong>Spec Writer</strong><br><span class="tag tag-blue">Technical BA</span></td>
+                <td><span class="tag tag-blue">Flutter</span></td>
+                <td>
+                  <span class="tag tag-green">flutter/feature-planner</span><br>
+                  <span class="tag tag-green">shared/work-items</span><br>
+                  <span class="tag tag-green">shared/huly-task-runner</span>
+                </td>
+                <td>
+                  <code>core-usage</code><br>
+                  <code>ask_question</code>
+                </td>
+                <td>
+                  Đọc GUIDE của <code>app_core</code> / <code>app_util</code> / <code>app_ui_kit</code> qua <code>core-usage</code>. Phân tích API Backend (Live vs Swagger vs FE Self-Mock). Xuất <code>brief.md</code>, <code>requirements.md</code> (BDD Gherkin), <code>design.md</code>. Dừng tại <strong>TP-1</strong> & <strong>TP-2</strong>.
+                </td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-purple">Frappe</span></td>
+                <td>
+                  <span class="tag tag-purple">frappe/ui-catalog</span><br>
+                  <span class="tag tag-green">shared/work-items</span>
+                </td>
+                <td>
+                  <code>ask_question</code><br>
+                  <code>view_file</code>
+                </td>
+                <td>
+                  Phân tích DocType Schema (Child tables, Single DocTypes), trường dữ liệu và quan hệ Link. Lựa chọn Frappe UI Vue 3 components (Button, Dialog, FormControl, ListView).
+                </td>
+              </tr>
+
+              <tr>
+                <td rowspan="2"><strong>Planning Agent</strong><br><span class="tag tag-blue">Tech Lead</span></td>
+                <td><span class="tag tag-blue">Flutter</span></td>
+                <td>
+                  <span class="tag tag-green">flutter/feature-planner</span><br>
+                  <span class="tag tag-green">flutter/planning-and-task-breakdown</span>
+                </td>
+                <td>
+                  <code>validate_plan_slices</code><br>
+                  <code>get_project_structure</code><br>
+                  <code>ask_question</code>
+                </td>
+                <td>
+                  Quét nhanh context song song với BA. Phân rã <code>implementation_plan.md</code> thành các Phase lát cắt (Domain/Data -> Cubit/State -> UI/Screen). <strong>Định nghĩa rõ DoD Unit Test</strong> cho Coder trong từng Phase. Dừng tại <strong>TP-3</strong>.
+                </td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-purple">Frappe</span></td>
+                <td>
+                  <span class="tag tag-green">shared/work-items</span>
+                </td>
+                <td>
+                  <code>ask_question</code>
+                </td>
+                <td>
+                  Phân rã kế hoạch thành các Phase: Phase 1 Tạo DocType JSON & Migrations -> Phase 2 Python Controller & Whitelist APIs -> Phase 3 Frappe UI Vue 3 Screens/Modals.
+                </td>
+              </tr>
+
+              <tr>
+                <td rowspan="2"><strong>Code Writer</strong><br><span class="tag tag-blue">Senior Dev</span></td>
+                <td><span class="tag tag-blue">Flutter</span></td>
+                <td>
+                  <span class="tag tag-green">flutter/clean-architecture</span><br>
+                  <span class="tag tag-green">flutter/unit-test</span><br>
+                  <span class="tag tag-green">flutter/clean-code</span>
+                </td>
+                <td>
+                  <code>get_project_structure</code><br>
+                  <code>core-usage</code><br>
+                  <code>write_to_file</code><br>
+                  <code>replace_file_content</code><br>
+                  <code>run_command</code>
+                </td>
+                <td>
+                  <strong>Chỉ viết Code + Developer Unit Test</strong>. Không viết docstring hay comment (để Reviewer viết). Tái sử dụng widget từ <code>app_ui_kit</code>. Tự chạy <code>flutter test</code> kiểm chứng 100% pass trước khi giao review.
+                </td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-purple">Frappe</span></td>
+                <td>
+                  <span class="tag tag-purple">frappe/clean-architecture</span>
+                </td>
+                <td>
+                  <code>write_to_file</code><br>
+                  <code>replace_file_content</code><br>
+                  <code>run_command</code>
+                </td>
+                <td>
+                  Tạo DocType JSON, viết Python Controller kế thừa <code>Document</code>, triển khai Whitelist API methods (<code>@frappe.whitelist()</code>), xây dựng giao diện Vue 3 với <code>frappe-ui</code>. Tự test API qua bench console.
+                </td>
+              </tr>
+
+              <tr>
+                <td rowspan="2"><strong>Code Reviewer</strong><br><span class="tag tag-blue">Tech Lead / Gatekeeper</span></td>
+                <td><span class="tag tag-blue">Flutter</span></td>
+                <td>
+                  <span class="tag tag-green">flutter/code-review</span><br>
+                  <span class="tag tag-green">flutter/clean-architecture</span><br>
+                  <span class="tag tag-green">flutter/unit-test</span>
+                </td>
+                <td>
+                  <code>validate_architecture_code</code><br>
+                  <code>replace_file_content</code><br>
+                  <code>ask_question</code><br>
+                  <code>run_command</code>
+                </td>
+                <td>
+                  Thẩm định 5-Axis Clean Architecture. <strong>Đánh giá tính khách quan của Unit Test</strong> (Edge cases, AAA, Mocktail). <strong>Tự tay bổ sung docstrings/comments</strong>. Trình bày Artifact và kích hoạt <strong>TP-4</strong>.
+                </td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-purple">Frappe</span></td>
+                <td>
+                  <span class="tag tag-purple">frappe/clean-architecture</span>
+                </td>
+                <td>
+                  <code>replace_file_content</code><br>
+                  <code>ask_question</code>
+                </td>
+                <td>
+                  Kiểm soát an toàn dữ liệu: Quyền hạn DocType (<code>has_permission</code>), SQL Injection (<code>frappe.db.sql</code>), logic Hooks. Viết docstring cho các Whitelist APIs.
+                </td>
+              </tr>
+
+              <tr>
+                <td rowspan="2"><strong>Test Runner</strong><br><span class="tag tag-blue">Independent QA</span></td>
+                <td><span class="tag tag-blue">Flutter</span></td>
+                <td>
+                  <span class="tag tag-green">flutter/verification</span><br>
+                  <span class="tag tag-green">flutter/visual-verification</span>
+                </td>
+                <td>
+                  <code>run_command</code><br>
+                  <code>view_file</code>
+                </td>
+                <td>
+                  <strong>QA Độc lập</strong>: Tuyệt đối không bám theo plan của Coder. Lấy <code>brief.md</code> (Scope In/Out) và <code>requirements.md</code> (BDD Gherkin, AC-NN) làm SSOT. Chạy <code>flutter test</code> toàn diện, <code>flutter analyze</code>. Nếu lỗi -> Dừng tại <strong>TP-5</strong> yêu cầu Coder sửa.
+                </td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-purple">Frappe</span></td>
+                <td>
+                  <span class="tag tag-green">shared/work-items</span>
+                </td>
+                <td>
+                  <code>run_command</code><br>
+                  <code>view_file</code>
+                </td>
+                <td>
+                  Chạy bộ kiểm thử tự động của Frappe: <code>bench run-tests --doctype &lt;Name&gt;</code>, kiểm thử API status codes, và kiểm thử UI E2E Cypress.
+                </td>
+              </tr>
+
+              <tr>
+                <td colspan="2"><strong>Docs Writer</strong><br><span class="tag tag-blue">Technical Writer</span></td>
+                <td><span class="tag tag-green">flutter/docs</span></td>
+                <td><code>write_to_file</code>, <code>replace_file_content</code></td>
+                <td>
+                  Hoàn thiện tài liệu thực tế sau khi tính năng đã chạy ổn định: <code>docs/as_built.md</code>, cập nhật <code>README.md</code>, sơ đồ kiến trúc module, và tài liệu release notes. Không can thiệp code runtime.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: 6 UNIFIED TOUCHPOINTS -->
+    <div id="tab-touchpoints" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🛑 Bảng Đặc Tả 6 Điểm Chạm Hợp Nhất (Phân loại Màu sắc)</div>
+          <span class="tag tag-green">🟢 Report</span>
+          <span class="tag tag-yellow">⚠️ Clarification</span>
+        </div>
+        <p style="color:var(--text-muted); font-size:0.85rem;">
+          Mỗi Điểm chạm được phân định rõ ràng giữa việc <strong>dừng hỏi ý kiến do thiếu data/chưa rõ (Màu Cam)</strong> và việc <strong>dừng để Báo cáo kết quả thành quả (Màu Xanh Lá)</strong>:
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Mã TP</th>
+                <th>Phân Loại Mục Đích</th>
+                <th>Tên Điểm Chạm</th>
+                <th>Agent Phụ Trách</th>
+                <th>Lý Do Dừng Lại & Nội Dung Trao Đổi</th>
+                <th>Hành Động Của Bạn</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="tag tag-yellow">TP-1</span></td>
+                <td><span class="tag tag-yellow">⚠️ Thiếu data / Hỏi ý kiến</span></td>
+                <td><strong>Làm Rõ Scope & Chốt API</strong><br>(Gate 1)</td>
+                <td>Spec Writer (BA)</td>
+                <td>
+                  <strong>Thiếu thông tin API Backend</strong>: Chưa có endpoint thật thì dùng Mock hay Swagger? Cần làm rõ In/Out scope trong <code>brief.md</code>.
+                </td>
+                <td>Bấm chọn 1 phương án API (Live / Swagger / Mock) và duyệt scope.</td>
+              </tr>
+
+              <tr>
+                <td><span class="tag tag-yellow">TP-2</span></td>
+                <td><span class="tag tag-yellow">⚠️ Thiếu data / Hỏi ý kiến</span></td>
+                <td><strong>Hỏi Ý Kiến Thiết Kế UI/UX</strong><br>(Gate 2)</td>
+                <td>Spec Writer (BA)</td>
+                <td>
+                  <strong>Tham vấn lựa chọn giao diện</strong>: Có nhiều component UI Kit phù hợp hoặc cần chốt phong cách layout, luồng xử lý lỗi UX trong <code>design.md</code>.
+                </td>
+                <td>Bấm Approve thiết kế hoặc yêu cầu chỉnh sửa widget.</td>
+              </tr>
+
+              <tr>
+                <td><span class="tag tag-yellow">TP-3</span></td>
+                <td><span class="tag tag-yellow">⚠️ Thiếu data / Hỏi ý kiến</span></td>
+                <td><strong>Duyệt Kế Hoạch & DoD Test</strong><br>(Gate 3)</td>
+                <td>Planning Agent</td>
+                <td>
+                  <strong>Xác nhận phạm vi thực thi</strong>: Chốt danh sách các Phase lát cắt (Domain -> Cubit -> UI) và tiêu chuẩn Unit Test DoD trước khi Coder viết code.
+                </td>
+                <td>Bấm Proceed để Coder bắt đầu viết code Phase 1.</td>
+              </tr>
+
+              <tr>
+                <td><span class="tag tag-green">TP-4</span></td>
+                <td><span class="tag tag-green">🟢 Dừng để REPORT</span></td>
+                <td><strong>Báo Cáo Thành Quả Phase</strong><br>(Phase Milestone Review)</td>
+                <td>Code Reviewer</td>
+                <td>
+                  <strong>BÁO CÁO KẾT QUẢ PHASE (Report Artifact)</strong>: Đã code xong 1 Phase + Flutter test pass 100% Green + Đã inject docstrings. Dừng lại nộp <code>phase_K_done_report.md</code> cho User xem thành quả.
+                </td>
+                <td>Đọc báo cáo nghiệm thu Phase và chọn: [1] Sang Phase K+1 ngay, hoặc [2] Tạm dừng chạy Preview xem app.</td>
+              </tr>
+
+              <tr>
+                <td><span class="tag tag-red">TP-5</span></td>
+                <td><span class="tag tag-red">🛑 Báo động lỗi sửa chữa</span></td>
+                <td><strong>Báo Động Lỗi QA & Khắc Phục</strong><br>(Defect Remediation Gate)</td>
+                <td>Test Runner (QA)</td>
+                <td>
+                  <strong>Phát hiện lỗi test failed / sai lệch BDD</strong>: Cung cấp báo cáo lỗi <code>defect_remediation_report.md</code> kèm log trace và file lỗi.
+                </td>
+                <td>Bấm Proceed Remediation để bắt Coder sửa lại code cho tới khi pass.</td>
+              </tr>
+
+              <tr>
+                <td><span class="tag tag-green">TP-6</span></td>
+                <td><span class="tag tag-green">🟢 Dừng để REPORT</span></td>
+                <td><strong>Báo Cáo Nghiệm Thu Cuối & Release</strong><br>(Final Gate 4)</td>
+                <td>Test Runner & Docs Writer</td>
+                <td>
+                  <strong>BÁO CÁO NGHIỆM THU TOÀN DIỆN (Final Report)</strong>: Toàn bộ Unit/Widget tests pass 100%, <code>verification_report.md</code> và <code>as_built.md</code> đã hoàn thiện. Báo cáo hoàn tất tính năng.
+                </td>
+                <td>Xác nhận nghiệm thu đạt chuẩn và Cấp quyền tạo Git Tag (vX.Y.Z) để phát hành.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: TESTING STRATEGY -->
+    <div id="tab-testing" class="tab-content">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🧪 1. Developer Unit Testing (Con Coder)</div>
+            <span class="tag tag-blue">Tầng Development</span>
+          </div>
+          <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">
+            Được thực hiện trực tiếp bởi <strong>Code Writer</strong> trong quá trình viết code từng Phase, và được thẩm định bởi <strong>Code Reviewer</strong>.
+          </p>
+          <div class="inspector-section" style="margin-bottom:1rem;">
+            <h4>Trách nhiệm & Phạm vi:</h4>
+            <ul>
+              <li><strong>Đối tượng kiểm thử</strong>: Từng hàm, từng Usecase, Model Mapper, và State transitions trong Cubit/BLoC.</li>
+              <li><strong>Nguyên tắc cốt lõi</strong>: Tuân thủ cấu trúc AAA (Arrange - Act - Assert), Mock toàn bộ dependency bằng <code>mocktail</code>.</li>
+              <li><strong>Self-Check bắt buộc</strong>: Coder phải tự chạy <code>flutter test</code> trong terminal. Nếu có test fail, Coder tự sửa trước khi gửi cho Reviewer.</li>
+              <li><strong>Reviewer Audit</strong>: Reviewer đánh giá tính khách quan của các test cases Coder tự nghĩ ra, bổ sung các edge cases thiếu sót.</li>
+            </ul>
+          </div>
+          <div class="inspector-section">
+            <h4>Templates hỗ trợ:</h4>
+            <code>usecase_test.dart.tpl</code> • <code>mapper_test.dart.tpl</code> • <code>cubit_test.dart.tpl</code>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🛡️ 2. Independent QA Verification (Test Runner)</div>
+            <span class="tag tag-green">Tầng Acceptance</span>
+          </div>
+          <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">
+            Được thực hiện độc lập bởi <strong>Test Runner</strong> sau khi tất cả các Phase code đã hoàn tất.
+          </p>
+          <div class="inspector-section" style="margin-bottom:1rem;">
+            <h4>Trách nhiệm & Ranh giới:</h4>
+            <ul>
+              <li><strong>Nguồn Chân Lý (SSOT)</strong>: <code>brief.md</code> (Scope In/Out) và <code>requirements.md</code> (BDD Gherkin, Acceptance Criteria AC-NN).</li>
+              <li><strong>Độc lập hoàn toàn với Planning</strong>: Không bao giờ dùng <code>implementation_plan.md</code> làm căn cứ nghiệm thu để tránh bias.</li>
+              <li><strong>Toàn vẹn hệ thống</strong>: Chạy bộ kiểm thử toàn diện: Flutter Unit Tests, Widget Tests, Integration Tests, và <code>flutter analyze</code>.</li>
+              <li><strong>Defect Remediation Loop</strong>: Nếu phát hiện bất kỳ sai lệch nào, Test Runner tạo Defect Report gửi ngược lại bắt Coder sửa cho tới khi PASS 100%.</li>
+            </ul>
+          </div>
+          <div class="inspector-section">
+            <h4>Báo cáo xuất ra:</h4>
+            <code>verification_report.md</code> • <code>defect_remediation_report.md</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1.5rem;">
+        <div class="card-header">
+          <div class="card-title">⚖️ So Sánh Ranh Giới: Developer Unit Test vs Independent QA</div>
+          <span class="tag tag-yellow">Strict Boundary</span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Tiêu chí</th>
+                <th>Developer Unit Testing (Coder & Reviewer)</th>
+                <th>Independent QA Verification (Test Runner)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Chủ sở hữu</strong></td>
+                <td>Code Writer viết, Code Reviewer thẩm định & audit</td>
+                <td>Test Runner (QA) độc lập hoàn toàn</td>
+              </tr>
+              <tr>
+                <td><strong>Thời điểm thực hiện</strong></td>
+                <td>Ngay trong lúc viết code của từng Phase slice</td>
+                <td>Sau khi toàn bộ code của feature đã xong và được Reviewer duyệt</td>
+              </tr>
+              <tr>
+                <td><strong>Căn cứ đối chiếu (SSOT)</strong></td>
+                <td>DoD trong <code>task.md</code> và <code>implementation_plan.md</code></td>
+                <td><code>brief.md</code> (In/Out Scope) và <code>requirements.md</code> (BDD Criteria)</td>
+              </tr>
+              <tr>
+                <td><strong>Mục đích chính</strong></td>
+                <td>Bảo đảm code chạy đúng logic nội tại, không bị Null/Crash, coverage cao</td>
+                <td>Bảo đảm tính năng thỏa mãn đúng nhu cầu nghiệp vụ, không thừa, không thiếu</td>
+              </tr>
+              <tr>
+                <td><strong>Quyền sửa code</strong></td>
+                <td>Có (Coder sửa logic, Reviewer sửa docstring/comment)</td>
+                <td><strong>Không (Read-Only 100%)</strong>, chỉ tạo report bắt Coder sửa</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+    }
+
+    const nodeDetails = {
+      'start': {
+        badge: 'badge-agent',
+        badgeText: 'Trigger Source',
+        title: 'User Goal / Huly Issue',
+        sub: 'Khởi đầu chu trình phát triển tính năng',
+        role: 'Yêu cầu từ người dùng hoặc Task được giao từ Huly tracker (Issue ID, Description, Acceptance Criteria sơ bộ).',
+        artifact: 'Không có (Khởi tạo từ Prompt hoặc Huly API).',
+        request: 'Hệ thống tự động kích hoạt Spec Writer và Planning Agent song song.',
+        next: 'Chuyển sang <strong>Spec Writer</strong> và <strong>Planning Agent</strong>.'
+      },
+      'spec_writer': {
+        badge: 'badge-agent',
+        badgeText: '🤖 Agent Thực Thi',
+        title: 'Spec Writer (Technical BA)',
+        sub: 'Phân tích yêu cầu, xác lập phạm vi & API Decision',
+        role: 'Làm rõ yêu cầu với User, định nghĩa Scope In/Out, viết kịch bản BDD Gherkin, tra cứu Flutter UI Kit và đưa ra quyết định Mocking API Backend.',
+        artifact: 'Soạn thảo <code>brief.md</code>, <code>requirements.md</code> và <code>design.md</code>.',
+        request: 'Kích hoạt <strong>TP-1 (Thiếu data API)</strong> và <strong>TP-2 (Hỏi ý kiến UI/UX)</strong>.',
+        next: 'Bàn giao tài liệu cho User duyệt tại TP-1 & TP-2.'
+      },
+      'planning': {
+        badge: 'badge-agent',
+        badgeText: '🤖 Agent Thực Thi',
+        title: 'Planning Agent (Tech Lead)',
+        sub: 'Phân rã kế hoạch lát cắt & Tiêu chuẩn Unit Test',
+        role: 'Quét nhanh codebase đồng thời với BA, phân tích mức độ sẵn sàng, chia nhỏ feature thành các Phase lát cắt (Domain -> Cubit -> UI), định nghĩa tiêu chuẩn Unit Test cho Coder.',
+        artifact: 'Soạn thảo <code>implementation_plan.md</code> và các file <code>task.md</code>.',
+        request: 'Kích hoạt <strong>TP-3 (Duyệt kế hoạch)</strong>.',
+        next: 'Bàn giao kế hoạch cho User duyệt tại TP-3.'
+      },
+      'tp1': {
+        badge: 'badge-clarify',
+        badgeText: '⚠️ DỪNG VÌ THIẾU DATA / HỎI Ý KIẾN',
+        title: 'TP-1: Làm rõ yêu cầu & Chọn phương án API',
+        sub: 'Thiếu thông tin Backend API & Cần làm rõ Scope',
+        role: 'AI dừng lại vì chưa rõ dữ liệu API Backend (Live endpoint đã deploy chưa? Có Swagger docs không hay FE phải tự Mock tạm thời?).',
+        artifact: '<strong>📄 Tài liệu làm căn cứ</strong>:<br>• <code>docs/.../brief.md</code> (Scope In/Out)<br>• <code>docs/.../requirements.md</code> (BDD Acceptance Criteria Gherkin)',
+        request: '<strong>🛑 Hộp thoại tham vấn (ask_question)</strong>:<br>User chọn 1 trong 3 phương án API Backend:<br>1. Dùng Live Endpoint (nếu Server đã deploy)<br>2. Dùng Swagger contract (nếu đang phát triển)<br>3. Tự Mock tại FE (nếu BE chưa làm)',
+        next: 'Sau khi chọn xong API, chuyển sang <strong>TP-2: Hỏi ý kiến thiết kế UI/UX</strong>.'
+      },
+      'tp2': {
+        badge: 'badge-clarify',
+        badgeText: '⚠️ DỪNG VÌ THIẾU DATA / HỎI Ý KIẾN',
+        title: 'TP-2: Hỏi ý kiến thiết kế UI/UX & UI Kit',
+        sub: 'Tham vấn lựa chọn Widget & Luồng giao diện',
+        role: 'AI dừng lại để hỏi ý kiến User vì có nhiều component từ <code>app_ui_kit</code> phù hợp hoặc phong cách giao diện/luồng xử lý lỗi UX cần User chốt.',
+        artifact: '<strong>📄 Tài liệu làm căn cứ</strong>:<br>• <code>docs/.../design.md</code> (UI Kit Specs, Wireframes, Error UX States, Screen Contract)',
+        request: '<strong>🛑 Hộp thoại tham vấn (ask_question)</strong>:<br>User kiểm tra các component được chọn và bấm Approve hoặc phản hồi điều chỉnh style/widget.',
+        next: 'Chuyển sang <strong>TP-3: Duyệt kế hoạch phân rã</strong>.'
+      },
+      'tp3': {
+        badge: 'badge-clarify',
+        badgeText: '⚠️ DỪNG VÌ HỎI XÁC NHẬN KẾ HOẠCH',
+        title: 'TP-3: Duyệt kế hoạch phân rã & DoD Unit Test',
+        sub: 'Xác nhận phạm vi các Phase lát cắt trước khi code',
+        role: 'AI dừng lại để hỏi ý kiến User: Kế hoạch chia các Phase (Domain -> Cubit -> UI) và tiêu chuẩn Definition of Done (DoD) Unit Test đã chuẩn xác chưa.',
+        artifact: '<strong>📄 Tài liệu làm căn cứ</strong>:<br>• <code>docs/.../implementation_plan.md</code> (Danh sách Phase slices & DoD Unit Test)',
+        request: '<strong>🛑 Hộp thoại tham vấn (ask_question)</strong>:<br>User bấm "Proceed" để cấp quyền cho Code Writer bắt đầu lập trình Phase 1.',
+        next: 'Kích hoạt <strong>Code Writer</strong> bắt đầu triển khai code Phase 1.'
+      },
+      'code_writer': {
+        badge: 'badge-agent',
+        badgeText: '🤖 Agent Thực Thi',
+        title: 'Code Writer (Senior Developer)',
+        sub: 'Chỉ viết Code + Developer Unit Test (No comments)',
+        role: 'Triển khai code cho đúng 1 Phase slice sẵn sàng. Tái sử dụng app_ui_kit. Tự viết Developer Unit Test (100% Mocktail). Không viết comments/docstrings. Tự chạy flutter test pass 100% trước khi chuyển Reviewer.',
+        artifact: 'Code trong <code>lib/...</code> và Developer Unit Tests trong <code>test/...</code>.',
+        request: 'Tự động kiểm tra trong terminal: nếu fail test thì tự sửa trước.',
+        next: 'Gửi code sang <strong>Code Reviewer</strong> thẩm định.'
+      },
+      'code_reviewer': {
+        badge: 'badge-agent',
+        badgeText: '🤖 Agent Thực Thi',
+        title: 'Code Reviewer (Quality Gatekeeper)',
+        sub: 'Clean Arch, Audit Unit Test & Docstrings Injection',
+        role: 'Thẩm định 5-Axis Clean Architecture bằng công cụ validate_architecture_code. Đánh giá tính khách quan của Unit Test do Coder viết. Tự tay bổ sung docstrings/comments. Tạo Phase Done Artifact.',
+        artifact: 'Code đã được inject docstrings & Artifact tổng kết Phase.',
+        request: 'Nếu có vi phạm: feedback bắt Coder sửa. Nếu pass: kích hoạt <strong>TP-4</strong>.',
+        next: 'Kích hoạt <strong>TP-4: Báo cáo thành quả Phase (REPORT)</strong>.'
+      },
+      'tp4': {
+        badge: 'badge-report',
+        badgeText: '🟢 DỪNG ĐỂ REPORT BÁO CÁO THÀNH QUẢ',
+        title: 'TP-4: Báo cáo thành quả Phase (Milestone Report)',
+        sub: 'Đã xong 1 Phase lát cắt -> Dừng lại nộp Báo cáo cho User',
+        role: '<strong>BÁO CÁO KẾT QUẢ PHASE</strong>: Coder đã code xong + Flutter test 100% Green + Reviewer đã audit kiến trúc và bổ sung docstrings. Dừng lại để nộp báo cáo cho User kiểm tra!',
+        artifact: '<strong>📄 Báo cáo tổng kết bàn giao (Report Artifact)</strong>:<br>• <code>phase_K_done_report.md</code>:<br>- Tóm tắt Code diff đã viết<br>- Kết quả flutter test (100% Green)<br>- Docstrings/Comments đã được inject<br>- Screenshot màn hình UI',
+        request: '<strong>🛑 Quyết định của User</strong>:<br>User xem báo cáo và chọn bước đi tiếp:<br>• <em>[Option 1] Tiếp tục sang Phase K+1</em> (Coder tiếp tục làm)<br>• <em>[Option 2] Tạm dừng để User chạy preview xem app</em>',
+        next: 'Nếu còn phase -> Loop lại Coder. Nếu hết các phase -> Chuyển sang <strong>Test Runner (QA)</strong>.'
+      },
+      'test_runner': {
+        badge: 'badge-agent',
+        badgeText: '🤖 Agent Thực Thi',
+        title: 'Test Runner (Independent QA)',
+        sub: 'Kiểm thử độc lập bám theo Brief & BDD',
+        role: 'Độc lập 100% với Coder và Plan. Lấy brief.md và requirements.md làm SSOT. Chạy toàn bộ Flutter tests, Widget tests và flutter analyze. Quyết định xem tính năng có đạt chuẩn release hay không.',
+        artifact: 'Tạo <code>verification_report.md</code> hoặc <code>defect_remediation_report.md</code>.',
+        request: 'Nếu lỗi -> Dừng tại <strong>TP-5</strong>. Nếu pass -> Chuyển Docs Writer.',
+        next: 'Kích hoạt <strong>TP-5</strong> (nếu fail) hoặc <strong>Docs Writer</strong> (nếu pass).'
+      },
+      'tp5': {
+        badge: 'badge-alert',
+        badgeText: '🛑 DỪNG DO BÁO ĐỘNG LỖI CẦN SỬA',
+        title: 'TP-5: Báo động lỗi QA & Xác nhận sửa lỗi',
+        sub: 'Test Runner phát hiện test failed hoặc sai lệch BDD',
+        role: 'AI dừng lại khẩn cấp vì phát hiện lỗi sai lệch so với yêu cầu hoặc phân tích tĩnh/test bị fail.',
+        artifact: '<strong>📄 Báo cáo lỗi đính kèm</strong>:<br>• <code>defect_remediation_report.md</code>: Chi tiết các test case failed, log trace, file lỗi vi phạm.',
+        request: '<strong>🛑 Hộp thoại tham vấn (ask_question)</strong>:<br>User xem danh sách lỗi và bấm "Proceed Remediation" để bắt Coder sửa lại code cho tới khi 100% Green.',
+        next: 'Gửi feedback bắt Code Writer sửa lại lỗi.'
+      },
+      'docs_writer': {
+        badge: 'badge-agent',
+        badgeText: '🤖 Agent Thực Thi',
+        title: 'Docs Writer (Technical Writer)',
+        sub: 'Đồng bộ tài liệu thực tế sau nghiệm thu',
+        role: 'Cập nhật docs/as_built.md, Feature README.md và Release Notes. Tuyệt đối không can thiệp code runtime.',
+        artifact: '<code>docs/.../as_built.md</code> và <code>README.md</code> updates.',
+        request: 'Tự động chạy sau khi QA pass 100%.',
+        next: 'Chuyển sang <strong>TP-6: Báo cáo nghiệm thu cuối cùng (REPORT)</strong>.'
+      },
+      'tp6': {
+        badge: 'badge-report',
+        badgeText: '🟢 DỪNG ĐỂ REPORT NGHIỆM THU CUỐI CÙNG',
+        title: 'TP-6: Báo cáo nghiệm thu toàn diện & Release',
+        sub: 'Đã hoàn tất 100% tính năng -> Dừng lại nộp Final Report',
+        role: '<strong>BÁO CÁO NGHIỆM THU CUỐI CÙNG</strong>: Toàn bộ Unit Tests, Widget Tests, Integration Tests pass 100%, tài liệu thực tế as_built.md đã xong. Dừng lại báo cáo hoàn tất cho User!',
+        artifact: '<strong>📄 Báo cáo nghiệm thu bàn giao (Final Report Artifact)</strong>:<br>• <code>verification_report.md</code> (Bằng chứng QA 100% PASS)<br>• <code>as_built.md</code> & <code>README.md</code> (Tài liệu kiến trúc thực tế)',
+        request: '<strong>🛑 Quyết định của User</strong>:<br>User xác nhận toàn bộ tính năng đạt chuẩn và cấp quyền gắn Git Tag (annotated tag vX.Y.Z) để phát hành.',
+        next: 'Kích hoạt <strong>Release Done & Published</strong>.'
+      },
+      'release': {
+        badge: 'badge-agent',
+        badgeText: '🚀 Deployment',
+        title: 'Release Done & Published',
+        sub: 'Hoàn thành tính năng & đóng gói',
+        role: 'Hệ thống thực hiện push branch, tạo annotated git tag (vX.Y.Z) và kích hoạt GitHub Actions release workflow.',
+        artifact: 'Git Release Tag & VSIX extension asset.',
+        request: 'Hoàn tất toàn bộ chu trình phát triển.',
+        next: 'Done.'
+      },
+      'handshake': {
+        badge: 'badge-handshake',
+        badgeText: '🤝 Handshake Protocol',
+        title: 'FE-BE API Handshake Bridge',
+        sub: 'Giao thức kết nối giữa Frontend và Backend',
+        role: 'Cơ chế Contract-First chuẩn hóa. Khi FE phát hiện thiếu API Backend, kích hoạt luồng xuất Contract Draft để BE thẩm định và cung cấp Mock URL.',
+        artifact: '<code>contracts/drafts/<feature>_api.json</code> và <code>api_gap_report.md</code>.',
+        request: 'Trạng thái chuyển giao: DRAFT_BY_FE -> APPROVED_BY_BE -> READY_FOR_MOCK.',
+        next: 'Cung cấp Mock Server cho FE Coder.'
+      },
+      'be_nexus': {
+        badge: 'badge-handshake',
+        badgeText: '🖥️ BE Nexus Plugin',
+        title: 'coder-nexus-be (Backend Repo)',
+        sub: 'Server API, DB Schemas & Endpoints',
+        role: 'Plugin độc lập trong workspace Backend: triển khai DB Migration, Service Logic, Controller, Unit Tests và phát hành Mock / Live API cho FE.',
+        artifact: 'DB Migrations, API Endpoints, Swagger Docs.',
+        request: 'Độc lập kiểm thử trên Server repo.',
+        next: 'Deploy LIVE_DEPLOYED lên Staging.'
+      }
+    };
+
+    function inspectNode(nodeId) {
+      document.querySelectorAll('.graph-node').forEach(el => el.classList.remove('active'));
+      const targetNode = document.getElementById('node-' + nodeId);
+      if (targetNode) targetNode.classList.add('active');
+
+      const data = nodeDetails[nodeId];
+      if (!data) return;
+
+      const badge = document.getElementById('inspBadge');
+      badge.className = 'badge ' + data.badge;
+      badge.innerText = data.badgeText;
+
+      document.getElementById('inspTitle').innerText = data.title;
+      document.getElementById('inspSub').innerText = data.sub;
+      document.getElementById('inspRole').innerText = data.role;
+      document.getElementById('inspArtifact').innerHTML = data.artifact;
+      document.getElementById('inspRequest').innerHTML = data.request;
+      document.getElementById('inspNext').innerHTML = data.next;
+    }
+
+    let currentZoom = 1;
+    function zoomIn() {
+      currentZoom = Math.min(currentZoom + 0.15, 2.0);
+      applyZoom();
+    }
+    function zoomOut() {
+      currentZoom = Math.max(currentZoom - 0.15, 0.5);
+      applyZoom();
+    }
+    function resetZoom() {
+      currentZoom = 1;
+      applyZoom();
+    }
+    function applyZoom() {
+      const zoomGroup = document.getElementById('zoomGroup');
+      zoomGroup.setAttribute('transform', `scale(${currentZoom})`);
+    }
+
+    function filterGraph(mode) {
+      document.querySelectorAll('.btn-tool').forEach(btn => btn.classList.remove('active-filter'));
+      const activeBtn = document.getElementById('btn-f-' + mode);
+      if (activeBtn) activeBtn.classList.add('active-filter');
+
+      document.querySelectorAll('.graph-node').forEach(el => {
+        if (mode === 'all') {
+          el.style.opacity = '1';
+        } else if (mode === 'clarify') {
+          el.style.opacity = el.classList.contains('node-clarify-item') ? '1' : '0.15';
+        } else if (mode === 'report') {
+          el.style.opacity = el.classList.contains('node-report-item') ? '1' : '0.15';
+        } else if (mode === 'agents') {
+          el.style.opacity = el.classList.contains('node-agent-item') ? '1' : '0.15';
+        }
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      inspectNode('tp4');
+    });
+  </script>
+</body>
+</html>
