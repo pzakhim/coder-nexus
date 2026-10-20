@@ -275,6 +275,11 @@ def test_cli_install_plugin_workspace():
 
         installed = Path(tmpdir) / ".agents" / "plugins" / "coder-nexus-fe"
         assert installed.is_dir()
+        assert not (installed / "agents").exists()
+        assert (Path(tmpdir) / ".agents" / "agents" / "code_writer.md").is_file()
+        projected = json.loads((installed / "bundle_manifest.json").read_text(encoding="utf-8"))
+        for resource in projected["required_resources"]:
+            assert (installed / resource).is_file(), resource
         metadata = json.loads((installed / "installed_version.json").read_text(encoding="utf-8"))
         manifest = json.loads((PLUGIN_DIR / "bundle_manifest.json").read_text(encoding="utf-8"))
         assert metadata["plugin_version"] == manifest["plugin_version"]

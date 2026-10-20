@@ -133,7 +133,7 @@ Once ALL implementation phases in `implement-plan.md` have been completed, revie
 - **Unit Test Delegation**: Does NOT re-test isolated unit logic (UseCases/Mappers/Cubits already verified by `code_reviewer` in Phase 3); focuses strictly on user-facing acceptance criteria, screen flows, and system integration.
 
 ### Step 3: Evidence Collection & QA Sign-off
-- Collects terminal evidence (command, exit code, concise output, screenshot artifacts) under `.agents/evidence/final_qa/<revision>/`.
+- Collects terminal evidence (command, exit code, concise output, screenshot artifacts) under `.superpowers/work-items/<slug>/vN/evidence/final_qa/<revision>/`.
 - Produces the comprehensive **Acceptance Criteria Verification Matrix**:
   | AC ID | BDD Scenario / Expected Behavior | Test Target / Path | Status | Evidence Link |
   |---|---|---|---|---|

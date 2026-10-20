@@ -32,7 +32,7 @@ For a screen using `BaseScreen`, inspect portrait and landscape on the approved 
 
 ## Capture evidence
 
-Save evidence under `.agents/evidence/<phase-id>/<revision>/visual/` unless the Client defines another approved location.
+Save evidence under `.superpowers/work-items/<slug>/vN/evidence/<phase-id>/<revision>/visual/` unless the Client defines another approved location.
 
 - iOS screenshot: `xcrun simctl io <device-id> screenshot <artifact-path>.png`
 - Android screenshot: `adb -s <device-serial> exec-out screencap -p > <artifact-path>.png`

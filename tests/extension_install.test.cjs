@@ -61,6 +61,9 @@ for (const [command, plugin, framework] of [
                 }
             }
             assert.ok(fs.existsSync(path.join(workspace, '.agents/agents/code_reviewer.md')));
+            assert.ok(!fs.existsSync(path.join(installed, 'agents')), 'agents must not be duplicated inside the plugin');
+            const stamp = JSON.parse(fs.readFileSync(path.join(installed, 'installed_version.json'), 'utf8'));
+            assert.equal(stamp.plugin_version, manifest.plugin_version);
         } finally {
             fs.rmSync(temp, { recursive: true, force: true });
         }

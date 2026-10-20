@@ -36,6 +36,33 @@ function rewriteFlattenedLinks(directory) {
     }
 }
 
+function extensionVersion(context) {
+    try {
+        return JSON.parse(fs.readFileSync(path.join(context.extensionPath, 'package.json'), 'utf8')).version || 'UNKNOWN';
+    } catch (_) {
+        return 'UNKNOWN';
+    }
+}
+
+function bundledPluginVersion(context, pluginName) {
+    try {
+        const manifest = path.join(context.extensionPath, 'plugins', pluginName, 'bundle_manifest.json');
+        return JSON.parse(fs.readFileSync(manifest, 'utf8')).plugin_version || null;
+    } catch (_) {
+        return null;
+    }
+}
+
+function installedPluginVersion(pluginDir) {
+    for (const file of ['installed_version.json', 'bundle_manifest.json']) {
+        try {
+            const version = JSON.parse(fs.readFileSync(path.join(pluginDir, file), 'utf8')).plugin_version;
+            if (version) return version;
+        } catch (_) {}
+    }
+    return null;
+}
+
 /**
  * Detect project role ('flutter', 'frappe', or 'be') based on workspace root signatures.
  */
@@ -122,6 +149,10 @@ function installAntigravityPlugin(context, targetWorkspace = null, silent = fals
                 if (entry.name === 'skills' || entry.name === 'rules') {
                     continue;
                 }
+                // Workspace agents live only in .agents/agents (single copy the host reads).
+                if (entry.name === 'agents' && targetWorkspace) {
+                    continue;
+                }
                 const src = path.join(pluginSource, entry.name);
                 const dest = path.join(destPath, entry.name);
                 if (entry.isDirectory()) {
@@ -201,8 +232,13 @@ function installAntigravityPlugin(context, targetWorkspace = null, silent = fals
                 }
             }
         } else {
-            // Backend plugin is already flat
-            copyFolderSync(pluginSource, destPath);
+            // Backend plugin is already flat; workspace agents live only in .agents/agents.
+            for (const entry of fs.readdirSync(pluginSource, { withFileTypes: true })) {
+                if (entry.name === 'agents' && targetWorkspace) continue;
+                const src = path.join(pluginSource, entry.name);
+                const dest = path.join(destPath, entry.name);
+                if (entry.isDirectory()) copyFolderSync(src, dest); else fs.copyFileSync(src, dest);
+            }
         }
 
         copyFolderSync(sharedContracts, path.join(destPath, 'shared_contracts'));
@@ -218,10 +254,18 @@ function installAntigravityPlugin(context, targetWorkspace = null, silent = fals
         if (pluginName === 'coder-nexus-fe') rewriteFlattenedLinks(destPath);
         const projectedManifestPath = path.join(destPath, 'bundle_manifest.json');
         const projectedManifest = JSON.parse(fs.readFileSync(projectedManifestPath, 'utf8'));
-        projectedManifest.required_resources = (projectedManifest.required_resources || []).map(res =>
-            res.startsWith('../shared_contracts/') ? res.slice(3) : res
-        );
+        projectedManifest.required_resources = (projectedManifest.required_resources || []).map(res => {
+            if (res.startsWith('../shared_contracts/')) return res.slice(3);
+            if (targetWorkspace && res.startsWith('agents/')) return `../../${res}`;
+            return res;
+        });
         fs.writeFileSync(projectedManifestPath, JSON.stringify(projectedManifest, null, 2) + '\n', 'utf8');
+        fs.writeFileSync(path.join(destPath, 'installed_version.json'), JSON.stringify({
+            plugin_version: projectedManifest.plugin_version || 'UNKNOWN',
+            extension_version: extensionVersion(context),
+            framework: pluginName === 'coder-nexus-fe' ? framework : null,
+            synced_at: new Date().toISOString(),
+        }, null, 2) + '\n', 'utf8');
 
         if (targetWorkspace) {
             // Sync corresponding agents to .agents/agents
@@ -230,6 +274,9 @@ function installAntigravityPlugin(context, targetWorkspace = null, silent = fals
             if (fs.existsSync(agentsSource)) {
                 copyFolderSync(agentsSource, agentsDest);
             }
+
+            // Remove a stale agents/ copy left inside the plugin by older syncs.
+            fs.rmSync(path.join(destPath, 'agents'), { recursive: true, force: true });
 
             // Clean up the alternative plugin directory if present to avoid role confusion
             const otherPlugin = pluginName === 'coder-nexus-fe' ? 'coder-nexus-be' : 'coder-nexus-fe';
@@ -388,6 +435,7 @@ function checkFirstTimeWorkspacePrompt(context) {
     const fePath = path.join(wsPath, '.agents', 'plugins', 'coder-nexus-fe');
     const bePath = path.join(wsPath, '.agents', 'plugins', 'coder-nexus-be');
     if (fs.existsSync(fePath) || fs.existsSync(bePath)) {
+        warnIfStaleSync(context, fs.existsSync(fePath) ? fePath : bePath);
         return;
     }
 
@@ -423,6 +471,26 @@ function checkFirstTimeWorkspacePrompt(context) {
                 }
             });
         }
+    }
+}
+
+/**
+ * Offer a re-sync when the workspace projection is older than the bundled plugin.
+ */
+function warnIfStaleSync(context, pluginDir) {
+    const pluginName = path.basename(pluginDir);
+    const installed = installedPluginVersion(pluginDir);
+    const bundled = bundledPluginVersion(context, pluginName);
+    if (!bundled || installed === bundled) return;
+    if (!vscode.window || typeof vscode.window.showWarningMessage !== 'function') return;
+    const p = vscode.window.showWarningMessage(
+        `Coder Nexus: workspace has ${pluginName} ${installed || 'unknown'}, extension ships ${bundled}. Re-sync agents & skills?`,
+        'Sync Now'
+    );
+    if (p && typeof p.then === 'function') {
+        p.then(choice => {
+            if (choice === 'Sync Now') vscode.commands.executeCommand('coder-nexus.installWorkspace');
+        });
     }
 }
 

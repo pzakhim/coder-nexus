@@ -31,7 +31,7 @@ Use [tool usage](references/tool-usage.md) for the exact conditions, inputs and 
 | Planning | `codebase-notes.md` (`D-NN`), `design.md` (Gate 2), `implement-plan.md` & `phases/*.md` (Gate 3) | `READY_FOR_BUILD`, `SKIPPED`, or `BLOCKED` |
 | Code Writer | Assigned Client runtime and test files | `READY_FOR_REVIEW` with full diff scope |
 | Docs Writer | Assigned reader-facing docs; phase `as-built.md` after review and tests | `READY_FOR_REVIEW` for reader docs; evidence-backed phase record for coordinator |
-| Code Reviewer | `.agents/reviews/` report | `APPROVED`, `CHANGES_REQUESTED`, or `BLOCKED` |
-| Test Runner | `.agents/evidence/` report | Per-AC `PASS`, `FAILED`, `BLOCKED`, or `NOT_RUN` |
+| Code Reviewer | `.superpowers/work-items/<slug>/vN/reviews/` report | `APPROVED`, `CHANGES_REQUESTED`, or `BLOCKED` |
+| Test Runner | `.superpowers/work-items/<slug>/vN/evidence/` report | Per-AC `PASS`, `FAILED`, `BLOCKED`, or `NOT_RUN` |
 
 Every handoff includes item/version/type, approved document revisions and user response references where required, AC IDs, task or phase, base/review revisions, staged/unstaged/untracked scope, affected files, planned checks, UI target/states, and unresolved blockers. The coordinator alone changes item status and verifies that `as-built.md` matches the underlying evidence. Docs Writer joins before final review when reader-facing docs are part of acceptance; it records the phase's as-built evidence after Test Runner reports.

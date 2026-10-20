@@ -64,7 +64,32 @@ def _read_json(path: Path) -> dict:
         return {}
 
 
-def _install_plugin_projection(plugin_dir: Path, destination: Path, repo_root: Path, framework: str = "flutter") -> str:
+def _top_level_ignore(root: Path, names: tuple[str, ...]):
+    """Ignore the given entries only at the top level of `root` (nested skills may reuse the names)."""
+    root = root.resolve()
+
+    def ignore(directory: str, entries: list[str]) -> set[str]:
+        return {name for name in entries if name in names} if Path(directory).resolve() == root else set()
+
+    return ignore
+
+
+def _project_resource(resource: str, workspace_agents: bool) -> str:
+    if resource.startswith("../shared_contracts/"):
+        return resource.removeprefix("../")
+    if workspace_agents and resource.startswith("agents/"):
+        return f"../../{resource}"
+    return resource
+
+
+def _install_plugin_projection(
+    plugin_dir: Path,
+    destination: Path,
+    repo_root: Path,
+    framework: str = "flutter",
+    workspace_agents: bool = False,
+) -> str:
+    """Project a plugin; with workspace_agents, agents live only in <workspace>/.agents/agents."""
     manifest = _read_json(plugin_dir / "bundle_manifest.json")
     shared_contracts = plugin_dir.parent / "shared_contracts"
     if not (shared_contracts / "api_handshake_protocol.md").is_file():
@@ -78,6 +103,7 @@ def _install_plugin_projection(plugin_dir: Path, destination: Path, repo_root: P
         "hub_digest": _hub_digest(repo_root),
         "shared_contracts_digest": _bundle_digest(shared_contracts),
         "framework": framework if (plugin_dir / "skills/flutter").is_dir() else None,
+        "agents_location": "workspace" if workspace_agents else "plugin",
     }
     existing = _read_json(destination / "installed_version.json") if destination.is_dir() else {}
     if existing == metadata:
@@ -91,9 +117,10 @@ def _install_plugin_projection(plugin_dir: Path, destination: Path, repo_root: P
 
     skills_src = plugin_dir / "skills"
     has_categories = (skills_src / "flutter").is_dir() or (skills_src / "frappe").is_dir()
+    excluded = ("agents",) if workspace_agents else ()
 
     if has_categories:
-        shutil.copytree(plugin_dir, staging, ignore=shutil.ignore_patterns("skills"))
+        shutil.copytree(plugin_dir, staging, ignore=_top_level_ignore(plugin_dir, ("skills", *excluded)))
         staging_skills = staging / "skills"
         staging_skills.mkdir(parents=True, exist_ok=True)
 
@@ -135,7 +162,7 @@ def _install_plugin_projection(plugin_dir: Path, destination: Path, repo_root: P
                 manifest_data["required_resources"] = rewritten_resources
             manifest_path.write_text(json.dumps(manifest_data, indent=2) + "\n", encoding="utf-8")
     else:
-        shutil.copytree(plugin_dir, staging)
+        shutil.copytree(plugin_dir, staging, ignore=_top_level_ignore(plugin_dir, excluded))
 
     shutil.copytree(shared_contracts, staging / "shared_contracts")
     if has_categories:
@@ -146,7 +173,7 @@ def _install_plugin_projection(plugin_dir: Path, destination: Path, repo_root: P
                 document.write_text(rewritten, encoding="utf-8")
     projected_manifest = _read_json(staging / "bundle_manifest.json")
     projected_manifest["required_resources"] = [
-        resource.removeprefix("../") if resource.startswith("../shared_contracts/") else resource
+        _project_resource(resource, workspace_agents)
         for resource in projected_manifest.get("required_resources", [])
     ]
     (staging / "bundle_manifest.json").write_text(json.dumps(projected_manifest, indent=2) + "\n", encoding="utf-8")
@@ -253,7 +280,13 @@ def cmd_install_plugin(args: argparse.Namespace) -> int:
     framework = getattr(args, "framework", "flutter") or "flutter"
     try:
         for destination in destinations:
-            action = _install_plugin_projection(plugin_dir, destination, repo_root, framework=framework)
+            action = _install_plugin_projection(
+                plugin_dir,
+                destination,
+                repo_root,
+                framework=framework,
+                workspace_agents=destination.parent.parent.name == ".agents",
+            )
             print(
                 f"✅ Plugin {action}: {destination} "
                 f"(version={manifest['plugin_version']}, source={_source_revision(repo_root)})"

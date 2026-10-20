@@ -47,7 +47,7 @@ Use [the five-axis rubric](references/01_five_axis_rubric.md):
 
 ## Report and handoff
 
-Write a revision-bound report using [the report template](templates/code_review_report.md.tpl) under `.agents/reviews/review_<phase-id>_<revision>.md`.
+Write a revision-bound report using [the report template](templates/code_review_report.md.tpl) under `.superpowers/work-items/<slug>/vN/reviews/review_<phase-id>_<revision>.md`.
 
 Record approved document revisions and Gate 1–3 user response references, every AC's code/test/visual evidence or gap, planned checks, analyzer command/result, module gate resolution, full uncommitted scope and image inspection. `APPROVED` requires all applicable ACs traced and no unresolved required check; final phase `PASS` still depends on Test Runner evidence.
 

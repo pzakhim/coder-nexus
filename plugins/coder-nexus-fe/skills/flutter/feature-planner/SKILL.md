@@ -37,7 +37,7 @@ Coordinate one feature under `docs/features/<module>/<feature>/vN/` (or `.superp
 | Requirements & Context (Gate 1) | `spec_writer`, `grill-me`, `flutter-brainstorming` | `vN/requirements.md`, `vN/codebase-notes.md`, `vN/change-impact.md` for v2+ |
 | Design & Plan (Gate 2 & Gate 3) | `planning`, `grill-me`, `architecture-design`, `flutter-planning-and-task-breakdown` | `vN/codebase-notes.md` (`D-NN`), `vN/design.md`, `vN/implementation-plan.md`, `vN/phases/*.md` |
 | Code | `code_writer`, `flutter-incremental-implementation` | Approved phase and code diff |
-| Tests/review | `test_runner`, `code_reviewer`, verification skills | Revision-bound reports under `.agents/evidence` or `.agents/reviews` |
+| Tests/review | `test_runner`, `code_reviewer`, verification skills | Revision-bound reports under `vN/evidence/` or `vN/reviews/` |
 | Status | Coordinator | `vN/as-built.md`, feature `README.md` |
 
 Resolve Client paths from `${workspaceFolder}`; do not include Hub author's absolute paths.
