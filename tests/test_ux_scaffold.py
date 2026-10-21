@@ -106,3 +106,18 @@ def test_invalid_ids_and_missing_new(work_item):
         add_screen(str(work_item), "S01", "a", "A", kind="MAYBE")
     with pytest.raises(ScaffoldError):
         add_component(str(work_item), "X1", "a", "A")
+
+
+def test_sync_refreshes_a_stale_kit_but_keeps_decisions(work_item):
+    import json
+    from coder_nexus.ux.kitgen import ASSETS
+    new_design(str(work_item), "X")
+    sp = work_item.parents[2]
+    ds_path = sp / "ux/design-system.json"
+    ds = json.loads(ds_path.read_text(encoding="utf-8"))
+    ds["source"]["decision"] = "D-07"
+    ds_path.write_text(json.dumps(ds), encoding="utf-8")
+    (sp / "ux/kit/kit.js").write_text("/* old kit without player */", encoding="utf-8")
+    sync(str(work_item))
+    assert (sp / "ux/kit/kit.js").read_text(encoding="utf-8") == (ASSETS / "kit.js").read_text(encoding="utf-8")
+    assert json.loads(ds_path.read_text(encoding="utf-8"))["source"]["decision"] == "D-07"

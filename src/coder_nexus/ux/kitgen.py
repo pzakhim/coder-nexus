@@ -173,6 +173,25 @@ def extract(project: Path, brand: Optional[str] = None, font: Optional[str] = No
     return system
 
 
+def refresh_kit(project: Path) -> bool:
+    """Rewrite the generated kit/ from the saved design-system.json and the installed Hub assets.
+
+    Keeps the confirmed source, roles and overrides (no re-detection), so a Hub update reaches existing
+    designs (kit.js player, base.css) without `ux extract`. Returns False when no design system exists yet.
+    """
+    path = ux_dir(project.resolve()) / "design-system.json"
+    if not path.is_file():
+        return False
+    system = json.loads(path.read_text(encoding="utf-8"))
+    kit = path.parent / "kit"
+    kit.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ASSETS / "kit.js", kit / "kit.js")
+    write_kit_css(system, kit)
+    write_viewports_js(project.resolve())
+    write_components_html(system, kit)
+    return True
+
+
 # ---------------------------------------------------------------- viewports
 
 def normalize_platform(name: str, v: dict) -> dict:

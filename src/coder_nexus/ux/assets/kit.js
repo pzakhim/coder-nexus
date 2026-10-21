@@ -238,6 +238,9 @@
             '<button class="one" title="next walkthrough step">⏭ Step</button><select class="speed" title="playback speed">' +
             SPEEDS.map(function (x) { return "<option value=\"" + x + "\"" + (x === player.speed ? " selected" : "") + ">" + x + "×</option>"; }).join("") +
             '</select><span class="pos">' + (mine ? player.i : 0) + "/" + f.walkthrough.length + "</span></div>";
+        } else {
+          h += '<div class="ux-play empty" title="Thêm kịch bản vào uiux.md → ## 8. Walkthrough rồi chạy coder-nexus ux sync">' +
+            '<button class="play" disabled>▶ Play</button><span class="pos">Chưa có walkthrough</span></div>';
         }
         (f.steps || []).forEach(function (st, si) {
           var s = screenById(st.screen) || {};
@@ -269,7 +272,7 @@
           if (player.flow === fi && player.playing) UX.pause(); else UX.play(cfg.flows[fi].id);
         };
       });
-      side.querySelectorAll(".ux-play").forEach(function (box) {
+      side.querySelectorAll(".ux-play:not(.empty)").forEach(function (box) {
         var id = cfg.flows[+box.dataset.f].id;
         box.querySelector(".play").onclick = function () { if (player.flow === +box.dataset.f && player.playing) UX.pause(); else UX.play(id); };
         box.querySelector(".one").onclick = function () { UX.stepOnce(id); };

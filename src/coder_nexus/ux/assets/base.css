@@ -189,6 +189,7 @@ html[data-notes="off"] .new-component::before { display: none; }
 .ux-play .play { background: #111827; color: #fff; border-color: #111827; }
 .ux-play.active .play { background: #2563eb; border-color: #2563eb; }
 .ux-play .pos { margin-left: auto; color: #6b7280; font-variant-numeric: tabular-nums; }
+.ux-play.empty .play { background: #e5e7eb; border-color: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
 .ux-mocklabel { position: absolute; top: 10px; left: 12px; z-index: 30; background: #e11d48; color: #fff; font: 700 11px/1.8 system-ui, sans-serif;
   padding: 0 8px; border-radius: 4px; letter-spacing: .3px; pointer-events: none; }
 .ux-countdown { position: absolute; top: 10px; right: 12px; z-index: 30; background: #111827; color: #fff; font: 700 18px/1.4 system-ui, sans-serif;

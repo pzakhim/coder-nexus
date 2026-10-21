@@ -11,7 +11,7 @@ from datetime import date
 from pathlib import Path
 from typing import Optional
 
-from .kitgen import extract
+from .kitgen import extract, refresh_kit
 
 TEMPLATES = Path(__file__).parent / "templates"
 STATE_BLOCKS = {
@@ -303,9 +303,10 @@ def render_flows(data: dict) -> str:
 
 
 def sync(work_item: str) -> dict:
-    """uiux.md -> data/flows.js. Returns warnings about obvious inconsistencies."""
-    vdir, _, _, _ = resolve_work_item(work_item)
+    """uiux.md -> data/flows.js, and refresh the generated kit from the installed Hub. Returns consistency warnings."""
+    vdir, superpowers, _, _ = resolve_work_item(work_item)
     d = vdir / "design-uiux"
+    refresh_kit(superpowers.parent)
     data, warnings = flows_data(d)
     known = {f["id"].upper() for f in data["flows"]}
     text = (d / "uiux.md").read_text(encoding="utf-8")
