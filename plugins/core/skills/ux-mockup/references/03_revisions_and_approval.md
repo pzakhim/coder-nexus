@@ -7,7 +7,7 @@
 3. Press ▶ Play for every workflow that has a walkthrough, at every confirmed viewport ([04_walkthrough.md](04_walkthrough.md)). Every workflow with time-based or automatic behavior, every multi-screen flow and every branch the user asked about has one.
 4. Compare `CHANGED` screens with the current app screenshots.
 5. Check that every `new-component` has a `components/C-NN` file and a row in `uiux.md` → `## 6. New components`.
-6. `coder-nexus ux validate --work-item …` has no ERROR (UX-011 covers walkthrough rows). Optionally `coder-nexus ux record` to attach videos. Before showing the revision set `Status: IN_REVIEW` and run it with `--write-hash`.
+6. `coder-nexus ux validate --work-item …` has no ERROR (UX-011 covers walkthrough rows; UX-012 warns when `index.html` was hand-edited). Optionally `coder-nexus ux record` to attach videos. Before showing the revision set `Status: IN_REVIEW` and run it with `--write-hash`.
 
 ## Present a revision
 

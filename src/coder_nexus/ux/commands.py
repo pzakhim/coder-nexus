@@ -4,7 +4,19 @@ import argparse
 import json
 from pathlib import Path
 
-from .kitgen import VIEWPORT_PRESETS, extract, load_viewports, parse_size, save_viewports, ux_dir
+from .kitgen import ORIENTATIONS, VIEWPORT_PRESETS, extract, load_viewports, oriented_size, parse_size, save_viewports, ux_dir
+
+
+def parse_orientations(text: str) -> dict[str, list[str]]:
+    """'mobile=portrait,tablet=portrait+landscape' -> {'mobile': ['portrait'], 'tablet': ['portrait', 'landscape']}."""
+    out: dict[str, list[str]] = {}
+    for part in (p.strip() for p in text.split(",") if p.strip()):
+        name, _, value = part.partition("=")
+        values = [v.strip().lower() for v in value.split("+") if v.strip()]
+        if not name.strip() or not values or any(v not in ORIENTATIONS for v in values):
+            raise ValueError(f"Bad orientation '{part}': write platform=portrait, platform=landscape or platform=portrait+landscape")
+        out[name.strip()] = list(dict.fromkeys(values))
+    return out
 
 
 def add_ux_parser(subparsers) -> None:
@@ -23,7 +35,8 @@ def add_ux_parser(subparsers) -> None:
     p_vp.add_argument("--mobile", help="WIDTHxHEIGHT, e.g. 390x844")
     p_vp.add_argument("--tablet", help="WIDTHxHEIGHT, e.g. 820x1180")
     p_vp.add_argument("--web", help="WIDTHxHEIGHT, e.g. 1440x900")
-    p_vp.add_argument("--tablet-orientation", choices=["portrait", "landscape"], help="Tablet orientation")
+    p_vp.add_argument("--orientations", help="Per platform: mobile=portrait,tablet=portrait+landscape,web=landscape (first = default)")
+    p_vp.add_argument("--tablet-orientation", choices=["portrait", "landscape"], help="Alias of --orientations tablet=<value>")
     p_vp.add_argument("--decision", help="D-NN that records the user's answer")
     p_vp.add_argument("--json", action="store_true", help="Print JSON")
 
@@ -59,8 +72,10 @@ def add_ux_parser(subparsers) -> None:
     p_re.add_argument("--work-item", required=True, help=wi_help)
     p_re.add_argument("--workflow", help="Only this workflow, e.g. W-01 (default: every workflow with a walkthrough)")
     p_re.add_argument("--viewport", help="Only this platform from viewports.json, e.g. mobile (default: all)")
+    p_re.add_argument("--orientation", choices=["portrait", "landscape"],
+                      help="Only this orientation (default: every orientation each platform allows)")
 
-    p_va = ux_sub.add_parser("validate", help="Check design-uiux/ against rules UX-001…UX-011 (read-only unless --write-hash)")
+    p_va = ux_sub.add_parser("validate", help="Check design-uiux/ against rules UX-001…UX-012 (read-only unless --write-hash)")
     p_va.add_argument("--work-item", required=True, help=wi_help)
     p_va.add_argument("--write-hash", action="store_true", help="Store the content hash in uiux.md first (when presenting or approving a revision)")
     p_va.add_argument("--json", action="store_true", help="Print the result as JSON")
@@ -121,7 +136,7 @@ def _cmd_record(args: argparse.Namespace) -> int:
     from .record import record
     from .scaffold import ScaffoldError
     try:
-        res = record(args.work_item, args.workflow, args.viewport)
+        res = record(args.work_item, args.workflow, args.viewport, getattr(args, "orientation", None))
     except ScaffoldError as exc:
         print(f"❌ {exc}")
         return 1
@@ -165,40 +180,52 @@ def cmd_ux(args: argparse.Namespace) -> int:
 
     # viewports
     current = load_viewports(project)
-    changes = any(getattr(args, k) for k in ("platforms", "mobile", "tablet", "web", "tablet_orientation"))
+    try:
+        orients = parse_orientations(getattr(args, "orientations", None) or "")
+    except ValueError as exc:
+        print(f"❌ {exc}")
+        return 1
+    if getattr(args, "tablet_orientation", None):
+        orients.setdefault("tablet", [args.tablet_orientation])
+    changes = orients or any(getattr(args, k, None) for k in ("platforms", "mobile", "tablet", "web"))
     if changes:
+        from .kitgen import DEFAULT_VIEWPORTS
         platforms = {k: dict(v) for k, v in current["platforms"].items()}
-        for name in ("mobile", "tablet", "web"):
-            size = getattr(args, name)
-            if size:
-                w, h = parse_size(size)
-                platforms.setdefault(name, {})
-                platforms[name].update({"width": w, "height": h})
-                platforms[name].setdefault("orientation", "landscape" if w > h else "portrait")
-        if args.tablet_orientation and "tablet" in platforms:
-            t = platforms["tablet"]
-            w, h = sorted((t["width"], t["height"]))
-            t["width"], t["height"] = (h, w) if args.tablet_orientation == "landscape" else (w, h)
-            t["orientation"] = args.tablet_orientation
         if args.platforms:
             keep = [p.strip() for p in args.platforms.split(",") if p.strip()]
-            platforms = {k: v for k, v in platforms.items() if k in keep}
-            for k in keep:
-                if k not in platforms:
-                    from .kitgen import DEFAULT_VIEWPORTS
-                    platforms[k] = dict(DEFAULT_VIEWPORTS[k])
-        current = save_viewports(project, platforms, args.decision)
+            platforms = {k: platforms.get(k) or dict(DEFAULT_VIEWPORTS[k]) for k in keep if k in platforms or k in DEFAULT_VIEWPORTS}
+        for name in ("mobile", "tablet", "web"):
+            size = getattr(args, name, None)
+            if size:
+                w, h = parse_size(size)
+                platforms.setdefault(name, dict(DEFAULT_VIEWPORTS.get(name, {"orientations": []})))
+                platforms[name].update({"width": w, "height": h})
+                if name not in orients and not platforms[name].get("orientations"):
+                    platforms[name]["orientations"] = ["landscape" if w > h else "portrait"]
+        unknown = sorted(set(orients) - set(platforms))
+        if unknown:
+            print(f"❌ --orientations names platform(s) not kept: {', '.join(unknown)} (platforms: {', '.join(platforms)})")
+            return 1
+        for name, values in orients.items():
+            platforms[name]["orientations"] = values
+        current = save_viewports(project, platforms, args.decision or current.get("decision"),
+                                 orientations_confirmed=bool(orients) or bool(current.get("orientations_confirmed")))
     if args.json:
         print(json.dumps(current, ensure_ascii=False, indent=2))
         return 0
     state = "confirmed" + (f" ({current.get('decision')})" if current.get("decision") else "") if current.get("confirmed") else "NOT CONFIRMED (defaults) — ask the user once"
     print(f"\n📐 Viewports: {state}")
     for name, v in current["platforms"].items():
-        print(f"   {name:<7} {v['width']}×{v['height']} {v.get('orientation', '')}")
-    if not current.get("confirmed"):
+        sizes = " · ".join(f"{o} {'×'.join(map(str, oriented_size(v, o)))}" for o in v["orientations"])
+        print(f"   {name:<7} {sizes}")
+    if current.get("confirmed") and not current.get("orientations_confirmed"):
+        print("   ⚠ Orientations not confirmed yet — ask the user (portrait / landscape / both per platform), then --orientations …")
+    if not current.get("confirmed") or not current.get("orientations_confirmed"):
         print("\n   Common choices:")
         for name, opts in VIEWPORT_PRESETS.items():
             print(f"   {name:<7} " + " · ".join(opts))
-        print("   Set: coder-nexus ux viewports --platforms mobile,tablet --mobile 390x844 --tablet 820x1180 --decision D-NN")
+        print("   Orientation per platform: portrait · landscape · portrait+landscape (first = default in the viewer)")
+        print("   Set: coder-nexus ux viewports --platforms mobile,tablet --mobile 390x844 --tablet 820x1180 "
+              "--orientations mobile=portrait,tablet=portrait+landscape --decision D-NN")
     print()
     return 0

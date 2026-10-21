@@ -3,9 +3,12 @@
  *                step links ([data-next] / href to another screen), walkthrough targets
  *                ([data-ux-target]) driven by ux:tap / ux:type / ux:highlight messages.
  * Index page:    UX.index() renders workflows (window.UX_FLOWS) in a device frame sized by
- *                window.UX_VIEWPORTS (kit/viewports.js), and plays each workflow's walkthrough
- *                (uiux.md "## 8. Walkthrough"): UX.play / UX.pause / UX.stepOnce / UX.setSpeed / UX.stop.
- *                index.html?play=W-01&platform=mobile&speed=1&chrome=off autoplays (used by `ux record`).
+ *                window.UX_VIEWPORTS (kit/viewports.js: platforms with width/height and allowed orientations),
+ *                and plays each workflow's walkthrough (uiux.md "## 8. Walkthrough"):
+ *                UX.play / UX.pause / UX.stepOnce / UX.setSpeed / UX.stop / UX.setOrientation.
+ *                ?platform=tablet&orientation=landscape picks the frame (kept in the URL when changed);
+ *                index.html?play=W-01&platform=mobile&orientation=portrait&speed=1&chrome=off autoplays (`ux record`).
+ *                The index shell is generated (`coder-nexus ux new`); never edit index.html or this file.
  *                A walkthrough is a scripted MOCK simulation; it does not run app logic.
  * Page <-> frame talk via postMessage only (file:// pages have opaque origins). */
 (function () {
@@ -168,8 +171,27 @@
     var cfg = window.UX_FLOWS || { title: "UI/UX design", flows: [], screens: [] };
     var vp = window.UX_VIEWPORTS || { platforms: { mobile: { width: 390, height: 844 } }, confirmed: false };
     var platforms = Object.keys(vp.platforms || {});
-    var cur = { platform: platforms[0], file: null, flow: null, step: -1, state: "default", notes: true, states: [] };
+    var cur = { platform: platforms[0], orientation: null, file: null, flow: null, step: -1, state: "default", notes: true, states: [] };
     if (platforms.indexOf(params.get("platform")) >= 0) cur.platform = params.get("platform");
+    function orientations(p) {
+      var v = vp.platforms[p] || {};
+      if ((v.orientations || []).length) return v.orientations;
+      return [v.orientation || (v.width > v.height ? "landscape" : "portrait")];  // schema-1 viewports.js
+    }
+    function dims(p, o) {
+      var v = vp.platforms[p] || { width: 390, height: 844 }, native = v.width > v.height ? "landscape" : "portrait";
+      return o === native || v.width === v.height ? [v.width, v.height] : [v.height, v.width];
+    }
+    function pickOrientation(o) { var all = orientations(cur.platform); cur.orientation = all.indexOf(o) >= 0 ? o : all[0]; }
+    pickOrientation(params.get("orientation"));
+    function syncUrl() {
+      try {
+        var q = new URLSearchParams(location.search);
+        q.set("platform", cur.platform); q.set("orientation", cur.orientation);
+        history.replaceState(null, "", location.pathname + "?" + q.toString() + location.hash);
+      } catch (e) { /* some browsers refuse replaceState on file:// */ }
+    }
+    var expanded = {}, filter = "";
     var SPEEDS = [1, 1.5, 2];
     var player = { flow: null, i: 0, playing: false, busy: false, token: 0, speed: Math.min(2, Math.max(1, +params.get("speed") || 1)) };
     var el = typeof mount === "string" ? document.querySelector(mount) : mount || document.body;
@@ -187,11 +209,27 @@
 
     function screenById(id) { return (cfg.screens || []).filter(function (s) { return s.id === id; })[0]; }
 
+    function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    side.innerHTML = "<div><h1>" + esc(cfg.title) + "</h1><div class=\"meta\">" + (cfg.revision ? "Revision " + esc(cfg.revision) : "") +
+      (cfg.approval ? " · " + esc(cfg.approval) : "") + "</div></div>" +
+      ((cfg.flows || []).length > 6 ? '<input class="ux-filter" type="search" placeholder="Lọc workflow… (W-01, tên, bước)">' : "") +
+      '<div class="ux-flows"></div>';
+    var flowsBox = side.querySelector(".ux-flows"), filterBox = side.querySelector(".ux-filter");
+    if (filterBox) filterBox.oninput = function () { filter = filterBox.value.trim().toLowerCase(); renderSide(); };
+    function matches(f) {
+      if (!filter) return true;
+      var hay = [f.id, f.title, f.goals].concat((f.steps || []).map(function (st) { return st.title + " " + st.screen; })).join(" ").toLowerCase();
+      return hay.indexOf(filter) >= 0;
+    }
     function renderSide() {
-      var h = "<div><h1>" + (cfg.title || "") + "</h1><div class=\"meta\">" + (cfg.revision ? "Revision " + cfg.revision : "") +
-        (cfg.approval ? " · " + cfg.approval : "") + "</div></div>";
+      var h = "", active = player.flow !== null ? player.flow : cur.flow;
       (cfg.flows || []).forEach(function (f, fi) {
-        h += '<div class="ux-flow"><h2>' + f.id + " · " + f.title + "</h2>" + (f.goals ? '<div class="goal">Goal: ' + f.goals + "</div>" : "");
+        if (!matches(f)) return;
+        var open = expanded[fi] !== undefined ? expanded[fi] : fi === active;
+        h += '<div class="ux-flow' + (open ? " open" : "") + (fi === active ? " current" : "") + '"><h2 class="head" data-f="' + fi + '" title="' + (open ? "Thu gọn" : "Mở") + '">' +
+          '<span class="caret">' + (open ? "▾" : "▸") + "</span><span>" + esc(f.id) + " · " + esc(f.title) + '</span><span class="count">' + (f.steps || []).length + "</span></h2>";
+        if (!open) { h += "</div>"; return; }
+        h += f.goals ? '<div class="goal">Goal: ' + esc(f.goals) + "</div>" : "";
         if ((f.walkthrough || []).length) {
           var mine = player.flow === fi, playing = mine && player.playing;
           h += '<div class="ux-play' + (mine ? " active" : "") + '" data-f="' + fi + '"><button class="play">' + (playing ? "⏸ Pause" : "▶ Play") + "</button>" +
@@ -201,9 +239,11 @@
         }
         (f.steps || []).forEach(function (st, si) {
           var s = screenById(st.screen) || {};
-          var active = cur.flow === fi && cur.step === si;
-          h += '<button class="ux-step' + (active ? " active" : "") + '" data-f="' + fi + '" data-s="' + si + '"><span class="n">' + (si + 1) +
-            "</span><span>" + st.screen + " · " + (st.title || s.title || "") + "</span>" + (s.kind ? '<span class="tag ' + s.kind + '">' + s.kind + "</span>" : "") + "</button>";
+          var on = cur.flow === fi && cur.step === si;
+          h += '<button class="ux-step' + (on ? " active" : "") + '" data-f="' + fi + '" data-s="' + si + '" title="' + esc(st.screen + " · " + (s.title || "") + (st.state ? " · state " + st.state : "")) + '">' +
+            '<span class="n">' + esc(st.n || si + 1) + '</span><span class="label">' + esc(st.title || s.title || st.screen) + "</span>" +
+            '<span class="sid">' + esc(st.screen + (st.state ? ":" + st.state : "")) + "</span>" +
+            (s.kind ? '<span class="tag ' + esc(s.kind) + '">' + esc(s.kind) + "</span>" : "") + "</button>";
         });
         h += "</div>";
       });
@@ -212,10 +252,14 @@
       });
       if (orphan.length) {
         h += '<div class="ux-flow"><h2>Screens not in a workflow</h2>';
-        orphan.forEach(function (s) { h += '<button class="ux-step" data-file="' + s.file + '"><span class="n">!</span><span>' + s.id + " · " + s.title + "</span></button>"; });
+        orphan.forEach(function (s) { h += '<button class="ux-step" data-file="' + esc(s.file) + '"><span class="n">!</span><span class="label">' + esc(s.title) + '</span><span class="sid">' + esc(s.id) + "</span></button>"; });
         h += "</div>";
       }
-      side.innerHTML = h;
+      if (!h && filter) h = '<div class="goal">Không có workflow khớp "' + esc(filter) + '".</div>';
+      flowsBox.innerHTML = h;
+      side.querySelectorAll(".ux-flow .head").forEach(function (head) {
+        head.onclick = function () { var fi = +head.dataset.f; expanded[fi] = !head.parentNode.classList.contains("open"); renderSide(); };
+      });
       side.querySelectorAll(".ux-play").forEach(function (box) {
         var id = cfg.flows[+box.dataset.f].id;
         box.querySelector(".play").onclick = function () { if (player.flow === +box.dataset.f && player.playing) UX.pause(); else UX.play(id); };
@@ -233,14 +277,21 @@
     function renderBar() {
       var h = '<span class="title">' + (cur.file ? cur.file.replace(/^screens\//, "") : "") + '</span><span class="group">';
       platforms.forEach(function (p) {
-        var v = vp.platforms[p];
-        h += '<button data-p="' + p + '" class="' + (p === cur.platform ? "on" : "") + '">' + p + " " + v.width + "×" + v.height + "</button>";
+        var d = dims(p, p === cur.platform ? cur.orientation : orientations(p)[0]);
+        h += '<button data-p="' + p + '" class="' + (p === cur.platform ? "on" : "") + '">' + p + " " + d[0] + "×" + d[1] + "</button>";
       });
-      h += '</span><select class="st">' + cur.states.map(function (s) { return "<option" + (s === cur.state ? " selected" : "") + ">" + s + "</option>"; }).join("") +
+      h += "</span>";
+      if (orientations(cur.platform).length > 1)
+        h += '<button class="rot" title="Xoay: dọc / ngang (portrait / landscape)">⟲ ' + (cur.orientation === "landscape" ? "ngang" : "dọc") + "</button>";
+      h += '<select class="st">' + cur.states.map(function (s) { return "<option" + (s === cur.state ? " selected" : "") + ">" + s + "</option>"; }).join("") +
         '</select><button class="nt ' + (cur.notes ? "on" : "") + '">notes</button>' +
         '<span class="group"><button class="prev">◀ step</button><button class="next">step ▶</button></span>';
       bar.innerHTML = h;
-      bar.querySelectorAll("[data-p]").forEach(function (b) { b.onclick = function () { cur.platform = b.dataset.p; size(); renderBar(); }; });
+      bar.querySelectorAll("[data-p]").forEach(function (b) {
+        b.onclick = function () { cur.platform = b.dataset.p; pickOrientation(cur.orientation); size(); renderBar(); syncUrl(); };
+      });
+      var rot = bar.querySelector(".rot");
+      if (rot) rot.onclick = function () { UX.setOrientation(cur.orientation === "landscape" ? "portrait" : "landscape"); };
       bar.querySelector(".st").onchange = function (e) { cur.state = e.target.value; send({ type: "ux:setState", state: cur.state }); };
       bar.querySelector(".nt").onclick = function () { cur.notes = !cur.notes; send({ type: "ux:setNotes", on: cur.notes }); renderBar(); };
       bar.querySelector(".prev").onclick = function () { UX.stop(); step(-1); };
@@ -248,11 +299,10 @@
     }
     function send(m) { if (frame.contentWindow) frame.contentWindow.postMessage(m, "*"); }
     function size() {
-      var v = vp.platforms[cur.platform] || { width: 390, height: 844 };
-      device.className = "ux-device " + cur.platform;
-      frame.style.width = v.width + "px"; frame.style.height = v.height + "px";
-      var pad = cur.platform === "web" ? 40 : 40;
-      var sx = (stage.clientWidth - 32) / (v.width + pad), sy = (stage.clientHeight - 32) / (v.height + pad);
+      var d = dims(cur.platform, cur.orientation), pad = 40;
+      device.className = "ux-device " + cur.platform + " " + cur.orientation;
+      frame.style.width = d[0] + "px"; frame.style.height = d[1] + "px";
+      var sx = (stage.clientWidth - 32) / (d[0] + pad), sy = (stage.clientHeight - 32) / (d[1] + pad);
       device.style.transform = "scale(" + Math.min(1, sx, sy) + ")";
     }
     function load(file, state) {
@@ -264,7 +314,7 @@
       var f = (cfg.flows || [])[fi]; if (!f || !f.steps[si]) return;
       cur.flow = fi; cur.step = si;
       var s = screenById(f.steps[si].screen);
-      load(s ? s.file : f.steps[si].file);
+      load(s ? s.file : f.steps[si].file, f.steps[si].state || null);
     }
     function step(d) {
       if (cur.flow === null) return;
@@ -378,6 +428,11 @@
       runStep(row, token).then(function () { player.busy = false; if (token !== player.token) return; if (player.i >= walk().length) finish(); else renderSide(); });
       return true;
     };
+    UX.setOrientation = function (o) {
+      if (orientations(cur.platform).indexOf(o) < 0) return false;
+      cur.orientation = o; size(); renderBar(); syncUrl();
+      return true;
+    };
     UX.setSpeed = function (x) { player.speed = Math.min(2, Math.max(1, +x || 1)); renderSide(); };
     UX.stop = function () {
       if (player.flow === null) return;
@@ -395,8 +450,10 @@
       if (d.type === "ux:navigate") {
         var base = cur.file ? cur.file.replace(/[^/]*$/, "") : "";
         var target = (base + d.href.split("?")[0]).replace(/[^/]+\/\.\.\//g, "");
-        var hit = -1;
-        if (cur.flow !== null) cfg.flows[cur.flow].steps.forEach(function (st, i) { var s = screenById(st.screen); if (s && s.file === target) hit = i; });
+        var hits = [];
+        if (cur.flow !== null) cfg.flows[cur.flow].steps.forEach(function (st, i) { var s = screenById(st.screen); if (s && s.file === target) hits.push(i); });
+        var hit = hits.filter(function (i) { return i > cur.step; }).concat(hits)[0];
+        if (hit === undefined) hit = -1;
         UX.stop();
         if (hit >= 0) go(cur.flow, hit); else load(target);
       }

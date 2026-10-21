@@ -1,6 +1,6 @@
 """`coder-nexus ux validate` / MCP `validate_ux_design`: read-only checks of a work item's design-uiux/.
 
-Rules UX-001 … UX-011 (see docs/handoff/2026-10-21-huly-goals-uiux.md §4.7). Only `write_content_hash`
+Rules UX-001 … UX-012 (see docs/handoff/2026-10-21-huly-goals-uiux.md §4.7). Only `write_content_hash`
 writes, and only `uiux.md` (CLI `--write-hash`); the validator itself never writes.
 """
 
@@ -12,7 +12,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 from ..architecture.spec_validator import SpecViolation, goal_rows
-from .scaffold import WALKTHROUGH_ACTIONS, ScaffoldError, _field, _rows, flows_data, render_flows, resolve_work_item, walkthrough_rows
+from .scaffold import (WALKTHROUGH_ACTIONS, ScaffoldError, _field, _rows, flows_data, render_flows, resolve_work_item,
+                       shell_drift, walkthrough_rows)
 
 STATUSES = {"DRAFT", "IN_REVIEW", "APPROVED"}
 REVIEW_STATUSES = {"IN_REVIEW", "APPROVED"}
@@ -23,7 +24,7 @@ HASH_FIELD = "Content hash"
 # Approval metadata changes when the user approves; it is not part of the design content.
 APPROVAL_FIELDS = ("Status", "Approval reference", HASH_FIELD)
 VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
-CHECKED_RULES = [f"UX-{i:03d}" for i in range(1, 12)]
+CHECKED_RULES = [f"UX-{i:03d}" for i in range(1, 13)]
 TARGET_NAME_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 # A note describing time-based or automatic behavior (auto-save, countdown, auto-reset, "15s").
 TIMER_NOTE_RE = re.compile(
@@ -317,7 +318,7 @@ def validate_design(work_item: str) -> dict[str, Any]:
         add("UX-004", w + ".", "Keep uiux.md tables, workflows and screen files consistent, then run `coder-nexus ux sync`.")
     for flow in flows["flows"]:
         if not flow["steps"]:
-            add("UX-004", f"{flow['id']} lists no screen in its steps.", "Write steps as '1→S01, 2→S02'.")
+            add("UX-004", f"{flow['id']} lists no screen in its steps.", "Write steps as '1 <label>→S01, 2 <label>→S02[:state]' (or '1→S01, 2→S02').")
     flow_ids = {f["id"] for f in flows["flows"]}
     screen_rows = _rows(text, 5, r"S\d+")
     pages: dict[str, _Page] = {}
@@ -338,6 +339,13 @@ def validate_design(work_item: str) -> dict[str, Any]:
         if sorted(_split(page.root.get("data-steps", ""))) != sorted(row_steps):
             add("UX-004", f"{rel}: data-steps='{page.root.get('data-steps', '')}' does not match the row Steps '{', '.join(row_steps)}'.",
                 "Keep data-steps and the uiux.md Steps column identical.")
+    for flow in flows["flows"]:
+        for st in flow["steps"]:
+            page = pages.get(st["screen"])
+            if st.get("state") and page is not None and st["state"] not in page.states:
+                add("UX-004", f"{flow['id']} step {st['n']} opens {st['screen']} in state '{st['state']}', which the screen does not draw "
+                    f"({', '.join(page.states) or 'no states'}).", f"Draw data-state=\"{st['state']}\" or fix '{st['screen']}:{st['state']}' in the Steps column.",
+                    line=_line_of(text, rf"^\|\s*`?{re.escape(flow['id'])}`?\s*\|"))
     flows_js = d / "data" / "flows.js"
     if not flows_js.is_file() or flows_js.read_text(encoding="utf-8") != render_flows(flows):
         add("UX-004", "data/flows.js is missing or older than uiux.md.", "Run `coder-nexus ux sync`.", "WARNING")
@@ -418,10 +426,20 @@ def validate_design(work_item: str) -> dict[str, Any]:
         if not (vp or {}).get("confirmed"):
             add("UX-009", "Viewports are not confirmed (.superpowers/ux/viewports.json).",
                 "Ask the user once, then `coder-nexus ux viewports … --decision D-NN`.")
+        elif not vp.get("orientations_confirmed") or not all((v or {}).get("orientations") for v in (vp.get("platforms") or {}).values()):
+            add("UX-009", "Viewport orientations are not confirmed (.superpowers/ux/viewports.json has no 'orientations' per platform).",
+                "Ask the user portrait / landscape / both per platform, then "
+                "`coder-nexus ux viewports --orientations mobile=portrait,tablet=portrait+landscape --decision D-NN`.")
         ds = _read_json(superpowers / "ux" / "design-system.json")
         if not ((ds or {}).get("source") or {}).get("decision"):
             add("UX-009", "Design source decision is not set (.superpowers/ux/design-system.json source.decision).",
                 "Confirm the design source with the user and record its D-NN.")
+
+    # UX-012 the viewer shell is generated
+    if shell_drift(d):
+        add("UX-012", "design-uiux/index.html differs from the generated viewer shell (hand-edited or from an older Hub).",
+            "Do not edit index.html or the kit; run `coder-nexus ux new --work-item … --title \"…\"` to restore it "
+            "(it only rewrites index.html and keeps uiux.md, screens and data).", "WARNING")
 
     # UX-010 content hash and approval
     current = content_hash(d)

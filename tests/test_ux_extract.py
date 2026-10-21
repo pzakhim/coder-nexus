@@ -155,7 +155,8 @@ def test_cli_viewports_tablet_landscape(tmp_path):
     assert cmd_ux(args) == 0
     data = load_viewports(tmp_path)
     assert set(data["platforms"]) == {"mobile", "tablet"}
-    assert data["platforms"]["tablet"] == {"width": 1180, "height": 820, "orientation": "landscape"}
+    assert data["platforms"]["tablet"] == {"width": 820, "height": 1180, "orientations": ["landscape"]}, "alias of --orientations"
+    assert data["orientations_confirmed"] is True
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")

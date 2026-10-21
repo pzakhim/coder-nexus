@@ -28,6 +28,8 @@ TODO: one paragraph — what the user can do after this change, for which goals 
 
 ## 4. Workflows
 
+One row per user-visible scenario (success, wrong input, forgot password, …). Steps: `1 <what the user does>→S01, 2 <label>→S01:<state>`.
+
 | Workflow | Title | Goals | Steps |
 |---|---|---|---|
 

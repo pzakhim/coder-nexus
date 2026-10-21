@@ -738,3 +738,20 @@ def test_ux_walkthrough_reference_is_packaged():
     assert "## 8. Walkthrough" in rendered_agent("designer.md")
     ux_kit = (skills / "flutter-ux-kit/SKILL.md").read_text(encoding="utf-8")
     assert "barcode scanners" in ux_kit and "Tablet landscape" in ux_kit
+
+
+def test_ux_scenarios_orientation_and_fixed_shell_guidance_is_packaged():
+    """Scenario workflows, labelled steps, orientation asked once, and the generated viewer shell reach the installed skill."""
+    skills = flutter_workspace() / ".agents/plugins/coder-nexus/skills"
+    interview = (skills / "ux-mockup/references/01_workflow_interview.md").read_text(encoding="utf-8")
+    for needle in ("One workflow per user-visible scenario", "Sai mật khẩu", "Quên mật khẩu", "Tài khoản bị khoá", "REQ-006",
+                   "portrait · landscape · portrait + landscape", "--orientations", "once per project", "1 Chọn NG→S01, 2 Quét LPN→S01:scan"):
+        assert needle in interview, needle
+    skill = (skills / "ux-mockup/SKILL.md").read_text(encoding="utf-8")
+    assert "One `W-NN` per user-visible scenario" in skill and "UX-012" in skill and "never edit them" in skill
+    designer = rendered_agent("designer.md")
+    assert "portrait / landscape / both per platform" in designer and "Never edit `design-uiux/index.html`" in designer
+    ux_kit = (skills / "flutter-ux-kit/SKILL.md").read_text(encoding="utf-8")
+    assert "scanner stations" in ux_kit and "only when a source shows it" in ux_kit
+    core = (PLUGIN_DIR / "core/skills/ux-mockup/references/01_workflow_interview.md").read_text(encoding="utf-8")
+    assert "Flutter" not in core and "flutter" not in core, "core stays stack-neutral"

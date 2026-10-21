@@ -41,7 +41,7 @@ Suggested commits (separate):
 ## 3. What exists for UI/UX
 
 - `coder-nexus ux extract [--project] [--brand] [--font]` → `.superpowers/ux/design-system.json` + `kit/` (kit.css from tokens + `ux/assets/base.css`, kit.js, viewports.js, components.html, fonts).
-- `coder-nexus ux viewports [--platforms --mobile --tablet --web --tablet-orientation --decision]`.
+- `coder-nexus ux viewports [--platforms --mobile --tablet --web --orientations mobile=portrait,tablet=portrait+landscape --decision]` (`--tablet-orientation` is an alias of `--orientations tablet=…`).
 - `coder-nexus ux new|screen|component|sync --work-item <vN>` (`src/coder_nexus/ux/scaffold.py`, templates in `src/coder_nexus/ux/templates/`).
 - Markup contract (kit.js + validator rely on it): `main.screen[data-screen][data-steps][data-catalog]`, `section[data-state]` inside the screen, links `href="S0x-….html"` (+ `data-next`), `.new-component[data-name]`, `[data-mock]` ← `window.MOCK`, `.note[data-ref]`. Components: `main[data-component][data-used-in]`.
 - Agent `plugins/core/agents/designer.md`; skill `plugins/core/skills/ux-mockup/` (SKILL.md + references 01 workflow interview, 02 screen rules, 03 revisions & approval); Flutter `plugins/packs/flutter/skills/ux-kit/`. Frappe has no ux-kit (auto BLOCKED placeholder); backend not_applicable.

@@ -18,7 +18,7 @@ It is a **scripted simulation labelled "Mô phỏng — MOCK"**. It shows the co
 ## Rules
 
 - **One walkthrough per workflow**, covering the happy path and its main unhappy branch.
-- **Mirror the confirmed steps 1:1.** The `#` column is the `W-NN` step number (the label in the Workflows Steps column, e.g. `2` of `1→S01, 2→S02`). Several rows may belong to one step. Do not script behavior the workflow does not contain. Anything new you notice while scripting (an unclear timeout, a missing branch) is a `Q-NN` for spec_writer, not a silent addition.
+- **Mirror the confirmed steps 1:1.** The `#` column is the `W-NN` step number (the number in the Workflows Steps column, e.g. `2` of `1 Chọn NG→S01, 2 Quét LPN→S01:scan` or `1→S01, 2→S02`). Several rows may belong to one step. Do not script behavior the workflow does not contain. Anything new you notice while scripting (an unclear timeout, a missing branch) is a `Q-NN` for spec_writer, not a silent addition.
 - **Stable targets.** Rows point at elements by `data-ux-target="<name>"`: kebab-case, named after what the element is (`lpn-field`, `ng-toggle`, `save-button`), unchanged across revisions. A CSS selector works only as a fallback and gets a warning.
 - **MOCK values.** Scanned and typed values come from `data/mock-data.js`: write the literal MOCK value or `@path` (e.g. `@lpns[0]`), which the screen reads from `window.MOCK`. Never real codes or personal data.
 - **Real durations.** A `timer` shows the real duration (`15s`). Playback may be faster (Wait (ms) or the 2× speed) and the badge says so; never shorten the number on screen.

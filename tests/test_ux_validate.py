@@ -178,7 +178,7 @@ def test_complete_design_passes(design, work_item):
     assert res["status"] == "success" and res["document_type"] == "UIUX"
     assert res["violations"] == [], res["violations"]
     assert res["gate_status"] == "PASSED" and res["valid"] is True
-    assert res["checked_rules"] == [f"UX-{i:03d}" for i in range(1, 12)]
+    assert res["checked_rules"] == [f"UX-{i:03d}" for i in range(1, 13)]
     assert res["revision"] == "r1" and res["design_status"] == "DRAFT"
     assert validate_design(str(design))["valid"], "design-uiux folder is accepted too"
 

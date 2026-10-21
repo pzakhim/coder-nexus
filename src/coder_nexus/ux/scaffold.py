@@ -142,6 +142,33 @@ def walkthrough_rows(text: str) -> list[dict]:
     return rows
 
 
+STEP_RE = re.compile(r"^(?P<left>.*?)(?:→|->)\s*(?P<screen>S\d{2,})(?::(?P<state>[\w-]+))?\s*$")
+STEP_N_RE = re.compile(r"^(?P<n>\d+(?:\.\d+)*[a-z]?)\.?(?:\s+(?P<label>.*))?$")
+
+
+def parse_steps(cell: str) -> list[dict]:
+    """Steps column of `## 4. Workflows` -> [{n, screen, title, state}].
+
+    Accepts `1→S01, 2→S02` (old), `1 Chọn NG→S01`, `1. Chọn NG → S01`, `2 Quét LPN→S01:scan` (state) and bare `S01, S02`.
+    `title` is the step label ("" when none); `state` is the screen state the step opens ("" = default).
+    """
+    steps: list[dict] = []
+    for part in (p.strip() for p in cell.split(",") if p.strip()):
+        m = STEP_RE.match(part)
+        if not m:
+            steps += [{"n": "", "screen": sid, "title": "", "state": ""} for sid in re.findall(r"\bS\d{2,}\b", part)]
+            continue
+        left = m.group("left").strip()
+        nm = STEP_N_RE.match(left)
+        n, label = (nm.group("n"), (nm.group("label") or "").strip()) if nm else ("", left)
+        steps.append({"n": n, "screen": m.group("screen"), "title": label, "state": m.group("state") or ""})
+    numbered = all(st["n"] for st in steps)
+    for i, st in enumerate(steps):
+        if not numbered:
+            st["n"] = str(i + 1)
+    return steps
+
+
 def _field(text: str, name: str) -> str:
     m = re.search(rf"^>\s*\*\*{re.escape(name)}\*\*:\s*(.+)$", text, re.MULTILINE)
     return m.group(1).strip() if m else ""
@@ -163,7 +190,10 @@ def new_design(work_item: str, title: str, lang: Optional[str] = None) -> dict:
     for name, target in (("uiux.md", d / "uiux.md"), ("CHANGELOG.md", d / "CHANGELOG.md"), ("mock-data.js", d / "data" / "mock-data.js")):
         if _write_new(target, _render(name, **values)):
             created.append(target)
-    if _write_new(d / "index.html", _render("index.html", kit=_rel(kit, d), **values)):
+    # The viewer shell is generated: always (re)write it so a hand-edited index.html is restored.
+    if shell_drift(d):
+        (d / "index.html").parent.mkdir(parents=True, exist_ok=True)
+        (d / "index.html").write_text(_render("index.html", kit=_rel(kit, d), **values), encoding="utf-8")
         created.append(d / "index.html")
     for sub in ("screens", "components", "assets"):
         (d / sub).mkdir(parents=True, exist_ok=True)
@@ -221,6 +251,16 @@ def add_component(work_item: str, comp_id: str, slug: str, title: str, used_in: 
     return {"file": str(target), "created": created}
 
 
+def shell_drift(d: Path) -> bool:
+    """True when design-uiux/index.html is not the rendered template (title, lang and kit path may differ)."""
+    path = d / "index.html"
+    if not path.is_file():
+        return True
+    pattern = re.escape((TEMPLATES / "index.html").read_text(encoding="utf-8").replace("\r\n", "\n").rstrip())
+    pattern = re.sub(r"\\\{\\\{\w+\\\}\\\}", lambda _: "[^\n]*?", pattern)
+    return re.fullmatch(pattern, path.read_text(encoding="utf-8").replace("\r\n", "\n").rstrip()) is None
+
+
 def flows_data(d: Path) -> tuple[dict, list[str]]:
     """Read-only: uiux.md of a design-uiux folder -> (flows.js data, consistency warnings)."""
     text = (d / "uiux.md").read_text(encoding="utf-8")
@@ -231,11 +271,11 @@ def flows_data(d: Path) -> tuple[dict, list[str]]:
     ]
     flows = []
     walk = walkthrough_rows(text)
+    titles = {s["id"]: s["title"] for s in screens}
     for r in _rows(text, 4, r"W-\d+"):
-        steps = [{"screen": s} for s in re.findall(r"\bS\d{2,}\b", r[3] if len(r) > 3 else "")]
-        labels = re.findall(r"([\w.]+)\s*(?:→|->)\s*S\d{2,}\b", r[3] if len(r) > 3 else "")
-        for i, st in enumerate(steps):
-            st["n"] = labels[i] if len(labels) == len(steps) else str(i + 1)
+        steps = parse_steps(r[3] if len(r) > 3 else "")
+        for st in steps:
+            st["title"] = st["title"] or titles.get(st["screen"], "")
         flow = {"id": r[0], "title": r[1], "goals": r[2] if len(r) > 2 else "", "steps": steps}
         rows = [{k: w[k] for k in ("step", "screen", "state", "action", "target", "value", "wait", "caption")}
                 for w in walk if w["workflow"] == r[0].upper()]

@@ -292,7 +292,7 @@ async def validate_module_architecture(
 
 @app.tool()
 async def validate_ux_design(work_item_path: str) -> dict[str, Any]:
-    """Validate a work item's UI/UX design (`design-uiux/`) against rules UX-001 … UX-011.
+    """Validate a work item's UI/UX design (`design-uiux/`) against rules UX-001 … UX-012.
 
     Strictly READ-ONLY: Never modifies files (the content hash is written only by the CLI `--write-hash`).
     A PASSED result is not approval; only the user approves a design revision.

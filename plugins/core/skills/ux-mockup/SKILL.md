@@ -12,6 +12,8 @@ Every change the user can see gets a UI/UX design the user approves before techn
 **Goal** `G-NN` (why; from `requirements.md`) ← **Workflow** `W-NN` (user-confirmed ordered steps) → **Step** → **Screen** `S-NN` (static HTML, with its states).
 
 - Goals only keep the work on topic. They are checked per workflow, not per screen.
+- One `W-NN` per user-visible scenario of a feature, so each one is listed and playable in `index.html` (login: W-01 Đăng nhập thành công, W-02 Sai mật khẩu, W-03 Quên mật khẩu, W-04 Tài khoản bị khoá). A small error branch may stay inside a workflow as a screen state plus walkthrough rows. See [the workflow interview](references/01_workflow_interview.md#22-one-workflow-per-user-visible-scenario).
+- Steps carry a label and an optional state: `1 Chọn NG→S01, 2 Quét LPN→S01:scan`.
 - A screen belongs to at least one workflow step. A screen in no workflow is extra, or a step is missing.
 - Each workflow becomes Given/When/Then scenarios and AC in `requirements.md`.
 
@@ -21,13 +23,13 @@ Every change the user can see gets a UI/UX design the user approves before techn
 .superpowers/
 ├── ux/                        # shared, committed — never holds designs
 │   ├── design-system.json     # design source ({{slot:ux-kit}}), decision D-NN
-│   ├── viewports.json         # mobile / tablet / web sizes, decision D-NN
+│   ├── viewports.json         # mobile / tablet / web sizes + portrait/landscape per platform, decision D-NN
 │   ├── kit/                   # generated: kit.css, kit.js, viewports.js, components.html, fonts/
 │   ├── screen-catalog.md      # every known screen of the app → latest approved design
 │   └── current/               # screenshots of the running app
 └── work-items/<slug>/vN/design-uiux/     # only when the work item has UI impact; committed
     ├── uiux.md                # APPROVAL DOC — source of truth for workflows, screens and walkthroughs
-    ├── index.html             # open this: workflows, device frame, viewport/state/notes switches, ▶ Play
+    ├── index.html             # GENERATED viewer shell — open it, never edit it (workflows, device frame, ⟲ rotate, ▶ Play)
     ├── screens/S01-<slug>.html
     ├── components/C01-<slug>.html
     ├── data/flows.js          # generated from uiux.md by `coder-nexus ux sync`
@@ -41,21 +43,21 @@ Every change the user can see gets a UI/UX design the user approves before techn
 | Step | Command |
 |---|---|
 | Design source + kit | `coder-nexus ux extract --project .` ({{slot:ux-kit}}) |
-| Viewports (ask once per project) | `coder-nexus ux viewports --project .` then `--platforms mobile,tablet --mobile 390x844 --tablet 820x1180 --decision D-NN` |
-| Create the folder | `coder-nexus ux new --work-item .superpowers/work-items/<slug>/vN --title "<feature>"` |
+| Viewports + orientation (ask once per project) | `coder-nexus ux viewports --project .` then `--platforms mobile,tablet --mobile 390x844 --tablet 820x1180 --orientations mobile=portrait,tablet=portrait+landscape --decision D-NN` |
+| Create the folder (also restores a hand-edited `index.html`) | `coder-nexus ux new --work-item .superpowers/work-items/<slug>/vN --title "<feature>"` |
 | Add a screen | `coder-nexus ux screen --work-item … --id S02 --slug receive-qty --title "…" --steps W-01#2 --kind CHANGED --catalog wms.is-items.receive [--states default,error]` |
 | Add a new component | `coder-nexus ux component --work-item … --id C01 --slug no-po-warning --title "…" --used-in S02` |
 | Rebuild `index.html` data | `coder-nexus ux sync --work-item …` (after every edit of `uiux.md`) |
-| Check the design (UX-001…UX-011) | `coder-nexus ux validate --work-item …` (MCP `validate_ux_design`); add `--write-hash` when presenting or approving a revision |
-| Record walkthrough videos (optional) | `coder-nexus ux record --work-item … [--workflow W-01] [--viewport mobile]` (needs Playwright in the environment) |
+| Check the design (UX-001…UX-012) | `coder-nexus ux validate --work-item …` (MCP `validate_ux_design`); add `--write-hash` when presenting or approving a revision |
+| Record walkthrough videos (optional) | `coder-nexus ux record --work-item … [--workflow W-01] [--viewport tablet] [--orientation landscape]` (needs Playwright in the environment) |
 
-The commands create files with the correct relative paths to the kit and add rows to `uiux.md`. Edit the generated files; do not move them.
+The commands create files with the correct relative paths to the kit and add rows to `uiux.md`. Edit what you own — `uiux.md`, `screens/`, `components/`, `data/mock-data.js`, `assets/`, `CHANGELOG.md` — and do not move them. `index.html` and `.superpowers/ux/kit/` are generated: never edit them. `ux validate` warns (UX-012) when `index.html` drifts from the template; `coder-nexus ux new` restores it.
 
 ## Process
 
 1. **Decide whether a design is needed** — see the designer agent's "When you are called" (no UI impact / existing visual / one-screen change). A fetched design-tool export in `.superpowers/sources/<ISSUE-ID>/` (status `READ`) counts as an existing visual: cite its file in `uiux.md` and in screen notes. A source marked `NOT_PROVIDED` or `UNREACHABLE` is missing input, not a design.
 2. **Workflow interview** — [references/01_workflow_interview.md](references/01_workflow_interview.md). The user confirms `W-NN` and its steps before any screen is drawn.
-3. **Viewports and design source** — confirmed once per project and recorded as `D-NN`.
+3. **Viewports, orientation and design source** — confirmed once per project (one question: platforms, size and portrait / landscape / both per platform) and recorded as `D-NN`.
 4. **Screens and components** — [references/02_screen_rules.md](references/02_screen_rules.md).
 5. **Walkthrough** — [references/04_walkthrough.md](references/04_walkthrough.md). Script `## 8. Walkthrough` so each workflow plays by itself in `index.html`; required for time-based or automatic behavior, multi-screen flows and the error or empty branches the user asked about.
 6. **Review, revisions, approval** — [references/03_revisions_and_approval.md](references/03_revisions_and_approval.md).
