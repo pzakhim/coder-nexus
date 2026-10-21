@@ -1,0 +1,26 @@
+# FE 08 — {{framework}} execution boundaries
+
+<!-- GEN: Why: server/client mistakes leak secrets or break rendering in ways tests rarely catch. Kind: Suggested — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Fill from references/frontend-rules.md F5 and the stack preset. For SSR frameworks (Next.js, Nuxt, Remix, SvelteKit) cover server/client components, the client directive, server-only modules, secrets, serialization and caching keys. For SPAs (React+Vite) cover bundle secrets and public env vars only. For a framework with installed docs (e.g. node_modules/next/dist/docs), tell readers to read the installed version first. -->
+
+## Default execution
+- {{default_rendering}}
+
+## Client boundary
+- {{client_directive_rules}}
+
+## Secrets & server-only code
+- {{secret_rules}}
+
+## Backend ownership
+- {{business_api_rule}}  <!-- GEN: e.g. "FastAPI is the business API; no Server Actions/DB access for business rules unless designed" -->
+
+## Caching
+- {{caching_rules}}  <!-- GEN: scope dimensions in cache keys; no global cache of authenticated responses -->
+
+## References
+- {{official_docs_links}}
+
+<!-- custom:start -->
+<!-- custom:end -->

@@ -1,0 +1,33 @@
+# Incremental adoption
+
+<!-- GEN: Why: keeping volatile facts and debt here lets the rule files stay true over time. Kind: Suggested — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+This file holds the rules for legacy code **and every volatile fact**. Other files stay timeless; update this one when facts change.
+
+## Current status
+
+<!-- GEN: Facts per branch: migration done or ongoing, counts/registries to update when adding modules, framework defaults not yet applied to old code. Delete for brand-new projects. -->
+- BE: {{be_status}}
+- FE: {{fe_status}}
+
+## Known debt
+
+<!-- GEN: From drift found in P4 and the gates' legacy output. Never block phases that do not touch it. -->
+| Area | Debt | Fix when |
+|---|---|---|
+| {{area}} | {{debt}} | The phase edits it |
+
+## Rules for legacy code
+
+- New and modified code meets the standard; legacy debt is fixed only when a phase explicitly scopes it.
+- Moving code = move + update every caller + delete the old file in the same phase; no shims (see `no-wrapper-rule.md` if generated).
+- Do not create empty future layers or duplicate canonical implementations.
+- Each phase leaves a runnable, checkable system; reviewers block on regressions, not unrelated debt.
+
+## Plans
+
+<!-- GEN: Keep if the project uses a plan format (e.g. File Action Tree with [+] [~] [-] [=]). Delete otherwise. -->
+{{plan_format}}
+
+<!-- custom:start -->
+<!-- custom:end -->

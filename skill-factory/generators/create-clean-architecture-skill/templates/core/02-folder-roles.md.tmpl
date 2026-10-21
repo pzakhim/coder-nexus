@@ -1,0 +1,31 @@
+# 02 — Folder roles
+
+<!-- GEN: Why: stating what each folder may contain and import stops folders from becoming dumping grounds. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Every folder in tree 01 gets an entry here (folders repeated in every feature are described once as `features/<feature>/<folder>`). -->
+
+## `{{folder_path}}`
+
+- **Role:** {{role}}
+- **Contains:** {{allowed_content}}
+- **Never contains:** {{forbidden_content}}
+- **May import:** {{can_import}}
+- **Imported by:** {{imported_by}}
+- **Example file:** `{{example_file}}`
+
+<!-- GEN: Repeat the block above for each folder. -->
+
+## Where logic lives
+
+<!-- GEN: "Kind of logic → folder" table with real paths, based on principles.md section 3. -->
+| Kind of logic | Lives in |
+|---|---|
+| Business rules | `{{path}}` |
+| Sequence of a business operation | `{{path}}` |
+| Input validation | `{{path}}` |
+| DB / external API calls | `{{path}}` |
+| Data mapping | `{{path}}` |
+| UI state / side effects | `{{path}}` |
+
+<!-- custom:start -->
+<!-- custom:end -->

@@ -1,0 +1,72 @@
+---
+name: clean-architecture
+description: Confirmed clean architecture of {{project_name}}, split into a backend branch ({{be_stack}}) and a frontend branch ({{fe_stack}}). Use before creating folders, files, modules or features, deciding where code belongs, adding imports between modules, moving or refactoring code, splitting long files, or reviewing structure in {{be_dir}} or {{fe_dir}}.
+---
+
+# Clean Architecture — {{project_name}}
+
+<!-- GEN: Why: agents read this file first; it must route BE work to be/ and FE work to fe/ so neither reads the other branch. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+One skill, two branches. Read only the branch you are working in, plus `shared/` when the task crosses BE and FE.
+
+Confirmed: {{date}} · BE level: {{be_level}} · FE level: {{fe_level}}
+
+## Pick the branch
+
+| Working in | Read | Gate (must pass) |
+|---|---|---|
+| `{{be_dir}}` | `references/be/` | {{be_gate_command}} |
+| `{{fe_dir}}` | `references/fe/` | {{fe_gate_command}} |
+| API contract / BE + FE | `references/shared/integration-contract.md`, then both branches | Both gates |
+
+## Which file to read
+
+<!-- GEN: Keep only rows for files actually generated. Extra branch files (08+) depend on the stack. -->
+| Doing | Backend | Frontend |
+|---|---|---|
+| See the folder tree | `be/01-folder-structure.md` | `fe/01-folder-structure.md` |
+| Unsure where code belongs | `be/02-folder-roles.md` | `fe/02-folder-roles.md` |
+| Creating a module/feature, folder or file | `be/03-creating-files-folders.md` | `fe/03-creating-files-folders.md` |
+| File/function/component too long | `be/04-long-files-splitting.md` | `fe/04-long-files-splitting.md` |
+| Adding imports between modules/features | `be/05-dependency-rules.md` | `fe/05-dependency-rules.md` |
+| Need a complete example | `be/06-example-flow.md` | `fe/06-example-flow.md` |
+| Reviewing | `be/07-anti-patterns.md` | `fe/07-anti-patterns.md` |
+| Transactions, errors, auth, ports, workers, config, tests | `be/08-runtime.md` | — |
+| Server/client execution, secrets, caching | — | `fe/08-framework-boundaries.md` |
+| State, API calls, scope switches | — | `fe/09-state-and-api-flow.md` |
+| Tokens, styles, shared UI | — | `fe/10-styling-ui.md` |
+| Moving/renaming code | `shared/no-wrapper-rule.md` | `shared/no-wrapper-rule.md` |
+| Legacy code, known debt | `shared/incremental-adoption.md` | `shared/incremental-adoption.md` |
+| Splitting together with clean-code | `shared/splitting-with-clean-code.md` | `shared/splitting-with-clean-code.md` |
+
+## Hard rules (BE + FE)
+
+<!-- GEN: 5–7 rules with real paths. Always include both dependency directions, the authorization authority rule, and the incremental-adoption rule; add project-specific rules kept per P5. -->
+1. Dependencies point inward only. BE: {{be_direction}}. FE: {{fe_direction}}.
+2. {{rule_2}}
+3. {{rule_3}}
+
+## Relationship with clean-code
+
+<!-- GEN: Only if a clean-code skill/doc exists (P1). State who owns naming/thresholds and who wins on conflict. Delete otherwise. -->
+- `{{clean_code_skill}}` owns naming and size thresholds; this skill owns placement and boundaries.
+
+## Checklist after a change
+
+**Backend**
+- [ ] {{be_check_1}}
+- [ ] {{be_gate_command}} passes
+
+**Frontend**
+- [ ] {{fe_check_1}}
+- [ ] {{fe_gate_command}} passes
+
+## Architecture decisions
+
+| ID | Decision |
+|---|---|
+| A1 | {{decision}} |
+
+<!-- custom:start -->
+<!-- custom:end -->

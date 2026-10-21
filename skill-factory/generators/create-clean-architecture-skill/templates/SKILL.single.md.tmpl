@@ -1,0 +1,57 @@
+---
+name: clean-architecture
+description: The confirmed architecture of {{project_name}} ({{stack}}). Use before creating folders/files, deciding where code belongs, refactoring, reviewing structure, or when a file/function/component grows too long and needs splitting.
+---
+
+# Clean Architecture — {{project_name}}
+
+<!-- GEN: Why: agents read this file first and often only this file, so it must state the few hard rules and route to the right reference. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+Stack: {{stack}} · Level: {{level}} · Confirmed: {{date}}
+
+## Hard rules
+
+<!-- GEN: The 4–6 most important rules, from principles.md + the user's decisions, written with real paths. -->
+1. Dependencies point inward only: {{dependency_direction_with_real_paths}}.
+2. Never import another feature's internals; only through {{public_api_file}}.
+3. {{rule_3}}
+4. {{rule_4}}
+
+## Which reference to read
+
+| Doing | Read |
+|---|---|
+| Overview / folder tree | `references/01-folder-structure.md` |
+| Unsure which folder code belongs in | `references/02-folder-roles.md` |
+| Creating a feature, folder, or file | `references/03-creating-files-folders.md` |
+| File/function/component too long, needs splitting | `references/04-long-files-splitting.md` |
+| Adding imports between modules | `references/05-dependency-rules.md` |
+| Need a complete feature example | `references/06-example-flow.md` |
+| Reviewing code | `references/07-anti-patterns.md` + checklist below |
+| BE: transactions, errors, auth, ports, workers, config, tests | `references/08-runtime.md` |
+| FE: server/client execution, secrets, caching | `references/08-framework-boundaries.md` |
+| FE: state, API calls, scope switches | `references/09-state-and-api-flow.md` |
+| FE: tokens, styles, shared UI | `references/10-styling-ui.md` |
+| Moving/renaming code | `references/no-wrapper-rule.md` |
+| Legacy code, known debt | `references/incremental-adoption.md` |
+
+<!-- GEN: Remove rows for files not generated (lite level, or the other side's extras: BE-only keeps 08-runtime, FE-only keeps 08–10). -->
+
+## Checklist after creating/changing code
+
+- [ ] New files are in the right folder per 02 and named per 03
+- [ ] No inward-rule violations and no imports into another feature's internals
+- [ ] No file/function/component over the thresholds in 04 left unhandled
+- [ ] No business logic in {{presentation_layer_name}}
+- [ ] {{extra_check}}
+
+## Architecture decisions
+
+<!-- GEN: Chosen option, reasons, rejected options and why, main sources. -->
+- Chosen: {{chosen_option}}
+- Why: {{reason}}
+- Considered and rejected: {{rejected_options}}
+
+<!-- custom:start -->
+<!-- custom:end -->

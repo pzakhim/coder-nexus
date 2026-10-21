@@ -1,0 +1,37 @@
+# 02 — Task loop
+
+<!-- GEN: Why: task-by-task grounding is what prevents bulk coding and scope creep. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules I4, I5, I6 with the workspace's task format and task-level commands (06). -->
+
+**Never code several tasks in one pass.** Take the phase's tasks top to bottom:
+
+## A. Read & ground the task
+
+- Open `{{phase_pattern}}`; take the next unticked task (`{{task_unticked}}`).
+- Confirm every earlier task is ticked (`{{task_ticked}}`).
+- Note: target files, reused components/contracts, signatures it must produce, acceptance criteria.
+
+## B. Implement only that task
+
+- Write or modify **only** the task's files.
+- Use the components and conventions the design mapped; placement per {{clean_architecture_link}}, code style per {{clean_code_link}}, tests per {{unit_test_link}}.
+- A mapped component or contract that does not fit → stop, report a planning blocker to {{planner_role}}.
+
+## C. Check immediately
+
+Run the task's own check before moving on (see {{ref_06}}):
+
+```
+{{task_check_example}}
+```
+
+Fix errors now; never carry a red check into the next task.
+
+## D. Tick and re-ground
+
+- Tick the task in the phase file.
+- **Re-read the phase file** for the next task (scope, reuse, signatures, acceptance) before touching code.
+
+<!-- custom:start -->
+<!-- custom:end -->

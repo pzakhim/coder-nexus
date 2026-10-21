@@ -1,0 +1,21 @@
+# 05 — Handoff
+
+<!-- GEN: Why: review and tests need one exact revision and the evidence to trust it; may merge into 03. Kind: Suggested — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules I10, I13 with the workspace's handoff format, roles and result files. -->
+
+## Hand off to {{next_role}}
+
+```
+{{handoff_template}}
+```
+<!-- GEN: Fields at minimum: plan/feature path, phase ID, approved revisions, changed files, actual code revision, evidence lines, what was removed/merged in the simplicity pass, open issues. Use the workspace's notation (e.g. H-NN). -->
+
+## Revisions
+
+- Review inspects the handed-off revision; verification uses the **reviewed** revision.
+- Any fix creates a new revision and restarts the affected review, tests and visual checks.
+- The approved plan stays unchanged; actual results go to `{{results_file}}` (written by {{results_owner}}).
+
+<!-- custom:start -->
+<!-- custom:end -->

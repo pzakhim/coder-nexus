@@ -1,0 +1,32 @@
+# 01 — Inputs and preconditions
+
+<!-- GEN: Why: starting a phase that is not ready produces work that has to be redone; may merge into SKILL.md for a light plan format. Kind: Suggested — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules I1, I2, I3, I14 with the workspace's real plan format (references/plan-formats.md). -->
+
+## Where the plan lives
+
+| Artifact | Path |
+|---|---|
+| {{artifact}} | `{{path}}` |
+
+Phase file: `{{phase_pattern}}` · Task format: `{{task_format}}`
+
+## Before writing any code
+
+- [ ] Approved: {{gates}} <!-- GEN: e.g. requirements, design, plan — user approvals only -->
+- [ ] {{prep_phase_rule}} <!-- GEN: e.g. "PHASE-00 ticked [x] PREPARED / COMPLETED"; delete if no preparation phase -->
+- [ ] Every phase in `{{dependency_notation}}` is `PASSED`
+- [ ] Each task names its files, reused components/contracts, outputs and a check
+- [ ] {{validator_rule}} <!-- GEN: e.g. "validate_dossier.py <dossier> --gate dispatch passes"; delete if none -->
+
+A missing item is a **planning gap**: report it to {{planner_role}} and stop. Do not fill it in yourself.
+
+## Sources of truth
+
+- Requirements and acceptance criteria: `{{requirements_source}}`
+- API contract: `{{contract_source}}`
+- Never re-query external systems for data the plan already recorded, and never invent business records, services or fallbacks (I14).
+
+<!-- custom:start -->
+<!-- custom:end -->

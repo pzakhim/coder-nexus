@@ -1,0 +1,63 @@
+---
+name: incremental-implementation
+description: How the Code Writer of {{project_name}} implements one approved plan phase task by task - ground each task, edit only its scope, check immediately, re-read the plan, verify the phase, self bug-hunt, hand off with evidence. Use after the plan is approved and a phase is assigned; never for brainstorming or unapproved scope.
+---
+
+# Incremental Implementation — {{project_name}}
+
+<!-- GEN: Why: the whole loop must fit on one screen so the Code Writer can follow it between tasks without rereading every reference. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+Confirmed: {{date}} · Plans: `{{plan_root}}` · Layout: {{layout}}
+
+## The loop in one screen
+
+1. **Before coding** — the phase is approved and ready ([01]({{ref_01}})).
+2. **Per task** — read & ground → implement only the task's files → run its check → tick and re-read the plan ([02]({{ref_02}})).
+3. **Phase end** — full suite, visual check (UI), self bug-hunt, evidence; out-of-scope fixes go back to the gate ([03]({{ref_03}})).
+4. **Simplicity pass** on changed code only ([04]({{ref_04}})).
+5. **Handoff** with phase ID, revisions, files, evidence ([05]({{ref_05}})).
+
+## Which file to read
+
+<!-- GEN: Flat layout: references/01…07. Branched: shared/01–05 plus be/06–07 and fe/06–07; add a "Working in" column (be_dir → be/, fe_dir → fe/). -->
+| Doing | Read |
+|---|---|
+| Checking a phase is ready | `{{ref_01}}` |
+| Working through tasks | `{{ref_02}}` |
+| Finishing a phase | `{{ref_03}}` |
+| Simplifying the diff | `{{ref_04}}` |
+| Handing off | `{{ref_05}}` |
+| Which commands to run | `{{ref_06}}` |
+| Order of tasks across layers | `{{ref_07}}` |
+
+## Skills this process calls
+
+<!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md. Link existing sibling skills; write "not set up in this workspace" for missing ones. -->
+| Need | Skill |
+|---|---|
+| Where code goes | {{clean_architecture_link}} |
+| How to write it | {{clean_code_link}} |
+| How to prove it | {{unit_test_link}} |
+| Simplify the diff | {{code_simplification_link}} |
+| Self-check for defects | {{bug_hunt_link}} |
+
+The approved plan and workspace decisions ({{decision_notation}}) override any skill for the phase they cover.
+
+## Hard rules
+
+1. Approved scope only; never start before {{gates}} are approved.
+2. One phase at a time; dependencies `PASSED` first.
+3. No bulk coding across tasks; re-read the plan before every task.
+4. A mapped component/contract that does not fit is a planning blocker, not a local workaround.
+5. `NOT_RUN`, `BLOCKED`, `UNVERIFIED` are never `PASS`.
+6. Behavior/API/architecture/dependency changes go back to the gate.
+7. Never fabricate data, services or fallbacks.
+
+## Not adopted
+
+<!-- GEN: List base rules marked "not adopted" with the reason, or delete this section. -->
+- {{not_adopted}}
+
+<!-- custom:start -->
+<!-- custom:end -->

@@ -1,0 +1,31 @@
+# FE 10 — Styling & shared UI
+
+<!-- GEN: Why: tokens and a promotion rule keep the look consistent and stop duplicate components. Kind: Suggested — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Fill from references/frontend-rules.md F9–F10 with the project's styling approach (CSS tokens, Tailwind config, CSS modules, theme files...). -->
+
+## Global design
+
+| File | Holds |
+|---|---|
+| {{token_file}} | Design tokens — the single source of truth |
+| {{other_global_files}} | {{role}} |
+
+## Feature styles
+- Location & naming: {{feature_style_rule}}
+- Only tokens, no hard-coded colors; a missing value becomes a role-named token.
+- Registration: {{style_registration}}  <!-- GEN: e.g. @import in globals.css; delete if automatic -->
+
+## Shared UI
+
+| Group | Components |
+|---|---|
+| {{group}} | {{components}} |
+
+**Promotion rule:** move a component to shared UI only when used by ≥ 2 features and free of business meaning. Layouts receive feature UI through slots/children.
+
+## Icons & content
+- {{icon_rule}}
+
+<!-- custom:start -->
+<!-- custom:end -->

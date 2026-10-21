@@ -1,0 +1,35 @@
+# Splitting long code: clean-code ↔ clean-architecture
+
+<!-- GEN: Why: two skills touch splitting; without a split of roles they give conflicting advice. Kind: Suggested — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Fill from references/splitting-protocol.md. Thresholds come from the project's clean-code skill/doc if one exists (P1); otherwise the confirmed defaults. -->
+
+## Who decides what
+
+| Skill | Answers | Decides |
+|---|---|---|
+| `{{clean_code_skill}}` | Is this too long? Into which pieces? | Thresholds and boundaries by responsibility |
+| `clean-architecture` | Where does each piece go? Who may import it? | Target layer and folder, dependency rules intact |
+
+Thresholds (owner: {{threshold_owner}}): {{thresholds}}.
+
+## Protocol
+
+1. Detect: over a threshold, or more than one job.
+2. List responsibilities, one-line label per block.
+3. Place each label with the decision tree in `be/03` or `fe/03`.
+4. Choose the form: sibling file / whitelisted subfolder / other layer / shared location allowed by `be/05` or `fe/05`.
+5. Move: update every caller and test, delete old code, no re-export.
+6. Verify: tests and the branch gate pass, no cycles, one responsibility left.
+
+Destination tables: `../be/04-long-files-splitting.md`, `../fe/04-long-files-splitting.md`.
+
+## Do not split when
+
+- One responsibility that reads linearly (migrations, prompt text, mapping tables, generated code).
+- Splitting breaks a dependency rule → redesign the boundary.
+- The piece would be tiny and used once.
+- A legacy file the phase does not touch.
+
+<!-- custom:start -->
+<!-- custom:end -->
