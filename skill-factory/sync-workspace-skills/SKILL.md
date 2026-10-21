@@ -18,7 +18,9 @@ Follow `~/.claude/skill-factory/core/sync-protocol.md`. Provenance format: `~/.c
    | Workspace | Skill | Recorded | Latest | Status |
    |---|---|---|---|---|
 
-3. **Ask** which rows to sync (AskUserQuestion; recommend all `behind` rows of the current workspace).
+   Status: `up to date`, `patch available` (only patch releases in between), `behind N`, `behind N (conflicts)`, `missing`, `managed by Coder Nexus`. Only released CHANGELOG entries count; `## Unreleased` is ignored.
+
+3. **Ask** which rows to sync (AskUserQuestion; recommend all `behind` rows of the current workspace; `patch available` rows only if the user wants them).
 4. **Per workspace, one at a time:** run sync-protocol steps 2–8 — read CHANGELOG entries newer than the recorded version, classify affected spots (project-owned / custom block / clean generated / conflict), show the plan, wait for confirmation, edit, update the registry.
 5. **Contribute back** (sync-protocol step 9) only when the user agrees.
 6. **Report:** per workspace — files changed, conflicts and how they were resolved, links updated, registry updated, nothing committed.

@@ -4,32 +4,26 @@
 
 ## Thresholds
 
-| Unit | Consider splitting above |
-|---|---|
-| File | {{file_lines}} lines |
-| Function / method | {{function_lines}} lines |
-| {{ui_unit}} | {{ui_lines}} lines |
+Owned by {{clean_code_link}} — when to split and into which pieces is decided there. Split by **responsibility**, not by line count.
 
-Thresholds are signals. Split by **responsibility**, not by line count.
-
-<!-- GEN: If the project already has a clean-code skill or doc with thresholds, copy its numbers here and state "owned by <skill>" (see ~/.claude/skill-factory/core/existing-project.md, P1). In the fullstack layout, replace the protocol below with a link to ../shared/splitting-with-clean-code.md and keep only this branch's smell table. -->
+<!-- GEN: Link the workspace's clean-code size/splitting reference; do NOT copy its numbers here (one source). Only if the workspace has no clean-code skill or doc: state the confirmed defaults here and say "until a clean-code skill exists". In the fullstack layout, link ../shared/splitting-with-clean-code.md for the protocol and keep only this branch's placement part and smell table. -->
 
 ## Division of roles
 
-- **clean-code** decides *whether* to split and *into which pieces* (one responsibility per piece).
+- **clean-code** decides *whether* to split, *into which pieces*, and what they are called.
 - **clean-architecture** (this file) decides *where each piece goes* and keeps the dependency rule intact.
 
-## Protocol
+## Placement steps (this skill's half)
 
-1. List the responsibilities in the file, one-line label per block.
+1. Take the pieces clean-code listed (one-line label each).
 2. Run each label through the decision tree in `03-creating-files-folders.md` → target folder.
-3. Choose the form: sibling file / subfolder with a public API / move to another layer / shared.
-4. Move the code, keep the old public API, fix imports in the allowed direction.
+3. Choose the form: sibling file / whitelisted subfolder / another layer of the same module / shared (only when the dependency rules allow it).
+4. Move the code, update every caller and test, delete the old code — no re-export shim.
 5. Run: {{verify_commands}}
 
 ## Smell → destination
 
-<!-- GEN: Apply splitting-protocol.md to this project: right column uses real paths from the confirmed tree. -->
+<!-- GEN: Apply ~/.claude/skill-factory/core/splitting-protocol.md to this project: right column uses real paths from the confirmed tree. -->
 | Smell | Move to |
 |---|---|
 | Business rules in a {{presentation_unit}} | `{{path}}` |

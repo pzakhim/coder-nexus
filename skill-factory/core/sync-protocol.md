@@ -11,8 +11,8 @@ How an agent brings a workspace skill up to date with its generator. **No script
 
 ## Steps
 
-1. **Status.** Compare the recorded `version` with the generator `VERSION`. Equal → report "up to date" and stop.
-2. **Read changes.** Read every `CHANGELOG.md` entry newer than the recorded version, oldest first. Collect their **Affects** and **Migration** lines.
+1. **Status.** Compare the recorded `version` with the generator `VERSION`. Equal → report "up to date" and stop. Only patch releases in between → report "patch available" and apply only if the user asks ([versioning.md](versioning.md)).
+2. **Read changes.** Read every **released** `CHANGELOG.md` entry newer than the recorded version, oldest first; ignore `## Unreleased`. Collect their **Affects** and **Migration** lines.
 3. **Check the workspace.** `git status` in the workspace; note uncommitted changes in the affected files (P3). Read each affected file.
 4. **Classify each affected spot:**
 
@@ -36,7 +36,7 @@ How an agent brings a workspace skill up to date with its generator. **No script
 | Workspace | Skill | Recorded | Latest | Status |
 |---|---|---|---|---|
 
-Status values: `up to date`, `behind N`, `behind N (conflicts)`, `missing` (path no longer exists → ask whether to drop the entry).
+Status values: `up to date`, `patch available`, `behind N`, `behind N (conflicts)`, `missing` (path no longer exists → ask whether to drop the entry).
 
 ## Never
 

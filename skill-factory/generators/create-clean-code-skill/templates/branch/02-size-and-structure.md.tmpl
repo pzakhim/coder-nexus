@@ -1,0 +1,35 @@
+# 02 — Size and structure{{branch_suffix}}
+
+<!-- GEN: Why: this skill owns the thresholds; clean-architecture decides where split pieces go, so both must agree on the numbers. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules C1, C2, C6, C12 (+ branch notes in references/base-rules.md). Thresholds apply to new or modified code. -->
+
+## Thresholds
+
+| Unit | Limit | Why |
+|---|---|---|
+| Function / method | ≤ ~{{function_lines}} lines | {{why}} |
+| File | ≤ ~{{file_lines}} lines | {{why}} |
+| {{ui_unit}} | ≤ ~{{ui_lines}} lines | {{why}} |
+| Parameters | ≤ {{max_params}} (else a named object) | {{why}} |
+| Nesting | ≤ {{max_nesting}} levels (use guard clauses) | {{why}} |
+
+These numbers are the **only** source; clean-architecture links here. Over a limit (or more than one job) → follow [02b-splitting.md]({{ref_02b}}).
+Large legacy files are split only when the phase edits them.
+
+## One concept, one place (C1)
+
+{{c1_rule}} <!-- GEN: e.g. no copied types/schemas/SQL; no aliases or re-exports; link the workspace no-wrapper rule if one exists -->
+
+## No dead code (C2)
+
+{{c2_rule}}
+
+## Visible side effects (C12)
+
+{{c12_rule}}
+
+<!-- GEN: Frontend branch: add component/props/hooks rules from the branch notes. Backend branch: add repository/SQL rules. -->
+
+<!-- custom:start -->
+<!-- custom:end -->

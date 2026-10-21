@@ -1,0 +1,48 @@
+---
+name: clean-code
+description: Clean-code standard of {{project_name}} - names, sizes, errors and logging, types, comments, dead/debug code, self-checks and review severities. Use whenever writing, changing or reviewing code in {{dirs}}.
+---
+
+# Clean Code — {{project_name}}
+
+<!-- GEN: Why: coders and reviewers both check the same rule table, so it must fit on one screen with severities and pointers. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+Confirmed: {{date}} · Layout: {{layout}}
+
+## Rules
+
+<!-- GEN: One row per rule from references/base-rules.md as adopted/adapted for this workspace (keep existing workspace rule IDs if any, P5). The "Why" is one clause in the workspace's terms. Mark rules enforced by a gate with that gate. -->
+| # | Rule | Why | Severity | Enforced by |
+|---|---|---|---|---|
+| {{id}} | {{rule}} | {{why}} | {{severity}} | {{gate_or_review}} |
+
+Severity: P1 blocks review · P2 finding · P3 suggestion. Reviewers grade only code changed in the phase.
+
+## Which file to read
+
+<!-- GEN: Flat: references/01–06. Branched: add a "Working in" column (be_dir → be/, fe_dir → fe/), shared/06. Remove rows for files merged away. -->
+| Doing | Read |
+|---|---|
+| Naming something | `{{ref_01}}` |
+| Is this too long / too nested? | `{{ref_02}}` |
+| Splitting it into pieces | `{{ref_02b}}` |
+| Handling or logging an error | `{{ref_03}}` |
+| Types, constants, comments | `{{ref_04}}` |
+| Before saying "done" | `{{ref_05}}` |
+| Grading a review finding | `{{ref_06}}` |
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Where code goes and where split pieces land: {{clean_architecture_link}} (wins on conflict).
+- Reducing a working diff: {{code_simplification_link}}.
+- Workspace decisions ({{decision_notation}}) and the approved plan override this skill for the phase they cover.
+
+## Not adopted
+
+<!-- GEN: Rules marked "not adopted" with the reason, or delete. -->
+- {{not_adopted}}
+
+<!-- custom:start -->
+<!-- custom:end -->

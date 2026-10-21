@@ -2,6 +2,14 @@
 
 Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace. Sync agents apply entries newer than the version recorded for a workspace (see `~/.claude/skill-factory/core/sync-protocol.md`).
 
+## 1.1.1 — 2026-10-22
+
+- Moved: `splitting-protocol.md` to `core/` (shared with create-clean-code-skill); it now states which skill owns each step, forbids re-export shims when moving code, and adds a fallback for workspaces without clean-architecture. (patch)
+- Changed: template 04 no longer repeats thresholds; it links the workspace's clean-code skill (defaults only when none exists). (patch)
+
+**Affects:** `references/04-long-files-splitting.md` (or `be/04`, `fe/04`).
+**Migration:** in 04, replace the thresholds table with a link to the clean-code skill's size reference (keep the numbers only if the workspace has no clean-code skill), and change "keep the old public API" to "update every caller, no re-export shim". No rule change.
+
 ## 1.1.0 — 2026-10-22
 
 - Templates are **suggested shapes**; only the four slices 01–04 (per branch) and `SKILL.md` are **Mandatory**. Output table gains Kind + Why columns.

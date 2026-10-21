@@ -24,9 +24,9 @@ Each generator follows [core/workflow.md](core/workflow.md), writes `<workspace>
 
 | Phase | Generator | Generated skill | Status |
 |---|---|---|---|
-| 0 | `create-clean-architecture-skill` | `clean-architecture` | Done (1.0.0) |
-| 1 | `create-incremental-implementation-skill` | `incremental-implementation` | Done (1.0.0) |
-| 2 | `create-clean-code-skill` | `clean-code` | Planned |
+| 0 | `create-clean-architecture-skill` | `clean-architecture` | Built (1.1.1), trial in a manual workspace pending |
+| 1 | `create-incremental-implementation-skill` | `incremental-implementation` | Built (1.1.0), trial in a manual workspace pending |
+| 2 | `create-clean-code-skill` | `clean-code` | Built (1.0.0), trial in a manual workspace pending |
 | 3 | `create-unit-test-skill` | `unit-test` | Planned |
 | 4 | `create-code-simplification-skill` | `code-simplification` | Planned |
 | 5 | `create-bug-hunt-skill` | `bug-hunt` | Planned |

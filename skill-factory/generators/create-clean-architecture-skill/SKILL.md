@@ -122,7 +122,7 @@ When writing from a template:
 - Give each rule its reason in a clause; keep "never/always" for truly absolute rules.
 - Replace every `{{...}}`; delete every `<!-- GEN: ... -->` comment.
 - Examples use **real paths and names**, in the stack's real syntax; snippets that are only the shape say so.
-- Apply `references/splitting-protocol.md` to the confirmed tree in each `04`.
+- Apply `~/.claude/skill-factory/core/splitting-protocol.md` to the confirmed tree in each `04`.
 - Every rule from `backend-rules.md` / `frontend-rules.md` is either expressed with real paths or explicitly marked "not adopted".
 - Volatile facts and known debt go only into `incremental-adoption.md` (P5).
 - Keep each file under ~200 lines; keep the `<!-- custom:start --> … <!-- custom:end -->` block at the end.
@@ -190,7 +190,7 @@ Any change to this folder bumps `VERSION` and adds a `CHANGELOG.md` entry with *
 - `references/principles.md` — framework-agnostic principles and adoption levels
 - `references/backend-rules.md` — B1–B13 backend rules
 - `references/frontend-rules.md` — F1–F14 frontend rules
-- `references/splitting-protocol.md` — clean-code ↔ clean-architecture coordination
+- `~/.claude/skill-factory/core/splitting-protocol.md` — clean-code ↔ clean-architecture coordination
 - `stacks/` — per-stack presets; `_template.md` for new stacks
 - `templates/` — `SKILL.single` / `SKILL.fullstack`, `core/` (01–07), `be/`, `fe/`, `shared/`
 - `checklist.md` — final checks
