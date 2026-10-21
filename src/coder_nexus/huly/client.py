@@ -129,6 +129,19 @@ _AC_HEADING_RE = re.compile(r"^(#+\s*)?(acceptance\s+criteria|ac|ti[eê]u\s+ch[i
 _CHECKBOX_RE = re.compile(r"^(?:[-*+]\s*)?\[( |x|X)\]\s+(.*)$")
 _NUMBERED_RE = re.compile(r"^\d+[.)]\s+(.*)$")
 _BULLET_RE = re.compile(r"^[-*+•]\s+(.*)$")
+# Numbered items that are not behavior: a goal / background paragraph, or a heading or label for a
+# picture, link, design or file ("1. Mục tiêu: …", "1. Workflow detail", "4. MD file: tham khảo").
+_NOT_AC_RE = re.compile(
+    r"^(?:m[uụ]c\s*ti[eê]u|goals?|objectives?|purpose|background|context|hi[eệ]n\s*tr[aạ]ng|l[ýy]\s*do)\b\s*:"
+    r"|^(?:workflow|user\s*flow|flow|links?|design|figma|mockup|md|files?|t[aà]i\s*li[eệ]u|attachments?|images?|h[iì]nh(?:\s*[aả]nh)?|"
+    r"screenshots?|tham\s*kh[aả]o|references?|notes?|ghi\s*ch[uú])\b[^.!?]{0,40}$",
+    re.IGNORECASE,
+)
+
+
+def _is_label_item(item: str) -> bool:
+    """A numbered item that only names a goal, heading, link or file, not an observable behavior."""
+    return bool(_NOT_AC_RE.search(item)) or (bool(re.search(r"https?://", item)) and len(item.split()) <= 8)
 
 
 def extract_acceptance_criteria(description: str) -> tuple[list[str], str]:
@@ -137,7 +150,8 @@ def extract_acceptance_criteria(description: str) -> tuple[list[str], str]:
     source:
       'ac_section' - bullets/numbers/checkboxes under an 'Acceptance Criteria' / 'AC' / 'Tiêu chí' heading
       'checklist'  - checkbox items anywhere in the description
-      'numbered'   - numbered list items anywhere in the description
+      'numbered'   - numbered list items anywhere in the description, minus goal paragraphs and
+                     heading / link / file labels (they belong to goals or sources, not criteria)
       'none'       - nothing explicit; ask the user instead of guessing
     """
     lines = [l.strip() for l in (description or "").splitlines()]
@@ -171,8 +185,8 @@ def extract_acceptance_criteria(description: str) -> tuple[list[str], str]:
     if checks:
         return checks, "checklist"
 
-    # 3. Numbered list anywhere
-    numbered = [m.group(1).strip() for l in lines if (m := _NUMBERED_RE.match(l))]
+    # 3. Numbered list anywhere, without goal paragraphs and heading / link / file labels
+    numbered = [m.group(1).strip() for l in lines if (m := _NUMBERED_RE.match(l)) and not _is_label_item(m.group(1).strip())]
     if numbered:
         return numbered, "numbered"
     return [], "none"

@@ -224,6 +224,39 @@ class TestIssueReferenceAndCriteria:
         ]}))
         assert extract_acceptance_criteria(desc) == (["Handle 401"], "checklist")
 
+    def test_numbered_goal_and_source_labels_are_not_criteria(self):
+        from coder_nexus.huly.client import extract_acceptance_criteria
+        # Same shape as a real ticket: behavior list, then restarted numbering for goal / image / design / file.
+        desc = (
+            "Hiện trạng: công nhân chọn OK/NG mỗi lần quét.\n"
+            "1. Mặc định là quét OK, tự ghi nhận số lượng.\n"
+            "2. Khi chọn NG, trong 15s quét LPN mới vẫn là NG.\n"
+            "3. Bật thùng lẻ thì phải nhập số lượng.\n"
+            "4. Bấm giữ một LPN để chuyển OK/NG.\n"
+            "1. Mục tiêu: giảm thao tác khi phần lớn hàng đạt.\n"
+            "  - Tối ưu tốc độ\n"
+            "1. Workflow detail\n"
+            "[image: flow.png]3. Link design: https://www.figma.com/design/abc/X?node-id=1-2\n"
+            "4. MD file: tham khảo\n"
+            "5. Design: https://example.com/spec\n"
+        )
+        criteria, source = extract_acceptance_criteria(desc)
+        assert source == "numbered"
+        assert criteria == [
+            "Mặc định là quét OK, tự ghi nhận số lượng.",
+            "Khi chọn NG, trong 15s quét LPN mới vẫn là NG.",
+            "Bật thùng lẻ thì phải nhập số lượng.",
+            "Bấm giữ một LPN để chuyển OK/NG.",
+        ]
+
+    def test_numbered_behavior_mentioning_design_words_is_kept(self):
+        from coder_nexus.huly.client import extract_acceptance_criteria
+        desc = "1. Design tab shows the saved layouts and lets the user rename one.\n2. File upload rejects files over 10 MB."
+        assert extract_acceptance_criteria(desc)[0] == [
+            "Design tab shows the saved layouts and lets the user rename one.",
+            "File upload rejects files over 10 MB.",
+        ]
+
     def test_prose_is_not_turned_into_criteria(self):
         from coder_nexus.huly.client import extract_acceptance_criteria
         assert extract_acceptance_criteria("Build the login screen.\nUse the design system.") == ([], "none")
