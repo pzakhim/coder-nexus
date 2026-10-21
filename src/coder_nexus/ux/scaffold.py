@@ -1,0 +1,224 @@
+"""Create and keep a work item's `design-uiux/` folder consistent.
+
+`uiux.md` is the source of truth. `ux sync` turns its Workflows / Screens tables into
+`data/flows.js`, which `index.html` reads (file:// pages cannot fetch JSON).
+"""
+
+import json
+import os
+import re
+from datetime import date
+from pathlib import Path
+from typing import Optional
+
+from .kitgen import extract
+
+TEMPLATES = Path(__file__).parent / "templates"
+STATE_BLOCKS = {
+    "default": '''  <section class="app-content" data-state="default">
+    <div class="note">TODO: draw the default content with kit classes.</div>
+  </section>''',
+    "loading": '''  <section class="app-content" data-state="loading">
+    <div class="app-shimmer" style="height:64px"></div>
+    <div class="app-shimmer" style="height:44px"></div>
+    <div class="app-shimmer" style="height:160px"></div>
+  </section>''',
+    "empty": '''  <section class="app-content" data-state="empty">
+    <div class="app-nodata"><div class="icon">🗂</div><div class="title">TODO: empty title</div><div>TODO: empty message</div></div>
+  </section>''',
+    "error": '''  <section class="app-content" data-state="error">
+    <div class="app-banner error">⛔ TODO: error message</div>
+    <a class="app-button block outline">TODO: retry / fix action</a>
+  </section>''',
+}
+GENERIC_STATE = '''  <section class="app-content" data-state="{state}">
+    <div class="note">TODO: draw the "{state}" state.</div>
+  </section>'''
+
+WORK_ITEM_RE = re.compile(r"\.superpowers/work-items/([^/]+)/(v\d+)/?$")
+
+
+class ScaffoldError(ValueError):
+    pass
+
+
+# ---------------------------------------------------------------- paths
+
+def resolve_work_item(path: str) -> tuple[Path, Path, str, str]:
+    """-> (vN dir, .superpowers dir, slug, version). Accepts the vN folder or its design-uiux folder."""
+    p = Path(path).resolve()
+    if p.name == "design-uiux":
+        p = p.parent
+    m = WORK_ITEM_RE.search(p.as_posix())
+    if not m:
+        raise ScaffoldError(f"Not a work-item version folder: {path} (expected …/.superpowers/work-items/<slug>/vN)")
+    superpowers = p.parents[2]
+    return p, superpowers, m.group(1), m.group(2)
+
+
+def _rel(target: Path, from_dir: Path) -> str:
+    return os.path.relpath(target, from_dir).replace(os.sep, "/")
+
+
+def _render(name: str, **values: str) -> str:
+    text = (TEMPLATES / name).read_text(encoding="utf-8")
+    for key, val in values.items():
+        text = text.replace("{{" + key + "}}", val)
+    return text
+
+
+def _ensure_kit(superpowers: Path) -> Path:
+    kit = superpowers / "ux" / "kit"
+    if not (kit / "kit.css").is_file():
+        extract(superpowers.parent)
+    return kit
+
+
+def _write_new(path: Path, text: str) -> bool:
+    if path.exists():
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return True
+
+
+# ---------------------------------------------------------------- uiux.md tables
+
+def _section(text: str, number: int) -> tuple[int, int]:
+    m = re.search(rf"^##\s+{number}\.[^\n]*\n", text, re.MULTILINE)
+    if not m:
+        raise ScaffoldError(f"uiux.md has no '## {number}.' section")
+    nxt = re.search(r"^##\s+", text[m.end():], re.MULTILINE)
+    return m.end(), m.end() + (nxt.start() if nxt else len(text) - m.end())
+
+
+def _rows(text: str, number: int, id_pattern: str) -> list[list[str]]:
+    start, end = _section(text, number)
+    rows = []
+    for line in text[start:end].splitlines():
+        if re.match(rf"^\|\s*`?{id_pattern}`?\s*\|", line.strip()):
+            rows.append([c.strip().strip("`") for c in line.strip().strip("|").split("|")])
+    return rows
+
+
+def _append_row(text: str, number: int, row: list[str]) -> str:
+    start, end = _section(text, number)
+    body = text[start:end]
+    lines = body.rstrip("\n").split("\n")
+    last_table = max(i for i, l in enumerate(lines) if l.strip().startswith("|"))
+    lines.insert(last_table + 1, "| " + " | ".join(row) + " |")
+    return text[:start] + "\n".join(lines) + "\n\n" + text[end:].lstrip("\n")
+
+
+def _field(text: str, name: str) -> str:
+    m = re.search(rf"^>\s*\*\*{re.escape(name)}\*\*:\s*(.+)$", text, re.MULTILINE)
+    return m.group(1).strip() if m else ""
+
+
+def _lang(superpowers: Path) -> str:
+    return "vi"
+
+
+# ---------------------------------------------------------------- commands
+
+def new_design(work_item: str, title: str, lang: Optional[str] = None) -> dict:
+    vdir, superpowers, slug, version = resolve_work_item(work_item)
+    kit = _ensure_kit(superpowers)
+    d = vdir / "design-uiux"
+    lang = lang or _lang(superpowers)
+    created = []
+    values = dict(title=title, slug=slug, version=version, date=date.today().isoformat(), lang=lang)
+    for name, target in (("uiux.md", d / "uiux.md"), ("CHANGELOG.md", d / "CHANGELOG.md"), ("mock-data.js", d / "data" / "mock-data.js")):
+        if _write_new(target, _render(name, **values)):
+            created.append(target)
+    if _write_new(d / "index.html", _render("index.html", kit=_rel(kit, d), **values)):
+        created.append(d / "index.html")
+    for sub in ("screens", "components", "assets"):
+        (d / sub).mkdir(parents=True, exist_ok=True)
+    _write_new(d / "shots" / ".gitignore", "# generated screenshots — not committed\n*\n")
+    catalog = superpowers / "ux" / "screen-catalog.md"
+    if _write_new(catalog, _render("screen-catalog.md", project=superpowers.parent.name)):
+        created.append(catalog)
+    sync(work_item)
+    return {"design_dir": str(d), "created": [str(p) for p in created]}
+
+
+def add_screen(work_item: str, screen_id: str, slug: str, title: str, steps: str = "", kind: str = "NEW",
+               catalog: str = "", states: str = "default,loading,empty,error", lang: Optional[str] = None) -> dict:
+    vdir, superpowers, _, _ = resolve_work_item(work_item)
+    d = vdir / "design-uiux"
+    if not (d / "uiux.md").is_file():
+        raise ScaffoldError("Run `coder-nexus ux new` first.")
+    if not re.fullmatch(r"S\d{2,}", screen_id):
+        raise ScaffoldError("Screen id must look like S01.")
+    kind = kind.upper()
+    if kind not in {"NEW", "CHANGED", "EXISTING"}:
+        raise ScaffoldError("Kind must be NEW, CHANGED or EXISTING.")
+    kit = _ensure_kit(superpowers)
+    state_list = [s.strip() for s in states.split(",") if s.strip()] or ["default"]
+    blocks = "\n\n".join(STATE_BLOCKS.get(s, GENERIC_STATE.format(state=s)) for s in state_list)
+    rel_file = f"screens/{screen_id}-{slug}.html"
+    target = d / rel_file
+    html = _render("screen.html", id=screen_id, title=title, steps=steps, catalog=catalog or "TODO",
+                   kit=_rel(kit, target.parent), states=blocks, lang=lang or _lang(superpowers))
+    created = _write_new(target, html)
+    text = (d / "uiux.md").read_text(encoding="utf-8")
+    if not any(r[0] == screen_id for r in _rows(text, 5, r"S\d+")):
+        text = _append_row(text, 5, [screen_id, title, rel_file, catalog or "TODO", kind, steps or "TODO", ", ".join(state_list), "", ""])
+        (d / "uiux.md").write_text(text, encoding="utf-8")
+    sync(work_item)
+    return {"file": str(target), "created": created}
+
+
+def add_component(work_item: str, comp_id: str, slug: str, title: str, used_in: str = "", lang: Optional[str] = None) -> dict:
+    vdir, superpowers, _, _ = resolve_work_item(work_item)
+    d = vdir / "design-uiux"
+    if not (d / "uiux.md").is_file():
+        raise ScaffoldError("Run `coder-nexus ux new` first.")
+    if not re.fullmatch(r"C\d{2,}", comp_id):
+        raise ScaffoldError("Component id must look like C01.")
+    kit = _ensure_kit(superpowers)
+    rel_file = f"components/{comp_id}-{slug}.html"
+    target = d / rel_file
+    created = _write_new(target, _render("component.html", id=comp_id, title=title, used_in=used_in,
+                                         kit=_rel(kit, target.parent), lang=lang or _lang(superpowers)))
+    text = (d / "uiux.md").read_text(encoding="utf-8")
+    if not any(r[0] == comp_id for r in _rows(text, 6, r"C\d+")):
+        text = _append_row(text, 6, [comp_id, title, rel_file, used_in, "TODO"])
+        (d / "uiux.md").write_text(text, encoding="utf-8")
+    return {"file": str(target), "created": created}
+
+
+def sync(work_item: str) -> dict:
+    """uiux.md -> data/flows.js. Returns warnings about obvious inconsistencies."""
+    vdir, _, _, _ = resolve_work_item(work_item)
+    d = vdir / "design-uiux"
+    text = (d / "uiux.md").read_text(encoding="utf-8")
+    title_m = re.search(r"^#\s+UI/UX:\s*(.+?)\s*(?:—\s*v\d+)?\s*$", text, re.MULTILINE)
+    screens = [
+        {"id": r[0], "title": r[1], "file": r[2], "catalog": r[3] if len(r) > 3 else "", "kind": (r[4] if len(r) > 4 else "").upper()}
+        for r in _rows(text, 5, r"S\d+")
+    ]
+    flows = []
+    for r in _rows(text, 4, r"W-\d+"):
+        steps = [{"screen": s} for s in re.findall(r"\bS\d{2,}\b", r[3] if len(r) > 3 else "")]
+        flows.append({"id": r[0], "title": r[1], "goals": r[2] if len(r) > 2 else "", "steps": steps})
+    approval = _field(text, "Status")
+    data = {
+        "title": title_m.group(1) if title_m else d.parent.parent.name,
+        "revision": _field(text, "Revision"),
+        "approval": approval,
+        "flows": flows,
+        "screens": screens,
+    }
+    (d / "data").mkdir(parents=True, exist_ok=True)
+    (d / "data" / "flows.js").write_text(
+        "/* Generated by `coder-nexus ux sync` from uiux.md. Do not edit. */\n"
+        f"window.UX_FLOWS = {json.dumps(data, ensure_ascii=False, indent=2)};\n", encoding="utf-8")
+
+    ids = {s["id"] for s in screens}
+    used = {st["screen"] for f in flows for st in f["steps"]}
+    warnings = [f"{f['id']} step {st['screen']} has no row in ## 5. Screens" for f in flows for st in f["steps"] if st["screen"] not in ids]
+    warnings += [f"{s['id']} is not in any workflow" for s in screens if s["id"] not in used]
+    warnings += [f"{s['id']} file missing: {s['file']}" for s in screens if not (d / s["file"]).is_file()]
+    return {"flows": len(flows), "screens": len(screens), "warnings": warnings, "file": str(d / "data" / "flows.js")}

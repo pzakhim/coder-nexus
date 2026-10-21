@@ -22,12 +22,14 @@
     "core/huly-task-runner",
     "core/incremental-implementation",
     "core/planning-and-task-breakdown",
+    "core/ux-mockup",
     "core/work-items",
     "flutter/architecture-design",
     "flutter/clean-architecture",
     "flutter/code-review",
     "flutter/core-usage",
     "flutter/unit-test",
+    "flutter/ux-kit",
     "flutter/verification",
     "flutter/visual-verification",
     "frappe/clean-architecture",
@@ -79,7 +81,12 @@
     "packs/backend/skills/api-contracts/SKILL.md",
     "packs/backend/skills/clean-architecture/SKILL.md",
     "core/skills/huly-task-runner/references/parent-and-sub-issues.md",
-    "core/skills/feature-planner/references/03_goal_framing.md"
+    "core/skills/feature-planner/references/03_goal_framing.md",
+    "core/agents/designer.md",
+    "core/skills/ux-mockup/references/01_workflow_interview.md",
+    "core/skills/ux-mockup/references/02_screen_rules.md",
+    "core/skills/ux-mockup/references/03_revisions_and_approval.md",
+    "packs/flutter/skills/ux-kit/SKILL.md"
   ],
   "resource_base": "plugins/"
 }

@@ -453,11 +453,11 @@ def test_flutter_verification_skill_structure():
 
 
 def test_plugin_agent_definitions_structure():
-    """Verify five delivery agents and a docs writer are packaged."""
+    """Verify five delivery agents, a docs writer and a UI/UX designer are packaged."""
     agents_dir = PLUGIN_DIR / "core" / "agents"
     assert agents_dir.is_dir(), f"Missing agents directory at {agents_dir}"
 
-    agent_names = ["spec_writer", "planning", "code_writer", "code_reviewer", "test_runner", "docs_writer"]
+    agent_names = ["spec_writer", "planning", "code_writer", "code_reviewer", "test_runner", "docs_writer", "designer"]
     for name in agent_names:
         agent_file = agents_dir / f"{name}.md"
         assert agent_file.exists(), f"Missing agent definition file: {agent_file}"
@@ -485,6 +485,9 @@ def test_plugin_agent_definitions_structure():
     planning_content = rendered_agent("planning.md")
     assert "Gate 3" in planning_content and "SKIPPED" in planning_content
     assert "validate_plan_slices" in planning_content
+    designer_content = rendered_agent("designer.md")
+    assert "ux-mockup" in designer_content and "ask_question" in designer_content
+    assert "Do not write runtime code" in designer_content and "flutter-ux-kit" in designer_content
     docs_content = rendered_agent("docs_writer.md")
     assert "documentation" in docs_content and "Do not edit runtime code" in docs_content
 
@@ -542,7 +545,7 @@ def test_backend_pack_structure_and_installation(tmp_path):
     assert {"backend-clean-architecture", "backend-api-contracts", "work-items", "grill-me"} <= skills
     assert not any(name.startswith(("flutter-", "frappe-")) for name in skills)
     stubs = json.loads((installed / "slot_stubs.json").read_text(encoding="utf-8"))
-    assert stubs == {"backend-core-usage": "not_applicable", "backend-visual-verification": "not_applicable"}
+    assert stubs == {"backend-core-usage": "not_applicable", "backend-visual-verification": "not_applicable", "backend-ux-kit": "not_applicable"}
     writer = (tmp_path / ".agents" / "agents" / "code_writer.md").read_text(encoding="utf-8")
     assert "## Backend rules" in writer and "## Frontend rules" not in writer
     meta = json.loads((installed / "installed_version.json").read_text(encoding="utf-8"))
@@ -593,7 +596,7 @@ def test_built_projections_apply_identically_for_every_variant(tmp_path):
         installed = workspace / spec["managed"][0]
         assert installed.name == "coder-nexus"
         assert not (installed / "agents").exists()
-        assert len(list((workspace / ".agents/agents").glob("*.md"))) == 6
+        assert len(list((workspace / ".agents/agents").glob("*.md"))) == 7
         assert not any((workspace / rel).exists() for rel in spec["remove"]), "pre-2.8 plugins must be removed"
         manifest = json.loads((installed / "bundle_manifest.json").read_text(encoding="utf-8"))
         assert manifest["packs"] == combo
