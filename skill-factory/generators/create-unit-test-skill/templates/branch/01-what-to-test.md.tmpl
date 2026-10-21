@@ -1,0 +1,27 @@
+# 01 — What to test{{branch_suffix}}
+
+<!-- GEN: Why: a per-layer matrix with required negative and edge cases is what stops happy-path-only suites. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules U2, U3. Rows = the workspace's real layers (from its clean-architecture skill if present), cases from references/cases-by-layer.md adapted to its error contract. -->
+
+| Layer / subject | Real path | Double | Required cases |
+|---|---|---|---|
+| {{layer}} | `{{path}}` | {{double}} | {{cases}} |
+
+## Minimum per changed behavior
+
+- **Happy path** — the expected result.
+- **Each handled failure** — {{failure_list}} <!-- GEN: e.g. validation, not found, forbidden (capability guard), conflict, dependency failure -->
+- **Edges** — empty, null/missing, zero/max, malformed input, {{domain_edges}}.
+
+## Bug fixes
+
+Write a test that fails on the faulty behavior before fixing it, when practical; name it after the bug's behavior.
+
+## Not unit-tested here
+
+<!-- GEN: Rule U13. E.g. SQL repositories, API authorization matrix, migrations, server/client rendering → integration/E2E (link the workspace's skill or "not set up"). -->
+- {{not_unit_tested}}
+
+<!-- custom:start -->
+<!-- custom:end -->

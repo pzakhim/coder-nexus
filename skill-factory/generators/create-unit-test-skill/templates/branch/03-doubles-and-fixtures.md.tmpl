@@ -1,0 +1,29 @@
+# 03 — Doubles and fixtures{{branch_suffix}}
+
+<!-- GEN: Why: mocking the wrong thing makes green tests prove nothing. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules U4, U5, U6, U11 with the workspace's real ports, fakes, fixtures and double library. -->
+
+## What to double
+
+| Dependency | Use | Example |
+|---|---|---|
+| Ports owned by this workspace (repositories, UoW, gateways) | **Fake** (in-memory, keeps the contract) | `{{fake_example}}` |
+| External edges (HTTP, SDKs, clock, random) | Mock / stub at the edge | `{{mock_example}}` |
+| The subject under test | **Never** | — |
+| Authorization guards, the database | **Never mocked away** — keep the rule in a fake or cover with integration tests | — |
+
+A double keeps the real contract: same return types, same errors raised for the same situations.
+
+## Existing setup to reuse
+
+- Framework: {{framework}} — no second framework, no global overrides ({{forbidden_overrides}}).
+- Fixtures / factories: `{{fixtures_path}}`
+- Existing fakes: `{{fakes_path}}`
+
+## Isolation
+
+No live network, database, file system or real clock in unit tests ({{isolation_notes}}).
+
+<!-- custom:start -->
+<!-- custom:end -->

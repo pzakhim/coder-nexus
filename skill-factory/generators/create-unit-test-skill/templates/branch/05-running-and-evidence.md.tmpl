@@ -1,0 +1,31 @@
+# 05 — Running and evidence{{branch_suffix}}
+
+<!-- GEN: Why: real commands and proof that the new test ran are what turn "tests pass" into evidence. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules U12, U14 with the workspace's real commands (references/tooling-by-stack.md for gaps). Match the task-level check in incremental-implementation if it exists. -->
+
+Run from: `{{run_dir}}`
+
+| When | Command |
+|---|---|
+| After each task (focused) | `{{focused_cmd}}` |
+| Phase end (full unit suite) | `{{full_cmd}}` |
+| Coverage (only if already measured) | `{{coverage_cmd}}` |
+
+## Confirm the new test ran
+
+{{ran_check}} <!-- GEN: e.g. "-v output lists tests/unit/...::test_x PASSED" -->
+A skipped test, a missing dependency or "0 tests collected" is **not** a pass.
+
+## Evidence line
+
+```
+<command> @ <revision> → PASS (<n> passed, <m> skipped) | FAIL | NOT_RUN | BLOCKED
+```
+
+## TDD mode
+
+{{tdd_mode}} <!-- GEN: when the plan asks / always / never; in TDD show the failing run first -->
+
+<!-- custom:start -->
+<!-- custom:end -->

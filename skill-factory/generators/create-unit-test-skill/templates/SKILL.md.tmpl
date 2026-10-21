@@ -1,0 +1,53 @@
+---
+name: unit-test
+description: Developer unit-test standard of {{project_name}} - what to test per layer, required happy/negative/edge cases, where tests live, fakes vs mocks, determinism, commands and evidence. Use whenever writing or changing code that needs tests, fixing a bug, or reviewing tests in {{dirs}}.
+---
+
+# Unit Tests — {{project_name}}
+
+<!-- GEN: Why: the Code Writer needs the per-change loop and the non-negotiable rules on one screen; details live in references. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+Confirmed: {{date}} · Framework: {{framework}} · Layout: {{layout}}
+
+## For every change
+
+1. Find the subject's layer → required cases in [01]({{ref_01}}).
+2. Put the test where [02]({{ref_02}}) says, named by behavior.
+3. Double only the boundary ([03]({{ref_03}})); reuse existing fixtures.
+4. Run the focused command and confirm the new test ran ([05]({{ref_05}})).
+5. Bug fix → add the regression test first when practical.
+
+## Rules
+
+<!-- GEN: One row per rule from references/base-rules.md as adopted/adapted (keep existing workspace rule IDs, P5). Why = one clause in the workspace's terms. -->
+| # | Rule | Why | Severity | Enforced by |
+|---|---|---|---|---|
+| {{id}} | {{rule}} | {{why}} | {{severity}} | {{gate_or_review}} |
+
+## Which file to read
+
+<!-- GEN: Flat: references/01–06. Branched: add a "Working in" column (be_dir → be/, fe_dir → fe/), shared/06. Remove rows for files merged away. -->
+| Doing | Read |
+|---|---|
+| Which cases to write | `{{ref_01}}` |
+| Where the test goes, what it is called | `{{ref_02}}` |
+| Fakes, mocks, fixtures | `{{ref_03}}` |
+| Making the test trustworthy | `{{ref_04}}` |
+| Running it and reporting | `{{ref_05}}` |
+| What unit tests cannot prove | `{{ref_06}}` |
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Layers and boundaries: {{clean_architecture_link}}
+- Test code follows {{clean_code_link}} too.
+- Task/phase checks: {{incremental_link}}
+
+## Not adopted
+
+<!-- GEN: Rules marked "not adopted" with the reason, or delete. -->
+- {{not_adopted}}
+
+<!-- custom:start -->
+<!-- custom:end -->
