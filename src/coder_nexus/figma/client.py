@@ -19,6 +19,7 @@ from .summary import render_summary
 
 API_BASE = "https://api.figma.com"
 TOKEN_KEY = "FIGMA_TOKEN"
+TOKEN_KEYS = (TOKEN_KEY, "FIGMA_ACCESS_TOKEN")
 LINK_KINDS = ("design", "file", "proto")
 DENIED = {401: "token rejected (401)", 403: "no access to this file with this token (403)", 404: "file or node not found (404)"}
 
@@ -65,9 +66,10 @@ def parse_figma_url(url: str) -> FigmaRef:
 
 
 def load_figma_token(workspace_path: Optional[str] = None) -> Optional[str]:
-    """FIGMA_TOKEN from the Client workspace `.env`, falling back to the environment (like Huly)."""
+    """FIGMA_TOKEN (or FIGMA_ACCESS_TOKEN) from the Client workspace `.env`, falling back to the environment (like Huly)."""
     base = Path(workspace_path).resolve() if workspace_path else Path.cwd().resolve()
-    return parse_env_file(base / ".env").get(TOKEN_KEY) or os.getenv(TOKEN_KEY) or None
+    env = parse_env_file(base / ".env")
+    return next((v for key in TOKEN_KEYS if (v := env.get(key) or os.getenv(key))), None)
 
 
 def node_file_stem(node_id: str) -> str:

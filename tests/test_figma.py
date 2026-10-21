@@ -116,8 +116,11 @@ def test_fetch_link_without_node_is_unreachable(tmp_path: Path):
 
 def test_token_from_client_env(tmp_path: Path, monkeypatch):
     monkeypatch.delenv("FIGMA_TOKEN", raising=False)
+    monkeypatch.delenv("FIGMA_ACCESS_TOKEN", raising=False)
     assert load_figma_token(str(tmp_path)) is None
-    (tmp_path / ".env").write_text("HULY_EMAIL=a@b.c\nFIGMA_TOKEN='figd_x'\n")
+    (tmp_path / ".env").write_text("HULY_EMAIL=a@b.c\nFIGMA_ACCESS_TOKEN=figd_alt\n")
+    assert load_figma_token(str(tmp_path)) == "figd_alt"
+    (tmp_path / ".env").write_text("HULY_EMAIL=a@b.c\nFIGMA_ACCESS_TOKEN=figd_alt\nFIGMA_TOKEN='figd_x'\n")
     assert load_figma_token(str(tmp_path)) == "figd_x"
 
 
