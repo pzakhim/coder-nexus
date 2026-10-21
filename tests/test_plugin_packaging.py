@@ -722,3 +722,19 @@ def test_designer_is_wired_into_the_delivery_flow():
     assert "## UI/UX mapping" in design_tpl and "`flutter-ux-kit` §3" in design_tpl
     visual = (skills / "flutter-visual-verification/SKILL.md").read_text(encoding="utf-8")
     assert "## Compare with the approved UI/UX design" in visual and ".superpowers/ux/current/" in visual
+
+
+def test_ux_walkthrough_reference_is_packaged():
+    """The designer learns to script walkthroughs; the reference ships in core and stays stack-neutral."""
+    manifest = json.loads((PLUGIN_DIR / "core" / "bundle_manifest.json").read_text(encoding="utf-8"))
+    assert "core/skills/ux-mockup/references/04_walkthrough.md" in manifest["required_resources"]
+    skills = flutter_workspace() / ".agents/plugins/coder-nexus/skills"
+    ref = (skills / "ux-mockup/references/04_walkthrough.md").read_text(encoding="utf-8")
+    for needle in ("## 8. Walkthrough", "data-ux-target", "Mô phỏng — MOCK", "Q-NN", "ux record", "not a test", "UX-011"):
+        assert needle in ref, needle
+    assert "references/04_walkthrough.md" in (skills / "ux-mockup/SKILL.md").read_text(encoding="utf-8")
+    assert "data-ux-target" in (skills / "ux-mockup/references/02_screen_rules.md").read_text(encoding="utf-8")
+    assert "▶ Play" in (skills / "ux-mockup/references/03_revisions_and_approval.md").read_text(encoding="utf-8")
+    assert "## 8. Walkthrough" in rendered_agent("designer.md")
+    ux_kit = (skills / "flutter-ux-kit/SKILL.md").read_text(encoding="utf-8")
+    assert "barcode scanners" in ux_kit and "Tablet landscape" in ux_kit

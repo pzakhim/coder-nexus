@@ -1,6 +1,6 @@
 """Create and keep a work item's `design-uiux/` folder consistent.
 
-`uiux.md` is the source of truth. `ux sync` turns its Workflows / Screens tables into
+`uiux.md` is the source of truth. `ux sync` turns its Workflows / Screens / Walkthrough tables into
 `data/flows.js`, which `index.html` reads (file:// pages cannot fetch JSON).
 """
 
@@ -34,6 +34,9 @@ STATE_BLOCKS = {
 GENERIC_STATE = '''  <section class="app-content" data-state="{state}">
     <div class="note">TODO: draw the "{state}" state.</div>
   </section>'''
+
+WALKTHROUGH_ACTIONS = ("show", "tap", "type", "scan", "wait", "timer", "caption")
+WALKTHROUGH_SECTION = 8
 
 WORK_ITEM_RE = re.compile(r"\.superpowers/work-items/([^/]+)/(v\d+)/?$")
 
@@ -108,6 +111,35 @@ def _append_row(text: str, number: int, row: list[str]) -> str:
     last_table = max(i for i, l in enumerate(lines) if l.strip().startswith("|"))
     lines.insert(last_table + 1, "| " + " | ".join(row) + " |")
     return text[:start] + "\n".join(lines) + "\n\n" + text[end:].lstrip("\n")
+
+
+def walkthrough_rows(text: str) -> list[dict]:
+    """Rows of the optional `## 8. Walkthrough` table, in order, with their uiux.md line numbers.
+
+    Columns: Workflow | # | Screen | State | Action | Target | Value | Wait (ms) | Caption.
+    An empty Screen continues on the previous row's screen of the same workflow.
+    """
+    m = re.search(rf"^##\s+{WALKTHROUGH_SECTION}\.[^\n]*\n", text, re.MULTILINE)
+    if not m:
+        return []
+    nxt = re.search(r"^##\s+", text[m.end():], re.MULTILINE)
+    end = m.end() + nxt.start() if nxt else len(text)
+    first_line = text[:m.end()].count("\n") + 1
+    rows, last_screen = [], {}
+    for offset, line in enumerate(text[m.end():end].splitlines()):
+        if not re.match(r"^\|\s*`?W-\d+`?\s*\|", line.strip()):
+            continue
+        cells = [c.strip().strip("`") for c in line.strip().strip("|").split("|")]
+        cells += [""] * (9 - len(cells))
+        wid, step, screen, state, action, target, value, wait, caption = cells[:9]
+        wid = wid.upper()
+        screen = screen.upper() or last_screen.get(wid, "")
+        last_screen[wid] = screen
+        wait_ms = int(wait) if re.fullmatch(r"\d+", wait) else None
+        rows.append({"workflow": wid, "step": step, "screen": screen, "state": state, "action": action.lower(),
+                     "target": target, "value": value, "wait": wait_ms, "wait_raw": wait, "caption": caption,
+                     "line": first_line + offset})
+    return rows
 
 
 def _field(text: str, name: str) -> str:
@@ -198,9 +230,18 @@ def flows_data(d: Path) -> tuple[dict, list[str]]:
         for r in _rows(text, 5, r"S\d+")
     ]
     flows = []
+    walk = walkthrough_rows(text)
     for r in _rows(text, 4, r"W-\d+"):
         steps = [{"screen": s} for s in re.findall(r"\bS\d{2,}\b", r[3] if len(r) > 3 else "")]
-        flows.append({"id": r[0], "title": r[1], "goals": r[2] if len(r) > 2 else "", "steps": steps})
+        labels = re.findall(r"([\w.]+)\s*(?:→|->)\s*S\d{2,}\b", r[3] if len(r) > 3 else "")
+        for i, st in enumerate(steps):
+            st["n"] = labels[i] if len(labels) == len(steps) else str(i + 1)
+        flow = {"id": r[0], "title": r[1], "goals": r[2] if len(r) > 2 else "", "steps": steps}
+        rows = [{k: w[k] for k in ("step", "screen", "state", "action", "target", "value", "wait", "caption")}
+                for w in walk if w["workflow"] == r[0].upper()]
+        if rows:
+            flow["walkthrough"] = rows
+        flows.append(flow)
     data = {
         "title": title_m.group(1) if title_m else d.parent.parent.name,
         "revision": _field(text, "Revision"),
@@ -226,6 +267,11 @@ def sync(work_item: str) -> dict:
     vdir, _, _, _ = resolve_work_item(work_item)
     d = vdir / "design-uiux"
     data, warnings = flows_data(d)
+    known = {f["id"].upper() for f in data["flows"]}
+    text = (d / "uiux.md").read_text(encoding="utf-8")
+    warnings = warnings + [f"Walkthrough row (uiux.md:{w['line']}) cites {w['workflow']}, which is not in ## 4. Workflows"
+                           for w in walkthrough_rows(text) if w["workflow"] not in known]
     (d / "data").mkdir(parents=True, exist_ok=True)
     (d / "data" / "flows.js").write_text(render_flows(data), encoding="utf-8")
-    return {"flows": len(data["flows"]), "screens": len(data["screens"]), "warnings": warnings, "file": str(d / "data" / "flows.js")}
+    return {"flows": len(data["flows"]), "screens": len(data["screens"]), "warnings": warnings, "file": str(d / "data" / "flows.js"),
+            "walkthroughs": sum(1 for f in data["flows"] if f.get("walkthrough"))}

@@ -10,6 +10,7 @@
 | `class="new-component" data-name="No-PO warning"` | Not in the kit; also drawn in `components/C-NN` |
 | `data-mock="items[1].name"` | Value from `data/mock-data.js` |
 | `<div class="note" data-ref="AC-02, D-05">` | Design note linked to AC / decision / source |
+| `data-ux-target="lpn-field"` | Stable name a walkthrough row points at (kebab-case, what the element is; keep it across revisions). Put it on every element a walkthrough taps, types or scans into, in each state where it appears |
 
 ## States
 
@@ -19,6 +20,8 @@
 | Form / input | default, error (validation); add `disabled` / `submitting` when the action can be blocked or slow |
 | Result / confirmation | default; error if the action can fail |
 | Dialog / bottom sheet | Draw it as a state of the screen that opens it (`app-overlay` + `app-dialog` / `app-bottomsheet`) |
+
+Time-based or automatic behavior (auto-save, countdown, auto-reset) is drawn as the states before and after, plus a `.note` with the real duration and the trigger ("tắt sau 15 giây kể từ lần quét cuối"); the walkthrough plays the change ([04_walkthrough.md](04_walkthrough.md)).
 
 States that do not apply are left out, with a `.note` saying why when a reviewer would expect them. For a list or data screen the note must name the state ("No empty state: …"); `coder-nexus ux validate` then reports a warning instead of an error.
 

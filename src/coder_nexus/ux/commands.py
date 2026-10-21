@@ -55,7 +55,12 @@ def add_ux_parser(subparsers) -> None:
     p_sy = ux_sub.add_parser("sync", help="Rebuild data/flows.js (read by index.html) from uiux.md")
     p_sy.add_argument("--work-item", required=True, help=wi_help)
 
-    p_va = ux_sub.add_parser("validate", help="Check design-uiux/ against rules UX-001…UX-010 (read-only unless --write-hash)")
+    p_re = ux_sub.add_parser("record", help="Play walkthroughs headless and save videos to design-uiux/shots/ (needs Playwright, optional)")
+    p_re.add_argument("--work-item", required=True, help=wi_help)
+    p_re.add_argument("--workflow", help="Only this workflow, e.g. W-01 (default: every workflow with a walkthrough)")
+    p_re.add_argument("--viewport", help="Only this platform from viewports.json, e.g. mobile (default: all)")
+
+    p_va = ux_sub.add_parser("validate", help="Check design-uiux/ against rules UX-001…UX-011 (read-only unless --write-hash)")
     p_va.add_argument("--work-item", required=True, help=wi_help)
     p_va.add_argument("--write-hash", action="store_true", help="Store the content hash in uiux.md first (when presenting or approving a revision)")
     p_va.add_argument("--json", action="store_true", help="Print the result as JSON")
@@ -78,7 +83,7 @@ def _cmd_design(args: argparse.Namespace) -> int:
             print(("✅ Created " if res["created"] else "ℹ️  Exists  ") + res["file"])
         if args.ux_command in ("sync", "screen", "new"):
             res = sync(args.work_item)
-            print(f"🔄 flows.js: {res['flows']} workflow(s), {res['screens']} screen(s)")
+            print(f"🔄 flows.js: {res['flows']} workflow(s), {res['screens']} screen(s), {res.get('walkthroughs', 0)} walkthrough(s)")
             for w in res["warnings"]:
                 print(f"   ⚠ {w}")
         return 0
@@ -112,7 +117,23 @@ def _cmd_validate(args: argparse.Namespace) -> int:
     return 0 if res["valid"] else 1
 
 
+def _cmd_record(args: argparse.Namespace) -> int:
+    from .record import record
+    from .scaffold import ScaffoldError
+    try:
+        res = record(args.work_item, args.workflow, args.viewport)
+    except ScaffoldError as exc:
+        print(f"❌ {exc}")
+        return 1
+    for path in res["videos"]:
+        print(f"🎬 {path}")
+    print("   MOCK simulation of the scripted walkthrough — not a test of app logic.")
+    return 0
+
+
 def cmd_ux(args: argparse.Namespace) -> int:
+    if args.ux_command == "record":
+        return _cmd_record(args)
     if args.ux_command == "validate":
         return _cmd_validate(args)
     if args.ux_command in ("new", "screen", "component", "sync"):

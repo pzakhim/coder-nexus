@@ -1,6 +1,6 @@
 """`coder-nexus ux validate` / MCP `validate_ux_design`: read-only checks of a work item's design-uiux/.
 
-Rules UX-001 … UX-010 (see docs/handoff/2026-10-21-huly-goals-uiux.md §4.7). Only `write_content_hash`
+Rules UX-001 … UX-011 (see docs/handoff/2026-10-21-huly-goals-uiux.md §4.7). Only `write_content_hash`
 writes, and only `uiux.md` (CLI `--write-hash`); the validator itself never writes.
 """
 
@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from ..architecture.spec_validator import SpecViolation, goal_rows
-from .scaffold import ScaffoldError, _field, _rows, flows_data, render_flows, resolve_work_item
+from .scaffold import WALKTHROUGH_ACTIONS, ScaffoldError, _field, _rows, flows_data, render_flows, resolve_work_item, walkthrough_rows
 
 STATUSES = {"DRAFT", "IN_REVIEW", "APPROVED"}
 REVIEW_STATUSES = {"IN_REVIEW", "APPROVED"}
@@ -23,7 +23,12 @@ HASH_FIELD = "Content hash"
 # Approval metadata changes when the user approves; it is not part of the design content.
 APPROVAL_FIELDS = ("Status", "Approval reference", HASH_FIELD)
 VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
-CHECKED_RULES = [f"UX-{i:03d}" for i in range(1, 11)]
+CHECKED_RULES = [f"UX-{i:03d}" for i in range(1, 12)]
+TARGET_NAME_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+# A note describing time-based or automatic behavior (auto-save, countdown, auto-reset, "15s").
+TIMER_NOTE_RE = re.compile(
+    r"\b\d+\s*(?:s|ms|sec|secs|seconds?|giây|phút|min|minutes?)\b|countdown|timeout|time-out|timer|"
+    r"auto[- ]?(?:save|reset|submit|close|revert|refresh)|tự động|đếm ngược|hết giờ", re.IGNORECASE)
 
 
 class _Page(HTMLParser):
@@ -36,11 +41,13 @@ class _Page(HTMLParser):
         self.classes: set[str] = set()
         self.new_components: list[str] = []
         self.mocks: list[str] = []
+        self.targets: dict[str, set[str]] = {}  # data-ux-target -> states it is drawn in ("" = outside any state)
         self.styles: list[str] = []
         self.has_table = False
         self.notes: list[str] = []
         self._open: list[str] = []
         self._note_depths: list[int] = []
+        self._state_depths: list[tuple[int, str]] = []
 
     def handle_starttag(self, tag, attrs):
         a = {k: (v or "") for k, v in attrs}
@@ -54,6 +61,9 @@ class _Page(HTMLParser):
             self.new_components.append(a.get("data-name", "").strip())
         if "data-mock" in a:
             self.mocks.append(a["data-mock"].strip())
+        state = a["data-state"].strip() if "data-state" in a else (self._state_depths[-1][1] if self._state_depths else "")
+        if a.get("data-ux-target"):
+            self.targets.setdefault(a["data-ux-target"].strip(), set()).add(state)
         if a.get("style"):
             self.styles.append(a["style"])
         if tag == "table":
@@ -61,6 +71,8 @@ class _Page(HTMLParser):
         if tag in VOID_TAGS:
             return
         self._open.append(tag)
+        if "data-state" in a:
+            self._state_depths.append((len(self._open), state))
         if "note" in classes:
             self._note_depths.append(len(self._open))
             self.notes.append("")
@@ -72,6 +84,8 @@ class _Page(HTMLParser):
             closed = len(self._open)
             if self._note_depths and self._note_depths[-1] == closed:
                 self._note_depths.pop()
+            if self._state_depths and self._state_depths[-1][0] == closed:
+                self._state_depths.pop()
             if self._open.pop() == tag:
                 break
 
@@ -384,6 +398,7 @@ def validate_design(work_item: str) -> dict[str, Any]:
     # UX-008 mock bindings
     mock_path = d / "data" / "mock-data.js"
     bindings = [(path.relative_to(d).as_posix(), m) for path, page in all_pages for m in page.mocks]
+    mock = None
     if bindings:
         mock = load_mock(mock_path) if mock_path.is_file() else None
         if mock is None:
@@ -393,6 +408,9 @@ def validate_design(work_item: str) -> dict[str, Any]:
             for rel, binding in bindings:
                 if mock_value(mock, binding) is None:
                     add("UX-008", f"{rel}: data-mock=\"{binding}\" is not in window.MOCK.", "Add the value to data/mock-data.js or fix the path.")
+
+    # UX-011 walkthrough (optional `## 8. Walkthrough`)
+    _check_walkthrough(text, status, flows["flows"], screen_rows, pages, mock, add)
 
     # UX-009 viewports and design source confirmed before review
     if status in REVIEW_STATUSES:
@@ -448,6 +466,91 @@ def validate_design(work_item: str) -> dict[str, Any]:
         "violations": [v.to_dict() for v in violations],
         "checked_rules": CHECKED_RULES,
     }
+
+
+def _leaves(data: Any) -> set[str]:
+    if isinstance(data, dict):
+        return set().union(*(_leaves(v) for v in data.values())) if data else set()
+    if isinstance(data, list):
+        return set().union(*(_leaves(v) for v in data)) if data else set()
+    return set() if data is None else {str(data)}
+
+
+def _check_walkthrough(text: str, status: str, flows: list[dict], screen_rows: list[list[str]],
+                       pages: dict[str, "_Page"], mock: Any, add) -> None:
+    """UX-011: walkthrough rows cite existing workflows, steps, screens, states and data-ux-target names."""
+    rows = walkthrough_rows(text)
+    by_id = {f["id"].upper(): f for f in flows}
+    screen_ids = {r[0] for r in screen_rows}
+    fix = "Edit uiux.md '## 8. Walkthrough', then run `coder-nexus ux sync`."
+    shown: dict[str, tuple[str, str]] = {}  # workflow -> (screen, state) on screen when the row starts
+    for w in rows:
+        prev_screen, prev_state = shown.get(w["workflow"], ("", "default"))
+        active = (w["state"] or "default") if w["action"] == "show" else (prev_state if w["screen"] == prev_screen else "default")
+        shown[w["workflow"]] = (w["screen"], w["state"] or active)
+        where, line = f"Walkthrough {w['workflow']} #{w['step'] or '?'}", w["line"]
+        flow = by_id.get(w["workflow"])
+        if flow is None:
+            add("UX-011", f"{where}: {w['workflow']} is not in '## 4. Workflows'.", "Script only confirmed workflows.", line=line)
+            continue
+        if w["action"] not in WALKTHROUGH_ACTIONS:
+            add("UX-011", f"{where}: unknown action '{w['action'] or '(empty)'}'.",
+                f"Use one of: {', '.join(WALKTHROUGH_ACTIONS)}.", line=line)
+            continue
+        steps = {st.get("n", str(i + 1)): st["screen"] for i, st in enumerate(flow["steps"])}
+        if w["step"] and w["step"] not in steps:
+            add("UX-011", f"{where}: step '{w['step']}' is not a step of {w['workflow']} ({', '.join(steps) or 'none'}).",
+                "Mirror the confirmed workflow steps 1:1; a new step is a Q-NN for spec_writer, not a silent addition.", line=line)
+        if not w["screen"]:
+            add("UX-011", f"{where}: no screen (first row of a workflow must name one).", fix, line=line)
+            continue
+        if w["screen"] not in screen_ids:
+            add("UX-011", f"{where}: screen {w['screen']} is not in '## 5. Screens'.", fix, line=line)
+            continue
+        if w["step"] in steps and steps[w["step"]] != w["screen"]:
+            add("UX-011", f"{where}: step {w['step']} of {w['workflow']} is {steps[w['step']]}, not {w['screen']}.", fix, line=line)
+        page = pages.get(w["screen"])
+        if page is None:
+            continue
+        if w["state"] and w["state"] not in page.states:
+            add("UX-011", f"{where}: {w['screen']} has no data-state=\"{w['state']}\".", "Draw the state or fix the State column.", line=line)
+        if w["wait_raw"] and w["wait"] is None:
+            add("UX-011", f"{where}: Wait (ms) '{w['wait_raw']}' is not a whole number.", "Write milliseconds, e.g. 1200.", line=line)
+        target = w["target"]
+        if w["action"] in ("tap", "type", "scan") and not target:
+            add("UX-011", f"{where}: '{w['action']}' needs a Target.", "Name a data-ux-target on the screen.", line=line)
+        if target:
+            if TARGET_NAME_RE.fullmatch(target):
+                if target not in page.targets:
+                    add("UX-011", f"{where}: {w['screen']} has no data-ux-target=\"{target}\".",
+                        f"Add data-ux-target=\"{target}\" to the element, or fix the Target.", line=line)
+                elif not page.targets[target] & {"", active}:
+                    add("UX-011", f"{where}: data-ux-target=\"{target}\" is not drawn in state '{active}' of {w['screen']} "
+                        f"(only in {', '.join(sorted(page.targets[target]))}).",
+                        "Show the right state first; a row's State applies after its action.", line=line)
+            else:
+                add("UX-011", f"{where}: Target '{target}' is a CSS selector.",
+                    "Prefer a stable data-ux-target name (kebab-case); selectors break between revisions.", "WARNING", line=line)
+        if w["action"] in ("type", "scan"):
+            value = w["value"]
+            if not value:
+                add("UX-011", f"{where}: '{w['action']}' needs a Value.", "Use a MOCK value from data/mock-data.js.", line=line)
+            elif mock is not None and page.mocks:
+                missing = mock_value(mock, value[1:]) is None if value.startswith("@") else value not in _leaves(mock)
+                if missing:
+                    add("UX-011", f"{where}: value '{value}' is not in data/mock-data.js.",
+                        "Use a MOCK value (or '@path') from data/mock-data.js so screens and playback agree.", "WARNING", line=line)
+        if w["action"] == "timer" and not re.fullmatch(r"\d+(?:\.\d+)?\s*(?:s|ms)?", w["value"]):
+            add("UX-011", f"{where}: timer Value '{w['value'] or '(empty)'}' is not a duration.",
+                "Write the real duration, e.g. 15s; playback may be faster, the number on screen is not shortened.", line=line)
+    if status == "IN_REVIEW":
+        scripted = {w["workflow"] for w in rows}
+        for flow in flows:
+            timed = [st["screen"] for st in flow["steps"] if st["screen"] in pages
+                     and any(TIMER_NOTE_RE.search(n) for n in pages[st["screen"]].notes)]
+            if timed and flow["id"].upper() not in scripted:
+                add("UX-011", f"{flow['id']} has time-based or automatic behavior ({', '.join(sorted(set(timed)))} notes) but no walkthrough.",
+                    "Script it in '## 8. Walkthrough' so the reviewer can watch it play.", "WARNING")
 
 
 def _read_json(path: Path) -> Optional[dict]:

@@ -26,14 +26,14 @@ Every change the user can see gets a UI/UX design the user approves before techn
 │   ├── screen-catalog.md      # every known screen of the app → latest approved design
 │   └── current/               # screenshots of the running app
 └── work-items/<slug>/vN/design-uiux/     # only when the work item has UI impact; committed
-    ├── uiux.md                # APPROVAL DOC — source of truth for workflows and screens
-    ├── index.html             # open this: workflows, device frame, viewport/state/notes switches
+    ├── uiux.md                # APPROVAL DOC — source of truth for workflows, screens and walkthroughs
+    ├── index.html             # open this: workflows, device frame, viewport/state/notes switches, ▶ Play
     ├── screens/S01-<slug>.html
     ├── components/C01-<slug>.html
     ├── data/flows.js          # generated from uiux.md by `coder-nexus ux sync`
     ├── data/mock-data.js      # window.MOCK — MOCK data only
     ├── assets/  CHANGELOG.md
-    └── shots/                 # generated screenshots (git-ignored)
+    └── shots/                 # generated screenshots and walkthrough videos (git-ignored)
 ```
 
 ## Commands (run in the Client workspace)
@@ -46,7 +46,8 @@ Every change the user can see gets a UI/UX design the user approves before techn
 | Add a screen | `coder-nexus ux screen --work-item … --id S02 --slug receive-qty --title "…" --steps W-01#2 --kind CHANGED --catalog wms.is-items.receive [--states default,error]` |
 | Add a new component | `coder-nexus ux component --work-item … --id C01 --slug no-po-warning --title "…" --used-in S02` |
 | Rebuild `index.html` data | `coder-nexus ux sync --work-item …` (after every edit of `uiux.md`) |
-| Check the design (UX-001…UX-010) | `coder-nexus ux validate --work-item …` (MCP `validate_ux_design`); add `--write-hash` when presenting or approving a revision |
+| Check the design (UX-001…UX-011) | `coder-nexus ux validate --work-item …` (MCP `validate_ux_design`); add `--write-hash` when presenting or approving a revision |
+| Record walkthrough videos (optional) | `coder-nexus ux record --work-item … [--workflow W-01] [--viewport mobile]` (needs Playwright in the environment) |
 
 The commands create files with the correct relative paths to the kit and add rows to `uiux.md`. Edit the generated files; do not move them.
 
@@ -56,7 +57,8 @@ The commands create files with the correct relative paths to the kit and add row
 2. **Workflow interview** — [references/01_workflow_interview.md](references/01_workflow_interview.md). The user confirms `W-NN` and its steps before any screen is drawn.
 3. **Viewports and design source** — confirmed once per project and recorded as `D-NN`.
 4. **Screens and components** — [references/02_screen_rules.md](references/02_screen_rules.md).
-5. **Review, revisions, approval** — [references/03_revisions_and_approval.md](references/03_revisions_and_approval.md).
+5. **Walkthrough** — [references/04_walkthrough.md](references/04_walkthrough.md). Script `## 8. Walkthrough` so each workflow plays by itself in `index.html`; required for time-based or automatic behavior, multi-screen flows and the error or empty branches the user asked about.
+6. **Review, revisions, approval** — [references/03_revisions_and_approval.md](references/03_revisions_and_approval.md).
 
 ## Rules
 
@@ -66,3 +68,4 @@ The commands create files with the correct relative paths to the kit and add row
 - Mock data lives in `data/mock-data.js`, bound with `data-mock`. It is realistic in shape and clearly MOCK.
 - HTML is a behavior and layout contract, not pixel-perfect: animations, complex gestures and heavy charts are sketched and noted as such.
 - `uiux.md` is the source of truth. `index.html` reads `data/flows.js`, generated from it by `coder-nexus ux sync`.
+- A walkthrough is a scripted MOCK simulation of the confirmed steps. It never adds behavior and does not prove app logic.

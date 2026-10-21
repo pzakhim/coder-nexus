@@ -46,3 +46,10 @@ TODO: one paragraph — what the user can do after this change, for which goals 
 - **Approved revision**: NONE
 - **Approved on**: NONE
 - **User response**: NONE
+
+## 8. Walkthrough
+
+Optional. One scripted playback per workflow (▶ Play in `index.html`); required when a workflow has time-based or automatic behavior. Actions: `show`, `tap`, `type`, `scan`, `wait`, `timer`, `caption`. Target = a `data-ux-target` name. It is a MOCK simulation, not a test.
+
+| Workflow | # | Screen | State | Action | Target | Value | Wait (ms) | Caption |
+|---|---|---|---|---|---|---|---|---|

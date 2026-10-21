@@ -55,5 +55,7 @@ For a `client-theme` source, use the `widget` names listed in `design-system.jso
 
 - Mobile screens follow Material layout: app bar on top, scrolling content, primary action at the bottom (`app-footer`) or in the content, bottom navigation only where the app already has it.
 - Tablet and web: use `.app-content.centered` or `cols md-2` instead of stretching phone layouts. Mark platform-only differences with a `.note`.
-- Do not draw platform chrome the app does not control (status bar, OS keyboard). Note the keyboard type with a `.note` when it matters (numeric input).
+- Do not draw platform chrome the app does not control (status bar, OS keyboard). Note the keyboard type with a `.note` when it matters: numeric entry (`TextInputType.number`) gets `inputmode="numeric"` on the drawn input and a note.
+- Hardware barcode scanners (handhelds, ring scanners) act as keyboard input into the focused field, usually ending with Enter. Draw the scan field with `data-ux-target` and a note on what keeps it focused; in the walkthrough model a scan as `scan` on that field, never as a camera screen unless the workflow uses the camera.
+- Tablet landscape (warehouse terminals, mounted tablets): when `viewports.json` has a landscape tablet, use `cols md-2` (list + detail, or scan field + result) instead of a stretched phone column, and keep primary actions reachable without scrolling.
 - Text sizes: use the kit's body size; headings 16–20px. `app-ui-kit` text widgets are `Text12` … `Text34` (`.bold`, `.medium`).

@@ -161,7 +161,7 @@ html[data-notes="off"] .new-component::before { display: none; }
 .ux-bar button, .ux-bar select { font: inherit; border: 1px solid #d1d5db; background: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
 .ux-bar button.on { background: #111827; color: #fff; border-color: #111827; }
 .ux-bar .title { font-weight: 700; margin-right: auto; }
-.ux-stage { flex: 1; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.ux-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 16px; }
 .ux-device { background: #111827; padding: 12px; border-radius: 36px; box-shadow: 0 20px 50px rgba(0,0,0,.25); transform-origin: center center; flex: none; }
 .ux-device.web { border-radius: 10px; padding: 28px 6px 6px; position: relative; }
 .ux-device.web::before { content: "● ● ●"; position: absolute; top: 6px; left: 12px; color: #9ca3af; font-size: 10px; letter-spacing: 2px; }
@@ -170,3 +170,29 @@ html[data-notes="off"] .new-component::before { display: none; }
 .ux-device.web iframe { border-radius: 4px; }
 .ux-device.tablet iframe { border-radius: 12px; }
 .ux-warn { background: #fef3c7; color: #92400e; font-size: 12px; padding: 6px 16px; }
+
+/* ---------- walkthrough player (index) and its marks inside screens ---------- */
+.ux-play { display: flex; gap: 4px; align-items: center; margin-bottom: 8px; font-size: 12px; }
+.ux-play button, .ux-play select { font: inherit; border: 1px solid #d1d5db; background: #fff; border-radius: 6px; padding: 3px 8px; cursor: pointer; }
+.ux-play .play { background: #111827; color: #fff; border-color: #111827; }
+.ux-play.active .play { background: #2563eb; border-color: #2563eb; }
+.ux-play .pos { margin-left: auto; color: #6b7280; font-variant-numeric: tabular-nums; }
+.ux-mocklabel { position: absolute; top: 10px; left: 12px; z-index: 30; background: #e11d48; color: #fff; font: 700 11px/1.8 system-ui, sans-serif;
+  padding: 0 8px; border-radius: 4px; letter-spacing: .3px; pointer-events: none; }
+.ux-countdown { position: absolute; top: 10px; right: 12px; z-index: 30; background: #111827; color: #fff; font: 700 18px/1.4 system-ui, sans-serif;
+  padding: 4px 12px; border-radius: 999px; font-variant-numeric: tabular-nums; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+.ux-countdown small { font-size: 11px; font-weight: 600; opacity: .75; }
+.ux-caption { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 30; max-width: min(92%, 640px); text-align: center;
+  background: rgba(17, 24, 39, .9); color: #fff; font: 14px/1.4 system-ui, sans-serif; padding: 8px 14px; border-radius: 10px; }
+.ux-mocklabel[hidden], .ux-countdown[hidden], .ux-caption[hidden] { display: none; }
+.ux-rec { grid-template-columns: 1fr; }
+.ux-rec .ux-side, .ux-rec .ux-bar, .ux-rec .ux-warn { display: none; }
+.ux-cursor { position: fixed; z-index: 1000; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; pointer-events: none;
+  background: rgba(37, 99, 235, .35); border: 2px solid #2563eb; transition-property: left, top; transition-timing-function: ease-in-out; }
+.ux-cursor[hidden] { display: none; }
+.ux-ripple { position: fixed; z-index: 999; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; pointer-events: none;
+  background: rgba(37, 99, 235, .45); animation: ux-ripple .6s ease-out forwards; }
+@keyframes ux-ripple { to { transform: scale(6); opacity: 0; } }
+.ux-hl { outline: 3px solid #2563eb !important; outline-offset: 2px; transition: outline-color .2s; }
+.ux-scan { outline-color: #16a34a !important; animation: ux-scan .35s ease-in-out 2; }
+@keyframes ux-scan { 50% { outline-offset: 6px; box-shadow: 0 0 0 6px rgba(22, 163, 74, .25); } }

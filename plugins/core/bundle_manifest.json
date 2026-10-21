@@ -87,6 +87,7 @@
     "core/skills/ux-mockup/references/01_workflow_interview.md",
     "core/skills/ux-mockup/references/02_screen_rules.md",
     "core/skills/ux-mockup/references/03_revisions_and_approval.md",
+    "core/skills/ux-mockup/references/04_walkthrough.md",
     "packs/flutter/skills/ux-kit/SKILL.md"
   ],
   "resource_base": "plugins/"
