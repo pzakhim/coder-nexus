@@ -1,0 +1,172 @@
+/* coder-nexus UX kit: component styles. Colors/sizes come from the :root variables generated
+   from the project's design source (design-system.json). Do not edit kit/ by hand. */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: var(--g-body-font-size); color: var(--c-text); background: var(--c-background);
+  -webkit-font-smoothing: antialiased; line-height: 1.4;
+}
+h1, h2, h3, h4 { margin: 0; line-height: 1.25; }
+p { margin: 0; }
+
+/* ---------- screen + layout ---------- */
+.screen { min-height: 100vh; display: flex; flex-direction: column; background: var(--c-background); position: relative; }
+.app-content { flex: 1; padding: var(--g-spacing); display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; align-items: center; gap: 12px; }
+.row.between { justify-content: space-between; }
+.grow { flex: 1; }
+.muted { color: var(--c-text-2); }
+.small { font-size: 12px; }
+.section-title { font-size: 16px; font-weight: 700; }
+.app-footer { padding: 12px var(--g-spacing) 20px; background: var(--c-background); border-top: 1px solid var(--c-divider); display: flex; gap: 12px; }
+.cols { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 768px) {
+  .cols.md-2 { grid-template-columns: 1fr 1fr; }
+  .cols.md-3 { grid-template-columns: repeat(3, 1fr); }
+  .app-content.centered { max-width: 960px; margin: 0 auto; width: 100%; }
+  .hide-md { display: none !important; }
+}
+@media (max-width: 767px) { .show-md { display: none !important; } }
+
+/* ---------- app bar ---------- */
+.app-appbar { height: var(--g-appbar-height); display: flex; align-items: center; gap: 8px; padding: 0 12px;
+  background: var(--c-background); border-bottom: 1px solid var(--c-divider); font-size: 18px; font-weight: 700; }
+.app-appbar .back { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: var(--c-text); text-decoration: none; font-size: 22px; }
+.app-appbar .title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-appbar .actions { display: flex; gap: 4px; font-size: 20px; color: var(--c-text-2); }
+.app-appbar.primary { background: var(--c-primary); color: var(--c-on-primary); border-bottom: 0; }
+.app-appbar.primary .back, .app-appbar.primary .actions { color: var(--c-on-primary); }
+
+/* ---------- buttons ---------- */
+.app-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--g-button-height);
+  padding: 0 20px; border-radius: var(--g-radius-button); border: 1px solid var(--c-primary); background: var(--c-primary);
+  color: var(--c-on-primary); font: inherit; font-size: var(--g-button-font-size); font-weight: var(--g-button-font-weight);
+  text-decoration: none; cursor: pointer; }
+.app-button.block { display: flex; width: 100%; }
+.app-button.secondary { background: var(--c-border); border-color: var(--c-border); color: var(--c-text); }
+.app-button.outline { background: transparent; color: var(--c-primary); }
+.app-button.text { background: transparent; border-color: transparent; color: var(--c-primary); padding: 0 8px; }
+.app-button.danger { background: var(--c-error); border-color: var(--c-error); }
+.app-button.success { background: var(--c-success); border-color: var(--c-success); }
+.app-button[disabled], .app-button.is-disabled { background: var(--c-disabled); border-color: var(--c-disabled); color: var(--c-on-primary); cursor: not-allowed; }
+.app-button.is-loading { color: transparent; position: relative; pointer-events: none; }
+.app-button.is-loading::after { content: ""; position: absolute; width: 20px; height: 20px; border: 2px solid var(--c-on-primary);
+  border-right-color: transparent; border-radius: 50%; animation: ux-spin .8s linear infinite; }
+
+/* ---------- form fields ---------- */
+.app-formfield, .app-search, .app-dropdown, .app-datepicker { display: flex; flex-direction: column; gap: 6px; }
+.app-formfield > span, .app-dropdown > span, .app-datepicker > span { font-size: var(--g-label-font-size); font-weight: var(--g-label-font-weight); color: var(--c-text); }
+.app-formfield > span .req { color: var(--c-error); }
+.app-formfield input, .app-formfield textarea, .app-dropdown select, .app-datepicker input, .app-search input {
+  font: inherit; font-size: var(--g-input-font-size); color: var(--c-text); background: #fff; width: 100%;
+  padding: var(--g-input-padding); border: 1px solid var(--c-input-border); border-radius: var(--g-radius-input); outline: none; }
+.app-formfield input:focus, .app-formfield textarea:focus { border-color: var(--c-primary); box-shadow: 0 0 0 1px var(--c-primary); }
+.app-formfield input::placeholder, .app-search input::placeholder { color: var(--c-hint); }
+.app-formfield small, .app-dropdown small, .app-datepicker small { font-size: 12px; color: var(--c-text-2); }
+.app-formfield.is-error input, .app-formfield.is-error textarea, .app-dropdown.is-error select { border-color: var(--c-error); }
+.app-formfield.is-error small, .app-dropdown.is-error small { color: var(--c-error); }
+.app-formfield.is-disabled input { background: var(--c-surface); color: var(--c-text-2); }
+.app-search { position: relative; }
+.app-search input { padding-left: 40px; border-radius: 999px; }
+.app-search::before { content: "⌕"; position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--c-text-3); font-size: 18px; }
+.app-datepicker input { padding-right: 40px; }
+.app-datepicker { position: relative; }
+.app-datepicker::after { content: "📅"; position: absolute; right: 12px; bottom: 12px; font-size: 16px; }
+
+/* ---------- content blocks ---------- */
+.app-card { background: #fff; border: 1px solid var(--c-border); border-radius: var(--g-radius-card); padding: 14px; box-shadow: 0 1px 3px var(--c-shadow); }
+.app-list { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--c-border); border-radius: var(--g-radius-card); overflow: hidden; }
+.app-list-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--c-divider); color: inherit; text-decoration: none; }
+.app-list-item:last-child { border-bottom: 0; }
+.app-list-item .leading { width: 40px; height: 40px; border-radius: 10px; background: var(--c-info-bg); display: grid; place-items: center; color: var(--c-primary); flex: none; }
+.app-list-item .body { flex: 1; min-width: 0; }
+.app-list-item .title { font-weight: 600; }
+.app-list-item .subtitle { font-size: 12px; color: var(--c-text-2); }
+.app-list-item .trailing { color: var(--c-text-3); }
+.app-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  background: var(--c-info-bg); color: var(--c-primary); }
+.app-badge.success { background: var(--c-success-bg); color: var(--c-success); }
+.app-badge.warning { background: var(--c-warning-bg); color: var(--c-warning); }
+.app-badge.error { background: var(--c-error-bg); color: var(--c-error); }
+.app-badge.neutral { background: var(--c-surface); color: var(--c-text-2); }
+.app-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--c-border); border-radius: 999px; font-size: 13px; background: #fff; }
+.app-chip.selected { background: var(--c-info-bg); border-color: var(--c-primary); color: var(--c-primary); }
+.app-banner { display: flex; gap: 10px; padding: 12px; border-radius: var(--g-radius-input); background: var(--c-info-bg); color: var(--c-text); font-size: 13px; }
+.app-banner.warning { background: var(--c-warning-bg); border-left: 4px solid var(--c-warning); }
+.app-banner.error { background: var(--c-error-bg); border-left: 4px solid var(--c-error); }
+.app-banner.success { background: var(--c-success-bg); border-left: 4px solid var(--c-success); }
+.app-nodata { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 48px 24px; color: var(--c-text-2); }
+.app-nodata .icon { font-size: 48px; opacity: .5; }
+.app-nodata .title { font-weight: 700; color: var(--c-text); }
+.app-loading { width: 32px; height: 32px; margin: 32px auto; border: 3px solid var(--c-primary); border-right-color: transparent; border-radius: 50%; animation: ux-spin .8s linear infinite; }
+.app-shimmer { border-radius: 8px; min-height: 14px; background: linear-gradient(90deg, var(--c-surface) 25%, var(--c-divider) 50%, var(--c-surface) 75%);
+  background-size: 200% 100%; animation: ux-shimmer 1.4s infinite; }
+@keyframes ux-spin { to { transform: rotate(360deg); } }
+@keyframes ux-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* ---------- overlays ---------- */
+.app-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); display: flex; align-items: center; justify-content: center; z-index: 20; }
+.app-overlay.bottom { align-items: flex-end; }
+.app-dialog { background: #fff; border-radius: var(--g-radius-dialog); padding: 20px; width: min(88%, 420px); display: flex; flex-direction: column; gap: 12px; }
+.app-dialog .title { font-size: 18px; font-weight: 700; }
+.app-dialog .actions { display: flex; gap: 12px; justify-content: flex-end; }
+.app-bottomsheet { background: #fff; border-radius: var(--g-radius-sheet) var(--g-radius-sheet) 0 0; padding: 8px 16px 24px; width: 100%; display: flex; flex-direction: column; gap: 12px; }
+.app-bottomsheet::before { content: ""; width: 40px; height: 4px; border-radius: 2px; background: var(--c-border); align-self: center; margin-bottom: 8px; }
+.app-bottomsheet .title { font-size: 16px; font-weight: 700; }
+.app-bottomnav { display: flex; justify-content: space-around; padding: 8px 4px 16px; background: #fff; border-top: 1px solid var(--c-divider); }
+.app-bottomnav a, .app-bottomnav span { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; color: var(--c-text-3); text-decoration: none; }
+.app-bottomnav .active { color: var(--c-primary); font-weight: 700; }
+.app-bottomnav .icon { font-size: 20px; }
+
+/* ---------- design annotations ---------- */
+.new-component { position: relative; outline: 2px dashed #e11d48; outline-offset: 3px; }
+.new-component::before { content: "NEW: " attr(data-name); position: absolute; top: -14px; right: 0; z-index: 5; background: #e11d48; color: #fff;
+  font: 600 10px/1.6 system-ui, sans-serif; padding: 0 6px; border-radius: 4px; white-space: nowrap; }
+.note { background: #fef9c3; border: 1px solid #facc15; color: #713f12; border-radius: 6px; padding: 6px 8px; font: 12px/1.4 system-ui, sans-serif; }
+.note::before { content: "📝 "; }
+.note[data-ref]::after { content: " (" attr(data-ref) ")"; font-weight: 600; }
+html[data-notes="off"] .note { display: none; }
+html[data-notes="off"] .new-component { outline: none; }
+html[data-notes="off"] .new-component::before { display: none; }
+.mock-missing { outline: 2px solid #f97316; }
+[data-state][hidden] { display: none !important; }
+
+/* ---------- standalone toolbar (screen opened directly) ---------- */
+.ux-toolbar { position: fixed; right: 8px; top: 8px; opacity: .85; z-index: 100; display: flex; gap: 4px; flex-wrap: wrap; max-width: 92vw;
+  background: rgba(17, 24, 39, .88); padding: 6px; border-radius: 10px; font: 12px system-ui, sans-serif; }
+.ux-toolbar button { font: inherit; border: 0; border-radius: 6px; padding: 4px 8px; background: #374151; color: #fff; cursor: pointer; }
+.ux-toolbar button.on { background: #2563eb; }
+
+/* ---------- index (workflow viewer) ---------- */
+.ux-index { display: grid; grid-template-columns: 300px 1fr; height: 100vh; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #f3f4f6; color: #111827; }
+.ux-side { background: #fff; border-right: 1px solid #e5e7eb; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.ux-side h1 { font-size: 16px; }
+.ux-side .meta { font-size: 12px; color: #6b7280; }
+.ux-flow h2 { font-size: 13px; margin-bottom: 6px; }
+.ux-flow .goal { font-size: 11px; color: #6b7280; margin-bottom: 6px; }
+.ux-step { display: flex; gap: 8px; align-items: center; width: 100%; text-align: left; border: 1px solid #e5e7eb; background: #fff; border-radius: 8px;
+  padding: 8px; margin-bottom: 6px; cursor: pointer; font: 13px system-ui, sans-serif; }
+.ux-step .n { width: 22px; height: 22px; border-radius: 50%; background: #e5e7eb; display: grid; place-items: center; font-size: 11px; font-weight: 700; flex: none; }
+.ux-step.active { border-color: #2563eb; background: #eff6ff; }
+.ux-step.active .n { background: #2563eb; color: #fff; }
+.ux-step .tag { margin-left: auto; font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #f3f4f6; color: #374151; }
+.ux-step .tag.NEW { background: #dcfce7; color: #166534; }
+.ux-step .tag.CHANGED { background: #fef3c7; color: #92400e; }
+.ux-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100vh; }
+.ux-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 16px; background: #fff; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+.ux-bar .group { display: flex; gap: 4px; }
+.ux-bar button, .ux-bar select { font: inherit; border: 1px solid #d1d5db; background: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+.ux-bar button.on { background: #111827; color: #fff; border-color: #111827; }
+.ux-bar .title { font-weight: 700; margin-right: auto; }
+.ux-stage { flex: 1; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.ux-device { background: #111827; padding: 12px; border-radius: 36px; box-shadow: 0 20px 50px rgba(0,0,0,.25); transform-origin: center center; flex: none; }
+.ux-device.web { border-radius: 10px; padding: 28px 6px 6px; position: relative; }
+.ux-device.web::before { content: "● ● ●"; position: absolute; top: 6px; left: 12px; color: #9ca3af; font-size: 10px; letter-spacing: 2px; }
+.ux-device.tablet { border-radius: 28px; padding: 18px; }
+.ux-device iframe { display: block; border: 0; background: #fff; border-radius: 26px; }
+.ux-device.web iframe { border-radius: 4px; }
+.ux-device.tablet iframe { border-radius: 12px; }
+.ux-warn { background: #fef3c7; color: #92400e; font-size: 12px; padding: 6px 16px; }

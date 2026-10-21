@@ -79,6 +79,10 @@ def build_parser() -> argparse.ArgumentParser:
     p_dbg.add_argument("--workspace-path", help="Path to client project workspace containing .env")
     p_dbg.add_argument("--out", help="Output file (default: ./huly-debug-<ID>.json)")
 
+    # ux (design source, HTML kit, viewports)
+    from .ux.commands import add_ux_parser
+    add_ux_parser(subparsers)
+
     # serve
     subparsers.add_parser("serve", help="Start the AIFactory MCP Server listening on stdio")
 
@@ -159,6 +163,11 @@ def cmd_huly_debug(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_ux(args: argparse.Namespace) -> int:
+    from .ux.commands import cmd_ux
+    return cmd_ux(args)
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
     """Handle `coder_nexus serve` command to start MCP server over stdio."""
     from .server import run_server
@@ -187,6 +196,7 @@ def main() -> int:
         "task-detail": cmd_task_detail,
         "serve": cmd_serve,
         "huly-debug": cmd_huly_debug,
+        "ux": _cmd_ux,
         "install-plugin": cmd_install_plugin,
     }
 
