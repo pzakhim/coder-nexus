@@ -51,7 +51,7 @@ def cmd_my_tasks(args: argparse.Namespace) -> int:
     client = HulyClient.from_workspace(workspace_path)
 
     async def _fetch():
-        return await client.get_my_uncompleted_tasks(workspace_path=workspace_path)
+        return await client.get_my_uncompleted_tasks(workspace_path=workspace_path, include_all=getattr(args, "include_all", False))
 
     try:
         tasks = asyncio.run(_fetch())
@@ -59,7 +59,8 @@ def cmd_my_tasks(args: argparse.Namespace) -> int:
             print(json.dumps([t.model_dump() for t in tasks], indent=2))
             return 0
 
-        print(f"\n📋 My Uncompleted Tasks ({len(tasks)} tasks):")
+        scope = "Open tasks in the workspace" if getattr(args, "include_all", False) else "My open tasks"
+        print(f"\n📋 {scope} ({len(tasks)}):")
         print(f"{'ID':<12} | {'PRIORITY':<8} | {'STATUS':<12} | {'TITLE'}")
         print("-" * 75)
         for t in tasks:
@@ -230,7 +231,11 @@ def _gitignore_warning(workspace_path: str) -> Optional[str]:
 
 
 def _verify_open_task(client: HulyClient, workspace_path: str) -> tuple[Optional[dict], int]:
-    tasks = asyncio.run(client.get_my_uncompleted_tasks(workspace_path=workspace_path))
+    try:
+        tasks = asyncio.run(client.get_my_uncompleted_tasks(workspace_path=workspace_path))
+    except ValueError:
+        # The token does not identify the user: still prove the connection with any open task.
+        tasks = asyncio.run(client.get_my_uncompleted_tasks(workspace_path=workspace_path, include_all=True))
     return (tasks[0].model_dump() if tasks else None), len(tasks)
 
 

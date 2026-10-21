@@ -50,6 +50,11 @@ async def run_debug(task_ref: str, workspace_path: Optional[str]) -> dict[str, A
         config = cfg.json() if cfg is not None and cfg.status_code == 200 else {}
         report["config_urls"] = {k: v for k, v in config.items() if k.endswith("_URL")}
 
+        account = client._token_account()
+        report["token_has_account_claim"] = bool(account)
+        if account:
+            await probe("whoami_person", "GET", fa, params=find("contact:class:Person", {"personUuid": account}, 1))
+
         ref = parse_task_ref(task_ref)
         res = await probe("issue", "GET", fa, params=find("tracker:class:Issue", {"identifier": ref}, 5))
         issue = {}

@@ -50,7 +50,8 @@ ROWS = {
         {"_id": "tracker:status:Backlog", "name": "Backlog", "category": "task:statusCategory:UnStarted"},
         {"_id": "st-cancel", "name": "CANCELED", "category": "task:statusCategory:Lost"},
     ],
-    "contact:class:Person": [{"_id": "p1", "name": "Le Vu Tuan,Anh"}, {"_id": "p2", "name": "Le Quoc,Hung"}],
+    "contact:class:Person": [{"_id": "p1", "name": "Le Vu Tuan,Anh", "personUuid": "acc-1"},
+                             {"_id": "p2", "name": "Le Quoc,Hung", "personUuid": "acc-2"}],
     "contact:class:SocialIdentity": [{"_id": "sid-1", "attachedTo": "p2"}],
     "chunter:class:ChatMessage": [{"_id": "m1", "attachedTo": "i-c1", "createdBy": "sid-1", "createdOn": 1789815700034,
                                     "attachments": 0, "message": json.dumps(COMMENT)}],
@@ -126,11 +127,33 @@ def test_child_comments_and_pdf_link_download(client, tmp_path):
     assert pdf.origin.startswith("comment ") and "Hung Le Quoc" in pdf.origin
 
 
-def test_open_tasks_use_status_category(client):
-    tasks = asyncio.run(client.get_my_uncompleted_tasks())
-    ids = {t.id for t in tasks}
-    assert ids == {"IMES-10", "IMES-11"}  # IMES-12 is in the LOST category
+def _jwt(claims: dict) -> str:
+    import base64
+    enc = lambda d: base64.urlsafe_b64encode(json.dumps(d).encode()).decode().rstrip("=")
+    return f"{enc({'alg': 'HS256'})}.{enc(claims)}.sig"
+
+
+def test_open_tasks_whole_workspace_use_status_category(client):
+    tasks = asyncio.run(client.get_my_uncompleted_tasks(include_all=True))
+    assert {t.id for t in tasks} == {"IMES-10", "IMES-11"}  # IMES-12 is in the LOST category
     assert {t.status for t in tasks} == {"Dev Done", "Backlog"}
+
+
+def test_my_tasks_only_returns_the_logged_in_users_issues(client):
+    ROWS["tracker:class:Issue"].append({"_id": "i-other", "identifier": "IMES-13", "number": 13, "title": "Someone else",
+                                        "status": "tracker:status:Backlog", "assignee": "p2", "subIssues": 0})
+    try:
+        client.credentials.session_token = _jwt({"account": "acc-1", "workspace": WS})
+        tasks = asyncio.run(client.get_my_uncompleted_tasks())
+        assert {t.id for t in tasks} == {"IMES-10", "IMES-11"}
+        assert all(t.assignee == "p1" for t in tasks)
+    finally:
+        ROWS["tracker:class:Issue"].pop()
+
+
+def test_my_tasks_fails_clearly_without_account_claim(client):
+    with pytest.raises(ValueError, match="Cannot tell who is logged in"):
+        asyncio.run(client.get_my_uncompleted_tasks())
 
 
 def test_sources_folder_is_git_ignored(tmp_path):

@@ -64,6 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_tasks = subparsers.add_parser("my-tasks", help="List uncompleted tasks assigned to user")
     p_tasks.add_argument("--workspace-path", help="Path to client project workspace containing .env")
     p_tasks.add_argument("--json", action="store_true", help="Output in raw JSON format")
+    p_tasks.add_argument("--all", dest="include_all", action="store_true", help="Open tasks of the whole workspace, not only yours")
 
     # task-detail
     p_detail = subparsers.add_parser("task-detail", help="Get full details and acceptance criteria for a task")

@@ -10,6 +10,16 @@
 | **Child issue** (has `parent`) | Work item scoped to **that child only**. Read the parent for context (feature name, shared terms, constraints) and record it in `codebase-notes.md` as context. Parent AC and sibling scope are **not** in scope unless the user confirms. | As usual. |
 | **Standalone issue** | As usual. | As usual. |
 
+## Parent coverage check (before using the children)
+
+Children often cover only part of the parent. IMES-1231's diagram shows a routing API, label/printer registries, a routing engine, a status monitor, clients and PC agents, but it has only one child (the .NET agent). Before drafting, compare the parent's scope with its children:
+
+1. List the parent's parts from every readable source: description text, images and diagrams (open the downloaded image), and readable PO documents.
+2. Map each part to the child that covers it, or to `NO CHILD`.
+3. Show the user one table, `| Parent part | Covered by | Status |`, and ask once with `ask_question`: which `NO CHILD` parts belong to this work item, and which are out of scope or tracked elsewhere. Record the answer as `D-NN`.
+
+Never silently drop a `NO CHILD` part, and never invent a child for it.
+
 ## Scope checks (ask with `ask_question`, one at a time; record answers as `D-NN`)
 
 - **Closed children** (`is_closed: true`, DONE or CANCELLED): list them as `Out of scope — already closed in Huly`. Do not write AC for them. Do not reopen them.

@@ -196,8 +196,8 @@ async def test_e2e_live_query_with_scratch_env():
 
     workspace_dir = str(TEST_ENV_FILE.parent)
 
-    # 1. Fetch uncompleted tasks
-    tasks_res = await app.call_tool("huly_get_my_tasks", {"workspace_path": workspace_dir})
+    # 1. Fetch open tasks of the workspace (the test account may have none assigned)
+    tasks_res = await app.call_tool("huly_get_my_tasks", {"workspace_path": workspace_dir, "include_all": True})
     assert tasks_res.is_error is False
     tasks_data = json.loads(tasks_res.content[0].text)
     assert tasks_data["status"] == "success"

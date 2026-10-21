@@ -1,6 +1,7 @@
 """Real HTTP and RPC client for Huly (ReadOnly: Query Tasks & Criteria)."""
 
 import asyncio
+import base64
 import json
 import logging
 from datetime import datetime, timezone
@@ -505,11 +506,48 @@ class HulyClient:
             raise ValueError(f"Number '{ref}' matches several issues ({ids}). Use the full ID, e.g. {matches[0].get('identifier')}.")
         return matches[0]
 
-    async def get_my_uncompleted_tasks(self, workspace_path: Optional[str] = None) -> list[HulyTaskSummary]:
-        """Open issues (status category not WON/LOST). Strictly READ-ONLY."""
+    def _token_account(self) -> Optional[str]:
+        """Account UUID from the session JWT (`account` claim). Decoded locally, never logged."""
+        parts = (self.credentials.session_token or "").split(".")
+        if len(parts) != 3:
+            return None
+        try:
+            payload = parts[1] + "=" * (-len(parts[1]) % 4)
+            claims = json.loads(base64.urlsafe_b64decode(payload))
+        except (ValueError, json.JSONDecodeError):
+            return None
+        account = claims.get("account") if isinstance(claims, dict) else None
+        return account if isinstance(account, str) and account else None
+
+    async def current_person(self, http: httpx.AsyncClient, workspace_id: str) -> tuple[str, Optional[str]]:
+        """(person _id, display name) of the logged-in account: JWT `account` -> Person.personUuid."""
+        cached = self.__dict__.get("_me")
+        if cached:
+            return cached
+        account = self._token_account()
+        if not account:
+            raise ValueError("Cannot tell who is logged in (session token has no account). Re-run 'coder-nexus setup huly --reset'.")
+        rows = await self._find_all(http, workspace_id, "contact:class:Person", {"personUuid": account}, limit=1)
+        if not rows or not rows[0].get("_id"):
+            raise ValueError("Logged-in account has no person in this Huly workspace.")
+        me = (rows[0]["_id"], _person_display_name(rows[0]))
+        self._me = me
+        return me
+
+    async def get_my_uncompleted_tasks(
+        self, workspace_path: Optional[str] = None, include_all: bool = False
+    ) -> list[HulyTaskSummary]:
+        """Open issues (status category not WON/LOST) assigned to the logged-in user.
+
+        `include_all=True` lists open issues of the whole workspace instead. Strictly READ-ONLY.
+        """
         workspace_id = await self._ensure_session(workspace_path)
         async with httpx.AsyncClient(timeout=self.timeout) as http:
-            issues = await self._find_all(http, workspace_id, "tracker:class:Issue")
+            if include_all:
+                issues = await self._find_all(http, workspace_id, "tracker:class:Issue")
+            else:
+                person_id, _ = await self.current_person(http, workspace_id)
+                issues = await self._find_all(http, workspace_id, "tracker:class:Issue", {"assignee": person_id})
             tasks: list[HulyTaskSummary] = []
             for issue in issues:
                 name, cat = await self._status(http, workspace_id, issue.get("status"))

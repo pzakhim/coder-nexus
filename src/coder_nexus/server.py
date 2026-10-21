@@ -19,26 +19,24 @@ app = MCPServer("coder-nexus")
 
 
 @app.tool()
-async def huly_get_my_tasks(workspace_path: str = "") -> dict[str, Any]:
-    """Fetch uncompleted tasks (TODO, IN_PROGRESS, etc.) for the current user from Huly.
+async def huly_get_my_tasks(workspace_path: str = "", include_all: bool = False) -> dict[str, Any]:
+    """Open Huly tasks assigned to the logged-in user (status category not Done/Canceled).
 
     Strictly READ-ONLY: Never modifies tasks on Huly.
     Zero Mock Data: Fails fast if credentials are not configured or network error occurs.
 
     Args:
-        include_sub_issues: Also return direct child issues (one level) with their own criteria.
-                            A parent issue is one feature: write one spec and use the children as
-                            planning input. A child issue: scope the spec to it; parent is context only.
-        workspace_path: Path to the Flutter developer workspace containing .env file.
-                       Defaults to current working directory if empty.
+        workspace_path: Client workspace containing the .env with Huly credentials.
+                        Defaults to current working directory if empty.
+        include_all: List open tasks of the whole workspace instead of only the user's own.
 
     Returns:
-        A dictionary containing task count and list of uncompleted tasks with ID, title, status, and priority.
+        Task count and the open tasks with ID, title, status name, priority, assignee and due date.
     """
     path = workspace_path.strip() or None
     try:
         client = HulyClient.from_workspace(path)
-        tasks = await client.get_my_uncompleted_tasks(path)
+        tasks = await client.get_my_uncompleted_tasks(path, include_all=include_all)
         return {
             "status": "success",
             "total": len(tasks),

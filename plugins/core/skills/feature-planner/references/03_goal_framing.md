@@ -2,6 +2,24 @@
 
 Huly tickets are not uniform. A ticket can be a one-line task, or a feature parent with many children. The real requirements are often elsewhere: a PO document mentioned in the description (which may not open for the developer's account), a PDF linked in a comment, or an AC added in a comment that differs from the FR document. So `spec_writer` does not copy the ticket. It **settles the goals with the user first** and keeps every later artifact on those goals.
 
+## Step 0 — Job type and stack (before anything else)
+
+**Job type.** Read `status` and `status_category` from `huly_get_task_detail` (and from each in-scope child). If the ticket is not new work, ask first, in one `ask_question`, what the job is:
+
+| Ticket state | Example statuses | Ask |
+|---|---|---|
+| Not started | Backlog, Todo | No question: new implementation is assumed. State it in the goal question. |
+| In progress | DEV IN PROGRESS | Continue the existing implementation, or start over? |
+| Built or later | Dev Done, QA/QC …, Prod …, RESOLVED, Done | Is this a **change** (new or changed behavior), a **bug fix**, **verification** (test what was built against the ticket), or **documentation**? |
+| Closed | Canceled / LOST category | Confirm the user really wants to work on a canceled ticket. |
+
+The answer is the first `D-NN`. It changes the flow. A change gets a new `vN` with `change-impact.md` against the built code. A bug fix follows the fix sequence. Verification produces findings, not new code. Documentation goes to Docs Writer.
+
+**Stack.** Compare the stack the ticket needs with the packs in `.agents/stack.json`. Clues are ticket text, title, sources and comments: for example ".NET", "C#", "Windows service", "Java", "iOS native". Any part whose stack has **no installed pack** is `BLOCKED — out of plugin scope`:
+- Tell the user which part is blocked and why ("IMES-1249 is a .NET Windows service; this workspace has no .NET pack").
+- Do not write requirements, design or plan for that part, and do not guess its code. List it under Non-goals with the reason.
+- Parts in a supported stack continue normally. If only the blocked part remains, stop with `BLOCKED`.
+
 ## Step 1 — Source inventory (`codebase-notes.md` → `## 0A. Source Inventory`)
 
 Collect every source once and record it:
@@ -28,7 +46,7 @@ Derive them from the ticket and parent titles, the purpose of the PO document, t
 
 - **Non-goals**: things mentioned but not in this batch. Examples: closed children, other stacks (for example a .NET agent), "later" items, and siblings of a child ticket.
 - **Conflicts**: places where sources disagree (FR document versus ticket AC versus comment).
-- **Job type** when the ticket is already `Dev Done` or later: change, bug fix, verification or documentation.
+- **Parent coverage** (for a parent ticket): the parts of the parent that no child covers (see `huly-task-runner` → `references/parent-and-sub-issues.md`).
 
 ## Step 3 — The goal question (first `Q-NN`, asked alone)
 

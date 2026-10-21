@@ -43,7 +43,7 @@ def fake_huly(monkeypatch):
         self.credentials.workspace_id = "ws-42"
         return "ws-42"
 
-    async def tasks(self, workspace_path=None):
+    async def tasks(self, workspace_path=None, include_all=False):
         return TASKS
 
     monkeypatch.setattr(HulyClient, "login", login)
