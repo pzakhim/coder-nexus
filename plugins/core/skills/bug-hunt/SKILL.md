@@ -1,6 +1,6 @@
 ---
 name: bug-hunt
-description: Finds real defects in a fixed code revision: each finding names a concrete failure scenario and survives an adversarial verification pass before it is reported. Use as the Reviewer's first pass on every code phase or small item, and as the Code Writer's self-check before READY_FOR_REVIEW. Complements the compliance checks of the stack's review skill; it does not replace them.
+description: Finds real defects in a fixed code revision — each finding names a concrete failure scenario and survives an adversarial verification pass before it is reported. Use as the Reviewer's first pass on every code phase or small item, and as the Code Writer's self-check before READY_FOR_REVIEW. Complements the compliance checks of the stack's review skill; it does not replace them.
 ---
 
 # Bug Hunt

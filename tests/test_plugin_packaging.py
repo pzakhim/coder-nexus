@@ -772,3 +772,20 @@ def test_bug_hunt_skill_is_wired_into_review_and_writing():
         assert ref in (review / "SKILL.md").read_text(encoding="utf-8")
     report = (PLUGIN_DIR / "packs/flutter/skills/code-review/templates/code_review_report.md.tpl").read_text(encoding="utf-8")
     assert "{{BUG_HUNT_ROWS}}" in report and "Failure scenario" in report
+
+
+def test_all_skills_have_valid_yaml_frontmatter():
+    """Every skill's SKILL.md frontmatter must parse cleanly without YAML syntax errors (e.g. unquoted colons)."""
+    import yaml
+
+    skill_files = list((PLUGIN_DIR / "core/skills").glob("*/SKILL.md")) + list((PLUGIN_DIR / "packs").glob("*/skills/*/SKILL.md"))
+    assert len(skill_files) >= 15
+    for skill_file in skill_files:
+        content = skill_file.read_text(encoding="utf-8")
+        assert content.startswith("---"), f"{skill_file} missing frontmatter delimiter"
+        parts = content.split("---", 2)
+        assert len(parts) >= 3, f"{skill_file} malformed frontmatter"
+        data = yaml.safe_load(parts[1])
+        assert isinstance(data, dict), f"{skill_file} frontmatter did not parse as a dict"
+        assert "name" in data, f"{skill_file} missing 'name'"
+        assert "description" in data, f"{skill_file} missing 'description'"

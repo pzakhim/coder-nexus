@@ -140,7 +140,7 @@ STUB_TEMPLATES = {
         "Never invent stack rules to fill the gap.",
     ),
     "blocked": (
-        "Not available yet for {title} (preview pack): stop and report BLOCKED.",
+        "Not available yet for {title} (preview pack) — stop and report BLOCKED.",
         "{title} is a preview pack and does not provide `{name}` yet ({purpose}). When a process step needs it, "
         "stop that step and report `BLOCKED: {name} is not available for {title}` to the coordinator, naming the "
         "decision or rule the user must supply. Do not borrow another stack's rules and never mark the step PASS.",
