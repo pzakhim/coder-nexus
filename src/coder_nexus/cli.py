@@ -71,7 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_detail.add_argument("task_id", help="Issue ID (AUTH-101), unique number, Huly _id, or a Huly issue link")
     p_detail.add_argument("--workspace-path", help="Path to client project workspace containing .env")
     p_detail.add_argument("--json", action="store_true", help="Output in raw JSON format")
-    p_detail.add_argument("--download", action="store_true", help="Save files/images/attachments/readable docs to .superpowers/sources/<ID>/")
+    p_detail.add_argument("--download", action="store_true", help="Save files/images/attachments/readable docs (and the Figma frame, with FIGMA_TOKEN) to .superpowers/sources/<ID>/")
 
     # huly-debug (read-only diagnostics)
     p_dbg = subparsers.add_parser("huly-debug", help="Read-only: dump raw Huly responses for one issue to a JSON file (no tokens)")
@@ -82,6 +82,10 @@ def build_parser() -> argparse.ArgumentParser:
     # ux (design source, HTML kit, viewports)
     from .ux.commands import add_ux_parser
     add_ux_parser(subparsers)
+
+    # figma (read-only frame extraction)
+    from .figma.commands import add_figma_parser
+    add_figma_parser(subparsers)
 
     # serve
     subparsers.add_parser("serve", help="Start the AIFactory MCP Server listening on stdio")
@@ -168,6 +172,11 @@ def _cmd_ux(args: argparse.Namespace) -> int:
     return cmd_ux(args)
 
 
+def _cmd_figma(args: argparse.Namespace) -> int:
+    from .figma.commands import cmd_figma
+    return cmd_figma(args)
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
     """Handle `coder_nexus serve` command to start MCP server over stdio."""
     from .server import run_server
@@ -197,6 +206,7 @@ def main() -> int:
         "serve": cmd_serve,
         "huly-debug": cmd_huly_debug,
         "ux": _cmd_ux,
+        "figma": _cmd_figma,
         "install-plugin": cmd_install_plugin,
     }
 

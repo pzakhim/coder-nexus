@@ -771,6 +771,8 @@ class HulyClient:
             sources = await self._collect_sources(http, workspace_id, target, description, comments)
             if download_dir:
                 await self._download_sources(http, workspace_id, sources, Path(download_dir))
+                if figma_url:
+                    await _fetch_figma_source(sources, figma_url, Path(download_dir) / "figma", workspace_path)
 
             return HulyTaskDetail(
                 id=target.get("identifier") or ref,
@@ -792,6 +794,26 @@ class HulyClient:
                 parent=parent,
                 sub_issues=sub_issues,
             )
+
+
+async def _fetch_figma_source(sources: list[HulySource], figma_url: str, target: Path, workspace_path: Optional[str]) -> None:
+    """Fetch the ticket's Figma frame (read-only). READ, NOT_PROVIDED (no FIGMA_TOKEN) or UNREACHABLE; never guessed."""
+    from ..figma import fetch_async, load_figma_token
+    src = next((s for s in sources if s.url == figma_url), None)
+    if src is None:
+        src = HulySource(kind="figma", title="Figma frame", origin="description", url=figma_url, status="EXTERNAL")
+        sources.append(src)
+    result = await fetch_async(figma_url, target, load_figma_token(workspace_path))
+    src.kind, src.status, src.note = "figma", result.status, result.note
+    if result.name:
+        src.title = f"Figma: {result.name}"
+    if result.status == "READ":
+        src.local_path = result.png_path or result.summary_path
+        src.mime = "image/png" if result.png_path else "text/markdown"
+        saved = ", ".join(Path(p).name for p in (result.png_path, result.json_path, result.summary_path) if p)
+        src.note = f"Saved to {target}: {saved}" + (f" ({result.note})" if result.note else "")
+        text = Path(result.summary_path).read_text(encoding="utf-8")
+        src.text = text[:DOC_TEXT_LIMIT] + ("\n…[truncated]" if len(text) > DOC_TEXT_LIMIT else "")
 
 
 def _iso_datetime(ms: Any) -> Optional[str]:

@@ -82,7 +82,16 @@ coder-nexus setup huly --reset   # ignore saved values and start again (e.g. exp
 coder-nexus my-tasks             # list open tasks assigned to you
 coder-nexus my-tasks --all       # open tasks of the whole workspace
 coder-nexus task-detail AUTH-101
+coder-nexus task-detail AUTH-101 --download   # save files, PO docs and the linked Figma frame to .superpowers/sources/AUTH-101/
 ```
+
+**Figma (optional, read-only).** Add a Figma personal access token as `FIGMA_TOKEN=…` to the same `.env` (read-only file scope is enough). When a ticket links a Figma frame, `task-detail --download` saves it to `.superpowers/sources/<ID>/figma/` as `<node>.png` (2× render), `<node>.json` (raw node tree) and `<node>.summary.md` (frames, visible text in reading order, fill colors, fonts, component instances, sizes). The source is marked `READ`, `NOT_PROVIDED` (no token) or `UNREACHABLE` (401/403/404, or a link without `node-id`); nothing is guessed from the link. To fetch one frame directly:
+
+```sh
+coder-nexus figma fetch "https://www.figma.com/design/<key>/<name>?node-id=1150-10051" [--workspace-path .] [--out DIR] [--json]
+```
+
+Exit codes: `0` read, `1` unreachable, `2` no token. Only the two `GET` endpoints `/v1/files/<key>/nodes` and `/v1/images/<key>` are called, and the token is sent only to `api.figma.com`.
 
 If the URL cannot be reached, setup stops and nothing is saved. Once it is reachable, the URL is saved before the login step.
 
@@ -117,11 +126,11 @@ coder-nexus ux sync --work-item …                  # uiux.md -> data/flows.js 
 coder-nexus ux validate --work-item … [--write-hash]
 ```
 
-`ux validate` (MCP `validate_ux_design`) checks rules UX-001 … UX-010: header and sections, no `TODO` left for review, workflows cite confirmed goals, workflows ↔ screens ↔ files, required states, kit classes only, new components documented, mock data paths, confirmed viewports and design source, and a content hash so an approved design cannot change silently. Requirements then map every workflow (`REQ-006`), the technical design maps every screen and new component (`DESIGN-008`), and review and visual verification compare the running app with the approved revision. Only the Flutter pack has a design source today; Frappe UI gets a `BLOCKED` placeholder and Backend has no UI. Screenshots of designs (`ux shoot`) and a real ticket pilot are not done yet.
+`ux validate` (MCP `validate_ux_design`) checks rules UX-001 … UX-010: header and sections, no `TODO` left for review, workflows cite confirmed goals, workflows ↔ screens ↔ files, required states, kit classes only, new components documented, mock data paths, confirmed viewports and design source, and a content hash so an approved design cannot change silently. Requirements then map every workflow (`REQ-006`), the technical design maps every screen and new component (`DESIGN-008`), and review and visual verification compare the running app with the approved revision. A Figma frame fetched with the ticket (see Connect Huly) is a visual source for the designer: the PNG and its summary, never a guess from the link. Only the Flutter pack has a design source today; Frappe UI gets a `BLOCKED` placeholder and Backend has no UI. Screenshots of designs (`ux shoot`) and a real ticket pilot are not done yet.
 
 ## Verification and boundaries
 
-The Hub suite (`uv run --offline python -m pytest -q`) covers validators, Huly adapter, setup, profile regression and CLI/extension installation. These are Hub and packaging checks. A real approved feature replay through host invocation, implementation, review, runtime visuals, and acceptance testing remains **NOT_RUN**.
+The Hub suite (`uv run --offline python -m pytest -q`) covers validators, Huly adapter, Figma extraction (mocked API), setup, profile regression and CLI/extension installation. These are Hub and packaging checks. A real approved feature replay through host invocation, implementation, review, runtime visuals, and acceptance testing remains **NOT_RUN**.
 
 Huly operations are read-only. Credentials belong in the Client's untracked `.env`. Agents cannot self-approve gates, invent package APIs, or turn `BLOCKED`, `NOT_RUN`, or `UNVERIFIED` into `PASS`. Lexical validators do not replace Client analysis and runtime tests.
 

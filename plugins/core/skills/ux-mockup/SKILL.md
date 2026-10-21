@@ -52,7 +52,7 @@ The commands create files with the correct relative paths to the kit and add row
 
 ## Process
 
-1. **Decide whether a design is needed** — see the designer agent's "When you are called" (no UI impact / existing visual / one-screen change).
+1. **Decide whether a design is needed** — see the designer agent's "When you are called" (no UI impact / existing visual / one-screen change). A fetched design-tool export in `.superpowers/sources/<ISSUE-ID>/` (status `READ`) counts as an existing visual: cite its file in `uiux.md` and in screen notes. A source marked `NOT_PROVIDED` or `UNREACHABLE` is missing input, not a design.
 2. **Workflow interview** — [references/01_workflow_interview.md](references/01_workflow_interview.md). The user confirms `W-NN` and its steps before any screen is drawn.
 3. **Viewports and design source** — confirmed once per project and recorded as `D-NN`.
 4. **Screens and components** — [references/02_screen_rules.md](references/02_screen_rules.md).

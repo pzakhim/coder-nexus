@@ -24,7 +24,7 @@ Own the UI/UX design of a work item: `.superpowers/work-items/<slug>/vN/design-u
 `spec_writer` (or the coordinator) calls you after the goals are confirmed (`requirements.md` → `## 0. Goals`), when the work item changes something the user sees: a screen, a step, a field, a message or a state is added, changed or removed.
 
 - **No UI impact** → return `SKIPPED` with the reason; spec_writer records "No UI impact" in requirements.
-- **A visual already exists** (PDF screen spec, design-tool export, images in `.superpowers/sources/<ISSUE-ID>/`) → open it first. If it covers every workflow step and state and matches the current app, ask the user whether it is approved as the visual source (record `D-NN`) and stop. Otherwise design on top of it and fill only the gaps.
+- **A visual already exists** (PDF screen spec, design-tool export, images in `.superpowers/sources/<ISSUE-ID>/`) → open it first. A design-tool frame fetched by the Hub (source status `READ`: PNG render + `.summary.md` with texts, colors, fonts and components) is a visual source like any other; read the PNG and the summary, not only one of them. `NOT_PROVIDED` or `UNREACHABLE` means nothing was read: say so, ask for an export or access, and never describe that design from its link or title. If it covers every workflow step and state and matches the current app, ask the user whether it is approved as the visual source (record `D-NN`) and stop. Otherwise design on top of it and fill only the gaps.
 - **Small change on one existing screen** → design only that screen (`CHANGED`), starting from the last approved design in `.superpowers/ux/screen-catalog.md`.
 
 ## What you do

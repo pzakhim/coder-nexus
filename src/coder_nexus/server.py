@@ -108,7 +108,9 @@ async def huly_get_task_detail(
                             planning input. A child issue: scope the spec to it; parent is context only.
         download: Save files, images, attachments and readable documents to
                   <workspace>/.superpowers/sources/<ISSUE-ID>/ so they can be opened and read
-                  (PDF, images). Use it before writing requirements.
+                  (PDF, images). Use it before writing requirements. A linked Figma frame is
+                  saved to figma/ (PNG, node JSON, summary) as a `figma` source: READ,
+                  NOT_PROVIDED (no FIGMA_TOKEN in the .env) or UNREACHABLE (401/403/404).
     """
     clean_task_id = task_id.strip()
     if not clean_task_id:

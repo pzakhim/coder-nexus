@@ -123,12 +123,12 @@ def cmd_task_detail(args: argparse.Namespace) -> int:
             print(f"  - {c.created_at or ''} {c.author or 'unknown'}: {c.text}")
     if d.sources:
         print(f"\n📎 Sources ({len(d.sources)}):")
-        icons = {"READ": "✅", "DOWNLOADED": "⬇️ ", "AVAILABLE": "•", "UNREACHABLE": "⛔", "EXTERNAL": "🌐"}
+        icons = {"READ": "✅", "DOWNLOADED": "⬇️ ", "AVAILABLE": "•", "UNREACHABLE": "⛔", "EXTERNAL": "🌐", "NOT_PROVIDED": "∅"}
         for s in d.sources:
             where = s.local_path or s.url or ""
             note = f" — {s.note}" if s.note else ""
             print(f"  {icons.get(s.status, '•')} {s.status:<11} {s.kind:<10} {s.title}  [{s.origin}] {where}{note}")
-        if not download_dir and any(s.status == "AVAILABLE" for s in d.sources):
+        if not download_dir and (d.figma_url or any(s.status == "AVAILABLE" for s in d.sources)):
             print("  → Re-run with --download to save files into .superpowers/sources/" + d.id + "/")
     if d.figma_url:
         print(f"\n🎨 Figma URL: {d.figma_url}")

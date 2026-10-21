@@ -41,14 +41,15 @@ class HulyComment(BaseModel):
 class HulySource(BaseModel):
     """Something the ticket points to: PO document, image, attachment, file or link."""
 
-    kind: str = Field(description="document | image | attachment | file | link")
+    kind: str = Field(description="document | image | attachment | file | link | figma")
     title: str = Field(description="Document title or file name")
     origin: str = Field(description="Where it was found: description, attachments, or 'comment <date> by <author>'")
     url: Optional[str] = Field(default=None, description="Original URL, if any")
     mime: Optional[str] = Field(default=None, description="MIME type, if known")
     status: str = Field(
         description="READ (text included) | DOWNLOADED (saved to local_path) | AVAILABLE (can be downloaded) "
-        "| UNREACHABLE (cannot be opened with this account) | EXTERNAL (outside Huly, open manually)"
+        "| UNREACHABLE (cannot be opened with this account) | EXTERNAL (outside Huly, open manually) "
+        "| NOT_PROVIDED (Figma link but no FIGMA_TOKEN in the Client .env)"
     )
     local_path: Optional[str] = Field(default=None, description="Saved file when downloaded")
     text: Optional[str] = Field(default=None, description="Document text (Huly documents), truncated")
