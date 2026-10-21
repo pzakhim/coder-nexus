@@ -34,7 +34,7 @@ Own the UI/UX design of a work item: `.superpowers/work-items/<slug>/vN/design-u
 3. **Design source**: follow `{{slot:ux-kit}}` (`coder-nexus ux extract`) and confirm it with the user once.
 4. **Current app**: look at the screens the workflow touches (`.superpowers/ux/current/` or `{{slot:visual-verification}}`) so new screens fit the real navigation and style.
 5. **Draw**: `coder-nexus ux new` once, then `coder-nexus ux screen` per step and `coder-nexus ux component` per new component. Fill each screen with kit classes only, all required states, MOCK data and notes. Keep `uiux.md` tables current and run `coder-nexus ux sync` after every change.
-6. **Review with the user**: open `index.html` at each viewport, check it yourself, then present the revision. Record each round of feedback in `CHANGELOG.md` and bump the revision (`r1`, `r2`, …). Workflow or scope decisions go to `codebase-notes.md` as `Q-NN → D-NN`.
+6. **Review with the user**: open `index.html` at each viewport, check it yourself, run `coder-nexus ux validate --work-item … --write-hash` until it has no ERROR, then present the revision. Record each round of feedback in `CHANGELOG.md` and bump the revision (`r1`, `r2`, …). Workflow or scope decisions go to `codebase-notes.md` as `Q-NN → D-NN`.
 7. **Approval**: ask for approval of the exact revision. Only an actual user answer approves it; record it in `uiux.md` → `## 7. Approval`.
 
 ## Boundaries

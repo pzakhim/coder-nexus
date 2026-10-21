@@ -50,6 +50,7 @@ Suggested commits (separate):
 ## 4. Remaining work
 
 ### 7. Validator — `coder-nexus ux validate --work-item <vN>` + MCP tool `validate_ux_design` (read-only)
+**Status: done** (`src/coder_nexus/ux/validate.py`, `tests/test_ux_validate.py`). Choices made: UX-005 downgrades a missing list state to WARNING when a `.note` on that screen names the state; UX-008 parses `mock-data.js` in Python only (no node), otherwise WARNING; the UX-010 hash leaves out the `Status` / `Approval reference` / `Content hash` fields, `## 7. Approval` and the generated `data/flows.js`, so approving does not change it; `sync()` was split into read-only `flows_data()` + writer.
 Rules (ERROR unless noted), structured like `architecture/spec_validator.py` (`SpecViolation`, `valid`, `violations`):
 - UX-001 uiux.md fields (Document type UIUX, Work Item, Version, Revision rN, Status) and sections 1–7 present.
 - UX-002 no `TODO` left in uiux.md, screens, components (WARNING while Status is DRAFT, ERROR for IN_REVIEW/APPROVED).
@@ -64,6 +65,7 @@ Rules (ERROR unless noted), structured like `architecture/spec_validator.py` (`S
 - Also run `sync` warnings. Tests in `tests/test_ux_validate.py` using `scaffold.py` to build fixtures. Add the tool to `server.py`, `bundle_manifest.json` `mcp_tools` (test asserts the count — update it), `work-items/references/tool-usage.md`.
 
 ### 8. Integration into the delivery flow
+**Status: done**, except the optional `coder-nexus ux gallery`. Validator rules `REQ-006` and `DESIGN-008` are in `architecture/spec_validator.py`.
 - `plugins/core/skills/work-items/SKILL.md` route + ownership table: add Designer between Spec Writer 1A-G and Gate 1 for UI-impact items; returns READY_FOR_SPEC / SKIPPED / BLOCKED.
 - `type-sequences.md` feature row: "… goals → workflows + UI/UX design (approved revision) → requirements …".
 - `spec_writer.md` (core): after goal framing, decide UI impact; call designer; Gate 1 approves requirements + the uiux.md revision; requirements gets `## Workflows` (W-NN → scenarios/AC; template `feature-planner/templates/requirements.md.tpl` and `work-items/templates/requirements.md.tpl`). Validator rule in `spec_validator`: if `design-uiux/uiux.md` exists, each W-NN appears in requirements and Status must be APPROVED before Gate 1 (REQ-006).

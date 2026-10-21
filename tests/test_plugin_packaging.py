@@ -10,7 +10,7 @@ import pytest
 
 from coder_nexus.plugin_install import _install_plugin_projection, cmd_install_plugin
 
-from .rendered import rendered_agent
+from .rendered import flutter_workspace, rendered_agent
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -697,3 +697,28 @@ def test_frappe_projection_receives_no_flutter_instructions(tmp_path):
     target = build_variant("frappe", "workspace", tmp_path)
     problems = json.loads((target / "projection.json").read_text(encoding="utf-8"))["problems"]
     assert not [p for p in problems if "mentions another stack" in p or "another stack's skill" in p]
+
+
+def test_designer_is_wired_into_the_delivery_flow():
+    """UI-impact items: Designer between goal framing and Gate 1; Planning, Reviewer and visual checks use the approved design."""
+    skills = flutter_workspace() / ".agents/plugins/coder-nexus/skills"
+    route = (skills / "work-items/SKILL.md").read_text(encoding="utf-8")
+    assert "**Designer (UI/UX)" in route and "READY_FOR_SPEC" in route and "| Designer |" in route
+    assert route.index("**Designer (UI/UX)") < route.index("**Planning")
+    assert "screen-catalog.md" in route and "{{slot:" not in route and "flutter-ux-kit" in route
+    assert "workflows + UI/UX design" in (skills / "work-items/references/type-sequences.md").read_text(encoding="utf-8")
+
+    spec = rendered_agent("spec_writer.md")
+    assert "Stage 1A-UX" in spec and "`designer`" in spec and "`## Workflows`" in spec and "validate_ux_design" in spec
+    planning = rendered_agent("planning.md")
+    assert "## UI/UX mapping" in planning and "DESIGN-008" in planning and "flutter-ux-kit" in planning
+    assert "NEW COMPONENT" in planning
+    assert "approved `uiux.md` revision" in rendered_agent("code_reviewer.md")
+    assert "screen-catalog.md" in rendered_agent("docs_writer.md")
+
+    for tpl in ("work-items/templates/requirements.md.tpl", "feature-planner/templates/requirements.md.tpl"):
+        assert "## Workflows" in (skills / tpl).read_text(encoding="utf-8")
+    design_tpl = (skills / "flutter-architecture-design/templates/design.md.tpl").read_text(encoding="utf-8")
+    assert "## UI/UX mapping" in design_tpl and "`flutter-ux-kit` §3" in design_tpl
+    visual = (skills / "flutter-visual-verification/SKILL.md").read_text(encoding="utf-8")
+    assert "## Compare with the approved UI/UX design" in visual and ".superpowers/ux/current/" in visual

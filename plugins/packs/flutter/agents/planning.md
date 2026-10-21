@@ -18,5 +18,6 @@ skills:
   4. **State Management & Data Flow**: Define Cubit states (follow the Client's existing state convention), Cubit methods, and only the UseCases and Repositories the behavior needs.
   5. **Mockoon design**: follow `{{slot:architecture-design}}` reference `references/05_api_mocking_strategy.md`.
   6. **Core Usage table**: `Core usage` table for `imespro`, `Client Core Mapping` for `external-structured`, or UI specification for `external-standard`.
+  7. **UI/UX mapping** (when `design-uiux/` exists): each `S-NN` → screen class, route and arguments; each kit class → widget from `{{slot:ux-kit}}` §3 for the recorded profile; each `C-NN` → widget under `lib/modules/<feature>/presentation/widgets/` (or the shared folder when two modules need it) with a `Core gap` note when `app_ui_kit` has no fitting widget.
 - **Task acceptance checks**: `flutter analyze` or a targeted unit test.
 - **Review DoD**: developer unit tests (UseCases, Mappers, Cubit emissions covering the agreed Pass/Default and Fail data) and zero-error `flutter analyze` requirements for Code Reviewer.

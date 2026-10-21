@@ -30,6 +30,15 @@ Exercise only approved, safely reachable states: initial/loading, populated, emp
 
 For a screen using `BaseScreen`, inspect portrait and landscape on the approved device/viewport when the changed behavior relies on responsive layout. Record route, orientation, expected and observed layout. A screenshot cannot prove tracking events; use the Client's actual approved tracking evidence for that claim. Mark unavailable observability `BLOCKED` or `NOT_RUN` rather than inferring a pass.
 
+## Compare with the approved UI/UX design
+
+When the work item has `design-uiux/` with an approved `uiux.md` revision, it is the Visual AC:
+
+- Use the confirmed viewports from `.superpowers/ux/viewports.json` for the device/window size.
+- For each `S-NN` the phase implements and each required state, open the design (`design-uiux/screens/S-NN-*.html?state=<state>`, or `index.html` at the same viewport) beside the running app and compare layout, order, copy, kit components, states and navigation.
+- Record each difference as `matches`, `deviation (finding)` or `covered by D-NN`. A material deviation is `FAILED` for that state; cosmetic differences that the kit cannot express are noted, not failed.
+- Save the app screenshot next to the visual evidence and, for the screen catalog, as `.superpowers/ux/current/<catalog-slug>/<viewport>.png` (for example `flutter run -d chrome` with the window at the viewport size, or `xcrun simctl io <device-id> screenshot …`).
+
 ## Capture evidence
 
 Save evidence under `.superpowers/work-items/<slug>/vN/evidence/<phase-id>/<revision>/visual/` unless the Client defines another approved location.

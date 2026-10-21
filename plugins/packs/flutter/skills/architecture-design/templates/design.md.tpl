@@ -85,6 +85,15 @@ Every element in this design serves a goal from `requirements.md` → `## 0. Goa
 - **3. Empty State**: {{EmptyStateViewSpecification}}
 - **4. Error State**: {{ErrorViewAndRetryActionSpecification}}
 
+## UI/UX mapping
+
+> Only when `design-uiux/uiux.md` exists; delete this section otherwise. Approved UI/UX revision: {{UiuxRevision}}. Every `S-NN` (except `EXISTING`) and every `C-NN` appears here (`DESIGN-008`). Kit class → widget follows `{{slot:ux-kit}}` §3.
+
+| Screen / component | Kind | Screen class & route / widget | Kit classes → widgets | Phase / task |
+|---|---|---|---|---|
+| S01 | {{NewOrChanged}} | {{ScreenClassRouteOrWidget}} | {{KitClassToWidgetMapping}} | {{PhaseOrTask}} |
+| C01 | NEW COMPONENT | {{WidgetPathOrCoreGap}} | {{BuiltFromKitWidgets}} | {{ExplicitTask}} |
+
 ## Integration, errors, and risks
 
 ### Backend API Contract & Mockoon Strategy (Omit if no external API)

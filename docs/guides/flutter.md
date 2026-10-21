@@ -1,6 +1,6 @@
 # Flutter profiles and iMESPro knowledge
 
-Flutter is the primary maintained delivery workflow. The same six roles serve three foundation profiles. Start with [installation](installation.md); installing the bundle and resolving application packages are separate steps.
+Flutter is the primary maintained delivery workflow. The same seven roles serve three foundation profiles. Start with [installation](installation.md); installing the bundle and resolving application packages are separate steps.
 
 ## Where detailed guidance lives
 

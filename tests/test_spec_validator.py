@@ -613,3 +613,85 @@ def test_plan_must_deliver_every_goal(tmp_path):
     plan_path.write_text(VERSIONED_PLAN, encoding="utf-8")
     ids = _violation_ids(spec_validator.validate_plan(plan_path=str(plan_path)))
     assert "PLAN-V-010-GOAL-COVERAGE" in ids
+
+
+# ---------------------------------------------------------------- UI/UX design (REQ-006 / DESIGN-008)
+
+UIUX_MD = """# UI/UX: Docs — v1
+
+> **Document type**: UIUX
+> **Revision**: r2
+> **Status**: {status}
+
+## 4. Workflows
+
+| Workflow | Title | Goals | Steps |
+|---|---|---|---|
+| W-01 | Open docs | G-01 | 1→S01, 2→S02 |
+| W-02 | Share docs | G-01 | 1→S01 |
+
+## 5. Screens
+
+| Screen | Title | File | Catalog | Kind | Steps | States | Kit classes | New components |
+|---|---|---|---|---|---|---|---|---|
+| S01 | Home | screens/S01-home.html | app.home | EXISTING | W-01#1, W-02#1 | default | | |
+| S02 | Docs | screens/S02-docs.html | app.docs | NEW | W-01#2 | default | | C01 |
+
+## 6. New components
+
+| Component | Title | File | Used in | Why not in the kit |
+|---|---|---|---|---|
+| C01 | Folder tree | components/C01-tree.html | S02 | no tree in the kit |
+"""
+
+
+def _write_uiux(version_dir, status="APPROVED"):
+    (version_dir / "design-uiux").mkdir(parents=True, exist_ok=True)
+    (version_dir / "design-uiux" / "uiux.md").write_text(UIUX_MD.format(status=status), encoding="utf-8")
+
+
+def test_requirements_must_map_approved_ui_workflows(tmp_path):
+    req_path = tmp_path / "requirements.md"
+    (tmp_path / "codebase-notes.md").write_text(SPEC_WRITER_CODEBASE_NOTES, encoding="utf-8")
+    req_path.write_text(SPEC_WRITER_REQUIREMENTS, encoding="utf-8")
+    baseline = _violation_ids(spec_validator.validate_proposal(proposal_path=str(req_path)))
+    assert not any(rule.startswith("REQ-006") for rule in baseline), "no design-uiux/: rule does not apply"
+
+    _write_uiux(tmp_path, status="IN_REVIEW")
+    ids = _violation_ids(spec_validator.validate_proposal(proposal_path=str(req_path)))
+    assert {"REQ-006-UIUX-NOT-APPROVED", "REQ-006-NO-WORKFLOWS"} <= ids
+
+    _write_uiux(tmp_path)
+    partial = SPEC_WRITER_REQUIREMENTS.replace(
+        "## 1. Scope", "## Workflows\n\n| Workflow | Goal | Steps → screens | Scenarios / AC |\n|---|---|---|---|\n| W-01 | G-01 | 1→S01, 2→S02 | AC-01 |\n\n## 1. Scope", 1)
+    req_path.write_text(partial, encoding="utf-8")
+    result = spec_validator.validate_proposal(proposal_path=str(req_path))
+    assert any(v["rule_id"] == "REQ-006-WORKFLOW-MISSING" and "W-02" in v["message"] for v in result["violations"])
+    assert "REQ-006-UIUX-NOT-APPROVED" not in _violation_ids(result)
+    assert "REQ-006" in result["checked_rules"]
+
+    req_path.write_text(partial.replace("| AC-01 |\n\n## 1. Scope", "| AC-01 |\n| W-02 | G-01 | 1→S01 | AC-01 |\n\n## 1. Scope"), encoding="utf-8")
+    assert not any(r.startswith("REQ-006") for r in _violation_ids(spec_validator.validate_proposal(proposal_path=str(req_path))))
+
+
+def test_design_must_map_ui_screens_and_new_components(tmp_path):
+    (tmp_path / "requirements.md").write_text(SPEC_WRITER_REQUIREMENTS, encoding="utf-8")
+    design_path = tmp_path / "design.md"
+    design_path.write_text("> **Document type**: DESIGN\n", encoding="utf-8")
+    head = "> **Document type**: DESIGN\n> **Feature**: a/b\n> **Version**: v1\n> **Status**: PENDING_REVIEW\n"
+    _write_uiux(tmp_path)
+    result = spec_validator.validate_proposal(proposal_content=head, proposal_path=str(design_path))
+    assert "DESIGN-008-NO-MAPPING" in _violation_ids(result) and "DESIGN-008" in result["checked_rules"]
+
+    mapping = "\n## UI/UX mapping\n\n| Screen / component | Kind | Destination | Kit | Phase |\n|---|---|---|---|---|\n| S02 | NEW | DocsScreen /docs | app-list → List | PHASE-01 |\n"
+    result = spec_validator.validate_proposal(proposal_content=head + mapping, proposal_path=str(design_path))
+    unmapped = [v["message"] for v in result["violations"] if v["rule_id"] == "DESIGN-008-UNMAPPED"]
+    assert unmapped and "C01" in unmapped[0] and "S01" not in unmapped[0], "EXISTING screens need no mapping"
+
+    full = mapping + "| C01 | NEW COMPONENT | widgets/folder_tree | app-list-item | PHASE-02 task 3 |\n"
+    assert not any(r.startswith("DESIGN-008") for r in _violation_ids(
+        spec_validator.validate_proposal(proposal_content=head + full, proposal_path=str(design_path))))
+
+    _write_uiux(tmp_path, status="DRAFT")
+    assert "DESIGN-008-UIUX-NOT-APPROVED" in _violation_ids(
+        spec_validator.validate_proposal(proposal_content=head + full, proposal_path=str(design_path)))

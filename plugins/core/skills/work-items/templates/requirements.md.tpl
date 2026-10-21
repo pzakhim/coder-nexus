@@ -38,6 +38,14 @@
 |---|---|---|---|
 | **BR-01** | {{ConciseBusinessOrUxRule}} | G-01 | `D-01` |
 
+## Workflows
+
+> Only for items with an approved UI/UX design (`design-uiux/uiux.md`, revision {{UiuxRevision}}); delete this section otherwise. Every `W-NN` of the approved revision appears here (`validate_proposal_spec` rule `REQ-006`).
+
+| Workflow | Goal | Steps → screens | Scenarios / AC |
+|---|---|---|---|
+| W-01 | G-01 | {{OrderedStepsWithScreenIds}} | {{ScenarioAndAcIds}} |
+
 ## 4. Behavioral Scenarios & Visual States
 
 ### Scenario 1: {{HappyPathTitle}} (`AC-01`, `D-01`)

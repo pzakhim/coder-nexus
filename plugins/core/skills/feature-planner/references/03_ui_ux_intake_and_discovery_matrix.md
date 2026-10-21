@@ -6,6 +6,8 @@ Apply the approved profile through `{{slot:core-usage}}`. Company setup and pack
 
 For UI-affecting work, inspect the supplied design frame, screenshot, PDF or local design asset directly before choosing components or writing the plan. A text description alone does not replace an available visual. If no visual source exists, record `VISUAL_INPUT_MISSING`, draft a minimal layout specification, and request user confirmation at Gate 2. Never invent a generic screen as a fallback.
 
+When the work item has an approved `design-uiux/` revision (skill `ux-mockup`), it is the visual source and the Visual AC; use its screens, states and `## UI/UX mapping` instead of re-deconstructing other visuals.
+
 ## Visual deconstruction and Visual AC
 
 Record the actual design source and observable details: layout hierarchy, spacing and alignment, typography, color and surface tokens, radius/elevation, icons, and required initial/loading/populated/empty/error/interactive states. Cite measured values only when supported by the source or verified Client design system. Map each Visual AC to the relevant UI phase and runtime target.

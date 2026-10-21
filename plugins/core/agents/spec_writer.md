@@ -66,6 +66,12 @@ Verify and collect the exact sources for every intake pillar:
 3. **Goal question**: before any other `Q-NN`, ask one `ask_question` showing the inventory, the candidates, the non-goals and the conflicts. Options: Confirm (Recommended) / Edit / Narrow. Record the answer as `D-NN` and write `requirements.md` → `## 0. Goals` with `Status: CONFIRMED`.
 4. **Goal lock**: every later `Q-NN` names the `G-NN` it serves. A question that serves no goal is not asked; record the topic under Non-goals. A goal change later is a new `D-NN` and needs Gate 1 approval again.
 
+### Stage 1A-UX — UI impact and UI/UX design (after goal framing)
+1. **Decide UI impact**: does the item add, change or remove something the user sees (a screen, step, field, message or state)? If not, write "No UI impact" with the reason in `requirements.md` → `## 1. Scope & Alignment` and continue.
+2. **Workflow source**: if the ticket and sources describe no front-end flow, ask; never invent it.
+3. **Call `designer`** with the confirmed goals, the source inventory and `.superpowers/sources/<ISSUE-ID>/`. It returns `READY_FOR_SPEC` with the approved `design-uiux/uiux.md` revision, `SKIPPED` with a reason, or `BLOCKED`. Behavior, rule or scope changes the user makes during design come back to you as `Q-NN → D-NN`; a goal change needs the goal question again.
+4. **Write `## Workflows`** in `requirements.md`: one row per approved `W-NN` (goal, steps → screens, scenarios / AC). Each workflow becomes `Given / When / Then` scenarios and AC rows.
+
 ### Stage 1B — Deep Input Analysis, Gap Detection & Initial Draft (`DRAFT`)
 1. Cross-check PO/BA requirements and the other intake sources against provided/estimated APIs and existing Client flows to detect missing endpoints, field mismatches, or overlapping rules.
 2. Write the initial Turn-1 **`requirements.md`** (`Status: DRAFT`) and **`codebase-notes.md`** (populating `## 0. Question Queue (Q-NN)` with all `OPEN` questions `Q-01..Q-NN` and `## 3. Verified Baseline Facts & Cross-Agent Notes`).
@@ -91,15 +97,16 @@ Merges the executive brief and functional requirements into one concise, scannab
 1. **`## 1. Scope & Alignment`**: Current baseline/problem, `Scope in` (each item serves a goal), `Scope out`, and API/Design sources.
 2. **`## 2. Actors & Permissions`**: User roles and access rules.
 3. **`## 3. Business Rules`**: Table of `BR-NN` rules where every `BR-NN` cites the `G-NN` it serves and its confirmed `D-NN` in `codebase-notes.md`.
+3A. **`## Workflows`** (UI-impact items only): every `W-NN` of the approved `uiux.md` revision with its goal, steps → screens and scenarios / AC (`validate_proposal_spec` rule `REQ-006`).
 4. **`## 4. Behavioral Scenarios & Observable States`**: Concise `Given / When / Then` scenarios (Happy Path, Validation Errors, Network Exceptions, Empty State) and the observable states required by the stack rules.
 5. **`## 5. Acceptance criteria`**: Table `| AC-NN | Observable behavior | Source (D-NN / Huly / USER_CONFIRMED) | Status | Goal |`. Every AC serves a `G-NN`, and every goal has at least one AC (`validate_proposal_spec` rule `REQ-005`).
-6. **`## 6. Gate 1 approval`**: Decision summary, approved response, and approved document revision.
+6. **`## 6. Gate 1 approval`**: Decision summary, approved response, and approved document revision (plus the approved `uiux.md` revision when `design-uiux/` exists).
 
 ### B. `codebase-notes.md` (Permanent Agent-Facing Single Source of Truth)
 Contains all 7 mandatory sections (`## 0. Question Queue (Q-NN)` with 0 `OPEN` rows, `## 1. Decision Log (D-NN)`, `## 2. Glossary`, `## 3. Verified Baseline Facts & Cross-Agent Notes`, `## 4. Constraints & External Integrations`, `## 5. Extended Rule Details`, `## 6. Change Log`).
 - **Permanent Retention**: `codebase-notes.md` is retained permanently throughout the entire `vN/` lifecycle and is **never** deleted after Gate 2. Only `spec_writer` and `planning` may write to `codebase-notes.md`; `code_writer`, `code_reviewer`, `test_runner`, and `docs_writer` read it as context.
 
-Validate both `codebase-notes.md` and `requirements.md` with `validate_proposal_spec`. Present `requirements.md` (with `codebase-notes.md` linked for reference) via `ask_question` for **Gate 1 user approval**.
+Validate both `codebase-notes.md` and `requirements.md` with `validate_proposal_spec`, and `design-uiux/` with `validate_ux_design` when it exists. Present `requirements.md` (with `codebase-notes.md` and the approved `design-uiux/index.html` revision linked) via `ask_question` for **Gate 1 user approval**; Gate 1 covers the requirements and the UI/UX revision together.
 
 Do not write `lib/`, `test/`, `implement-plan.md` or phase files (or the stack's equivalent source and test folders), and never self-approve or mark execution `PASS`.
 

@@ -35,6 +35,7 @@ For new Client work, receive `.superpowers/work-items/<slug>/vN/brief.md`, optio
   - Verify shared components/helpers created by earlier phases of the same work item are reused, not re-implemented privately.
   - Verify UI/entry-point classes do not construct data sources, repositories or use cases directly; dependencies arrive through the Client's approved DI/state convention.
   - Any violation = `CHANGES_REQUESTED`.
+- **Approved UI/UX design** (when `design-uiux/` exists): compare each changed screen with the approved `uiux.md` revision at the same viewport and state (`screens/S-NN-*.html?state=…`) and the `## UI/UX mapping` in `design.md`. A deviation not covered by a `D-NN` is a finding (`CHANGES_REQUESTED`); a design the code cannot follow goes back to Planning and the user.
 
 ### `PHASE-00` Audit & Cross-Repo Boundary Checks
 - **Single Source Context (`PHASE-00` & `design.md`)**: Read consolidated Huly and API context from `phases/phase-00-prepare.md` (`PHASE-00`) and `design.md` — never re-query Huly.

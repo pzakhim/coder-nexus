@@ -189,6 +189,22 @@ def ac_goal_map(requirements: str) -> dict[str, set[str]]:
     return {ac: {g.upper() for g in G_ID_RE.findall(" | ".join(cells[1:]))} for ac, cells in _table_rows(body, r"AC-\d+").items()}
 
 
+def uiux_summary(version_dir: Path) -> Optional[dict[str, Any]]:
+    """`design-uiux/uiux.md` of a work-item version: status, workflows, screens (id -> kind), components."""
+    path = version_dir / "design-uiux" / "uiux.md"
+    if not path.is_file():
+        return None
+    text = _strip_html_comments(path.read_text(encoding="utf-8"))
+    screens = _table_rows(_section_body(text, "Screens"), r"S\d+")
+    return {
+        "status": _document_field(text, "Status").upper(),
+        "revision": _document_field(text, "Revision"),
+        "workflows": set(_table_rows(_section_body(text, "Workflows"), r"W-\d+")),
+        "screens": {sid: (cells[4].upper() if len(cells) > 4 else "") for sid, cells in screens.items()},
+        "components": set(_table_rows(_section_body(text, "New components"), r"C\d+")),
+    }
+
+
 def _strip_html_comments(text: str) -> str:
     return re.sub(r"<!--[\s\S]*?-->", "", text)
 
@@ -566,6 +582,8 @@ class SpecValidator:
                     )
 
             self._check_goals(cleaned, violations)
+            if proposal_path:
+                self._check_workflows(cleaned, Path(proposal_path).resolve().parent, violations)
 
             cited_decisions = {m.upper() for m in D_ID_RE.findall(cleaned)}
             notes_ref = _document_field(cleaned, "Codebase Notes") or _document_field(cleaned, "Context")
@@ -638,8 +656,35 @@ class SpecValidator:
             "errors_count": sum(item.severity == "ERROR" for item in violations),
             "warnings_count": sum(item.severity == "WARNING" for item in violations),
             "violations": [item.to_dict() for item in violations],
-            "checked_rules": ["REQ-001", "REQ-002", "REQ-003", "REQ-004", "REQ-005", "NOTES-001", "IMPACT-001", "IMPACT-002", "IMPACT-003"],
+            "checked_rules": ["REQ-001", "REQ-002", "REQ-003", "REQ-004", "REQ-005", "REQ-006", "NOTES-001", "IMPACT-001", "IMPACT-002", "IMPACT-003"],
         }
+
+    @staticmethod
+    def _check_workflows(cleaned: str, version_dir: Path, violations: list[SpecViolation]) -> None:
+        """REQ-006: an approved UI/UX design exists before Gate 1 and every W-NN is in `## Workflows`."""
+        uiux = uiux_summary(version_dir)
+        if uiux is None:
+            return
+        if uiux["status"] != "APPROVED":
+            violations.append(SpecViolation(
+                "REQ-006-UIUX-NOT-APPROVED", "ERROR", None,
+                f"design-uiux/uiux.md is {uiux['status'] or 'missing a Status'}; the UI/UX revision must be APPROVED by the user before Gate 1.",
+                "Finish the designer loop and record the user's approval in uiux.md '## 7. Approval'.",
+            ))
+        body = _section_body(cleaned, "Workflows")
+        if not body:
+            violations.append(SpecViolation(
+                "REQ-006-NO-WORKFLOWS", "ERROR", None, "requirements.md has no '## Workflows' section although design-uiux/ exists.",
+                "Add one row per approved W-NN with its goal, steps -> screens and scenarios / AC.",
+            ))
+            return
+        listed = {w.upper() for w in re.findall(r"\bW-\d+\b", body, re.IGNORECASE)}
+        missing = sorted(uiux["workflows"] - listed)
+        if missing:
+            violations.append(SpecViolation(
+                "REQ-006-WORKFLOW-MISSING", "ERROR", None, f"Workflows of the UI/UX design missing from requirements.md: {missing}.",
+                "Map each approved W-NN to scenarios and AC in '## Workflows'.",
+            ))
 
     @staticmethod
     def _check_goals(cleaned: str, violations: list[SpecViolation]) -> None:
@@ -799,6 +844,7 @@ class SpecValidator:
                             "DESIGN-007-GOALS", "ERROR", None, f"Goal alignment does not cover {missing}.",
                             "Name the design elements that deliver each goal.",
                         ))
+            self._check_uiux_mapping(cleaned, design_dir, violations)
             notes_path = design_dir / "codebase-notes.md"
             if not notes_path.is_file() and (design_dir / "context.md").is_file():
                 notes_path = design_dir / "context.md"
@@ -821,8 +867,37 @@ class SpecValidator:
             "errors_count": sum(item.severity == "ERROR" for item in violations),
             "warnings_count": sum(item.severity == "WARNING" for item in violations),
             "violations": [item.to_dict() for item in violations],
-            "checked_rules": ["DESIGN-001", "DESIGN-002", "DESIGN-003", "DESIGN-004", "DESIGN-005", "DESIGN-006", "DESIGN-007"],
+            "checked_rules": ["DESIGN-001", "DESIGN-002", "DESIGN-003", "DESIGN-004", "DESIGN-005", "DESIGN-006", "DESIGN-007", "DESIGN-008"],
         }
+
+    @staticmethod
+    def _check_uiux_mapping(cleaned: str, version_dir: Path, violations: list[SpecViolation]) -> None:
+        """DESIGN-008: with design-uiux/, design.md maps every non-EXISTING S-NN and every C-NN."""
+        uiux = uiux_summary(version_dir)
+        if uiux is None:
+            return
+        if uiux["status"] != "APPROVED":
+            violations.append(SpecViolation(
+                "DESIGN-008-UIUX-NOT-APPROVED", "ERROR", None,
+                f"design-uiux/uiux.md is {uiux['status'] or 'missing a Status'}; design.md maps only an approved UI/UX revision.",
+                "Get the UI/UX revision approved at Gate 1 first.",
+            ))
+        body = _section_body(cleaned, "UI/UX mapping")
+        if not body:
+            violations.append(SpecViolation(
+                "DESIGN-008-NO-MAPPING", "ERROR", None, "design.md has no '## UI/UX mapping' section although design-uiux/ exists.",
+                "Map each S-NN to its screen/route and each C-NN to a component.",
+            ))
+            return
+        mapped = {m.upper() for m in re.findall(r"\b[SC]-?\d+\b", body, re.IGNORECASE)}
+        mapped |= {re.sub(r"^([SC])-", r"\1", m) for m in mapped}
+        needed = {sid for sid, kind in uiux["screens"].items() if kind != "EXISTING"} | uiux["components"]
+        missing = sorted(needed - mapped)
+        if missing:
+            violations.append(SpecViolation(
+                "DESIGN-008-UNMAPPED", "ERROR", None, f"UI/UX items without a mapping in design.md: {missing}.",
+                "Add a row per screen and NEW COMPONENT; each NEW COMPONENT also becomes a task at Gate 3.",
+            ))
 
     def _check_anti_self_approval(
         self,

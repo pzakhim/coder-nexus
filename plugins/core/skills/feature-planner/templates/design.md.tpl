@@ -54,6 +54,15 @@ For each screen destination, record the selected profile’s naming, superclass,
 
 {{DesignSourceVisualACAndVerifiedComponentMatrixOrReasonedNA}}
 
+## UI/UX mapping
+
+> Only when `design-uiux/uiux.md` exists; delete this section otherwise. Approved UI/UX revision: {{UiuxRevision}}. Every `S-NN` (except `EXISTING`) and every `C-NN` appears here (`validate_proposal_spec` rule `DESIGN-008`); kit classes map to components through `{{slot:ux-kit}}`.
+
+| Screen / component | Kind | Destination (screen, route or component) | Kit classes → components | Phase / task |
+|---|---|---|---|---|
+| S01 | {{NewOrChanged}} | {{ScreenRouteOrComponent}} | {{KitClassToComponentMapping}} | {{PhaseOrTask}} |
+| C01 | NEW COMPONENT | {{ComponentLocation}} | {{BuiltFromKitPieces}} | {{ExplicitTask}} |
+
 ## Integration, errors, and risks
 
 {{DiRouterLifecyclePermissionsRisksAndBlockers}}

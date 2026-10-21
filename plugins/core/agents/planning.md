@@ -55,6 +55,7 @@ Inspect `Target Platform` and stack in `codebase-notes.md` / `requirements.md` (
      5. **External Integration Design**: Consolidate the external interfaces this work consumes or provides, per the stack rules below. Omit the section when there is no external integration.
      6. **Foundation Usage & Mapping**: Fill the exact component/class mapping table according to the resolved profile.
      7. **Error Handling & Storage**: Apply the agreed error patterns and local cache policies.
+     8. **UI/UX mapping** (only when `design-uiux/uiux.md` exists): map each `S-NN` (except `EXISTING`) to its screen and route and each `C-NN` to a component, kit class → component via `{{slot:ux-kit}}`, in `## UI/UX mapping` (validator `DESIGN-008`). The approved `uiux.md` revision is the Visual AC; a design that cannot be built as drawn is a `Q-NN` for the user, not a silent change.
 
 Validate `codebase-notes.md` and `design.md` with `validate_proposal_spec`. Present `design.md` to User via `ask_question` for **Gate 2 (Architecture Approval)**. Keep `codebase-notes.md` permanently in the version folder alongside `requirements.md` and `design.md`.
 
@@ -80,6 +81,7 @@ After Gate 2 approval, formulate the execution plan using `planning-and-task-bre
     - **Acceptance Criteria**: Immediate command or check to verify that task (the stack's analyzer, targeted unit test).
   - Design tasks for the **Mandatory Plan Re-Grounding Loop**: after finishing each micro-task and passing its acceptance check, `code_writer` returns to `phases/phase-NN-*.md`, ticks `- [x]`, and re-reads the next task's specification before writing code.
 - **100% AC Traceability**: Map every AC ID from `requirements.md` to an owning phase with a decisive check.
+- **UI/UX coverage**: every `S-NN` / `C-NN` in `## UI/UX mapping` belongs to a phase; each NEW COMPONENT (`C-NN`) is an explicit task built from its `components/C-NN-*.html` drawing.
 - **Review Definition of Done (DoD)**: Specify developer unit tests (UseCases, Mappers, state transitions covering the agreed Pass/Default and Fail data) and zero-error analyzer requirements for Code Reviewer.
 - For small non-feature work items, return `SKIPPED` with an executable check list when no separate plan is needed.
 
