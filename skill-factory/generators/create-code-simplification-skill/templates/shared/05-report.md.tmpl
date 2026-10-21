@@ -1,0 +1,28 @@
+# 05 — Report and review
+
+<!-- GEN: Why: one line of what was cut lets reviewers see intent, and marked shortcuts do not silently become permanent. Kind: Suggested — keep the purpose, adapt the structure; may merge into SKILL.md (core/authoring-guide.md). -->
+
+<!-- GEN: Rule S13 + review severity from references/base-rules.md, in the workspace's handoff notation. -->
+
+## Report line (in the handoff)
+
+```
+{{report_line}}
+```
+<!-- GEN: e.g. "Simplified/removed: inlined OrderServiceWrapper, replaced manual grouping with defaultdict (-34 lines)". Use the workspace's handoff field (e.g. H-NN "removed/merged"). -->
+
+## Deliberate shortcuts
+
+{{marker_rule}} <!-- GEN: e.g. "Mark with `# ponytail: <ceiling>, <upgrade path>`"; delete if the workspace has no convention -->
+
+## Review severity
+
+| Finding | Severity |
+|---|---|
+| Unnecessary complexity in the diff | P2 (P3 if small) — not blocking alone |
+| Wrapper/alias left after a move, or S11 violated, or a decision ignored | P1 |
+
+Only code changed in the phase is reviewed.
+
+<!-- custom:start -->
+<!-- custom:end -->

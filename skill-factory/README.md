@@ -30,6 +30,7 @@ skill-factory/
     create-incremental-implementation-skill/  # VERSION, CHANGELOG.md, SKILL.md, references/, templates/
     create-clean-code-skill/                  # VERSION, CHANGELOG.md, SKILL.md, references/, templates/
     create-unit-test-skill/                   # VERSION, CHANGELOG.md, SKILL.md, references/, templates/
+    create-code-simplification-skill/         # VERSION, CHANGELOG.md, SKILL.md, references/, templates/
   sync-workspace-skills/         # skill: status table + sync, workspace by workspace
   ROADMAP.md                     # planned coder skills
 ```
@@ -59,6 +60,10 @@ ln -s ~/.claude/skill-factory/generators/create-unit-test-skill ~/.claude/skills
 ```
 
 ```bash
+ln -s ~/.claude/skill-factory/generators/create-code-simplification-skill ~/.claude/skills/create-code-simplification-skill
+```
+
+```bash
 ln -s ~/.claude/skill-factory/sync-workspace-skills ~/.claude/skills/sync-workspace-skills
 ```
 
@@ -68,7 +73,7 @@ Run the commands from the repository root. Generators refer to shared files as `
 
 | Goal | Run in the workspace |
 |---|---|
-| Create a workspace skill | `/create-clean-architecture-skill`, `/create-incremental-implementation-skill`, `/create-clean-code-skill`, `/create-unit-test-skill` |
+| Create a workspace skill | `/create-clean-architecture-skill`, `/create-incremental-implementation-skill`, `/create-clean-code-skill`, `/create-unit-test-skill`, `/create-code-simplification-skill` |
 | Adopt an existing, unregistered skill | Run its generator (it detects the skill and adopts it) |
 | Sync this workspace after the base changed | `/sync-workspace-skills` |
 | Check / sync every workspace | `/sync-workspace-skills all` |

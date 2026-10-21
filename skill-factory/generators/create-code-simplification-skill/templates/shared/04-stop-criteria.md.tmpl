@@ -1,0 +1,19 @@
+# 04 — Stop criteria
+
+<!-- GEN: Why: knowing when not to simplify protects behavior and approved decisions as much as the techniques do. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rule S12 with the workspace's gate names and decision notation. -->
+
+Stop simplifying when:
+
+| Situation | Do instead |
+|---|---|
+| Behavior or a public contract would change | Return to {{gate_for_changes}} |
+| A workspace decision ({{decision_notation}}) requires the abstraction | Leave it; mention it in the report if it looks unnecessary |
+| The gain is cosmetic (renaming taste, reordering) | Leave it |
+| A hot path would change without measurement | Measure first or leave it |
+| The next step needs code outside the diff | Record a separate task |
+| Checks turn red and the cause is not obvious | Revert the last step |
+
+<!-- custom:start -->
+<!-- custom:end -->

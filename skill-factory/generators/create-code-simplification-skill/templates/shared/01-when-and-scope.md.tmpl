@@ -1,0 +1,24 @@
+# 01 — When and scope
+
+<!-- GEN: Why: simplifying at the wrong time or outside the diff mixes refactoring with behavior change and bloats review. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules S1, S4 with the workspace's phase/diff notions. -->
+
+## When
+
+- After the phase's checks pass ({{checks_ref}}), as the simplicity pass.
+- When review names a concrete unnecessary complexity in the diff.
+
+## Not when
+
+- Checks are red — fix behavior first.
+- The code is already clear, or is about to be rewritten.
+- Writing a new feature or fixing a bug — that is not simplification.
+
+## Scope
+
+- Only the files and lines changed in this phase: `{{diff_command}}` <!-- GEN: e.g. git diff --name-only <base> -->
+- Something worth simplifying outside the diff → record it as a separate task ({{task_tracker}}), do not do it now.
+
+<!-- custom:start -->
+<!-- custom:end -->
