@@ -121,7 +121,7 @@ def test_ux009_needs_confirmed_orientations_before_review(design, work_item):
 def test_kit_js_viewer_has_rotate_url_and_collapsible_sidebar():
     js = (ASSETS / "kit.js").read_text(encoding="utf-8")
     for needle in ("UX.setOrientation", "⟲", 'q.set("orientation"', "history.replaceState", "orientations(cur.platform).length > 1",
-                   "length > 6", "ux-filter", "expanded[fi]", "f.steps[si].state", 'class="sid"'):
+                   "length > 6", "ux-filter", "class=\"wt\"", "Trạng thái", "expanded[fi]", "f.steps[si].state", 'class="sid"'):
         assert needle in js, needle
     css = (ASSETS / "base.css").read_text(encoding="utf-8")
     assert ".ux-filter" in css and ".ux-step .sid" in css

@@ -152,6 +152,9 @@ html[data-notes="off"] .new-component::before { display: none; }
 .ux-flow.open .head { margin-bottom: 6px; }
 .ux-flow.current .head { color: #1d4ed8; }
 .ux-flow .head .caret { width: 10px; color: #6b7280; flex: none; }
+.ux-flow .head .wt { flex: none; font-size: 11px; line-height: 1; padding: 3px 7px; border-radius: 6px; background: #111827; color: #fff; cursor: pointer; }
+.ux-flow .head .wt:hover { background: #2563eb; }
+.ux-bar .stl { display: inline-flex; gap: 6px; align-items: center; color: #6b7280; }
 .ux-flow .head .count { margin-left: auto; font-size: 11px; font-weight: 500; color: #6b7280; }
 .ux-flow .goal { font-size: 11px; color: #6b7280; margin-bottom: 6px; }
 .ux-step { display: flex; gap: 8px; align-items: center; width: 100%; text-align: left; border: 1px solid #e5e7eb; background: #fff; border-radius: 8px;

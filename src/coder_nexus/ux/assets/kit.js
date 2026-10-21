@@ -227,7 +227,9 @@
         if (!matches(f)) return;
         var open = expanded[fi] !== undefined ? expanded[fi] : fi === active;
         h += '<div class="ux-flow' + (open ? " open" : "") + (fi === active ? " current" : "") + '"><h2 class="head" data-f="' + fi + '" title="' + (open ? "Thu gọn" : "Mở") + '">' +
-          '<span class="caret">' + (open ? "▾" : "▸") + "</span><span>" + esc(f.id) + " · " + esc(f.title) + '</span><span class="count">' + (f.steps || []).length + "</span></h2>";
+          '<span class="caret">' + (open ? "▾" : "▸") + "</span><span>" + esc(f.id) + " · " + esc(f.title) + "</span>" +
+          ((f.walkthrough || []).length ? '<span class="wt" title="Có walkthrough tự chạy">' + (player.flow === fi && player.playing ? "⏸" : "▶") + "</span>" : "") +
+          '<span class="count">' + (f.steps || []).length + "</span></h2>";
         if (!open) { h += "</div>"; return; }
         h += f.goals ? '<div class="goal">Goal: ' + esc(f.goals) + "</div>" : "";
         if ((f.walkthrough || []).length) {
@@ -259,6 +261,13 @@
       flowsBox.innerHTML = h;
       side.querySelectorAll(".ux-flow .head").forEach(function (head) {
         head.onclick = function () { var fi = +head.dataset.f; expanded[fi] = !head.parentNode.classList.contains("open"); renderSide(); };
+        var wt = head.querySelector(".wt");
+        if (wt) wt.onclick = function (ev) {  // play straight from a collapsed workflow
+          ev.stopPropagation();
+          var fi = +head.dataset.f;
+          expanded[fi] = true;
+          if (player.flow === fi && player.playing) UX.pause(); else UX.play(cfg.flows[fi].id);
+        };
       });
       side.querySelectorAll(".ux-play").forEach(function (box) {
         var id = cfg.flows[+box.dataset.f].id;
@@ -283,8 +292,8 @@
       h += "</span>";
       if (orientations(cur.platform).length > 1)
         h += '<button class="rot" title="Xoay: dọc / ngang (portrait / landscape)">⟲ ' + (cur.orientation === "landscape" ? "ngang" : "dọc") + "</button>";
-      h += '<select class="st">' + cur.states.map(function (s) { return "<option" + (s === cur.state ? " selected" : "") + ">" + s + "</option>"; }).join("") +
-        '</select><button class="nt ' + (cur.notes ? "on" : "") + '">notes</button>' +
+      h += '<label class="stl" title="Trạng thái (data-state) của màn đang xem: default, loading, empty, error, …">Trạng thái <select class="st">' + cur.states.map(function (s) { return "<option" + (s === cur.state ? " selected" : "") + ">" + s + "</option>"; }).join("") +
+        '</select></label><button class="nt ' + (cur.notes ? "on" : "") + '">notes</button>' +
         '<span class="group"><button class="prev">◀ step</button><button class="next">step ▶</button></span>';
       bar.innerHTML = h;
       bar.querySelectorAll("[data-p]").forEach(function (b) {
