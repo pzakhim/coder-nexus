@@ -14,7 +14,7 @@ The Frontend never changes Backend code. The design records the contract the Cli
 
 | Status | Meaning | Source to cite & `PHASE-00` mode |
 |---|---|---|
-| `BE_API_READY` | BE API exists and specification is provided | Huly BE task / Swagger / OpenAPI / user-provided API spec. Consolidated in `PHASE-00` as **`[INFO_NOTE]`** (or `[EXECUTE]` if a live endpoint probe is needed) with explicit verification status against user spec. |
+| `BE_API_READY` | BE API exists and specification is provided | Huly BE task / Swagger / OpenAPI / user-provided API spec. Recorded in `design.md`; `PHASE-00` links it as **`[INFO_NOTE]`** (or `[EXECUTE]` if a live endpoint probe is needed) with explicit verification status against user spec. |
 | `MOCKOON_MOCKED` | BE API does not exist yet (or is missing endpoints); user confirmed using Mockoon | Business API contract approved at Gate 1 (`requirements.md`) + **`Mockoon Trigger & Test Data Table`** agreed with user at Gate 2 (`design.md`). Executed in **`PHASE-00` (`[EXECUTE]`)** before `PHASE-01`. |
 | `NONE` | Feature is UI-only or local-only without external BE API calls | Omit the external API section from `design.md` and `PHASE-00`. |
 
@@ -50,7 +50,7 @@ RemoteDataSource (BaseRemoteDataSource + ApiService)
   - This table serves as the unified contract for:
     1. `code_writer` creating `mocks/<feature>_mockoon.json` in `PHASE-00` (`[EXECUTE]`) and writing isolated developer **Unit Tests** in `PHASE-01+`.
     2. `code_reviewer` auditing `mocks/<feature>_mockoon.json` in `PHASE-00` and grading Unit Test coverage in `PHASE-01+`.
-- **Consolidate in `PHASE-00` (`phases/phase-00-prepare.md`)**: Mark `PHASE-00` as **`[EXECUTE]`**. Once `code_writer` creates `mocks/<feature>_mockoon.json`, starts `mockoon-cli`, and `code_reviewer` approves it, tick **`[x] PREPARED / COMPLETED`** so `PHASE-01, 02, 03...` have all data ready without getting stuck.
+- **Prepare in `PHASE-00` (`phases/phase-00-prepare.md`)**: Mark `PHASE-00` as **`[EXECUTE]`**. Once `code_writer` creates `mocks/<feature>_mockoon.json`, starts `mockoon-cli`, and `code_reviewer` approves it, tick **`[x] PREPARED / COMPLETED`** so `PHASE-01, 02, 03...` have all data ready without getting stuck.
 - **Live Cutover**: When BE delivers the real API, update `ApiConfig.domain` in `.env` to the BE server domain and verify actual auth/schema/error behavior per `shared_contracts/api_handshake_protocol.md`.
 - If the delivered BE contract differs in schema, update `Model` / `Mapper` in a new version (`vN+1`); Domain and UI stay unchanged.
 

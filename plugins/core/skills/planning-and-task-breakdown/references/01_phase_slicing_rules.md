@@ -1,10 +1,10 @@
 # 01 — Phase Slicing and Dependency Order
 
-Guide for Phase Order and task breakdown in `implement-plan.md`.
+Guide for Phase Order and task breakdown in `implementation-plan.md`.
 
 ## 0. Huly sub-issues are not phases
 
-When the spec comes from a Huly parent issue, its sub-issues are planning **input**. They are often split by role (API, UI, design) or by whoever filed them, which produces horizontal phases if copied 1:1. Re-cut them with the rules below. Keep traceability in `implement-plan.md` as `| Huly ID | AC-NN | Phase |`: every in-scope child appears in at least one phase, and closed children are listed as out of scope.
+When the spec comes from a Huly parent issue, its sub-issues are planning **input**. They are often split by role (API, UI, design) or by whoever filed them, which produces horizontal phases if copied 1:1. Re-cut them with the rules below. Keep traceability in `implementation-plan.md` as `| Huly ID | AC-NN | Phase |`: every in-scope child appears in at least one phase, and closed children are listed as out of scope.
 
 ## 1. A phase is a thin vertical slice
 
@@ -22,23 +22,23 @@ A phase delivers one behavior a user (or a test) can observe end to end. It cuts
 
 ### Right (`PHASE-00` Prepare Phase + Vertical Behavior Phases)
 
-| Phase | Mode (`[EXECUTE]` vs `[INFO_NOTE]`) | Behavior / Consolidation | Layers / Files touched |
+| Phase | Mode (`[EXECUTE]` vs `[INFO_NOTE]`) | Behavior / Readiness | Layers / Files touched |
 |---|---|---|---|
-| `PHASE-00` (`phase-00-prepare.md`) | **`[EXECUTE]`** (if `MOCKOON_MOCKED`) or **`[INFO_NOTE]`** (if `BE_API_READY` / no API) | Consolidate Huly context (fetched once) + API specs. If `MOCKOON_MOCKED`, create & verify `mocks/<feature>_mockoon.json` (Pass/Default & Fail rules). If `BE_API_READY`, record verified BE API notes. Tick **`[x] PREPARED / COMPLETED`** when ready. | `phases/phase-00-prepare.md`, `mocks/<feature>_mockoon.json` (if `MOCKOON_MOCKED`) |
+| `PHASE-00` (`phase-00-prepare.md`) | **`[EXECUTE]`** (if `MOCKOON_MOCKED`) or **`[INFO_NOTE]`** (if `BE_API_READY` / no API) | Link Huly context (`codebase-notes.md`) and API contract (`design.md`). If `MOCKOON_MOCKED`, create & verify `mocks/<feature>_mockoon.json` (Pass/Default & Fail rules). If `BE_API_READY`, record verified BE API notes. Tick **`[x] PREPARED / COMPLETED`** when ready. | `phases/phase-00-prepare.md`, `mocks/<feature>_mockoon.json` (if `MOCKOON_MOCKED`) |
 | `PHASE-01` | `[EXECUTE]` | Open the screen and see the `<feature>` list (Loading → Content) | Entity + repo contract + remote data source/model/repo impl for the list call + state holder/paging + screen + route + DI |
 | `PHASE-02` | `[EXECUTE]` | Empty and error states with retry | State + screen states; no new data code |
 | `PHASE-03` | `[EXECUTE]` | Tap an item → detail screen | Detail call through all layers + new screen + route |
 | `PHASE-04` | `[EXECUTE]` | Submit form action with validation errors | Write call + request model + form components + state action |
 
-`PHASE-00` consolidates all external context/API readiness in one place, and `PHASE-01` is the "walking skeleton": thin but complete from API (or Mockoon HTTP server) to pixels. Later phases widen it.
+`PHASE-00` records all external context/API readiness in one place (linking, not copying), and `PHASE-01` is the "walking skeleton": thin but complete from API (or Mockoon HTTP server) to pixels. Later phases widen it.
 
 Concrete stack examples (file paths, commands, component names) live in `{{slot:verification}}`.
 
 ## 2. Rules
 
 - **`PHASE-00` (`phases/phase-00-prepare.md`) Single Source & Readiness Tick**:
-  - Consolidates all Huly context (fetched once) and external API details so downstream agents (`code_writer`, `code_reviewer`, `test_runner`) read only from `PHASE-00` and `design.md` without hunting for scattered information.
-  - **`MOCKOON_MOCKED` (`[EXECUTE]`)**: `PHASE-00` includes executable tasks to create `mocks/<feature>_mockoon.json` (implementing all Pass/Default, Empty, and Fail rules from the `Mockoon Trigger & Test Data Table` in `design.md`) and verify `mockoon-cli`. Once `code_writer` finishes and `code_reviewer` approves `PHASE-00`, tick **`[x] PREPARED / COMPLETED`** in `phase-00-prepare.md` and `implement-plan.md`. Never create fake mock data source classes in Client source.
+  - Links the Huly context in `codebase-notes.md` and the API contract in `design.md`, so downstream agents (`code_writer`, `code_reviewer`, `test_runner`) know where each fact lives without a second copy.
+  - **`MOCKOON_MOCKED` (`[EXECUTE]`)**: `PHASE-00` includes executable tasks to create `mocks/<feature>_mockoon.json` (implementing all Pass/Default, Empty, and Fail rules from the `Mockoon Trigger & Test Data Table` in `design.md`) and verify `mockoon-cli`. Once `code_writer` finishes and `code_reviewer` approves `PHASE-00`, tick **`[x] PREPARED / COMPLETED`** in `phase-00-prepare.md` and `implementation-plan.md`. Never create fake mock data source classes in Client source.
   - **`BE_API_READY` (`[INFO_NOTE]`)**: `PHASE-00` summarizes the existing BE APIs, whether they have been verified, and whether they match the user-supplied spec, pre-ticking **`[x] PREPARED (INFO_READY)`**.
   - **No External API (`[INFO_NOTE]`)**: Omit the API section in `PHASE-00` and pre-tick **`[x] PREPARED (NO_EXTERNAL_API)`**.
 - **Readiness Gate for `PHASE-01, 02, 03...`**: Feature phases (`PHASE-01`+) only start once `PHASE-00` is ticked **`[x] PREPARED / COMPLETED`**, guaranteeing all data and API contracts are ready so `code_writer` never gets stuck.

@@ -1,6 +1,6 @@
 ---
 name: grill-me
-description: Relentless Socratic interviewing skill for spec_writer (Gate 1) and planning (Gate 2). Forces the agent to draft requirements.md + codebase-notes.md immediately, queue every inference or ambiguity as Q-NN in codebase-notes.md, and use ask_question one question at a time across interactive rounds until 0 open questions remain before locking in requirements.md or design.md.
+description: Relentless Socratic interviewing skill for spec_writer (Gate 1) and planning (Gate 2). Opens with one goal question that includes a sufficiency summary, then drafts requirements.md + codebase-notes.md, queue every inference or ambiguity as Q-NN in codebase-notes.md, orders the queue by dependency with a visible "câu i/N" progress, splits question ownership between spec_writer, designer and planning, and uses ask_question one question at a time across interactive rounds until 0 open questions remain before locking in requirements.md or design.md.
 ---
 
 # Grill-Me — Socratic Interviewing & Decision-Log Protocol
@@ -12,7 +12,7 @@ When this skill is active, act as a rigorous Technical Business Analyst (`spec_w
 ## 1. The 4 Iron Laws of `grill-me`
 
 ### Law 1 — Draft First, Lock In Through Question Queue (`Q-NN` $\to$ `D-NN`)
-1. **Immediate Turn-1 Draft (`DRAFT`)**: On the first turn after scanning the request, Huly task (when provided), supplied visuals or API contracts, and existing codebase context, immediately create or update both files in `.superpowers/work-items/<slug>/vN/` (or `docs/features/<module>/<feature>/vN/`):
+1. **Draft Right After the Goal Question (`DRAFT`)**: Read every source first (request, Huly task and its downloads, supplied visuals or API contracts, and the codebase scan). Ask the job-type question (only when the ticket is no longer new) and the goal question (§2) before anything else. In the turn the goals are confirmed, create or update both files in `.superpowers/work-items/<slug>/vN/` (or `docs/features/<module>/<feature>/vN/`):
    - **`requirements.md`** (`Status: DRAFT`): Capture the explicitly confirmed scope, actors, business rules, and scenarios; mark any unresolved detail inline with `(Q-NN)`.
    - **`codebase-notes.md`**: Populate `## 0. Question Queue (Q-NN)` with every ambiguity, inference, API/UX gap, or edge case as an `OPEN` row, and record verified codebase/package facts in `## 3. Verified Baseline Facts & Cross-Agent Notes`.
 2. **Never Present `DRAFT` as Gate 1 Approval**: A `DRAFT` file is a working checkpoint so nothing is lost across turns. Gate 1 approval happens only when `## 0. Question Queue (Q-NN)` has **zero `OPEN` rows**, all `(Q-NN)` markers in `requirements.md` are replaced by `(D-NN)`, and `Status` transitions to `PENDING_REVIEW`.
@@ -34,7 +34,7 @@ When this skill is active, act as a rigorous Technical Business Analyst (`spec_w
   - Options that were considered and rejected belong exclusively in the `Options Considered` column of `## 1. Decision Log (D-NN)` inside `codebase-notes.md`.
 
 ### Law 4 — One Question at a Time & Reply Classification
-- **Strictly 1 Question per `ask_question` Call**: Every call to `ask_question` must contain **exactly 1 question** (`questions` array length = 1) corresponding to the highest-priority `OPEN` `Q-NN` in `codebase-notes.md`. Never bundle 3–5 questions into one turn.
+- **Strictly 1 Question per `ask_question` Call**: Every call to `ask_question` must contain **exactly 1 question** (`questions` array length = 1) corresponding to the highest-priority `OPEN` `Q-NN` in `codebase-notes.md` (order: §2.2), prefixed with its progress (`câu i/N`). Never bundle 3–5 separate decisions into one turn; the only exception is the single batch confirmation of low-risk inferences in §2.3.
 - Put the recommended option first, prefixed with `(Recommended)`, followed by 1–2 concrete alternatives and brief trade-offs.
 - **Classify every user reply before updating files**:
 
@@ -47,11 +47,50 @@ When this skill is active, act as a rigorous Technical Business Analyst (`spec_w
 
 ---
 
-## 2. Iterative Turn-by-Turn Loop
+## 2. Question Order, Sufficiency and Progress
+
+### 2.1 Sufficiency summary (inside the goal question)
+The goal question (spec_writer, first `Q-NN`) also tells the user whether the sources are enough, in three short lines:
+- **Enough for:** what the read sources already settle (cite them).
+- **Missing:** every `UNREACHABLE` / `NOT_PROVIDED` source and every gap that only the user can fill; ask to attach or paste missing documents.
+- **Next:** how many questions are queued, grouped by topic (e.g. `~8 questions: 2 scope, 3 workflow, 2 API, 1 edge case`).
+
+If a missing source would change the goals, ask for it before confirming the goals.
+
+### 2.2 Order of the queue
+Ask the highest-priority `OPEN` row first. Priority follows dependency, so an earlier answer can remove a later question:
+
+1. Job type and goals (`G-NN`)
+2. Scope in/out, actors and permissions
+3. Main workflow and its branches (designer owns this when there is UI impact, see 2.4)
+4. Data and API source (`BE_API_READY` / `MOCKOON_MOCKED`), fields and errors
+5. Observable states (the 4 visual states for UI) and multi-step lifecycle
+6. Negative, boundary and edge cases
+7. Technical trade-offs (planning, Gate 2)
+
+Record the group in the `Dimension` column. After each answer, drop or rewrite queued rows the answer settled; never ask a question already answered by a source or a `D-NN`.
+
+### 2.3 Progress and batch confirmation
+- Start every question with its position: `Q-07 · câu 3/9 · Workflow`. Recount `N` when answers add or remove rows.
+- Low-risk inferences (wording, an obvious default the sources strongly imply, a convention already used by sibling screens) may be confirmed together in **one** question that lists them (`Confirm all (Recommended)` / `Review one by one`). Each listed item becomes its own `D-NN`. Business rules, permissions, money, data loss and API contracts are never batched.
+
+### 2.4 Who asks what (one queue, three askers)
+All agents share the `Q-NN` queue in `codebase-notes.md`. Before adding or asking a row, read `## 0. Question Queue` and `## 1. Decision Log` and skip anything already queued or decided.
+- `spec_writer`: goals, scope, actors, business rules, data/API business contract, edge cases.
+- `designer` (UI impact only): workflow steps, screens, branches, states, viewports. spec_writer queues these rows with `Owner: designer` and does not ask them itself.
+- `planning`: technical trade-offs, Core gaps, test data (Gate 2).
+A question outside the asker's ownership is routed through the coordinator; the user still sees one question at a time in the main chat.
+
+---
+
+## 3. Iterative Turn-by-Turn Loop
 
 ```text
-Turn 1: Intake & Scan -> Write DRAFT requirements.md + codebase-notes.md (with Q-01..Q-NN OPEN)
-        -> Call ask_question for Q-01 ONLY (1 question, Recommended first)
+Turn 1: Read all sources + codebase scan -> Source Inventory
+        -> [job type question, only if the ticket is not new]
+        -> Goal question with sufficiency summary (1 question)
+Turn 2: Goals confirmed -> Write DRAFT requirements.md + codebase-notes.md (Q-NN OPEN, ordered by §2.2)
+        -> Call ask_question for the top OPEN Q-NN ONLY (with "câu i/N")
 Turn 2..K: Receive user reply -> Classify reply (Explain & re-ask OR lock in D-NN)
         -> Update codebase-notes.md (Q-NN -> CLOSED -> D-NN) + update requirements.md
         -> Call ask_question for next OPEN Q-NN ONLY
@@ -63,7 +102,7 @@ Final Turn (0 OPEN Q-NN):
 
 ---
 
-## 3. Role-Specific Application
+## 4. Role-Specific Application
 
 - **`spec_writer` (Gate 1)**:
   - Owns `requirements.md` (human-facing, concise $\le \sim 120$ lines, business/UX language, every `BR-NN` cites `D-NN`, zero code/class/node names) and `codebase-notes.md` (agent-facing SSOT).

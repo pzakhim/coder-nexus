@@ -7,6 +7,10 @@ description: Backend review rubric — Two Review Gates and Four Mandatory Audit
 
 Inspects code diffs independently across Two Gates and Four Mandatory Audit Axes. The reviewer is strictly read-only.
 
+## 0. Bug hunt first
+
+Run core `bug-hunt` on the fixed scope before the axes below; its dimension 6 uses [the backend bug patterns](references/bug_patterns.md). A `CONFIRMED` `BLOCKER`/`MAJOR` blocks `APPROVED` even when all four axes pass.
+
 ## 1. The Two Review Gates
 
 1. **Phase Gate**: Verifies newly added code respects clean boundaries (Domain does not depend on DB/frameworks; SQL parameterized; auth checks present) for an individual behavior phase.
@@ -35,4 +39,4 @@ Inspects code diffs independently across Two Gates and Four Mandatory Audit Axes
 ## 3. Verdict
 
 - Return structured findings to `code_writer` when issues are found (`CHANGES_REQUESTED`).
-- Issue `APPROVED` only when all 4 axes pass cleanly.
+- Issue `APPROVED` only when all 4 axes pass cleanly and bug hunt left no `CONFIRMED` `BLOCKER`/`MAJOR`.

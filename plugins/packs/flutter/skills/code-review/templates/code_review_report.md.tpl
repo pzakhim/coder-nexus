@@ -39,7 +39,17 @@
 - **Analyzer command/result on reviewed tree:** {{ANALYZER_EVIDENCE}}
 - **Full-module gate:** {{MODULE_GATE_AND_WARNING_RESOLUTION}} <!-- PASSED | FAILED | UNVERIFIED | N/A with reason -->
 
-## 3. Findings
+## 3. Bug hunt
+
+> **Effort:** `{{BUG_HUNT_EFFORT}}` <!-- quick | standard | deep --> | **Summary:** {{BUG_HUNT_SUMMARY}}
+
+| ID | Severity | Verdict | File:line | Defect | Failure scenario | Evidence | Fix direction |
+|---|---|---|---|---|---|---|---|
+{{BUG_HUNT_ROWS}}
+
+- **Writer self-check PLAUSIBLE items resolved:** {{SELF_CHECK_FOLLOWUP}}
+
+## 3b. Compliance findings
 
 {{#HAS_FINDINGS}}
 | Severity | File | Line | Rule | Finding | Suggested correction |

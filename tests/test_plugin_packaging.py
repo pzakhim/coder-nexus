@@ -481,7 +481,7 @@ def test_plugin_agent_definitions_structure():
     spec_writer_content = rendered_agent("spec_writer.md")
     assert "ask_question" in spec_writer_content
     assert "Gate 1" in spec_writer_content and "Gate 2" in spec_writer_content
-    assert "Do not write `lib/`, `test/`, `implement-plan.md`" in spec_writer_content
+    assert "Do not write `lib/`, `test/`, `implementation-plan.md`" in spec_writer_content
     planning_content = rendered_agent("planning.md")
     assert "Gate 3" in planning_content and "SKIPPED" in planning_content
     assert "validate_plan_slices" in planning_content
@@ -716,8 +716,8 @@ def test_designer_is_wired_into_the_delivery_flow():
     assert "approved `uiux.md` revision" in rendered_agent("code_reviewer.md")
     assert "screen-catalog.md" in rendered_agent("docs_writer.md")
 
-    for tpl in ("work-items/templates/requirements.md.tpl", "feature-planner/templates/requirements.md.tpl"):
-        assert "## Workflows" in (skills / tpl).read_text(encoding="utf-8")
+    assert "## Workflows" in (skills / "work-items/templates/requirements.md.tpl").read_text(encoding="utf-8")
+    assert not (skills / "feature-planner/templates/requirements.md.tpl").exists()
     design_tpl = (skills / "flutter-architecture-design/templates/design.md.tpl").read_text(encoding="utf-8")
     assert "## UI/UX mapping" in design_tpl and "`flutter-ux-kit` §3" in design_tpl
     visual = (skills / "flutter-visual-verification/SKILL.md").read_text(encoding="utf-8")
@@ -755,3 +755,20 @@ def test_ux_scenarios_orientation_and_fixed_shell_guidance_is_packaged():
     assert "scanner stations" in ux_kit and "only when a source shows it" in ux_kit
     core = (PLUGIN_DIR / "core/skills/ux-mockup/references/01_workflow_interview.md").read_text(encoding="utf-8")
     assert "Flutter" not in core and "flutter" not in core, "core stays stack-neutral"
+
+
+def test_bug_hunt_skill_is_wired_into_review_and_writing():
+    """Core bug-hunt: concrete failure scenarios, adversarial verification, used by Reviewer and Code Writer."""
+    content = (PLUGIN_DIR / "core/skills/bug-hunt/SKILL.md").read_text(encoding="utf-8")
+    assert "name: bug-hunt" in content
+    for term in ("Cold pass first", "Failure scenario", "CONFIRMED", "PLAUSIBLE", "BLOCKER", "quick", "standard", "deep"):
+        assert term in content, term
+    assert "bug-hunt" in rendered_agent("code_reviewer.md")
+    assert "bug-hunt" in rendered_agent("code_writer.md")
+    assert "bug-hunt" in (PLUGIN_DIR / "core/skills/incremental-implementation/SKILL.md").read_text(encoding="utf-8")
+    for pack, ref in (("flutter", "05_bug_patterns.md"), ("backend", "bug_patterns.md")):
+        review = PLUGIN_DIR / "packs" / pack / "skills/code-review"
+        assert (review / "references" / ref).is_file()
+        assert ref in (review / "SKILL.md").read_text(encoding="utf-8")
+    report = (PLUGIN_DIR / "packs/flutter/skills/code-review/templates/code_review_report.md.tpl").read_text(encoding="utf-8")
+    assert "{{BUG_HUNT_ROWS}}" in report and "Failure scenario" in report

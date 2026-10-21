@@ -4,7 +4,7 @@ Huly tickets often describe what the system should do, not how the user moves th
 
 ## 1. Read before asking
 
-Read the confirmed goals, the requirements draft, the source inventory (PDF screen specs, images, comments, PO documents), `screen-catalog.md` and the screenshots of the screens involved. Do not ask what a source already answers. Cite the source in the question instead.
+Read the confirmed goals, the requirements draft, the source inventory (PDF screen specs, images, comments, PO documents), `screen-catalog.md` and the screenshots of the screens involved. Read `codebase-notes.md` → Question Queue and Decision Log too. Do not ask what a source or a `D-NN` already answers; cite it instead. Ask the rows with `Owner: designer`; route business-rule, permission or API questions back to spec_writer's queue.
 
 ## 2. What to settle (only what the sources leave open)
 

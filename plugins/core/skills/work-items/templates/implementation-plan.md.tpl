@@ -4,7 +4,7 @@
 > **Feature**: {{module}}/{{feature}}  
 > **Version**: {{Version}}  
 > **Created**: {{CreatedDate}}  
-> **Source references**: [requirements.md](requirements.md), [design.md](design.md)  
+> **Source references**: [requirements.md](requirements.md), [codebase-notes.md](codebase-notes.md), [design.md](design.md)  
 > **Status**: PENDING_REVIEW  
 > **Approval reference**: NONE
 
@@ -21,9 +21,9 @@ Every confirmed goal in `requirements.md` → `## 0. Goals` is delivered by at l
 
 ## Phase order (Starting with `PHASE-00` Prepare Phase)
 
-Each phase file is linked under `phases/` relative to this plan. `PHASE-00` (`phases/phase-00-prepare.md`) consolidates Huly/API context once and must be ticked `[x] PREPARED / COMPLETED` before `PHASE-01, 02, 03...` begin.
+Each phase file is linked under `phases/` relative to this plan. `PHASE-00` (`phases/phase-00-prepare.md`) records readiness (linking Huly context in `codebase-notes.md` and the API contract in `design.md`, never copying them) and must be ticked `[x] PREPARED / COMPLETED` before `PHASE-01, 02, 03...` begin.
 
-| Phase ID | Mode (`[EXECUTE]` / `[INFO_NOTE]`) | Behavioral outcome / Consolidation | Phase file | Depends on | Readiness / Status | Owner |
+| Phase ID | Mode (`[EXECUTE]` / `[INFO_NOTE]`) | Behavioral outcome / Readiness | Phase file | Depends on | Readiness / Status | Owner |
 |---|---|---|---|---|---|---|
 {{PhaseRowsWithRelativeLinks}}
 

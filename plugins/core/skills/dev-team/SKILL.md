@@ -1,14 +1,15 @@
 ---
 name: dev-team
-description: Coordinate the Coder Nexus agent profiles (Spec Writer, Planning, Code Writer, Code Reviewer, Test Runner, Docs Writer) from intake and API handshake through implementation, review, and verification for the workspace's installed stack.
+description: Coordinate the Coder Nexus agent profiles (Spec Writer, Designer, Planning, Code Writer, Code Reviewer, Test Runner, Docs Writer) from intake and API handshake through implementation, review, and verification for the workspace's installed stack.
 ---
 
 # Dev Team Coordinator
 
 Act as the **Lead Coordinator** for one Client work item (`.superpowers/work-items/<slug>/vN/`). Read the user's request and supplied files such as `spec.md` or `<feature>_spec.md`; a Huly task is optional and read-only. Inspect the actual Client workspace and work-items configuration before assigning work.
 
-Coordinate the 6 specialized agent profiles in `agents/`:
+Coordinate the 7 specialized agent profiles in `agents/`:
 - **Spec Writer** (Technical BA)
+- **Designer** (UI/UX, only for items with UI impact)
 - **Planning** (Tech Lead)
 - **Code Writer** (Senior Engineer)
 - **Code Reviewer** (Independent Senior Reviewer)
@@ -21,32 +22,23 @@ Read the installed plugin's `shared_contracts/api_handshake_protocol.md` for all
 
 ---
 
-## Phase 1 — Technical BA Intake, Gap Analysis & Socratic `grill-me` Loop (`spec_writer`)
+## Phase 1 — Intake, Goals, UI/UX & Socratic `grill-me` Loop (`spec_writer` + `designer`)
 
-Call **Spec Writer** to engage the user as the primary conversational partner using the 4 Iron Laws of `grill-me`:
+Follow the canonical order in the `spec_writer` agent §3 (1A sources → 1A-0 job type → 1A-G goal + sufficiency → 1B draft → 1A-UX designer → 1C remaining questions → Gate 1). Spec Writer is the user's conversational partner; the user sees one question at a time in the main chat, whichever agent owns it (`grill-me` §2.4).
 
-1. **Step 0: Context Discovery & Framework Detection**:
-   - Detect target platform and framework from workspace signatures. The installed stack's detection signatures and scan targets are defined by `{{slot:architecture-design}}`; foundation/UI authority is resolved through `{{slot:core-usage}}` from Client evidence. Web Standard (React/Next.js/Vue signatures) is TODO — not yet maintained.
-   - If ambiguous, prompt user via `ask_question` (1 question, `(Recommended)` first). Record metadata in `codebase-notes.md` and `requirements.md`.
-2. **Step 1A: Three-Pillar Source Intake (`ask_question` if unspecified)**:
-   - Confirm where to read the 3 core inputs before scanning or drafting:
-     1. **PO/BA Requirements**: Huly task ID (via `huly_get_task_detail`), external PO/BA `.md` file, or direct user prompt.
-     2. **UI Screens, UX & Design System**: Screen flows, UX descriptions, and design system specs (typically design-tool exports converted to `.md` files, plus workspace UI Kit authority via `{{slot:core-usage}}`).
-     3. **API Integration Source (Binary Check: Does BE API Exist?)**:
-        - **Case 1 (BE API Exists — `BE_API_READY`)**: Request the user to provide the API specification (Huly BE task, Swagger/OpenAPI, or `.md` file) for integration.
-        - **Case 2 (No BE API or Missing Endpoints — `MOCKOON_MOCKED`)**: Request the user to use **Mockoon** (`mocks/<feature>_mockoon.json`) so `spec_writer` locks in the business Input/Output in `requirements.md` + `codebase-notes.md` and `planning` designs the Mockoon data and allocates `PHASE-00` (`phase-00-prepare.md`) to prepare the Mockoon API mock. Only approved contract-derived Mockoon fixtures may support FE UI/contract checks; missing required schema remains `BLOCKED`, and live integration remains pending until a real endpoint is verified. FE fixture approval does not imply BE contract approval.
-3. **Step 1B: Input & API Gap Analysis + Turn-1 Draft (`DRAFT`)**:
-   - Read the confirmed sources and compare PO/BA requirements + design-export `.md` UI flows against the provided/estimated APIs and existing codebase business flows.
-   - Identify API count or field discrepancies (e.g., user estimates 3 APIs, but the UX flow requires 4 APIs) and what needs adjustment in the current codebase flow.
-   - Immediately draft **`requirements.md`** (`Status: DRAFT`, marking unresolved points with `(Q-NN)`) and **`codebase-notes.md`** (queueing every ambiguity, inference, or gap as `OPEN` `Q-NN` rows in `## 0. Question Queue (Q-NN)` and recording verified repo facts in `## 3. Verified Baseline Facts & Cross-Agent Notes`).
-4. **Step 1C: Interactive Open Questions & Cross-Agent Consultation (`grill-me` + `ask_question` 1-by-1)**:
-   - Ask **strictly 1 question per `ask_question` call** (`questions` length = 1) for the top `OPEN` `Q-NN` in `codebase-notes.md`, placing `(Recommended)` first.
-   - If the user asks a counter-question or requests clarification, explain clearly and re-ask `Q-NN` — never record a counter-question as agreement.
-   - **Cross-Agent Consultation (Never Fabricate)**: When Stage 1B analysis or a user counter-question touches codebase internals, architecture, or implementation details outside `spec_writer` scope, the coordinator invokes `planning` (Tech Lead) or `code_writer` (Dev) with that question. The consulted agent answers with evidence in `codebase-notes.md` and stops, and `spec_writer` relays the verified answer back to the user.
-   - As each question is confirmed by the user, close `Q-NN -> CLOSED -> D-NN` in `codebase-notes.md`, append `D-NN` to `## 1. Decision Log (D-NN)`, and update `requirements.md` (`(Q-NN)` $\to$ `(D-NN)`) until `0 OPEN Q-NN` remain.
-5. **Step 1D: Lock In `requirements.md` & `codebase-notes.md` and Gate 1 Approval**:
-   - Only after `0 OPEN Q-NN` remain in `codebase-notes.md`, set `requirements.md` `Status: PENDING_REVIEW` covering Scope & Alignment, Actors & Permissions, `BR-NN` Business Rules citing `D-NN`, Behavioral Scenarios & 4 Visual States (`Given-When-Then`), and Acceptance Criteria (`AC-NN`), and run `validate_proposal_spec` on both `codebase-notes.md` and `requirements.md`.
-   - Present exact `requirements.md` + `codebase-notes.md` revision via `ask_question` for **Gate 1: user approval of requirements**. Stop until user explicitly approves.
+1. **Step 1A — Source intake & codebase scan (no question yet)**:
+   - Read the request, the Huly task with `huly_get_task_detail` and `download: true` (parent/children, comments, downloaded PDFs, images and design-tool exports in `.superpowers/sources/<ISSUE-ID>/`), supplied files and the API source. Detect platform and stack with `{{slot:architecture-design}}`; foundation/UI authority via `{{slot:core-usage}}`. Web Standard (React/Next.js/Vue) is TODO — not yet maintained.
+   - Record every source as `READ` / `UNREACHABLE` / `NOT_PROVIDED` in `codebase-notes.md` → `## 0A. Source Inventory` and verified repo facts in `## 3`. API source is binary: `BE_API_READY` (spec from Huly BE task, Swagger/OpenAPI or `.md`) or `MOCKOON_MOCKED` (spec_writer locks business Input/Output; planning designs `mocks/<feature>_mockoon.json` and `PHASE-00`). Approved Mockoon fixtures support FE UI/contract checks only; live integration stays pending until a real endpoint is verified.
+2. **Step 1A-0 — Job type & stack**: only when the ticket is no longer new, ask the job type first (one question). A part whose stack has no installed pack is `BLOCKED — out of plugin scope`.
+3. **Step 1A-G — Goal question with sufficiency summary**: one `ask_question` showing the source inventory, 1–3 goal candidates, non-goals, conflicts and the sufficiency summary (enough for / missing / next N questions by topic, `grill-me` §2.1). A missing source that could change the goals is requested before the goals are locked.
+4. **Step 1B — Gap analysis & DRAFT** (the turn the goals are confirmed): cross-check requirements, UI sources and APIs against existing Client flows (e.g. the flow needs 4 APIs, the user estimated 3). Draft `requirements.md` (`Status: DRAFT`, `(Q-NN)` markers) and `codebase-notes.md` with every gap as an `OPEN` `Q-NN`, ordered by `grill-me` §2.2 and tagged with its owner.
+5. **Step 1A-UX — Designer (UI impact only)**: if the item adds, changes or removes something the user sees, call **Designer** with the goals, the draft and the sources. Designer asks the `Owner: designer` rows (workflow, steps, branches, states, viewports), draws `design-uiux/` and obtains approval of the exact `uiux.md` revision. It returns `READY_FOR_SPEC`, `SKIPPED` (no UI impact, with reason) or `BLOCKED`. Otherwise Spec Writer records "No UI impact" with the reason.
+6. **Step 1C — Remaining questions (`grill-me` + `ask_question` 1-by-1)**:
+   - Spec Writer asks the remaining `OPEN` `Q-NN` it owns, top priority first, one per call, with `câu i/N` and `(Recommended)` first; low-risk inferences may be confirmed together once (`grill-me` §2.3).
+   - A counter-question is answered and the same `Q-NN` re-asked; it is never recorded as agreement.
+   - **Cross-Agent Consultation (Never Fabricate)**: a question about codebase internals or architecture goes through the coordinator to `planning` (Tech Lead) or `code_writer` (Dev), which answers with evidence in `codebase-notes.md` and stops; Spec Writer relays it.
+   - Each confirmed answer closes `Q-NN -> CLOSED -> D-NN`, appends `D-NN` to `## 1. Decision Log (D-NN)` and replaces `(Q-NN)` with `(D-NN)` in `requirements.md`, until `0 OPEN Q-NN` remain.
+7. **Step 1D — Lock in & Gate 1**: set `requirements.md` `Status: PENDING_REVIEW` (Goals, Scope, Actors, `BR-NN` citing `D-NN`, `## Workflows` for UI items, scenarios & 4 visual states, `AC-NN`), run `validate_proposal_spec` on `codebase-notes.md` and `requirements.md` and `validate_ux_design` when `design-uiux/` exists, then present the exact revisions (with the approved `uiux.md` revision) via `ask_question` for **Gate 1**. Stop until the user explicitly approves.
 
 ---
 
@@ -73,7 +65,7 @@ Upon Gate 1 approval, call **Planning** (Tech Lead) for Gate 2 (design) and Gate
    - Define **Review Acceptance Criteria (DoD for Code Review)**: Explicitly specify required developer unit tests (UseCases, Mappers, state holders) and zero-error static analysis.
    - **Strict Boundary**: Planning defines *technical architecture and review criteria*; Planning does NOT dictate QA user-acceptance test cases (QA test design belongs independently to Test Runner).
 4. **Step 2D — Gate 3 (User Negotiation & Plan Freeze)**:
-   - Present `implement-plan.md` and all linked phase files via `ask_question` with 3 clear options:
+   - Present `implementation-plan.md` and all linked phase files via `ask_question` with 3 clear options:
      1. `[Approve Plan & Proceed to Build]`: Freeze specs and plan (`APPROVED_FOR_BUILD`), hand off the first executable phase to a single `code_writer`.
      2. `[Refine Technical Decisions]`: Adjust task order, mock approach, or scaffolding directly in Planning.
      3. `[Modify Business Scope / Requirements]`: Route back to Spec Writer to revise requirements before replanning.
@@ -90,7 +82,7 @@ Execute approved ready phases in strict sequential order (`PHASE-01` $\to$ `PHAS
 - **Developer Unit Testing**: Writes unit tests following AAA pattern (`{{slot:unit-test}}` skill) for all implemented UseCases, Mappers, and state holders under the Client's feature test path.
 - **Screen Visual Baseline (when approved)**: Use the Client's approved screenshot-baseline harness and dependencies for stable applicable states; generate a baseline only for independent visual review. Follow `{{slot:visual-verification}}`; baselines supplement the required runtime UI evidence.
 - **Local Self-Verification**: Executes the local formatter/linter, the stack's analyzer, and unit test suite via `run_command` (commands: `{{slot:architecture-design}}`). Must achieve 100% green before handing off as `READY_FOR_REVIEW`.
-- If `MOCKOON_MOCKED`: In `PHASE-01`, generates and validates `mocks/<feature>_mockoon.json` (`mockoon-cli` or JSON schema check). In feature phases (`PHASE-02`+), implements the real `RemoteDataSource` calling `ApiService` (`ApiConfig.domain`) — never fake `Mock<Feature>DataSource` classes in `lib/` and never touches Backend files.
+- If `MOCKOON_MOCKED`: In `PHASE-00`, generates and validates `mocks/<feature>_mockoon.json` (`mockoon-cli` and `curl`). In feature phases (`PHASE-01`+), implements the real `RemoteDataSource` calling `ApiService` (`ApiConfig.domain`) — never fake `Mock<Feature>DataSource` classes in `lib/` and never touches Backend files.
 - **Sequential Task Execution & Plan Re-Grounding**: `code_writer` executes tasks in `phases/phase-NN-*.md` strictly in order from top to bottom (without spawning sub-agents for micro-tasks). After each micro-task's verification, `code_writer` returns to the phase plan file (`phase-NN-*.md`), marks the task done `- [x]`, and re-reads the plan and next task's specifications before writing code for the next task. Never implement multiple tasks in bulk without re-reading the plan.
 
 ### Step 2: Independent Code Review (`code_reviewer`)
@@ -117,7 +109,7 @@ Execute approved ready phases in strict sequential order (`PHASE-01` $\to$ `PHAS
 
 ## Phase 4 — Final Feature E2E QA Verification (`test_runner`)
 
-Once ALL implementation phases in `implement-plan.md` have been completed, reviewed, and recorded in `as-built.md`, call **Test Runner** for a single, comprehensive End-to-End QA pass across the fully integrated feature:
+Once ALL implementation phases in `implementation-plan.md` have been completed, reviewed, and recorded in `as-built.md`, call **Test Runner** for a single, comprehensive End-to-End QA pass across the fully integrated feature:
 
 ### Step 1: Independent Test Matrix Derivation
 - **Single Source of Truth (SSOT)**: Derives test-case matrix directly and independently from `requirements.md` (BDD Scenarios and AC table) and `brief.md` (Scope In / Scope Out), completely independent of internal implementation phases.

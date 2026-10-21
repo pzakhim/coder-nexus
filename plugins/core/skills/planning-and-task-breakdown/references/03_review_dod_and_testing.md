@@ -3,7 +3,7 @@
 Use a screenshot-comparison harness only when approved and already available, or when its dependency addition is explicitly approved. Screenshot-comparison evidence supplements required runtime checks; it never proves live integration. Follow `{{slot:visual-verification}}` and the shared handshake evidence policy. The concrete stack commands and tools for this DoD are in `{{slot:verification}}` and `{{slot:unit-test}}`.
 
 
-Guide for Verification and DoD design in `implement-plan.md`.
+Guide for Verification and DoD design in `implementation-plan.md`.
 
 ## 1. Tech Lead's Definition of Done for Code Review
 The Planning Agent establishes the technical quality gates that `code_writer` must pass before requesting review:

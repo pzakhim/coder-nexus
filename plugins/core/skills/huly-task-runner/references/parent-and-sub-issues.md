@@ -33,4 +33,4 @@ Never silently drop a `NO CHILD` part, and never invent a child for it.
 
 - `brief.md` / requirements header: list the source parent and the in-scope child IDs.
 - `codebase-notes.md`: consolidate parent and child details once, including a table `| Huly ID | Title | Status | In scope | AC count |`. Downstream agents never re-query Huly.
-- `implement-plan.md`: add a traceability table `| Huly ID | AC-NN | Phase |`.
+- `implementation-plan.md`: add a traceability table `| Huly ID | AC-NN | Phase |`.

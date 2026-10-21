@@ -26,11 +26,11 @@
     "references/04_plan_breakdown_and_checkpoints.md"
   ],
   "templates": [
-    "templates/requirements.md.tpl",
+    "../work-items/templates/requirements.md.tpl",
     "templates/change_impact.md.tpl",
     "templates/design.md.tpl",
-    "templates/versioned_implementation_plan.md.tpl",
-    "templates/phase.md.tpl",
+    "../work-items/templates/implementation-plan.md.tpl",
+    "../work-items/templates/phase.md.tpl",
     "templates/as_built.md.tpl",
     "templates/feature_readme.md.tpl"
   ],

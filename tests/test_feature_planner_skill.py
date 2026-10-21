@@ -47,8 +47,8 @@ def test_three_gates_and_versioned_handoff():
     arch_design = read("packs/flutter/skills/architecture-design/SKILL.md")
     incremental = read("core/skills/incremental-implementation/SKILL.md")
     phase_rules = read("core/skills/planning-and-task-breakdown/references/01_phase_slicing_rules.md")
-    phase_tpl = read("core/skills/feature-planner/templates/phase.md.tpl")
-    work_phase_tpl = read("core/skills/work-items/templates/phase.md.tpl")
+    phase_tpl = read("core/skills/work-items/templates/phase.md.tpl")
+    work_phase_tpl = phase_tpl
     assert "Pre-Design Counter-Review" in planning_agent
     assert "Pre-Design Counter-Review" in arch_design
     reviewer_agent = read("core/agents/code_reviewer.md")
@@ -74,11 +74,11 @@ def test_versioned_manifest_files_exist_and_legacy_is_explicit():
     assert manifest["version"] == "1.3.0"
     assert len(manifest["three_gate_approvals"]) == 3
     assert set(manifest["templates"]) == {
-        "templates/requirements.md.tpl",
+        "../work-items/templates/requirements.md.tpl",
         "templates/change_impact.md.tpl",
         "templates/design.md.tpl",
-        "templates/versioned_implementation_plan.md.tpl",
-        "templates/phase.md.tpl",
+        "../work-items/templates/implementation-plan.md.tpl",
+        "../work-items/templates/phase.md.tpl",
         "templates/as_built.md.tpl",
         "templates/feature_readme.md.tpl",
     }
@@ -90,10 +90,11 @@ def test_versioned_manifest_files_exist_and_legacy_is_explicit():
 
 def test_templates_cover_version_impact_ac_and_real_evidence():
     tpl = PLANNER / "templates"
-    requirements = (tpl / "requirements.md.tpl").read_text(encoding="utf-8")
+    shared = SKILLS / "work-items" / "templates"
+    requirements = (shared / "requirements.md.tpl").read_text(encoding="utf-8")
     impact = (tpl / "change_impact.md.tpl").read_text(encoding="utf-8")
-    plan = (tpl / "versioned_implementation_plan.md.tpl").read_text(encoding="utf-8")
-    phase = (tpl / "phase.md.tpl").read_text(encoding="utf-8")
+    plan = (shared / "implementation-plan.md.tpl").read_text(encoding="utf-8")
+    phase = (shared / "phase.md.tpl").read_text(encoding="utf-8")
     built = (tpl / "as_built.md.tpl").read_text(encoding="utf-8")
     assert "Scope out" in requirements and "Acceptance criteria" in requirements
     assert "Baseline code revision" in impact and "Design versus actual code differences" in impact
@@ -129,7 +130,7 @@ def test_pre_release_visual_cases_keep_real_data_and_reviewed_goldens():
     verification = read("packs/flutter/skills/verification/SKILL.md")
     visual = read("packs/flutter/skills/visual-verification/SKILL.md")
     report = read("packs/flutter/skills/verification/templates/verification_report.md.tpl")
-    phase = read("core/skills/feature-planner/templates/phase.md.tpl")
+    phase = read("core/skills/work-items/templates/phase.md.tpl")
     assert "Code Review report" in runner
     assert "test-case matrix" in runner
     assert "Remain read-only toward `lib/` and `test/`" in runner

@@ -9,7 +9,7 @@
 - **Created:** `{{CreatedDate}}`
 - **Updated:** `{{UpdatedDate}}`
 - **Grill-Me Rounds:** `{{GrillMeRoundsCount}}`
-- **Related Docs:** `requirements.md` | `design.md` | `implement-plan.md`
+- **Related Docs:** `requirements.md` | `design.md` | `implementation-plan.md`
 
 ---
 
@@ -17,9 +17,9 @@
 
 > Queue every ambiguity, inference, API/UX gap, or architectural trade-off here before asking via `ask_question` (1 question per turn). Before presenting Gate 1 or Gate 2 for approval, **0 rows may remain `OPEN`**.
 
-| ID | Status (`OPEN` \| `CLOSED -> D-NN`) | Dimension | Question / Inference to Confirm | Recommended Option |
-|---|---|---|---|---|
-| **Q-01** | `CLOSED -> D-01` | {{Dimension}} | {{QuestionAskedToUser}} | {{RecommendedOptionPresented}} |
+| ID | Status (`OPEN` \| `CLOSED -> D-NN`) | Dimension (order: grill-me §2.2) | Owner (`spec_writer` \| `designer` \| `planning`) | Question / Inference to Confirm | Recommended Option |
+|---|---|---|---|---|---|
+| **Q-01** | `CLOSED -> D-01` | {{Dimension}} | {{Owner}} | {{QuestionAskedToUser}} | {{RecommendedOptionPresented}} |
 
 ---
 

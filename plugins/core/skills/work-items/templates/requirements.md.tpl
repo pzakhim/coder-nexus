@@ -75,3 +75,5 @@
 - **Decision summary**: {{UserFacingSummary}}
 - **Approved response**: NONE
 - **Approved document revision**: NONE
+
+Keep Huly read-only. Every `BR-NN` must trace to a confirmed `D-NN` in `codebase-notes.md`. Never leave `Option A / Option B`, `Open Questions`, or `TBD` in this document.

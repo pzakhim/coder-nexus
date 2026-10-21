@@ -18,9 +18,13 @@ Review a fixed code revision independently. Read only; do not change production 
 
 Record `BASE_REVISION`, `REVIEW_REVISION`, the phase ID and all in-scope uncommitted changes, including untracked files. Inspect the whole affected diff with `git diff <BASE_REVISION>..<REVIEW_REVISION>`, `git diff` and `git diff --cached` as applicable. Inspect existing test evidence when available; Test Runner's final report follows review approval. Do not infer success from the latest commit alone.
 
+## Bug hunt first
+
+Run core `bug-hunt` on the fixed scope before the gates below; its dimension 6 uses [the Flutter bug patterns](references/05_bug_patterns.md). Findings go into the report's bug-hunt table. A `CONFIRMED` `BLOCKER`/`MAJOR` blocks approval even when every gate passes.
+
 ## Two-Gate Protocol
 
-These are code-review checks after the three user approval gates for specifications. Read consolidated Huly and API context from `phases/phase-00-prepare.md` (`PHASE-00`) and `design.md`.
+These are code-review checks after the three user approval gates for specifications. Read Huly and source context from `codebase-notes.md` (`## 0A. Source Inventory`, Huly table, `## 4`) and the API contract from `design.md`; `phases/phase-00-prepare.md` (`PHASE-00`) only records readiness and links to them.
 
 0. **For `PHASE-00` (`[EXECUTE]` — Mockoon preparation phase)**:
    - When reviewing `PHASE-00` that only prepares `mocks/<feature>_mockoon.json`, Dart file lexical checks are `N/A`; audit `mocks/<feature>_mockoon.json` against the **`Mockoon Trigger & Test Data Table`** in `design.md` (endpoints, Pass/Default `200/201`, Empty `[]`, and Fail `400/401/403/500` conditional `rules`), verify via `mockoon-cli` / `curl`, and confirm `phases/phase-00-prepare.md` is ticked **`[x] PREPARED / COMPLETED`** before approving `PHASE-00` to unlock `PHASE-01, 02, 03...`.
@@ -39,7 +43,7 @@ For screen changes, apply [the screen contract](../clean-architecture/references
 
 Use [the five-axis rubric](references/01_five_axis_rubric.md):
 
-1. **Correctness:** Every mapped AC and relevant error path is implemented and evidenced. Audit test changes for weakened assertions.
+1. **Correctness:** Every mapped AC and relevant error path is implemented and evidenced, and the bug-hunt pass left no `CONFIRMED` `BLOCKER`/`MAJOR`. Audit test changes for weakened assertions.
 2. **Readability and simplicity:** Names, control flow and abstractions are clear and proportional to approved behavior.
 3. **Clean Architecture and DI:** Layer imports, module ownership, DI order and state patterns match the actual Client scope.
 4. **Security and data safety:** No credentials, fake data, hidden parse fallback or unauthorized Huly writes.

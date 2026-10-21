@@ -43,7 +43,7 @@ When presenting the plan to the User via `ask_question`, provide 3 clear choices
    - Trigger `code_writer`.
 2. **[Refine Technical Decisions]**:
    - User requests technical adjustments (mock approach, scaffold choice, task order).
-   - Planning directly adjusts `implement-plan.md` and re-presents without involving Spec Writer.
+   - Planning directly adjusts `implementation-plan.md` and re-presents without involving Spec Writer.
 3. **[Modify Business Requirements / Scope]**:
    - User requests changes to feature behavior, visual scope, or acceptance criteria.
    - Planning halts and transfers the request back to `spec_writer` to revise `brief.md` / `requirements.md` (Gate 1/2) first.

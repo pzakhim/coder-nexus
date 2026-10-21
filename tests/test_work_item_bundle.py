@@ -22,7 +22,7 @@ def test_new_router_covers_types_and_optional_plan():
         assert f"`{kind}`" in sequences
     assert "Gate 1" in router and "Gate 2" in router and "Gate 3" in router
     assert "features also require `design.md`" in router
-    assert "For a feature, write `implement-plan.md`" in router
+    assert "For a feature, write `implementation-plan.md`" in router
     assert "codebase-notes.md" in router and "grill-me" in router
     assert "codebase-notes.md" in contract and "Question Queue" in contract
     assert "SKIPPED" in planning and "brief.md" in planning

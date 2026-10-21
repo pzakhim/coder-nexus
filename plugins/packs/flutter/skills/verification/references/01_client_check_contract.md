@@ -3,7 +3,7 @@
 Read plugin-root `shared_contracts/api_handshake_protocol.md`. Only explicitly approved contract-derived development fixtures may support UI/contract checks. Record fixture provenance and contract revision separately from live integration evidence. Required live ACs remain `BLOCKED` or `NOT_RUN` until exercised against the real endpoint; fixture success cannot close the handshake or imply overall feature acceptance. Never fabricate business records, Huly data, services or production success fallbacks.
 
 
-For new work, take commands and targets from `.superpowers/work-items/<slug>/vN/brief.md` or optional `implement-plan.md`/phase, and verify them against the real Client. The feature path below is historical compatibility guidance.
+For new work, take commands and targets from `.superpowers/work-items/<slug>/vN/brief.md` or optional `implementation-plan.md`/phase, and verify them against the real Client. The feature path below is historical compatibility guidance.
 
 ## Source of commands
 

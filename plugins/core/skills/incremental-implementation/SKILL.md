@@ -5,7 +5,7 @@ description: Implements an approved plan one dependency-ready slice at a time wi
 
 # Incremental Implementation
 
-Read plugin-root `shared_contracts/api_handshake_protocol.md`. Read consolidated Huly and API context from `phases/phase-00-prepare.md` (`PHASE-00`) and `design.md` — never re-query Huly or fabricate business records, services, or production fallbacks.
+Read plugin-root `shared_contracts/api_handshake_protocol.md`. Read Huly and source context from `codebase-notes.md` (`## 0A. Source Inventory`, Huly table, `## 4`) and the API contract from `design.md`; `phases/phase-00-prepare.md` (`PHASE-00`) only records readiness and links to them — never re-query Huly or fabricate business records, services, or production fallbacks.
 
 
 For new Client work, use the approved `.superpowers/work-items/<slug>/vN/brief.md` with optional design/plan/phase. A small non-feature task can be executable from the brief alone; a feature still requires all three actual user gates. Follow the chosen type's checks in `work-items`. The versioned `docs/features/` preconditions below apply only to historical feature work.
@@ -17,7 +17,7 @@ Implement the smallest approved behavior that can be verified end to end. Apply 
 ## Preconditions
 
 - Gate 1–3 approvals cover the current `docs/features/<module>/<feature>/vN/` requirements, design, plan and linked phases.
-- **For `PHASE-00` (`[EXECUTE]` — Mockoon preparation)**: `design.md` contains the approved `Mockoon Trigger & Test Data Table`. Upon completing `PHASE-00` (`mocks/<feature>_mockoon.json` + `mockoon-cli` smoke test) and passing review, tick **`[x] PREPARED / COMPLETED`** in `phases/phase-00-prepare.md` and `implement-plan.md`.
+- **For `PHASE-00` (`[EXECUTE]` — Mockoon preparation)**: `design.md` contains the approved `Mockoon Trigger & Test Data Table`. Upon completing `PHASE-00` (`mocks/<feature>_mockoon.json` + `mockoon-cli` smoke test) and passing review, tick **`[x] PREPARED / COMPLETED`** in `phases/phase-00-prepare.md` and `implementation-plan.md`.
 - **For `PHASE-01, 02, 03...`**: `phases/phase-00-prepare.md` must already be ticked **`[x] PREPARED / COMPLETED`** (or **`[x] PREPARED (INFO_READY)`** when `PHASE-00` is `[INFO_NOTE]`), and all earlier phase dependencies are complete.
 - File scope and verification commands are concrete.
 
@@ -26,7 +26,7 @@ Implement the smallest approved behavior that can be verified end to end. Apply 
 **Strict Non-Negotiable Rule**: Prohibit ungrounded bulk coding. NEVER attempt to code all tasks of a phase in one blind pass without checkpoints. A single `code_writer` receives one phase at a time and executes its ordered tasks through the strict Task-by-Task Grounding Loop below:
 
 1. **Phase Initialization**:
-   - Open `phases/phase-00-prepare.md` (to confirm `[x] PREPARED / COMPLETED` and read consolidated API/context notes) and `phases/phase-XX-<behavior>.md`.
+   - Open `phases/phase-00-prepare.md` (to confirm `[x] PREPARED / COMPLETED`) and `phases/phase-XX-<behavior>.md`.
    - Confirm all earlier phase dependencies listed in `Depends on` are `PASSED`.
 
 2. **Sequential Micro-Task Execution Cycle (Repeat for each task in the phase from top to bottom)**:
@@ -46,6 +46,7 @@ Implement the smallest approved behavior that can be verified end to end. Apply 
 3. **Phase-Level Integration & Handoff**:
    - Once all tasks in the phase are `- [x]`, run the full phase verification suite (the stack's analyzer and the phase's tests; exact commands in `{{slot:verification}}`).
    - For UI impact, invoke `{{slot:visual-verification}}` on the approved target/states.
+   - Run `bug-hunt` at `quick` effort on the phase diff as a self-check; fix `CONFIRMED` findings with their missing tests and rerun the affected checks before handoff.
    - Report exact commands, revision, target and results to the coordinator for `as-built.md`; `NOT_RUN` and `BLOCKED` are not `PASS`.
    - If checks fail, fix within the approved scope. If the fix changes behavior, API, architecture, dependencies, or component contract, return to the relevant planning/design gate.
    - Coordinator marks the phase complete in `as-built.md` only when its AC, review and verification evidence pass.

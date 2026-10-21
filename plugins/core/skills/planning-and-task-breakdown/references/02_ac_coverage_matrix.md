@@ -1,6 +1,6 @@
 # 02 — Acceptance Criteria Coverage Matrix
 
-Guide for AC Coverage mapping in `implement-plan.md`.
+Guide for AC Coverage mapping in `implementation-plan.md`.
 
 ## 1. 100% Traceability Rule
 Every Acceptance Criteria (`AC-01`, `AC-02`, etc.) defined in `requirements.md` MUST be mapped to exactly one owning phase and have a decisive check that can fail.

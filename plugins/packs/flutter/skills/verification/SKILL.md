@@ -5,7 +5,7 @@ description: Verifies a reviewed Flutter revision with the approved analyzer, te
 
 # Flutter Verification
 
-Read plugin-root `shared_contracts/api_handshake_protocol.md`. Read consolidated Huly and API context from `phases/phase-00-prepare.md` (`PHASE-00`), `requirements.md`, and `design.md` — never re-query Huly or fabricate business records, services, or production fallbacks.
+Read plugin-root `shared_contracts/api_handshake_protocol.md`. Read Huly and source context from `codebase-notes.md` (`## 0A. Source Inventory`, Huly table, `## 4`) and the API contract from `design.md`; `phases/phase-00-prepare.md` (`PHASE-00`) only records readiness and links to them, plus `requirements.md` — never re-query Huly or fabricate business records, services, or production fallbacks.
 
 
 For new Client work, use `.superpowers/work-items/<slug>/vN/brief.md` and optional design/plan/phase, then choose decisive checks from `work-items` by Type. A small item can have no phase. Run only checks relevant to affected Flutter boundaries, and record exact revision and provenance. The `docs/features/` contract below applies to historical features.
@@ -46,5 +46,5 @@ Any code fix creates a new revision and invalidates affected review, test, build
 ## Flutter references for core skills
 
 Core planning, implementation and work-item skills are stack-neutral and point here for Flutter specifics:
-- [Planning codebase scan](references/02_planning_codebase_scan.md) — Flutter readiness checklist and screen checks for `implement-plan.md`.
+- [Planning codebase scan](references/02_planning_codebase_scan.md) — Flutter readiness checklist and screen checks for `implementation-plan.md`.
 - [Flutter plan, phase and DoD conventions](references/03_flutter_plan_and_dod.md) — phase slicing examples, task file paths, analyzer/test commands, AC matrix examples and the golden review DoD.

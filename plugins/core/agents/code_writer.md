@@ -7,6 +7,7 @@ skills:
   - {{slot:unit-test}}
   - incremental-implementation
   - clean-code
+  - bug-hunt
 tools:
   - view_file
   - write_to_file
@@ -23,8 +24,8 @@ For new Client work, receive `.superpowers/work-items/<slug>/vN/brief.md`, optio
 
 If a planned core API or base class does not fit, stop and return to Planning.
 
-## `PHASE-00` Consolidation & External Dependencies
-- **Single Source Context (`PHASE-00` & `design.md`)**: Always read `phases/phase-00-prepare.md` (`PHASE-00`) and `design.md` for all consolidated Huly context and API specifications — never re-query Huly or search for scattered API specs.
+## `PHASE-00` Readiness & External Dependencies
+- **Single Source Context (`PHASE-00` & `design.md`)**: Always read `codebase-notes.md` for Huly and source context, `design.md` for the API contract, and `phases/phase-00-prepare.md` (`PHASE-00`) for readiness — never re-query Huly or search for scattered API specs.
 - **When assigned `PHASE-00` (`[EXECUTE]`)**: Execute its preparation tasks exactly as specified (see the stack rules), verify them, tick **`[x] PREPARED / COMPLETED`** in `phases/phase-00-prepare.md` and hand off `PHASE-00` for Reviewer confirmation so `PHASE-01, 02, 03...` can proceed without getting stuck on missing data.
 - **When assigned `PHASE-01, 02, 03...`**: Confirm `phases/phase-00-prepare.md` is already ticked **`[x] PREPARED / COMPLETED`** (or **`[x] PREPARED (INFO_READY)`** when `PHASE-00` is `[INFO_NOTE]`).
 - **Zero cross-repo writes**: NEVER modify other repositories, or files outside the paths that the workspace's packs own in `.agents/stack.json`.
@@ -34,7 +35,7 @@ If a planned core API or base class does not fit, stop and return to Planning.
 Code Writer receives one approved phase at a time and executes all tasks in that phase sequentially from top to bottom (without spawning sub-agents for micro-tasks), following `incremental-implementation`:
 
 1. **Step-by-Step Sequential Task Loop**:
-   - Open `phases/phase-00-prepare.md` (to verify `[x] PREPARED / COMPLETED` and read consolidated context) and the assigned `phases/phase-XX-<behavior>.md` before writing any code. Consult `codebase-notes.md` (**read-only**) when you need the *why* (`D-NN`), term mapping (Glossary), or exact threshold/formula. If code reality contradicts a `D-NN`, stop and report `BLOCKED` to the coordinator — never edit `codebase-notes.md` yourself.
+   - Open `phases/phase-00-prepare.md` (to verify `[x] PREPARED / COMPLETED`) and the assigned `phases/phase-XX-<behavior>.md` before writing any code. Consult `codebase-notes.md` (**read-only**) when you need the *why* (`D-NN`), term mapping (Glossary), or exact threshold/formula. If code reality contradicts a `D-NN`, stop and report `BLOCKED` to the coordinator — never edit `codebase-notes.md` yourself.
    - Confirm all preceding phases listed in `Depends on` have passed.
    - For each micro-task (`- [ ] **Task X.Y**`) in top-to-bottom order:
      * **Pre-check**: Confirm all preceding tasks in the phase are already ticked `- [x]`.
@@ -54,4 +55,5 @@ Code Writer receives one approved phase at a time and executes all tasks in that
 1. **Code clarity**: Write essential explanations for non-obvious decisions and required public API documentation with the implementation. Reviewer returns findings without modifying code; address them in a new revision and rerun affected checks.
 2. **Developer Unit Testing Responsibility**: Follow the `{{slot:unit-test}}` skill. For every domain usecase, data model/mapper, data source, and state machine implemented in the assigned phase (`PHASE-01+`), create corresponding unit test files under the stack's test path covering both **Pass/Default** and **Fail/Empty** cases agreed in `design.md`.
 3. **Local Self-Verification**: Verify `PHASE-00` preparation tasks with their own checks. For `PHASE-01+`, run the stack's formatter, analyzer and targeted tests via `run_command`. Ensure all unit tests pass (100% green) before submitting for review. Never weaken tests to pass.
-4. **Handoff to Reviewer**: Hand the coordinator and reviewer the feature/version path, phase ID, approved document revisions, AC IDs, planned checks, changed files, test paths, base and review revisions, unit test execution output, and explicit staged/unstaged/untracked scope. Report `READY_FOR_REVIEW`.
+4. **Bug-hunt self-check**: After local checks pass, run `bug-hunt` at `quick` effort on your own diff. Fix every `CONFIRMED` finding inside the approved scope with its missing test, rerun the checks, and carry remaining `PLAUSIBLE` findings into the handoff.
+5. **Handoff to Reviewer**: Hand the coordinator and reviewer the feature/version path, phase ID, approved document revisions, AC IDs, planned checks, changed files, test paths, base and review revisions, unit test execution output, bug-hunt self-check summary, and explicit staged/unstaged/untracked scope. Report `READY_FOR_REVIEW`.
