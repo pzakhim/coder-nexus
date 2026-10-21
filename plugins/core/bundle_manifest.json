@@ -43,7 +43,8 @@
     "validate_architecture_code",
     "validate_proposal_spec",
     "validate_plan_slices",
-    "validate_module_architecture"
+    "validate_module_architecture",
+    "validate_ux_design"
   ],
   "required_resources": [
     "shared_contracts/api_handshake_protocol.md",

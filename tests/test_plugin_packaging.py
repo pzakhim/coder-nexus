@@ -54,7 +54,7 @@ def test_bundle_manifest_inventory():
     assert manifest["hub_version"] == "0.1.0"
     assert manifest["resource_base"] == "plugins/"
     assert "flutter/verification" in manifest["public_skills"]
-    assert len(manifest["mcp_tools"]) == 8
+    assert len(manifest["mcp_tools"]) == 9
     packaged_skills = {f"core/{p.parent.name}" for p in (PLUGIN_DIR / "core" / "skills").glob("*/SKILL.md")}
     packaged_skills |= {f"{p.parent.parent.parent.name}/{p.parent.name}" for p in (PLUGIN_DIR / "packs").glob("*/skills/*/SKILL.md")}
     assert set(manifest["public_skills"]) == packaged_skills

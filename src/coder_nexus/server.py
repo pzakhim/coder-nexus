@@ -14,6 +14,7 @@ from .architecture.structure import get_project_structure_data
 from .architecture.validator import architecture_validator
 from .ux_patterns import get_ux_pattern
 from .huly.client import HulyClient
+from .ux.validate import validate_design
 
 app = MCPServer("coder-nexus")
 
@@ -285,6 +286,22 @@ async def validate_module_architecture(
         feature_name=feature_name,
         architecture_profile=architecture_profile,
     )
+
+
+@app.tool()
+async def validate_ux_design(work_item_path: str) -> dict[str, Any]:
+    """Validate a work item's UI/UX design (`design-uiux/`) against rules UX-001 … UX-010.
+
+    Strictly READ-ONLY: Never modifies files (the content hash is written only by the CLI `--write-hash`).
+    A PASSED result is not approval; only the user approves a design revision.
+
+    Args:
+        work_item_path: Work-item version folder `.superpowers/work-items/<slug>/vN` (or its design-uiux folder).
+
+    Returns:
+        Dictionary with gate_status (PASSED/FAILED), design status, revision, content hash, violations and checked rules.
+    """
+    return validate_design(work_item_path)
 
 
 def run_server() -> None:

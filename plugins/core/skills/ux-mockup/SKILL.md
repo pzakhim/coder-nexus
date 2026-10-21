@@ -46,6 +46,7 @@ Every change the user can see gets a UI/UX design the user approves before techn
 | Add a screen | `coder-nexus ux screen --work-item … --id S02 --slug receive-qty --title "…" --steps W-01#2 --kind CHANGED --catalog wms.is-items.receive [--states default,error]` |
 | Add a new component | `coder-nexus ux component --work-item … --id C01 --slug no-po-warning --title "…" --used-in S02` |
 | Rebuild `index.html` data | `coder-nexus ux sync --work-item …` (after every edit of `uiux.md`) |
+| Check the design (UX-001…UX-010) | `coder-nexus ux validate --work-item …` (MCP `validate_ux_design`); add `--write-hash` when presenting or approving a revision |
 
 The commands create files with the correct relative paths to the kit and add rows to `uiux.md`. Edit the generated files; do not move them.
 

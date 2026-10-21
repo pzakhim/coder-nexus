@@ -55,6 +55,11 @@ def add_ux_parser(subparsers) -> None:
     p_sy = ux_sub.add_parser("sync", help="Rebuild data/flows.js (read by index.html) from uiux.md")
     p_sy.add_argument("--work-item", required=True, help=wi_help)
 
+    p_va = ux_sub.add_parser("validate", help="Check design-uiux/ against rules UX-001…UX-010 (read-only unless --write-hash)")
+    p_va.add_argument("--work-item", required=True, help=wi_help)
+    p_va.add_argument("--write-hash", action="store_true", help="Store the content hash in uiux.md first (when presenting or approving a revision)")
+    p_va.add_argument("--json", action="store_true", help="Print the result as JSON")
+
 
 def _cmd_design(args: argparse.Namespace) -> int:
     from .scaffold import ScaffoldError, add_component, add_screen, new_design, sync
@@ -82,7 +87,34 @@ def _cmd_design(args: argparse.Namespace) -> int:
         return 1
 
 
+def _cmd_validate(args: argparse.Namespace) -> int:
+    from .scaffold import ScaffoldError
+    from .validate import validate_design, write_content_hash
+    if args.write_hash:
+        try:
+            print(f"🔒 Content hash written: {write_content_hash(args.work_item)}")
+        except ScaffoldError as exc:
+            print(f"❌ {exc}")
+            return 1
+    res = validate_design(args.work_item)
+    if args.json:
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+    elif res["status"] != "success":
+        print(f"❌ {res['message']}")
+    else:
+        print(f"\n🧪 UI/UX {res['work_item']} {res['version']} {res['revision']} ({res['design_status']}): {res['gate_status']}"
+              f" — {res['errors_count']} error(s), {res['warnings_count']} warning(s)")
+        for v in res["violations"]:
+            icon = "❌" if v["severity"] == "ERROR" else "⚠"
+            where = f" (uiux.md:{v['line_number']})" if v["line_number"] else ""
+            print(f"   {icon} {v['rule_id']}{where} {v['message']}\n      → {v['suggestion']}")
+        print()
+    return 0 if res["valid"] else 1
+
+
 def cmd_ux(args: argparse.Namespace) -> int:
+    if args.ux_command == "validate":
+        return _cmd_validate(args)
     if args.ux_command in ("new", "screen", "component", "sync"):
         return _cmd_design(args)
     project = Path(args.project).resolve()

@@ -7,6 +7,7 @@
 > **Created**: {{date}}
 > **Status**: DRAFT
 > **Approval reference**: NONE
+> **Content hash**: NONE
 
 Open `index.html` to review. This file is the source of truth: after editing it, run `coder-nexus ux sync --work-item <this vN folder>`.
 

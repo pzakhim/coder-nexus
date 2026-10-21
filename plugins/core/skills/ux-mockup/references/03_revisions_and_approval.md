@@ -6,6 +6,7 @@
 2. Switch every state of every screen. Look for overflow, clipped text, missing mock values (orange outline) and wrong kit classes.
 3. Compare `CHANGED` screens with the current app screenshots.
 4. Check that every `new-component` has a `components/C-NN` file and a row in `uiux.md` → `## 6. New components`.
+5. `coder-nexus ux validate --work-item …` has no ERROR. Before showing the revision set `Status: IN_REVIEW` and run it with `--write-hash`.
 
 ## Present a revision
 
@@ -19,7 +20,7 @@ Tell the user the revision (`r1`), how to open it (`design-uiux/index.html`), an
 
 ## Approval
 
-Ask for approval of the exact revision: "Approve UI/UX revision r3?". Only an actual user answer approves it. Then fill `uiux.md` → `## 7. Approval` (revision, date, user response) and set `Status: APPROVED`. Any later change starts a new revision that needs approval again.
+Ask for approval of the exact revision: "Approve UI/UX revision r3?". Only an actual user answer approves it. Then fill `uiux.md` → `## 7. Approval` (revision, date, user response), set `Status: APPROVED` and run `coder-nexus ux validate --work-item … --write-hash`. The hash covers `uiux.md` (without status and approval fields), screens, components and data; any later change fails UX-010 and starts a new revision that needs approval again.
 
 ## After approval
 

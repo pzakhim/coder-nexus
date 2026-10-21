@@ -20,7 +20,7 @@
 | Result / confirmation | default; error if the action can fail |
 | Dialog / bottom sheet | Draw it as a state of the screen that opens it (`app-overlay` + `app-dialog` / `app-bottomsheet`) |
 
-States that do not apply are left out, with a `.note` saying why when a reviewer would expect them.
+States that do not apply are left out, with a `.note` saying why when a reviewer would expect them. For a list or data screen the note must name the state ("No empty state: …"); `coder-nexus ux validate` then reports a warning instead of an error.
 
 ## Composition
 
