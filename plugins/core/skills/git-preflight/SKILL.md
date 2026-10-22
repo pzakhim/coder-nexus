@@ -85,7 +85,7 @@ Return `BRANCH_READY` with the `D-NN`, or `BLOCKED` with the decision the user s
 ## 4. Branch decision record
 
 ```text
-D-NN Branch: fix/WMS-142-stock-calculation
+D-NN Branch: fix/ABC-142-<short-description>
      Base: origin/release/1.8.0 @ <sha>
      Spec scanned on: origin/develop @ <sha> (re-checked, <n> cited paths changed)
      Merge to: release/1.8.0, then develop

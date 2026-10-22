@@ -21,7 +21,7 @@ Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P
 | Branches | `git branch -a`: `main`/`master`, `develop`, `release/*`, `hotfix/*`, `support/*`, environment branches (`dev`, `staging`, `prod`) |
 | Tags | `git tag --sort=-creatordate`: format (`v1.2.3`, `1.2.3`, `be-v…`), pre-release tags (`-rc.N`), first `1.0.0` or still `0.x` |
 | Merge history | `git log --merges --first-parent <integration branch>` and squash commit shapes: squash vs merge commits per target |
-| Naming | Last 50 branch names and commit subjects: ticket prefixes (`WMS-`, `DEVOPS-`), types, Conventional Commits |
+| Naming | Last 50 branch names and commit subjects: ticket prefixes (for example `ABC-`), types, Conventional Commits |
 | CI/CD | `.github/workflows`, `.gitlab-ci.yml`, `Jenkinsfile`, `bitbucket-pipelines.yml`: which branch or tag deploys where, approvals for production |
 | Tools | commitlint, commitizen, husky/lefthook, semantic-release, release-please, changesets, standard-version |
 | Version files | `package.json`, `pubspec.yaml`, `pyproject.toml`, `build.gradle`, `*.csproj`, sync scripts |
