@@ -159,7 +159,7 @@ def test_flutter_feature_planner_skill_structure():
         manifest = json.load(f)
     assert manifest.get("version") == "1.3.0"
     assert manifest.get("skill_name") == "feature-planner"
-    assert len(manifest.get("references", [])) == 4
+    assert len(manifest.get("references", [])) == 3
     assert len(manifest.get("templates", [])) == 7
     assert len(manifest.get("legacy_templates", [])) == 3
 
@@ -173,7 +173,8 @@ def test_flutter_feature_planner_skill_structure():
 def test_client_workflow_skills_are_packaged_and_portable():
     """Verify public workflow skills ship in the plugin without author-machine links."""
     expected = {
-        "brainstorming",
+        "goal-framing",
+        "grilling",
         "planning-and-task-breakdown",
         "incremental-implementation",
         "clean-code",
@@ -367,7 +368,7 @@ def test_installed_projection_includes_shared_contract_and_valid_resource_paths(
     for resource in manifest["required_resources"]:
         assert (destination / resource).is_file(), resource
     if "flutter" in variant.split("+"):
-        for relative in ("skills/work-items/SKILL.md", "rules/clean_architecture_rules.md"):
+        for relative in ("skills/work-item-contract/SKILL.md", "rules/clean_architecture_rules.md"):
             document = destination / relative
             for link in re.findall(r"\]\(([^)]+)\)", document.read_text()):
                 assert (document.parent / link).is_file(), (relative, link)
@@ -542,7 +543,7 @@ def test_backend_pack_structure_and_installation(tmp_path):
     assert cmd_install_plugin(args) == 0
     installed = tmp_path / ".agents" / "plugins" / "coder-nexus"
     skills = {p.name for p in (installed / "skills").iterdir()}
-    assert {"backend-clean-architecture", "backend-api-contracts", "work-items", "grill-me"} <= skills
+    assert {"backend-clean-architecture", "backend-api-contracts", "work-item-contract", "grilling"} <= skills
     assert not any(name.startswith(("flutter-", "frappe-")) for name in skills)
     stubs = json.loads((installed / "slot_stubs.json").read_text(encoding="utf-8"))
     assert stubs == {"backend-core-usage": "not_applicable", "backend-visual-verification": "not_applicable", "backend-ux-kit": "not_applicable"}
@@ -619,7 +620,7 @@ def test_framework_skills_are_prefixed_and_agent_skills_resolve(tmp_path):
     files = target / "files"
     skills = files / ".agents/plugins/coder-nexus/skills"
     names = {p.name for p in skills.iterdir()}
-    assert {"flutter-core-usage", "flutter-clean-architecture", "work-items", "feature-planner"} <= names
+    assert {"flutter-core-usage", "flutter-clean-architecture", "work-item-contract", "feature-planner"} <= names
     assert "core-usage" not in names and "clean-architecture" not in names
     assert "name: flutter-core-usage" in (skills / "flutter-core-usage/SKILL.md").read_text(encoding="utf-8")
     for agent in (files / ".agents/agents").glob("*.md"):
@@ -702,11 +703,13 @@ def test_frappe_projection_receives_no_flutter_instructions(tmp_path):
 def test_designer_is_wired_into_the_delivery_flow():
     """UI-impact items: Designer between goal framing and Gate 1; Planning, Reviewer and visual checks use the approved design."""
     skills = flutter_workspace() / ".agents/plugins/coder-nexus/skills"
-    route = (skills / "work-items/SKILL.md").read_text(encoding="utf-8")
-    assert "**Designer (UI/UX)" in route and "READY_FOR_SPEC" in route and "| Designer |" in route
-    assert route.index("**Designer (UI/UX)") < route.index("**Planning")
-    assert "screen-catalog.md" in route and "{{slot:" not in route and "flutter-ux-kit" in route
-    assert "workflows + UI/UX design" in (skills / "work-items/references/type-sequences.md").read_text(encoding="utf-8")
+    route = (skills / "dev-team/SKILL.md").read_text(encoding="utf-8")
+    contract = (skills / "work-item-contract/SKILL.md").read_text(encoding="utf-8")
+    assert "**Designer** (UI/UX" in route and "READY_FOR_SPEC" in route and "| Designer |" in contract
+    assert route.index("**Designer** (UI/UX") < route.index("**Planning** (Tech Lead)")
+    assert "screen-catalog.md" in contract and "{{slot:" not in route + contract
+    assert "flutter-ux-kit" in rendered_agent("designer.md")
+    assert "workflows + UI/UX design" in (skills / "work-item-contract/references/type-sequences.md").read_text(encoding="utf-8")
 
     spec = rendered_agent("spec_writer.md")
     assert "Stage 1A-UX" in spec and "`designer`" in spec and "`## Workflows`" in spec and "validate_ux_design" in spec
@@ -716,7 +719,7 @@ def test_designer_is_wired_into_the_delivery_flow():
     assert "approved `uiux.md` revision" in rendered_agent("code_reviewer.md")
     assert "screen-catalog.md" in rendered_agent("docs_writer.md")
 
-    assert "## Workflows" in (skills / "work-items/templates/requirements.md.tpl").read_text(encoding="utf-8")
+    assert "## Workflows" in (skills / "work-item-contract/templates/requirements.md.tpl").read_text(encoding="utf-8")
     assert not (skills / "feature-planner/templates/requirements.md.tpl").exists()
     design_tpl = (skills / "flutter-architecture-design/templates/design.md.tpl").read_text(encoding="utf-8")
     assert "## UI/UX mapping" in design_tpl and "`flutter-ux-kit` §3" in design_tpl

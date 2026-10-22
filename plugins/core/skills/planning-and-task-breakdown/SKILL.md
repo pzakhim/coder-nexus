@@ -30,22 +30,32 @@ Before formulating tasks, confirm:
    - Each task (`- [ ] **Task X.Y**: <Title>`) MUST explicitly specify:
      * **Scope / Files**: Exact file paths and class names created or modified.
      * **Reused Components**: Exact entries from the approved reuse mapping (`Core usage` / `Client Core Mapping` in `design.md`) that this task must use.
-     * **Produces**: Public symbols/signatures that subsequent tasks in the phase consume (or `none`).
+     * **Consumes**: Symbols/signatures this task uses from earlier tasks or phases, spelled exactly as their **Produces** line (or `none`). Reason: the Code Writer sees one task at a time and must not guess a neighbour's names.
+     * **Produces**: Public symbols/signatures (name, parameters, return type) that later tasks consume (or `none`).
      * **Acceptance Criteria**: Exact command or assertion to verify that specific task immediately upon completion (e.g. the stack's analyzer on `<path>`, a targeted unit test).
-4. **Agent Execution Loop & Plan Re-Grounding Contract**:
+4. **Plan Quality Rules**: Follow [04_plan_structure_and_task_rules.md](references/04_plan_structure_and_task_rules.md):
+   - `implementation-plan.md` carries `## Global constraints` (rules every task implicitly includes, one line each, cited `BR-NN` / `D-NN` with the pinned value) and `## Review focus` (up to five input classes or failure modes the ACs imply but no decisive check exercises; each gets a check in its owning task).
+   - **Right-size** tasks: one deliverable with its own check; fold setup/config into the task that needs it.
+   - **Order**: after `PHASE-00`, the highest-risk behavior first; behavior-preserving prefactor tasks first inside the phase that needs them; storage or public-contract changes with live consumers follow expand → migrate → contract.
+   - **No transcribed code**: tasks give file, signature and the values `requirements.md` / `design.md` pin, never full bodies.
+5. **Agent Execution Loop & Plan Re-Grounding Contract**:
    - The breakdown structures tasks as ordered, single-objective units designed for the Code Writer's Task-by-Task Grounding Loop (in `incremental-implementation`).
    - Every task has an actionable checkbox `- [ ]`.
    - **Mandatory Re-Reading of Plan**: After finishing each micro-task and running its acceptance verification, `code_writer` MUST return to the phase file (`phases/phase-NN-*.md`), tick the completed task `- [x]`, re-read the plan to refresh context, and inspect the scope, mapped components, and acceptance criteria of the next task before starting it. Never execute multiple tasks in one bulk pass without returning to re-read the plan between tasks.
-5. **AC Coverage Matrix**: Follow [02_ac_coverage_matrix.md](references/02_ac_coverage_matrix.md). Map every AC ID from `requirements.md` to an owning phase with decisive checks.
-6. **Review DoD & Verification Strategy**: Follow [03_review_dod_and_testing.md](references/03_review_dod_and_testing.md). Specify developer unit tests (use cases, mappers, state-holder emissions covering the agreed Pass/Default and Fail cases) and a zero-error run of the stack's analyzer; the exact commands and test conventions come from `{{slot:unit-test}}` and `{{slot:verification}}`.
-7. **Draft Plan & Phases**:
-   - Write `implementation-plan.md` using [implementation-plan.md.tpl](../work-items/templates/implementation-plan.md.tpl).
-   - Write `phases/phase-00-prepare.md` and `phases/phase-NN-<behavior>.md` using [phase.md.tpl](../work-items/templates/phase.md.tpl) ensuring each task has status checkbox `- [ ]`, file scope, reused components, produced symbols, and acceptance criteria.
-8. **Validation**: Run `validate_plan_slices(plan_path="...")` to ensure document integrity and 100% AC coverage.
+6. **AC Coverage Matrix**: Follow [02_ac_coverage_matrix.md](references/02_ac_coverage_matrix.md). Map every AC ID from `requirements.md` to an owning phase with decisive checks.
+7. **Review DoD & Verification Strategy**: Follow [03_review_dod_and_testing.md](references/03_review_dod_and_testing.md). Specify developer unit tests (use cases, mappers, state-holder emissions covering the agreed Pass/Default and Fail cases) and a zero-error run of the stack's analyzer; the exact commands and test conventions come from `{{slot:unit-test}}` and `{{slot:verification}}`.
+8. **Draft Plan & Phases**:
+   - Write `implementation-plan.md` using [implementation-plan.md.tpl](../work-item-contract/templates/implementation-plan.md.tpl); keep every template heading.
+   - Write `phases/phase-00-prepare.md` and `phases/phase-NN-<behavior>.md` using [phase.md.tpl](../work-item-contract/templates/phase.md.tpl) ensuring each task has status checkbox `- [ ]`, file scope, reused components, consumed and produced symbols, and acceptance criteria.
+9. **Validation**: Run `validate_plan_slices(plan_path="...")` to ensure document integrity and 100% AC coverage.
+10. **Pre-Gate 3 Review** (after validation passes):
+    - Run [gate-review](../gate-review/SKILL.md) with `modes/plan.md` (it starts from the validator result). Fix CRITICAL and HIGH findings in the plan; a finding only the user can settle becomes `Q-NN`.
+    - Run [cold-reader-check](../cold-reader-check/SKILL.md) on `implementation-plan.md` and the phase files. Answer minor questions in the plan yourself and mark them as Planning's call; queue user's-call questions as `Q-NN` in `codebase-notes.md`, ask one at a time, close each into `D-NN`.
+    - Present Gate 3 only with 0 `OPEN` `Q-NN`. Reason: a plan the Code Writer cannot follow without asking stops the build mid-phase.
 
 ## 3. Gate 3 Approval Protocol & Handoff
 
 Present the plan and linked phases to the User via `ask_question`:
-1. **[Approve Plan & Proceed to Build]**: User approves at Gate 3 $\implies$ Freeze specs and plan (`APPROVED_FOR_BUILD`), hand off `PHASE-00` (if `[EXECUTE]`) or `PHASE-01` (if `PHASE-00` is `[INFO_NOTE]` and already ticked `[x] PREPARED`) to a single `code_writer`.
+1. **[Approve Plan & Proceed to Build]**: User approves at Gate 3 $\implies$ Freeze specs and plan (`APPROVED_FOR_BUILD`), hand off `PHASE-00` (if `[EXECUTE]`) or `PHASE-01` (if `PHASE-00` is `[INFO_NOTE]` and already ticked `[x] PREPARED`) to a single `code_writer`; the Code Reviewer checks each `## Review focus` line deliberately.
 2. **[Technical Refinement]**: Adjust task order, mock fixtures, or DoD directly in `implementation-plan.md`.
 3. **[Scope / Requirements Change]**: Route back to Spec Writer if business rules need revision before replanning.

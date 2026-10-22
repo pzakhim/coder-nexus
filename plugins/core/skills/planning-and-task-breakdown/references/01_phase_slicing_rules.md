@@ -46,6 +46,7 @@ Concrete stack examples (file paths, commands, component names) live in `{{slot:
 - Shared pieces (an entity, a DI file) belong to the first phase that needs them; later phases extend them.
 - UI-only phases (layout, a new state) are valid vertical slices — they need no Domain/Data work.
 - **Strict Sequential Phase Order**: Phases run one by one in sequence (`PHASE-00` $\to$ `PHASE-01` $\to$ `PHASE-02` $\to$ ...). Each phase's verified output serves as the foundation and input for the next phase.
+- **Risk-first order and sizing**: which behavior comes right after `PHASE-00`, prefactor tasks, the expand → migrate → contract exception and task right-sizing follow [04_plan_structure_and_task_rules.md](04_plan_structure_and_task_rules.md).
 
 ## 3. Phase file contract
 
@@ -60,11 +61,12 @@ Concrete stack examples (file paths, commands, component names) live in `{{slot:
 Inside each Phase file, the `## Tasks` section lists the ordered micro-tasks that a single `code_writer` executes sequentially from top to bottom (e.g., Domain $\to$ Data $\to$ State $\to$ Screen/Components & Route/DI $\to$ Unit Tests). Do **not** split tasks into `[PARALLEL]` / `[SEQUENTIAL]` tracks or `Join points`.
 
 1. **Task Specification Standard**:
-   Every task entry MUST follow this exact 4-field format:
+   Every task entry MUST follow this exact 5-field format:
    ```markdown
    - [ ] **Task X.Y**: <Clear Actionable Name>
      - **Scope / Files**: exact Client source paths following the stack's module layout
      - **Reused Components**: the entries from the design's `Core usage` / `Client Core Mapping` table this task must use (or the standard framework components when the profile has no mapping)
+     - **Consumes**: symbols/signatures used from earlier tasks or phases, spelled exactly as their **Produces** line (or `none`)
      - **Produces**: public symbols/signatures later tasks consume (or `none`)
      - **Acceptance Criteria**: Command or condition to verify this task immediately (e.g. the stack's analyzer on the changed module, unit test pass)
    ```

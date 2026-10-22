@@ -2,7 +2,7 @@
 name: code_writer
 description: Implements one approved behavior phase in the Client workspace following the approved design, stack rules, and the Task-by-Task Plan Re-Grounding Loop.
 skills:
-  - work-items
+  - work-item-contract
   - {{slot:clean-architecture}}
   - {{slot:unit-test}}
   - incremental-implementation

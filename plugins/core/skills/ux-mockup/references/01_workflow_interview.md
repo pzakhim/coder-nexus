@@ -1,6 +1,6 @@
 # 01 — Workflow interview
 
-Huly tickets often describe what the system should do, not how the user moves through it. Ask before drawing. Use `ask_question`, one question per turn, with a recommended option first (skill `grill-me`). Record each answer as `Q-NN → D-NN` in `codebase-notes.md`.
+Huly tickets often describe what the system should do, not how the user moves through it. Ask before drawing. Use `ask_question`, one question per turn, with a recommended option first (skill `grilling`, mode designer). Record each answer as `Q-NN → D-NN` in `codebase-notes.md`.
 
 ## 1. Read before asking
 

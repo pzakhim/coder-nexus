@@ -21,16 +21,15 @@
   ],
   "references": [
     "references/01_context_scan_and_module_routing.md",
-    "references/02_interview_rubric_and_gates.md",
     "references/03_ui_ux_intake_and_discovery_matrix.md",
     "references/04_plan_breakdown_and_checkpoints.md"
   ],
   "templates": [
-    "../work-items/templates/requirements.md.tpl",
-    "templates/change_impact.md.tpl",
+    "../work-item-contract/templates/requirements.md.tpl",
+    "../work-item-contract/templates/change-impact.md.tpl",
     "templates/design.md.tpl",
-    "../work-items/templates/implementation-plan.md.tpl",
-    "../work-items/templates/phase.md.tpl",
+    "../work-item-contract/templates/implementation-plan.md.tpl",
+    "../work-item-contract/templates/phase.md.tpl",
     "templates/as_built.md.tpl",
     "templates/feature_readme.md.tpl"
   ],
@@ -40,7 +39,8 @@
     "templates/task.md.tpl"
   ],
   "public_workflow_skills": [
-    "brainstorming",
+    "goal-framing",
+    "grilling",
     "planning-and-task-breakdown",
     "incremental-implementation",
     "clean-code",
@@ -48,7 +48,8 @@
     "{{slot:visual-verification}}"
   ],
   "handoff_order": [
-    "brainstorming",
+    "goal-framing",
+    "grilling",
     "planning-and-task-breakdown",
     "incremental-implementation"
   ]

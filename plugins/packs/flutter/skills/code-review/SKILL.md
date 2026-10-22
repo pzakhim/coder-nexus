@@ -8,7 +8,7 @@ description: Review approved Flutter behavior phases across correctness, simplic
 Reviewer stays read-only toward implementation and tests; write review artifacts only. Return necessary edits to Code Writer and require affected checks on the new revision. Read `{{slot:core-usage}}` for the approved foundation policy; external Client conventions require source inspection, never inferred company bases.
 
 
-For new Client work, review `.superpowers/work-items/<slug>/vN/brief.md`, optional design/plan/phase and Docs Writer output against the same code revision. Use `work-items` for type-specific evidence; a phase-free work item is valid. Run Flutter analyzer and visual checks when affected, not for a docs-only change. The `docs/features/` contract below applies to historical features.
+For new Client work, review `.superpowers/work-items/<slug>/vN/brief.md`, optional design/plan/phase and Docs Writer output against the same code revision. Use `work-item-contract` for type-specific evidence; a phase-free work item is valid. Run Flutter analyzer and visual checks when affected, not for a docs-only change. The `docs/features/` contract below applies to historical features.
 
 ## Historical feature workflow
 

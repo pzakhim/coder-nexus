@@ -38,6 +38,14 @@ Every element in this design serves a goal from `requirements.md` → `## 0. Goa
 - **Confirmed architecture (`D-NN`)**: {{ConfirmedArchitecturalDecisionAndRationale}}
 - **Decision log reference**: All evaluated trade-offs and rejected alternatives are recorded in `codebase-notes.md` (`## 1. Decision Log (D-NN)`).
 
+### Deferred decisions
+
+> Optional — delete when nothing is deferred. Only choices this version's goals do not need; an unknown that blocks this version is resolved before Gate 2, not deferred.
+
+| Decision deferred | Why it can wait | Revisit when |
+|---|---|---|
+| {{DeferredDecision}} | {{ReasonNotNeededForThisVersionGoals}} | {{TriggerOrLaterVersion}} |
+
 ## Module and folder diff
 
 - **Current structure and owners**: {{CurrentVerifiedPaths}}
@@ -71,6 +79,14 @@ Every element in this design serves a goal from `requirements.md` → `## 0. Goa
 {{CoreUsageRows}}
 
 - **Gotchas affecting this design**: {{GuideGotchasOrNone}}
+
+### Complexity justifications
+
+> Optional — delete when the design uses the approved foundation components as mapped. One row per deviation (a foundation component not used where it fits, a new shared layer or abstraction); the full justification lives on the cited `D-NN`.
+
+| Deviation | Decision | Why needed | Simpler alternative rejected because |
+|---|---|---|---|
+| {{DeviationFromFoundation}} | `D-NN` | {{CurrentNeed}} | {{WhyTheSimplerOptionFails}} |
 
 ## UI design system
 
@@ -117,6 +133,23 @@ Every element in this design serves a goal from `requirements.md` → `## 0. Goa
 ### UX Error Handling & Storage Policy
 - **Error Patterns**: {{UxErrorPatterns401_400_Timeout}}
 - **Storage & Invalidation**: {{LocalStoragePolicyAndCacheInvalidation}}
+
+### Risk → Mitigation
+
+> Optional — delete when no known risk threatens an AC or goal.
+
+| Risk | Affects (AC / G) | Mitigation | Owning phase |
+|---|---|---|---|
+| {{Risk}} | {{AcOrGoalIds}} | {{MitigationOrCheck}} | {{PhaseId}} |
+
+### Migration plan and rollback
+
+> Optional — only when persisted keys, cache schema or stored formats change; delete otherwise.
+
+- **What changes**: {{StoredKeysSchemaOrFormatBeforeAndAfter}}
+- **Steps (expand → migrate → contract)**: {{OrderedStepsEachLeavingTheAppWorking}}
+- **Old data and older app versions**: {{HowExistingDataIsReadOrConverted}}
+- **Rollback**: {{HowToReturnToThePreviousStateAndItsCheck}}
 
 ## Verification strategy
 

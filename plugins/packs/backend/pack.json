@@ -10,7 +10,7 @@
     "code-review": "code-review",
     "verification": "verification"
   },
-  "extra": ["api-contracts", "work-items"],
+  "extra": ["api-contracts", "work-item-contract"],
   "not_applicable": ["core-usage", "visual-verification", "ux-kit"],
   "markers": ["pytest", "ORM", "ORMs", "SQLAlchemy", "Prisma", "GORM", "FastAPI", "gRPC"]
 }
