@@ -25,6 +25,7 @@
     "create-security-review-skill"
   ],
   "quality": [
-    "create-quality-planning-skill"
+    "create-quality-planning-skill",
+    "create-quality-environment-skill"
   ]
 }

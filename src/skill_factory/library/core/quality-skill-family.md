@@ -7,7 +7,7 @@ Rules shared by the Quality Assurance Pack generators. The Quality Engineer veri
 | Skill (`.agents/skills/<name>/`) | Side | Answers | When |
 |---|---|---|---|
 | `quality-planning` | QA | Which test cases prove each acceptance criterion, at which level, with which data | After the requirements gate (testability), then before execution |
-| `quality-environment` *(planned)* | QA | How the stack, data and stubs are prepared safely | Before execution |
+| `quality-environment` | QA | How the stack, data and stubs are prepared safely | Before execution |
 | `quality-acceptance` *(planned)* | QC | How cases are executed: `fe/` real browser, `be/` real API | Once per feature (and after fixes) |
 | `quality-reporting` *(planned)* | QC | Evidence, verdicts and defect reports | After execution |
 | `visual-quality` *(planned, optional)* | QC | Comparison with the approved design | UI features |

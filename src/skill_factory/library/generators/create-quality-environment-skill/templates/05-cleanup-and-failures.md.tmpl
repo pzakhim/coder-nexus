@@ -1,0 +1,35 @@
+# 05 — Cleanup, failures and the environment record
+
+<!-- GEN: Why: leftovers poison later runs, silent environment failures look like product bugs, and results without their environment cannot be reproduced. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules E11, E12, E14 with the workspace's cleanup steps, owners and evidence location. -->
+
+## Cleanup
+
+- Data you created: {{cleanup_data}}
+- Processes you started: stop them ({{stop_own_cmd}}); keep the logs for evidence.
+
+## Environment failures
+
+| Failure | Report |
+|---|---|
+| Service down / unhealthy (not yours) | `BLOCKED` — owner {{stack_owner}} |
+| Port conflict you cannot resolve | `BLOCKED` |
+| Missing credentials / config | `BLOCKED` — never invent values |
+| Provider unavailable, no stub | `BLOCKED` for affected cases |
+
+Never change application code to get past an environment problem.
+
+## Environment record (goes with the results)
+
+```
+Revision:   <commit>
+Services:   <name@version / url>
+Data:       <seed / isolation id>
+Stubs:      <provider → tool, or "none">
+Accounts:   <role names only>
+Started:    <by me | reused>   at <time>
+```
+
+<!-- custom:start -->
+<!-- custom:end -->

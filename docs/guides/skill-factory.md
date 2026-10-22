@@ -59,7 +59,7 @@ Defined in [`src/skill_factory/library/packages.json`](../../src/skill_factory/l
 | `coder` | create-clean-architecture-skill · create-incremental-implementation-skill · create-clean-code-skill · create-unit-testing-skill · create-code-simplification-skill · create-bug-hunt-skill · create-root-cause-debugging-skill · create-secure-coding-standards-skill · create-database-migrations-skill |
 | `reviewer` | create-code-review-skill · create-bug-hunt-skill · create-clean-architecture-skill · create-clean-code-skill · create-unit-testing-skill · create-secure-coding-standards-skill · create-database-migrations-skill · create-security-review-skill |
 | `security` | create-secure-coding-standards-skill · create-security-review-skill |
-| `quality` | create-quality-planning-skill (environment, acceptance, reporting, visual planned) |
+| `quality` | create-quality-planning-skill · create-quality-environment-skill (acceptance, reporting, visual planned) |
 
 Planned packages and generators: [skill-factory-roadmap.md](skill-factory-roadmap.md).
 

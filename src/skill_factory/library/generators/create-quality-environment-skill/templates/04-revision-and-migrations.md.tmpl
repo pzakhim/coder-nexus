@@ -1,0 +1,15 @@
+# 04 — Revision and migrations
+
+<!-- GEN: Why: testing a different revision or an old schema proves nothing about the reviewed change. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules E8, E9 with the workspace's install/build steps and migration commands (link database-migrations). -->
+
+1. Confirm the revision under test: {{revision_source}} <!-- GEN: e.g. REVIEW_REVISION from the review report -->
+2. Bring your own services to it: {{align_steps}} <!-- GEN: checkout/worktree, install deps, build, restart own services -->
+3. Migrate the **local/disposable** DB: `{{migrate_cmd}}` — per {{database_migrations_link}}
+4. Record: revision, migration status, service versions.
+
+If the running shared stack is on another revision and is not yours: use a separate stack/worktree you own, or report `BLOCKED`.
+
+<!-- custom:start -->
+<!-- custom:end -->

@@ -1,0 +1,36 @@
+---
+name: quality-environment
+description: How the Quality Engineer of {{project_name}} prepares the test environment - probe before starting and never stop a stack someone else started, start in the background with logs, wait for readiness, run the reviewed revision with its migrations, isolated test data and per-role accounts, sandboxes or labelled stubs for external providers, cleanup, and BLOCKED when the environment fails. Use whenever starting or checking the stack for testing, seeding test data, preparing test accounts or mocking a provider in {{dirs}}.
+---
+
+# Quality Environment — {{project_name}}
+
+<!-- GEN: Why: the lifecycle and the never-list protect other people's work and make results trustworthy. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+## Lifecycle
+
+1. **Probe** {{ports}} — running and healthy → reuse ([01]({{ref_01}})).
+2. **Align** to the reviewed revision and migrate the local DB ([04]({{ref_04}})).
+3. **Start** only what is missing, in the background, logs to {{log_dir}}; record what you started.
+4. **Wait** for readiness ({{readiness_checks}}).
+5. **Seed** isolated data and per-role accounts ([02]({{ref_02}})); set sandboxes/stubs ([03]({{ref_03}})).
+6. **Record** the environment; after the run, **clean up** your own data and processes ([05]({{ref_05}})).
+
+## Never
+
+- Stop, restart or reset a stack you did not start.
+- Run {{forbidden_data_commands}} — they clone, reset or overwrite shared data.
+- Use production data or real users' accounts.
+- Print or report credential values.
+- Report a stubbed result without the `stubbed` label.
+- Work around an environment failure by changing application code — report `BLOCKED`.
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/quality-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Which data and environments cases need: {{quality_planning_link}}
+- Running the cases: {{quality_acceptance_link}} · Migrations: {{database_migrations_link}}
+
+<!-- custom:start -->
+<!-- custom:end -->

@@ -1,0 +1,34 @@
+# 01 — Stack and lifecycle
+
+<!-- GEN: Why: starting or killing the wrong processes breaks other people's work and produces false failures. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules E1–E4 with the workspace's real services, ports, commands (cwd) and health checks; keep existing probe rules verbatim (P5). Read what each make target does — some stop other processes. -->
+
+## Services
+
+| Service | Port / URL | Start (cwd) | Health / ready when |
+|---|---|---|---|
+| {{service}} | {{url}} | `{{start_cmd}}` ({{cwd}}) | {{ready}} |
+
+Start order: {{start_order}}
+
+## Probe first
+
+```bash
+{{probe_commands}}
+```
+
+- Running and healthy → reuse it.
+- Running, unhealthy, not yours → `BLOCKED`; tell {{stack_owner}}.
+- Nothing running → start only the missing services, in the background, logs to `{{log_dir}}`.
+
+## Ownership
+
+Record what you started (PIDs/containers). Stop only those: `{{stop_own_cmd}}`. Never `{{stop_all_cmd}}` unless you started everything and nobody else uses it.
+
+## Notes
+
+{{stack_notes}} <!-- GEN: e.g. "Next listens on IPv6 — use http://localhost:3000"; "first page load can take ~60 s" -->
+
+<!-- custom:start -->
+<!-- custom:end -->
