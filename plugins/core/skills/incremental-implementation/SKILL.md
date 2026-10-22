@@ -8,7 +8,7 @@ description: Implements an approved plan one dependency-ready slice at a time wi
 Read plugin-root `shared_contracts/api_handshake_protocol.md`. Read Huly and source context from `codebase-notes.md` (`## 0A. Source Inventory`, Huly table, `## 4`) and the API contract from `design.md`; `phases/phase-00-prepare.md` (`PHASE-00`) only records readiness and links to them — never re-query Huly or fabricate business records, services, or production fallbacks.
 
 
-For new Client work, use the approved `.superpowers/work-items/<slug>/vN/brief.md` with optional design/plan/phase. A small non-feature task can be executable from the brief alone; a feature still requires all three actual user gates. Follow the chosen type's checks in `work-items`. The versioned `docs/features/` preconditions below apply only to historical feature work.
+For new Client work, use the approved `.superpowers/work-items/<slug>/vN/brief.md` with optional design/plan/phase. A small non-feature task can be executable from the brief alone; a feature still requires all three actual user gates. Follow the chosen type's checks in `work-item-contract`. The versioned `docs/features/` preconditions below apply only to historical feature work.
 
 ## Historical feature workflow
 

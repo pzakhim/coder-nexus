@@ -55,5 +55,5 @@ Agents run only when the coordinator invokes them; Planning does not listen to t
 
 1. **Consult call**: when Spec Writer needs a codebase fact ("does module X exist?", "does the UI kit have a date picker?", "is setup READY?"), the coordinator invokes Planning with that one question.
 2. **Answer and stop**: Planning reads the Client and core guides, answers with file/GUIDE evidence, and returns. It does not draft `design.md` or a plan before Gate 1 is approved.
-3. **Use and clean up the temporary scratchpad**: Planning appends each answer to `.superpowers/work-items/<slug>/vN/codebase-notes.md` (question, answer, evidence path). At Gate 2 it starts from these notes instead of rescanning, consolidates all confirmed decisions into `design.md`, and deletes `codebase-notes.md` immediately upon Gate 2 approval.
+3. **Record in codebase-notes**: Planning appends each answer to `.superpowers/work-items/<slug>/vN/codebase-notes.md` (question, answer, evidence path). At Gate 2 it starts from these notes instead of rescanning and cites the confirmed decisions in `design.md`. `codebase-notes.md` is kept for the whole `vN/` lifecycle; never delete it.
 

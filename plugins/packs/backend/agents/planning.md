@@ -1,7 +1,7 @@
 ---
 skills:
   - backend-api-contracts
-  - backend-work-items
+  - backend-work-item-contract
 ---
 ## Backend rules
 

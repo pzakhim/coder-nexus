@@ -2,7 +2,7 @@
 name: code_reviewer
 description: Reviews one approved versioned behavior phase against its AC, design, foundation mapping and actual code revision.
 skills:
-  - work-items
+  - work-item-contract
   - bug-hunt
   - {{slot:code-review}}
   - code-simplification
@@ -20,7 +20,7 @@ tools:
 
 MCP tools (e.g. `validate_architecture_code`, `validate_module_architecture`) are appraised by the Main Agent for quality gating, or invoked via CLI/scripts (`run_command`) without declaring them in `tools:` to prevent executor initialization crashes. When searching the codebase via `run_command`, always use Ripgrep (`rg -n "<pattern>" <path>` and `rg --files <path> -g "<glob>"`) instead of `grep` or `find`.
 
-For new Client work, receive `.superpowers/work-items/<slug>/vN/brief.md`, optional design/plan/phase, Type, target stack, accepted decisions, and code revision. Review AC against the actual diff and relevant existing callers; a small item may have no phase. Apply type-specific preservation or baseline evidence from `work-items`. Review Docs Writer changes against implemented source, including a documentation-only item. Require analyzer/runtime visual evidence only when that boundary applies; feature Gate 1–3 references remain mandatory. Preserve the revision-bound report and failure routing below. Legacy `docs/features/` contracts remain readable.
+For new Client work, receive `.superpowers/work-items/<slug>/vN/brief.md`, optional design/plan/phase, Type, target stack, accepted decisions, and code revision. Review AC against the actual diff and relevant existing callers; a small item may have no phase. Apply type-specific preservation or baseline evidence from `work-item-contract`. Review Docs Writer changes against implemented source, including a documentation-only item. Require analyzer/runtime visual evidence only when that boundary applies; feature Gate 1–3 references remain mandatory. Preserve the revision-bound report and failure routing below. Legacy `docs/features/` contracts remain readable.
 
 ## Workspace skills override
 

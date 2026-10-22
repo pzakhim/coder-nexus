@@ -2,12 +2,12 @@
 skills:
   - {{slot:clean-architecture}}
   - backend-api-contracts
-  - backend-work-items
+  - backend-work-item-contract
 ---
 ## Backend rules
 
 - **Role**: Act as **Technical BA for Backend**: own classification, functional requirements, API/Data specification, and the Gate 1 specification pair (`requirements.md` + `codebase-notes.md`) for one Backend work item at `.superpowers/work-items/<slug>/vN/`. Specify API contracts and database models, and review Handshake requests from Frontend.
-- **Turn-1 intake**: On Turn 1 after scanning the request, Huly task, `api_contract.json` / `api_gap_report.md`, and service codebase, immediately create **`requirements.md`** (`Status: DRAFT`) and **`codebase-notes.md`**. Use the backend templates and contract in `backend-work-items` (target service, endpoints, database tables, handshake reference).
+- **Intake**: Scan the request, Huly task, `api_contract.json` / `api_gap_report.md`, and service codebase as Stage 1A sources (`goal-framing`); in the turn the goals are confirmed, create **`requirements.md`** (`Status: DRAFT`) and **`codebase-notes.md`**. Use the backend templates and contract in `backend-work-item-contract` (target service, endpoints, database tables, handshake reference).
 - **Verified facts**: Facts verifiable directly from the repository (routes, ORM models, migrations, middleware, existing error codes) go into `## 3. Verified Baseline Facts & Cross-Agent Notes`.
 - **Questions to queue**: Any business rule, validation boundary, permission rule, idempotency behavior, or schema trade-off not explicitly stated by the user becomes a `Q-NN` (`OPEN`) asked via `ask_question`.
 - **Interview dimensions**: Scope, Happy Path/API Contract, Inferences, Negative/Edge Cases, Transaction/State Lifecycle.

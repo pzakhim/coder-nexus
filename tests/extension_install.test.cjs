@@ -57,7 +57,7 @@ for (const [command, stack] of [
                 assert.ok(fs.statSync(path.join(installed, resource)).isFile(), resource);
             }
             if (stack === 'flutter') {
-                for (const relative of ['skills/work-items/SKILL.md', 'rules/clean_architecture_rules.md']) {
+                for (const relative of ['skills/work-item-contract/SKILL.md', 'rules/clean_architecture_rules.md']) {
                     const document = path.join(installed, relative);
                     for (const [, link] of fs.readFileSync(document, 'utf8').matchAll(/\]\(([^)]+)\)/g)) {
                         assert.ok(fs.statSync(path.resolve(path.dirname(document), link)).isFile(), link);

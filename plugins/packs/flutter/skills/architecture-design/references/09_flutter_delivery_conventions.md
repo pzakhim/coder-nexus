@@ -1,6 +1,6 @@
 # 09 — Flutter Delivery Conventions
 
-Flutter values for the stack placeholders used by the core `dev-team`, `feature-planner`, `brainstorming`, `clean-code`, `code-simplification` and `docs` skills and the core feature templates.
+Flutter values for the stack placeholders used by the core `dev-team`, `feature-planner`, `clean-code`, `code-simplification` and `docs` skills and the core feature templates.
 
 ## Profiles and kit matching
 

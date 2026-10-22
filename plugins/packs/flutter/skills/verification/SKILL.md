@@ -8,7 +8,7 @@ description: Verifies a reviewed Flutter revision with the approved analyzer, te
 Read plugin-root `shared_contracts/api_handshake_protocol.md`. Read Huly and source context from `codebase-notes.md` (`## 0A. Source Inventory`, Huly table, `## 4`) and the API contract from `design.md`; `phases/phase-00-prepare.md` (`PHASE-00`) only records readiness and links to them, plus `requirements.md` — never re-query Huly or fabricate business records, services, or production fallbacks.
 
 
-For new Client work, use `.superpowers/work-items/<slug>/vN/brief.md` and optional design/plan/phase, then choose decisive checks from `work-items` by Type. A small item can have no phase. Run only checks relevant to affected Flutter boundaries, and record exact revision and provenance. The `docs/features/` contract below applies to historical features.
+For new Client work, use `.superpowers/work-items/<slug>/vN/brief.md` and optional design/plan/phase, then choose decisive checks from `work-item-contract` by Type. A small item can have no phase. Run only checks relevant to affected Flutter boundaries, and record exact revision and provenance. The `docs/features/` contract below applies to historical features.
 
 ## Historical feature workflow
 

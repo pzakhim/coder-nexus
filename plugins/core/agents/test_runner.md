@@ -2,7 +2,7 @@
 name: test_runner
 description: Runs approved checks for one versioned feature phase in the Client workspace and reports revision-bound results.
 skills:
-  - work-items
+  - work-item-contract
   - {{slot:verification}}
 tools:
   - run_command
