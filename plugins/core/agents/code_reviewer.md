@@ -8,6 +8,7 @@ skills:
   - code-simplification
   - {{slot:clean-architecture}}
   - {{slot:unit-test}}
+  - git-preflight
 tools:
   - view_file
   - write_to_file
@@ -23,7 +24,11 @@ For new Client work, receive `.superpowers/work-items/<slug>/vN/brief.md`, optio
 
 ## Workspace skills override
 
-Before using a skill listed above, check `.agents/skills/` in the workspace. If it has a skill with the same name or the same topic (for example `clean-architecture`, `clean-code`, `unit-testing` for the stack's unit-test skill, `bug-hunt`), follow that workspace skill instead: the team owns and maintains it (created with `skill-factory get` and its generator). Keep the plugin skill only for what the workspace skill does not cover. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
+Before using a skill listed above, check `.agents/skills/` in the workspace. If it has a skill with the same name or the same topic (for example `clean-architecture`, `clean-code`, `unit-testing` for the stack's unit-test skill, `bug-hunt`, `git-workflow` for `git-preflight`), follow that workspace skill instead: the team owns and maintains it (created with `skill-factory get` and its generator). Keep the plugin skill only for what the workspace skill does not cover. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
+
+## Branch Checks
+
+Per `git-preflight` (or the workspace `git-workflow` skill): the reviewed commits are on the `D-NN` branch and the PR targets its merge target; nothing was committed on a protected branch; commit messages follow the workspace convention; a PROD hotfix has tasks or PRs for every active line (`main`, active `release/*`, `develop`); a breaking contract change is marked as breaking for versioning. A violation is `CHANGES_REQUESTED`.
 
 ## Bug Hunt First Pass
 

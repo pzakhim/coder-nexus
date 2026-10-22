@@ -1,0 +1,37 @@
+# 03 — Branch and commit names
+
+<!-- GEN: Why: names drive review, the changelog and the version bump; vague or personal names hide what changed. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules G2, G3, M3, M7. Real prefixes and types from recent branches and commits; link the commitlint/commitizen config when one exists. -->
+
+## Branches
+
+Format: `{{branch_pattern}}`
+
+- Description in lowercase, words joined by `-`; no person names; no vague names (`fix-new`, `final-v2`, `test-branch`).
+- Ticket IDs as the tracker writes them: {{ticket_prefixes}}. Without a ticket ID the user names the branch.
+- The agent proposes the name; the user confirms or edits it.
+- Release lines: `{{release_pattern}}`.
+
+| Example | Work |
+|---|---|
+{{branch_examples}}
+
+## Commits
+
+Format: `{{commit_pattern}}` <!-- GEN: default `type(TICKET): summary` -->
+
+| Type | Use for | Version effect |
+|---|---|---|
+| `feat` | New behavior | MINOR |
+| `fix` | Bug fix | PATCH |
+| `perf` | Performance without behavior change | PATCH |
+| `refactor`, `chore`, `docs`, `test` | No behavior change | none alone |
+| `type!` or footer `BREAKING CHANGE:` | Breaks a contract ([05]({{ref_05}})) | MAJOR |
+
+Check: `{{commit_check_cmd}}` <!-- GEN: e.g. npx commitlint --from origin/develop --to HEAD; "none" if the repo has no tool -->
+
+One PR = one ticket or logical change. Never commit secrets; never bypass hooks with `--no-verify`.
+
+<!-- custom:start -->
+<!-- custom:end -->

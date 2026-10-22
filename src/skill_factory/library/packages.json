@@ -8,7 +8,8 @@
     "create-bug-hunt-skill",
     "create-root-cause-debugging-skill",
     "create-secure-coding-standards-skill",
-    "create-database-migrations-skill"
+    "create-database-migrations-skill",
+    "create-git-workflow-skill"
   ],
   "reviewer": [
     "create-code-review-skill",
@@ -18,7 +19,8 @@
     "create-unit-testing-skill",
     "create-secure-coding-standards-skill",
     "create-database-migrations-skill",
-    "create-security-review-skill"
+    "create-security-review-skill",
+    "create-git-workflow-skill"
   ],
   "security": [
     "create-secure-coding-standards-skill",

@@ -18,6 +18,7 @@
     "core/dev-team",
     "core/docs",
     "core/feature-planner",
+    "core/git-preflight",
     "core/grill-me",
     "core/huly-setup",
     "core/huly-task-runner",
@@ -87,7 +88,8 @@
     "core/skills/ux-mockup/references/02_screen_rules.md",
     "core/skills/ux-mockup/references/03_revisions_and_approval.md",
     "core/skills/ux-mockup/references/04_walkthrough.md",
-    "packs/flutter/skills/ux-kit/SKILL.md"
+    "packs/flutter/skills/ux-kit/SKILL.md",
+    "core/skills/git-preflight/SKILL.md"
   ],
   "resource_base": "plugins/"
 }

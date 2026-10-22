@@ -7,6 +7,7 @@ skills:
   - {{slot:architecture-design}}
   - planning-and-task-breakdown
   - {{slot:clean-architecture}}
+  - git-preflight
 tools:
   - ask_question
   - view_file
@@ -80,6 +81,7 @@ After Gate 2 approval, formulate the execution plan using `planning-and-task-bre
     - **Produces**: Public symbols/signatures later tasks in the phase consume.
     - **Acceptance Criteria**: Immediate command or check to verify that task (the stack's analyzer, targeted unit test).
   - Design tasks for the **Mandatory Plan Re-Grounding Loop**: after finishing each micro-task and passing its acceptance check, `code_writer` returns to `phases/phase-NN-*.md`, ticks `- [x]`, and re-reads the next task's specification before writing code.
+- **Branch**: scan code on the item branch recorded by `git-preflight` and copy its `D-NN` (branch, base, merge targets) into `implementation-plan.md`. A PROD hotfix gets explicit tasks to bring the fix into the active `release/*` and `develop`. Never plan a merge into `main`, a tag or a production deploy as an agent task; list them as commands for the user.
 - **100% AC Traceability**: Map every AC ID from `requirements.md` to an owning phase with a decisive check.
 - **UI/UX coverage**: every `S-NN` / `C-NN` in `## UI/UX mapping` belongs to a phase; each NEW COMPONENT (`C-NN`) is an explicit task built from its `components/C-NN-*.html` drawing.
 - **Review Definition of Done (DoD)**: Specify developer unit tests (UseCases, Mappers, state transitions covering the agreed Pass/Default and Fail data) and zero-error analyzer requirements for Code Reviewer.

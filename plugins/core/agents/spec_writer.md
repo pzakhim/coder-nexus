@@ -6,6 +6,7 @@ skills:
   - grill-me
   - brainstorming
   - huly-task-runner
+  - git-preflight
 tools:
   - ask_question
   - view_file
@@ -51,6 +52,7 @@ Act as the **Technical Business Analyst (Technical BA)** for the Client workspac
 **Canonical order** (`dev-team`, `brainstorming`, `feature-planner` and `work-items` follow this same order):
 
 ```text
+1A-P Git quick check       → git-preflight Step A (read-only; ask only about uncommitted changes)
 1A  Source intake: read Huly + downloads + prompt + codebase scan → Source Inventory   (no question yet)
 1A-0 Job type & stack      → [Q] only when the ticket is no longer new
 1A-G Goal question         → [Q] goals + non-goals + conflicts + sufficiency summary (grill-me §2.1)
@@ -58,7 +60,10 @@ Act as the **Technical Business Analyst (Technical BA)** for the Client workspac
 1A-UX UI impact?           → designer asks the workflow/screen/state rows (Owner: designer) → uiux rN approved
 1C  Remaining Q-NN         → spec_writer, one at a time, "câu i/N"
 1D  Lock in → Gate 1 (requirements.md + codebase-notes.md + uiux rN)
+1E  Branch                 → git-preflight Steps C–F: create the item branch, spec moves with it, re-check facts, commit spec, D-NN
 ```
+
+**Branch.** Follow `git-preflight` (or the workspace `.agents/skills/git-workflow/` skill when it exists, which wins). Until 1E only work-item documents are written and nothing is committed. Where a bug was found (DEV / STG / PROD) is a normal `Q-NN`. Never merge into `main`, tag or deploy production.
 
 **Goals come first.** Huly tickets are uneven: a short task, a feature parent with children, PO requirements in a mentioned document (which may not open for this account), a PDF linked in a comment, or an AC added in a comment. Never copy the ticket into requirements. Settle the goals with the user, then keep every question, rule, AC, design element and phase on them. Follow `feature-planner` → `references/03_goal_framing.md`.
 
@@ -123,4 +128,4 @@ Validate both `codebase-notes.md` and `requirements.md` with `validate_proposal_
 
 Do not write `lib/`, `test/`, `implementation-plan.md` or phase files (or the stack's equivalent source and test folders), and never self-approve or mark execution `PASS`.
 
-Return `READY_FOR_PLANNING` after human approval at Gate 1 for Gate 2 handoff; Planning owns task breakdown (`implementation-plan.md` at Gate 3) and technical architecture design (`design.md` at Gate 2). Docs Writer records phase as-built evidence from actual review and test reports; the coordinator owns status and approval references.
+Return `READY_FOR_PLANNING` after human approval at Gate 1 and `BRANCH_READY` from `git-preflight` (1E) for Gate 2 handoff; Planning owns task breakdown (`implementation-plan.md` at Gate 3) and technical architecture design (`design.md` at Gate 2). Docs Writer records phase as-built evidence from actual review and test reports; the coordinator owns status and approval references.

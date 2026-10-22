@@ -26,6 +26,7 @@ CODER = [
     "create-root-cause-debugging-skill",
     "create-secure-coding-standards-skill",
     "create-database-migrations-skill",
+    "create-git-workflow-skill",
 ]
 NON_CODER = ["create-code-review-skill", "create-security-review-skill", "create-quality-planning-skill", "create-quality-environment-skill", "create-quality-acceptance-skill", "create-quality-reporting-skill", "create-visual-quality-skill"]
 ALL = CODER + NON_CODER
@@ -92,6 +93,15 @@ def test_every_template_states_why_it_exists():
 def test_skill_factory_does_not_depend_on_coder_nexus():
     for module in (LIBRARY_DIR.parent).glob("*.py"):
         assert "coder_nexus" not in module.read_text(encoding="utf-8"), f"{module} imports coder_nexus"
+
+
+def test_git_workflow_generator_keeps_production_human():
+    base = (GENERATORS_DIR / "create-git-workflow-skill" / "references" / "base-rules.md").read_text(encoding="utf-8")
+    assert "never merge into the production branch, tag, or deploy production" in base
+    template = (GENERATORS_DIR / "create-git-workflow-skill" / "templates" / "SKILL.md.tmpl").read_text(encoding="utf-8")
+    assert "Merge into `{{production_branch}}`, create a tag or deploy production" in template
+    for preset in ("gitflow-dev-stg-prod", "github-flow", "trunk-based"):
+        assert (GENERATORS_DIR / "create-git-workflow-skill" / "references" / "presets" / f"{preset}.md").is_file()
 
 
 def test_roles_let_workspace_skills_override_fixed_skills():

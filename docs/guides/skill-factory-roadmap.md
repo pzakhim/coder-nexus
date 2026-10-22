@@ -8,7 +8,7 @@ Every generator follows [core/workflow.md](../../src/skill_factory/library/core/
 
 | Pack | Role | Skills |
 |---|---|---|
-| **Engineering Pack** | Code Writer | clean-architecture · incremental-implementation · clean-code · unit-testing · code-simplification · bug-hunt (`quick`) · root-cause-debugging · database-migrations · secure-coding-standards |
+| **Engineering Pack** | Code Writer | clean-architecture · incremental-implementation · clean-code · unit-testing · code-simplification · bug-hunt (`quick`) · root-cause-debugging · database-migrations · secure-coding-standards · git-workflow |
 | **Code Review Pack** (`-p reviewer`) | Code Reviewer | code-review · bug-hunt (`standard`/`deep`) · grades against clean-architecture, clean-code, unit-testing, secure-coding-standards, database-migrations ([reviewer-skill-family](../../src/skill_factory/library/core/reviewer-skill-family.md)) |
 | **Application Security Pack** (`-p security`) | Security | security-review · secure-coding-standards ([security-skill-family](../../src/skill_factory/library/core/security-skill-family.md)) |
 | **Quality Assurance Pack** (`-p quality`) | Quality Engineer (QA/QC) | quality-planning · quality-environment · quality-acceptance · quality-reporting · visual-quality (optional) |
@@ -40,6 +40,7 @@ Distribution: `skill-factory list | get` (CLI, `src/skill_factory/`). Next distr
 | 13 | `create-quality-acceptance-skill` | `quality-acceptance` | Quality Assurance | Built (1.0.0) |
 | 14 | `create-quality-reporting-skill` | `quality-reporting` | Quality Assurance | Built (1.0.0) |
 | 15 | `create-visual-quality-skill` | `visual-quality` | Quality Assurance (optional) | Built (1.0.0) |
+| 16 | `create-git-workflow-skill` | `git-workflow` | Engineering, Code Review | Built (1.0.0); runtime steps in the fixed core skill `git-preflight` |
 
 None has been trial-run in a real workspace yet.
 
@@ -86,6 +87,21 @@ Each milestone ends with a trial run in a real workspace before the next starts.
 
 - `create-<pack>-skills` orchestrators: one Context Card and one question round for a whole pack.
 - Delivery Planning Pack.
+
+## Reference sources (to integrate later)
+
+Ideas and structure only; rewrite them in the factory's Q-NN → D-NN and gate vocabulary, never copy text, and cite the source in the generator's `references/`. Stars checked on 2026-10-22.
+
+| Source | Stars | Use for | Ideas to take |
+|---|---|---|---|
+| [github/spec-kit](https://github.com/github/spec-kit) (`templates/spec-template.md`, `plan-template.md`, `constitution-template.md`) | 142k | requirements-specification, implementation-planning | Prioritized independently testable user stories (P1/P2/P3), `FR-NNN`, `[NEEDS CLARIFICATION]` markers, measurable technology-agnostic success criteria, Key Entities, a per-project constitution checked before planning, task IDs `T001` with exact paths, complexity tracking |
+| [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) (`spec-driven-development`, `planning-and-task-breakdown`, `api-and-interface-design`, `documentation-and-adrs`, `git-workflow-and-versioning`, `interview-me`) | 109k | spec, planning, api-contract, git-workflow | Gated phases with a scope check and capability map, Boundaries section, dependency graph and vertical slices with checkpoints, task sizing, ADRs; git: atomic commits, worktrees for parallel agents, semver, human changelog (defaults to trunk-based; gitflow teams adapt) |
+| [obra/superpowers](https://github.com/obra/superpowers) (`writing-plans`, `finishing-a-development-branch`, `using-git-worktrees`, `brainstorming`) | 303k | implementation-planning, git-workflow | Scope check, right-sized tasks with file structure, global constraints, review focus, self-review before handoff; finishing a branch: verify tests, detect base, offer merge / PR / keep, then clean up |
+| [Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec) | 73k | requirements-specification, change-impact-analysis | Spec deltas for changes to existing behavior (not yet read in detail) |
+| [bmad-code-org/BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD) | 54k | spec, planning | PM / Architect roles, PRD → architecture → stories (idea level only) |
+| [nvie/gitflow](https://github.com/nvie/gitflow) | 27k | git-workflow | The original Git Flow model and commands |
+| [Conventional Commits](https://github.com/conventional-commits/conventionalcommits.org), [commitlint](https://github.com/conventional-changelog/commitlint), [commitizen](https://github.com/commitizen/cz-cli), [semantic-release](https://github.com/semantic-release/semantic-release), [release-please](https://github.com/googleapis/release-please) | 9k–24k | git-workflow | Commit format `type(scope): …`; detect these tools in a workspace and use them as the real checks |
+| [netresearch/git-workflow-skill](https://github.com/netresearch/git-workflow-skill) | <100 | git-workflow | Git Flow / GitHub Flow / trunk-based presets in one skill (low adoption; reference only) |
 
 ## Open decisions
 

@@ -8,6 +8,7 @@ skills:
   - incremental-implementation
   - clean-code
   - bug-hunt
+  - git-preflight
 tools:
   - view_file
   - write_to_file
@@ -26,7 +27,7 @@ If a planned core API or base class does not fit, stop and return to Planning.
 
 ## Workspace skills override
 
-Before using a skill listed above, check `.agents/skills/` in the workspace. If it has a skill with the same name or the same topic (for example `clean-architecture`, `clean-code`, `unit-testing` for the stack's unit-test skill, `bug-hunt`), follow that workspace skill instead: the team owns and maintains it (created with `skill-factory get` and its generator). Keep the plugin skill only for what the workspace skill does not cover. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
+Before using a skill listed above, check `.agents/skills/` in the workspace. If it has a skill with the same name or the same topic (for example `clean-architecture`, `clean-code`, `unit-testing` for the stack's unit-test skill, `bug-hunt`, `git-workflow` for `git-preflight`), follow that workspace skill instead: the team owns and maintains it (created with `skill-factory get` and its generator). Keep the plugin skill only for what the workspace skill does not cover. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
 
 ## `PHASE-00` Readiness & External Dependencies
 - **Single Source Context (`PHASE-00` & `design.md`)**: Always read `codebase-notes.md` for Huly and source context, `design.md` for the API contract, and `phases/phase-00-prepare.md` (`PHASE-00`) for readiness — never re-query Huly or search for scattered API specs.
@@ -53,6 +54,10 @@ Code Writer receives one approved phase at a time and executes all tasks in that
    - **No bypassing the mapping**: for each need in the design's `Core usage` / `Client Core Mapping` table, use the mapped component, not a raw framework substitute.
    - **No contract bypass**: route/entry points follow the approved profile's contract recorded in `design.md`.
    - If a mapped component cannot work in this Client, stop and report `BLOCKED` to Planning; never substitute silently.
+
+## Branch
+
+Before each phase, `git branch --show-current` must match the branch in the `git-preflight` `D-NN`; if not, stop and report `BLOCKED`. Commit on that branch only, with the workspace's message convention (default `type(TICKET): summary`). Never commit on `main`, `develop` or `release/*`, never force-push a shared branch, and never merge into `main`, tag or deploy production: prepare those commands for the user.
 
 ## Execution and Quality Safeguards
 

@@ -774,6 +774,18 @@ def test_bug_hunt_skill_is_wired_into_review_and_writing():
     assert "{{BUG_HUNT_ROWS}}" in report and "Failure scenario" in report
 
 
+def test_core_git_preflight_skill_is_wired():
+    """Core git-preflight: spec first, branch after Gate 1 from the job type's base, never production."""
+    content = (PLUGIN_DIR / "core/skills/git-preflight/SKILL.md").read_text(encoding="utf-8")
+    assert "name: git-preflight" in content
+    assert "after Gate 1" in content and "git switch -c" in content
+    assert "Never put code on production" in content
+    assert ".agents/skills/git-workflow/" in content
+    for role in ("spec_writer.md", "planning.md", "code_writer.md", "code_reviewer.md"):
+        assert "git-preflight" in rendered_agent(role), role
+    assert "1E  Branch" in rendered_agent("spec_writer.md")
+
+
 def test_all_skills_have_valid_yaml_frontmatter():
     """Every skill's SKILL.md frontmatter must parse cleanly without YAML syntax errors (e.g. unquoted colons)."""
     import yaml

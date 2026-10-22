@@ -1,0 +1,39 @@
+# 02 — Branch preflight
+
+<!-- GEN: Why: `git-preflight` reads this file to pick the base and merge targets; a wrong row sends code to the wrong environment. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules M1, M4, M8, M9, G1. The steps themselves live in the fixed git-preflight skill; this file holds the workspace's table and exceptions only. -->
+
+## When
+
+- Task start: quick read-only check (branch, uncommitted changes, existing ticket branch, active `release/*`).
+- After Gate 1: create the branch, the uncommitted spec moves with it, re-check facts, commit the spec first.
+
+Spec documents: `{{work_items_path}}` — {{work_items_committed}}
+<!-- GEN: "committed with the branch" or "kept out of Git by user choice (D-NN)" per Gate Q9. -->
+
+## Base and merge targets
+
+| Job type | Ask first | Base | Merges into (PR, user merges production) |
+|---|---|---|---|
+{{preflight_rows}}
+<!-- GEN: Cover feature/refactor/perf/chore, bug on DEV, bug on STG (several releases → ask; none → DEV), bug on PROD (hotfix), spike, verification/docs. -->
+
+## Existing branch checks
+
+- Base: `git merge-base --is-ancestor origin/<base> HEAD`.
+- Behind: `git rev-list --count HEAD..origin/<base>` → rebase (personal branch) or merge.
+- Wrong base → warn and offer to recreate; the user decides.
+
+## Decision record
+
+```text
+D-NN Branch: {{example_branch}}
+     Base: origin/{{example_base}} @ <sha>
+     Spec scanned on: <ref> @ <sha> (re-checked, <n> cited paths changed)
+     Merge to: {{example_targets}}
+     Source: {{example_source}}
+```
+
+<!-- custom:start -->
+<!-- custom:end -->

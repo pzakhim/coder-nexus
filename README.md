@@ -146,8 +146,8 @@ Then ask your agent to run a generator, e.g. `/create-clean-code-skill` in Claud
 
 | Package | Generators (`create-…-skill`) |
 |---|---|
-| `coder` | clean-architecture · incremental-implementation · clean-code · unit-testing · code-simplification · bug-hunt · root-cause-debugging · secure-coding-standards · database-migrations |
-| `reviewer` | code-review · bug-hunt · clean-architecture · clean-code · unit-testing · secure-coding-standards · database-migrations · security-review |
+| `coder` | clean-architecture · incremental-implementation · clean-code · unit-testing · code-simplification · bug-hunt · root-cause-debugging · secure-coding-standards · database-migrations · git-workflow |
+| `reviewer` | code-review · bug-hunt · clean-architecture · clean-code · unit-testing · secure-coding-standards · database-migrations · security-review · git-workflow |
 | `security` | secure-coding-standards · security-review |
 | `quality` | quality-planning · quality-environment · quality-acceptance · quality-reporting · visual-quality |
 

@@ -1,0 +1,29 @@
+# 01 — Branch model
+
+<!-- GEN: Why: agents must know which line is DEV, STG and PROD and which branches are protected before choosing a base. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules G1, M2. Facts from the Context Card (branches, CI filters, protection); preset from Step 3. -->
+
+Model: **{{branch_model}}**. {{model_one_line}}
+
+## Lines and environments
+
+| Environment | Git ref | Deployed by | Role |
+|---|---|---|---|
+{{environment_rows}}
+<!-- GEN: e.g. | DEV | `develop` | CI on push | continuous integration | -->
+
+## Branch types
+
+| Branch | From | Merges into | Purpose |
+|---|---|---|---|
+{{branch_type_rows}}
+
+## Protected
+
+`{{protected_branches}}` — no direct commits, PR only, no force-push. {{protection_notes}}
+
+<!-- GEN: Say how protection was verified (gh api, CI settings, or the user's answer). -->
+
+<!-- custom:start -->
+<!-- custom:end -->

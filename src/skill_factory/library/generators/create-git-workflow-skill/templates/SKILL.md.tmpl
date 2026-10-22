@@ -1,0 +1,47 @@
+---
+name: git-workflow
+description: How {{project_name}} branches, commits, merges and versions with {{branch_model}} - which base each job type branches from ({{base_summary}}), branch and commit names with {{ticket_prefixes}}, merge strategy, hotfix propagation, when to bump PATCH, MINOR or MAJOR and the release checks - agents never merge into {{production_branch}}, tag or deploy production. Use whenever starting a task, creating a branch, fixing a bug on DEV, STG or PROD, preparing a hotfix or release, choosing a version or writing a commit message in {{project_name}}.
+---
+
+# Git Workflow — {{project_name}}
+
+<!-- GEN: Why: a wrong base or a wrong merge reaches the wrong environment, so the never-list and the base table must be in front of the agent before it creates a branch. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+Model: {{branch_model}} · Integration: `{{integration_branch}}` · Production: `{{production_branch}}` + tags `{{tag_format}}`
+
+This skill overrides the defaults of the Coder Nexus `git-preflight` skill, which runs the branch steps (quick check at task start, branch after Gate 1, spec as the first commit).
+
+## Never
+
+- Merge into `{{production_branch}}`, create a tag or deploy production — prepare the commands for the user.
+- Commit on `{{protected_branches}}` or force-push a shared branch.
+- Discard or overwrite the user's uncommitted changes.
+- Promote between environments with cherry-pick.
+- Commit a secret.
+
+## Where a task branches from
+
+| Job type | Base | Merges into |
+|---|---|---|
+{{base_table_rows}}
+<!-- GEN: Copy the confirmed rows of references/02-preflight.md here; keep it to the common cases. -->
+
+Name: `{{branch_pattern}}`, confirmed by the user ([03]({{ref_03}})).
+
+## Read next
+
+1. Lines and environments ([01]({{ref_01}})).
+2. Preflight details and the `D-NN` record ([02]({{ref_02}})).
+3. Branch and commit names ([03]({{ref_03}})).
+4. Merge strategy and hotfix propagation ([04]({{ref_04}})).
+5. Versioning and what the user runs to release ([05]({{ref_05}})).
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Task order inside a phase: {{incremental_implementation_link}}
+- Whether a schema change breaks a contract: {{database_migrations_link}}
+
+<!-- custom:start -->
+<!-- custom:end -->

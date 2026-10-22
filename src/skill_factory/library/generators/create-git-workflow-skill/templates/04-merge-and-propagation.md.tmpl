@@ -1,0 +1,35 @@
+# 04 — Merge strategy and propagation
+
+<!-- GEN: Why: squash vs merge decides whether history stays auditable, and a hotfix that reaches only one line comes back in the next release. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules G4, G5, G6, M5, M6. Strategy per pair from merge history and the user's confirmation. -->
+
+## Strategy
+
+| Source → target | Strategy | Who merges |
+|---|---|---|
+{{merge_rows}}
+<!-- GEN: Production target rows say "user". -->
+
+Rule of thumb: {{merge_motto}} <!-- GEN: e.g. "Squash the developer's work; preserve the release's history." -->
+
+## Hotfix propagation
+
+A production fix must exist on every active line that can ship the bug again:
+
+| Line | Required | Why |
+|---|---|---|
+{{propagation_rows}}
+
+Never merge all of `{{production_branch}}` into a release to obtain one fix when it carries unrelated changes; use a PR from the hotfix branch or a controlled backport.
+
+## Cherry-pick
+
+Not a promotion mechanism between environments. Allowed only as a deliberate backport; write the reason in the PR.
+
+## Rewriting history
+
+No force-push on `{{protected_branches}}`; rebase only personal branches nobody else has pulled.
+
+<!-- custom:start -->
+<!-- custom:end -->

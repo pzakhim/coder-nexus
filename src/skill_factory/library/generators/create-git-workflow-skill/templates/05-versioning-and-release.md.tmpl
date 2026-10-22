@@ -1,0 +1,52 @@
+# 05 — Versioning and release
+
+<!-- GEN: Why: the version tells consumers how risky an upgrade is, and the release steps decide whether production gets exactly what was tested. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules V1–V7, R1–R2, M6. Contracts from Gate Q5; phase from Q6; rc tags Q7; monorepo Q8. If semantic-release or release-please computes versions, say so and link its config. -->
+
+Format: `MAJOR.MINOR.PATCH`, tag `{{tag_format}}` · Current phase: {{version_phase}} <!-- GEN: "0.x (pre-production)" or "1.0.0+" -->
+
+## Contracts
+
+A change breaks the contract when it breaks any of:
+
+{{contract_list}}
+
+## When to bump
+
+| Bump | When | Example in this workspace |
+|---|---|---|
+| PATCH | Fixes, security patches, performance without behavior change; no new feature | {{patch_example}} |
+| MINOR | At least one new backward-compatible feature (screens, endpoints, optional fields, additive migrations, config with defaults, deprecations); PATCH resets | {{minor_example}} |
+| MAJOR | Any contract break: removed or renamed endpoint/field, changed meaning, required config without default, a migration that breaks the running version, forced mobile update, permission model change | {{major_example}} |
+
+The highest impact in the release wins. A business-driven MAJOR needs a recorded, approved decision.
+
+## Computing it
+
+From commits since the last tag: `feat` → MINOR, `fix`/`perf` → PATCH, `!`/`BREAKING CHANGE` → MAJOR. The agent proposes the version with the commit list, AC and reason; {{release_approver}} approves.
+
+## Through the branch lifecycle
+
+| Moment | Version |
+|---|---|
+{{lifecycle_rows}}
+<!-- GEN: cut release (name fixed), STG (fixes only, rc tags if Q7), production tag, hotfix PATCH, new feature during STG (not into the running release), DEV builds (SHA, no tag). -->
+
+## Single source of truth
+
+Tag first; files `{{version_files}}` are synced by `{{version_sync_cmd}}`. {{mobile_build_note}} Changelog groups: Added / Changed / Fixed / Security, written for users.
+
+## Releasing to production (the user runs it)
+
+The agent prepares this checklist and the commands; it never runs the merge, the tag or the deploy.
+
+1. STG passed for `{{release_pattern}}` @ `<sha>`.
+2. R1: every hotfix on `{{production_branch}}` is in the release — `git log --oneline origin/<release>..origin/{{production_branch}}` is empty (or only merge commits already contained).
+3. Merge the release into `{{production_branch}}` (merge commit).
+4. R2: `git diff origin/<release> <merge-commit>` is empty; otherwise test again on STG.
+5. Tag `{{tag_format}}` with the release SHA in the message; promote the tested artifact `<registry>/<app>:<sha>`.
+6. Propagate as [04]({{ref_04}}) requires; delete the release branch when done.
+
+<!-- custom:start -->
+<!-- custom:end -->
