@@ -1,0 +1,29 @@
+# 01 — Scope and order
+
+<!-- GEN: Why: a review of the wrong tree, or one that reads intent before code, proves nothing. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules R1, R2, R3, R6, R9 with the workspace's handoff fields and inputs. -->
+
+## Inputs
+
+From the handoff ({{handoff_location}}): {{handoff_fields}} <!-- GEN: e.g. phase ID, BASE_REVISION, REVIEW_REVISION, uncommitted scope, AC IDs, approved document revisions, planned checks -->
+
+## Fix the scope
+
+- Review exactly the review revision plus its uncommitted scope.
+- Read each changed hunk with its whole function/class and the callers it can break.
+- Legacy debt outside the change is a note, never a blocker.
+
+## Read-only
+
+Never edit code, tests, generated files or dependencies. Any edit — even a comment — is a new revision to review.
+
+## Order
+
+1. Bug-hunt (cold, from the code).
+2. Read the plan, decisions ({{decision_notation}}), goals and AC.
+3. Grade the axes and rerun their gates.
+4. Findings → verdict → report.
+
+<!-- custom:start -->
+<!-- custom:end -->

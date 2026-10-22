@@ -27,6 +27,8 @@ CODER = [
     "create-secure-coding-standards-skill",
     "create-database-migrations-skill",
 ]
+REVIEWER_ONLY = ["create-code-review-skill"]
+ALL = CODER + REVIEWER_ONLY
 
 
 def run(capsys, *argv: str) -> tuple[int, str, str]:
@@ -40,7 +42,7 @@ def run(capsys, *argv: str) -> tuple[int, str, str]:
 
 def test_every_generator_is_well_formed():
     generators = list_generators()
-    assert [g.name for g in generators] == sorted(CODER)
+    assert [g.name for g in generators] == sorted(ALL)
     for g in generators:
         assert g.name == g.path.name, f"{g.path}: frontmatter name differs from the folder"
         assert SEMVER_RE.match(g.version), f"{g.name}: VERSION {g.version!r} is not semver"
@@ -53,6 +55,7 @@ def test_every_generator_is_well_formed():
 def test_packages_reference_existing_generators():
     packages = load_packages()
     assert packages["coder"] == CODER
+    assert set(packages["reviewer"]) >= {"create-code-review-skill", "create-bug-hunt-skill"}
     for members in packages.values():
         for name in members:
             assert (GENERATORS_DIR / name / "SKILL.md").is_file(), f"package member {name} does not exist"
@@ -151,8 +154,8 @@ def test_get_package_and_get_all(tmp_path, capsys):
     package_ws, all_ws = tmp_path / "pkg", tmp_path / "all"
     assert run(capsys, "get", "-p", "coder", "--workspace", str(package_ws))[0] == 0
     assert run(capsys, "get", ".", "--workspace", str(all_ws))[0] == 0
-    for ws in (package_ws, all_ws):
-        assert sorted(p.name for p in (ws / ".agents" / "skills").iterdir()) == sorted(CODER)
+    assert sorted(p.name for p in (package_ws / ".agents" / "skills").iterdir()) == sorted(CODER)
+    assert sorted(p.name for p in (all_ws / ".agents" / "skills").iterdir()) == sorted(ALL)
 
 
 def test_get_existing_copy_is_kept_unless_forced(tmp_path, capsys):

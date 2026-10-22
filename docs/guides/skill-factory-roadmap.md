@@ -9,7 +9,7 @@ Every generator follows [core/workflow.md](../../src/skill_factory/library/core/
 | Pack | Role | Skills |
 |---|---|---|
 | **Engineering Pack** | Code Writer | clean-architecture · incremental-implementation · clean-code · unit-testing · code-simplification · bug-hunt (`quick`) · root-cause-debugging · database-migrations · secure-coding-standards |
-| **Code Review Pack** | Code Reviewer | code-review · bug-hunt (`standard`/`deep`) · grades against clean-architecture, clean-code, unit-testing |
+| **Code Review Pack** (`-p reviewer`) | Code Reviewer | code-review · bug-hunt (`standard`/`deep`) · grades against clean-architecture, clean-code, unit-testing, secure-coding-standards, database-migrations ([reviewer-skill-family](../../src/skill_factory/library/core/reviewer-skill-family.md)) |
 | **Application Security Pack** | Security | security-review · secure-coding-standards |
 | **Quality Assurance Pack** | Quality Engineer (QA/QC) | quality-planning · quality-environment · quality-acceptance · quality-reporting · visual-quality (optional) |
 | *Later:* Delivery Planning Pack | Planning, Spec | requirements-specification · implementation-planning · api-contract-design |
@@ -31,6 +31,7 @@ Distribution: `skill-factory list | get` (CLI, `src/skill_factory/`). Next distr
 | 6 | `create-root-cause-debugging-skill` | `root-cause-debugging` | Engineering | Built (1.0.0) |
 | 7 | `create-secure-coding-standards-skill` | `secure-coding-standards` | Engineering, Application Security | Built (1.0.0) |
 | 8 | `create-database-migrations-skill` | `database-migrations` | Engineering (backend) | Built (1.0.0) |
+| 9 | `create-code-review-skill` | `code-review` | Code Review | Built (1.0.0) |
 
 None has been trial-run in a real workspace yet.
 
@@ -49,11 +50,11 @@ None has been trial-run in a real workspace yet.
 | 8 ✅ | `create-database-migrations-skill` | Hard-to-undo changes: idempotency, locks, backfills, ordering, rollback (BE only) | erp `be-database-migration` |
 | — | incremental-implementation minor | Add git hygiene (scoped commits, messages, no unrelated files) instead of a new skill; release with the Unreleased patch | — |
 
-### Milestone C — Code Review Pack
+### Milestone C — Code Review Pack (generator 9 built)
 
 | # | Generator | Why |
 |---|---|---|
-| 9 | `create-code-review-skill` | Review process: fixed revision, order of axes (bug-hunt first, then compliance), finding format, verdicts, rounds and escalation; grades with the Engineering skills |
+| 9 ✅ | `create-code-review-skill` | Review process: fixed revision, order of axes (bug-hunt first, then compliance), finding format, verdicts, rounds and escalation; grades with the Engineering skills |
 
 ### Milestone D — Application Security Pack
 

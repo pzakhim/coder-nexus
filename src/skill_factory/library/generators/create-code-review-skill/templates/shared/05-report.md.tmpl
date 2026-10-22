@@ -1,0 +1,24 @@
+# 05 — Report
+
+<!-- GEN: Why: the report is the evidence trail for the phase and the input of the next role. Kind: Suggested — keep the purpose, adapt the structure; may merge into 04 (core/authoring-guide.md). -->
+
+<!-- GEN: Rule R13 with the workspace's report path and next role. -->
+
+Write to `{{report_location}}`:
+
+```
+Review of <item / phase> @ <review revision> (base <base revision>)
+
+Bug-hunt: <summary line>  — table below
+Checks rerun:
+  <command> → PASS | FAIL | NOT_RUN | BLOCKED
+AC trace: <n>/<m> traced
+Findings: <table, most severe first>
+Notes (non-blocking): …
+Verdict: <APPROVED | CHANGES_REQUESTED | BLOCKED> — <one-line reason>
+```
+
+Hand the verdict to {{next_role}}. Security-relevant changes flagged in the handoff go to {{security_role}} as well.
+
+<!-- custom:start -->
+<!-- custom:end -->

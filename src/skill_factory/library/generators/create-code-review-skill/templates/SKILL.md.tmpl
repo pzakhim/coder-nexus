@@ -1,0 +1,43 @@
+---
+name: code-review
+description: How the Code Reviewer of {{project_name}} reviews one revision - read-only, bug-hunt first, then plan, architecture, quality, tests, security, contract, UI and migration axes graded with the workspace's own skills and gates, findings with severity and fix direction, and an APPROVED / CHANGES_REQUESTED / BLOCKED verdict. Use whenever reviewing a phase, pull request or diff, or re-reviewing after fixes, in {{dirs}}.
+---
+
+# Code Review — {{project_name}}
+
+<!-- GEN: Why: the order of passes and the verdict criteria must be fixed, or every review becomes a different review. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+## Order of passes
+
+1. **Fix the revision** and the full scope; stay read-only ([01]({{ref_01}})).
+2. **Bug-hunt** at `standard` (`deep` for {{deep_triggers}}) from the code, before the documents — {{bug_hunt_link}}.
+3. **Grade each axis** with its rubric skill and rerun its gate ([02]({{ref_02}})).
+4. **Write findings** with severity and fix direction ([03]({{ref_03}})).
+5. **Decide the verdict** by the criteria; handle rounds ([04]({{ref_04}})).
+6. **Report** on the revision ([05]({{ref_05}})).
+
+## Verdict criteria
+
+`{{approved_word}}` only when:
+- every applicable acceptance criterion is traced to implementation and evidence,
+- bug-hunt left no CONFIRMED BLOCKER/MAJOR,
+- no other blocking finding,
+- {{required_gates}} pass on the review revision,
+- UI/visual review done when the change has UI.
+
+Otherwise `{{changes_word}}`, or `{{blocked_word}}` when required evidence is missing. The reviewer never waives a rule.
+
+## Rubric skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/reviewer-skill-family.md; link existing skills or write "not set up in this workspace — fallback checklist in 02". -->
+| Axis | Rubric |
+|---|---|
+| Architecture | {{clean_architecture_link}} |
+| Code quality | {{clean_code_link}} |
+| Tests | {{unit_testing_link}} |
+| Security | {{secure_coding_link}} |
+| Migrations | {{database_migrations_link}} |
+
+<!-- custom:start -->
+<!-- custom:end -->

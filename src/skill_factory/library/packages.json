@@ -10,6 +10,15 @@
     "create-secure-coding-standards-skill",
     "create-database-migrations-skill"
   ],
+  "reviewer": [
+    "create-code-review-skill",
+    "create-bug-hunt-skill",
+    "create-clean-architecture-skill",
+    "create-clean-code-skill",
+    "create-unit-testing-skill",
+    "create-secure-coding-standards-skill",
+    "create-database-migrations-skill"
+  ],
   "security": [
     "create-secure-coding-standards-skill"
   ]

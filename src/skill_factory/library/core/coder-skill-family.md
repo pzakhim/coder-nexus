@@ -20,6 +20,8 @@ Rules shared by every coder-skill generator. Each generated skill states its own
 
 Workspace decisions (`D-NN` or equivalent) and the approved plan override every skill for the phase they cover.
 
+The Code Reviewer reuses these skills as rubrics; see [reviewer-skill-family.md](reviewer-skill-family.md).
+
 ## Linking
 
 - Refer to siblings by path: `.agents/skills/<name>/SKILL.md`. If a sibling does not exist yet, write "not set up in this workspace" instead of a dead link, and add a CHANGELOG-free note in the generated skill's custom block only if the user wants one.
