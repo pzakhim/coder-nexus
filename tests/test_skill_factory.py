@@ -29,7 +29,10 @@ CODER = [
     "create-git-workflow-skill",
 ]
 NON_CODER = ["create-code-review-skill", "create-security-review-skill", "create-quality-planning-skill", "create-quality-environment-skill", "create-quality-acceptance-skill", "create-quality-reporting-skill", "create-visual-quality-skill"]
-ALL = CODER + NON_CODER
+PLANNING = [
+    "create-domain-knowledge-skill",
+]
+ALL = CODER + NON_CODER + PLANNING
 
 
 def run(capsys, *argv: str) -> tuple[int, str, str]:
@@ -57,6 +60,7 @@ def test_packages_reference_existing_generators():
     packages = load_packages()
     assert packages["coder"] == CODER
     assert set(packages["reviewer"]) >= {"create-code-review-skill", "create-bug-hunt-skill"}
+    assert packages["planning"] == PLANNING
     assert set(packages["security"]) == {"create-secure-coding-standards-skill", "create-security-review-skill"}
     for members in packages.values():
         for name in members:

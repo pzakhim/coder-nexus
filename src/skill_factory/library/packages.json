@@ -32,5 +32,8 @@
     "create-quality-acceptance-skill",
     "create-quality-reporting-skill",
     "create-visual-quality-skill"
+  ],
+  "planning": [
+    "create-domain-knowledge-skill"
   ]
 }

@@ -1,0 +1,39 @@
+---
+name: domain-knowledge
+description: What {{project_name}}'s business words mean and how its domain works - the glossary ({{sample_terms}}), entities and their status lifecycles, roles and data scopes, business rules and where each lives in the code. Use whenever writing or reviewing requirements, asking spec questions, planning, designing tests, naming things in code or checking permissions in {{project_name}}, even if the user only names a business term.
+---
+
+# Domain Knowledge — {{project_name}}
+
+<!-- GEN: Why: every Spec & Planning skill reads these facts, so their labels and where to find them must be clear on one screen. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+Scope: {{modules_in_scope}}
+
+## Use it like this
+
+- Use only glossary terms in requirements, BR and AC; map a synonym to its term before asking.
+- Before a spec question about status, read the entity card: ask about every transition the change touches.
+- Before any rule about who sees or changes data, read the roles × scopes matrix.
+- When a work item changes an entity, role or rule, update this skill in the same item.
+
+## Labels
+
+`VERIFIED` = read from the code (path given) · `CONFIRMED` = stated by the user or an approved document · `OPEN` = not known yet — ask it, never assume it.
+
+## Read next
+
+1. Glossary ([01]({{ref_01}})).
+2. Entities and lifecycles ([02]({{ref_02}})).
+3. Roles and data scopes ([03]({{ref_03}})).
+4. Business rules and where they live ([04]({{ref_04}})).
+5. Sources and upkeep ([05]({{ref_05}})).
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/planning-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Writing requirements: {{requirements_specification_link}}
+- Enforcing authorization in code: {{secure_coding_link}}
+
+<!-- custom:start -->
+<!-- custom:end -->
