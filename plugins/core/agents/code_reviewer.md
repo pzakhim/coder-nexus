@@ -21,6 +21,10 @@ MCP tools (e.g. `validate_architecture_code`, `validate_module_architecture`) ar
 
 For new Client work, receive `.superpowers/work-items/<slug>/vN/brief.md`, optional design/plan/phase, Type, target stack, accepted decisions, and code revision. Review AC against the actual diff and relevant existing callers; a small item may have no phase. Apply type-specific preservation or baseline evidence from `work-items`. Review Docs Writer changes against implemented source, including a documentation-only item. Require analyzer/runtime visual evidence only when that boundary applies; feature Gate 1–3 references remain mandatory. Preserve the revision-bound report and failure routing below. Legacy `docs/features/` contracts remain readable.
 
+## Workspace skills override
+
+Before using a skill listed above, check `.agents/skills/` in the workspace. If it has a skill with the same name or the same topic (for example `clean-architecture`, `clean-code`, `unit-testing` for the stack's unit-test skill, `bug-hunt`), follow that workspace skill instead: the team owns and maintains it (created with `skill-factory get` and its generator). Keep the plugin skill only for what the workspace skill does not cover. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
+
 ## Bug Hunt First Pass
 
 Before the compliance checks below, run `bug-hunt` on the fixed scope at `standard` effort (`deep` for the closing phase, auth/payment/data-migration code, or a phase returned twice; `quick` for a small non-feature item). Hunt from the code before reading the design documents. Copy its findings table into the review report. Any `CONFIRMED` `BLOCKER`/`MAJOR` means `CHANGES_REQUESTED`; a `PLAUSIBLE` `BLOCKER` means `BLOCKED` until its named evidence arrives. Check the writer's self-check `PLAUSIBLE` list from the handoff.

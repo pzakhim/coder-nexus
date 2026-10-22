@@ -1,0 +1,42 @@
+---
+name: code-simplification
+description: Simplification standard of {{project_name}} - reduce a working diff to its simplest clear form without changing behavior - delete before writing, stdlib/native first, YAGNI, rule of three, flat code, with real examples and stop rules. Use after checks pass or when review flags unnecessary complexity in {{dirs}}.
+---
+
+# Code Simplification — {{project_name}}
+
+<!-- GEN: Why: the agent must see when to run, the loop and the hard limits at once, because a simplification done at the wrong time or too far is a bug. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+Goal: code a newcomer understands on first read — not the fewest lines.
+
+## The loop
+
+1. Checks are green; take only the phase's diff ([01]({{ref_01}})).
+2. Understand callers, side effects, error paths and tests ([02]({{ref_02}})).
+3. Name the smell from the catalog; skip code that is already clear ([03]({{ref_03}})).
+4. One small simplification → rerun formatter/analyzer and affected tests.
+5. Stop at the stop criteria ([04]({{ref_04}})).
+6. Report one line ([05]({{ref_05}})).
+
+## Rules
+
+<!-- GEN: One row per rule from references/base-rules.md as adopted/adapted (keep existing workspace principles and IDs, P5). Why = one clause in the workspace's terms. -->
+| # | Rule | Why | Severity | Enforced by |
+|---|---|---|---|---|
+| {{id}} | {{rule}} | {{why}} | {{severity}} | {{gate_or_review}} |
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Thresholds and naming: {{clean_code_link}} (not repeated here).
+- Placement and boundaries: {{clean_architecture_link}}; workspace decisions ({{decision_notation}}) keep the abstractions they require.
+- Called from the simplicity pass of {{incremental_link}}.
+
+## Not adopted
+
+<!-- GEN: Rules marked "not adopted" with the reason, or delete. -->
+- {{not_adopted}}
+
+<!-- custom:start -->
+<!-- custom:end -->
