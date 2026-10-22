@@ -1,0 +1,39 @@
+# 05 — Gate 1 review questions
+
+<!-- GEN: Why: a spec is ready when its text answers the questions this workspace always needs; one review path (gate-review spec mode) avoids both endless asking and premature approval. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rule RS6, RS7. This file is the workspace part of the Coder Nexus gate-review spec mode; it never replaces the validators or the fixed checklist. One list per job type the workspace uses. -->
+
+## Order
+
+1. Lint first: `validate_proposal_spec` has no error (and its checks on `codebase-notes.md` and `change-impact.md`).
+2. The fixed checklist of `gate-review` spec mode.
+3. The questions below.
+
+Each finding gets a severity (CRITICAL / HIGH / MEDIUM / LOW) and becomes a `Q-NN`. Gate 1 is presented with 0 `OPEN` `Q-NN`.
+
+## How a question is written
+
+Ask about the spec text, not about the product: "Does BR-03 say which role may cancel?", not "Can a manager cancel?". Tag each question and cite what it checks:
+
+| Tag | Means |
+|---|---|
+| `[Gap]` | Something the item needs is not written |
+| `[Ambiguity]` | Written, but readable two ways (vague word, synonym, unmeasurable signal) |
+| `[Conflict]` | Two statements, or a statement and a `D-NN`, disagree |
+
+## Every job type
+
+These add to the fixed spec-mode checks (vague words, terminology drift, conflicts, coverage); write only what this workspace needs beyond them.
+
+- Does every BR and AC serve a confirmed `G-NN`? `[Gap]`
+- Does any goal, BR or AC use a word other than its glossary term? `[Ambiguity]`
+- Does any statement use a word from "Words we never write" ([04]({{ref_04}}))? `[Ambiguity]`
+- Can each success signal be observed and measured as written? `[Ambiguity]`
+- Is every mandatory edge-case category ([03]({{ref_03}})) covered or marked not applicable with a reason? `[Gap]`
+
+{{job_type_questions}}
+<!-- GEN: One block per job type the workspace uses (feature, bugfix, change, verification, documentation, … mapped onto the work-item Types), written from real past review findings. e.g. "Bugfix: Does the spec record where it was found and the exact reproduction steps? [Gap]"; "Change: Is every affected BR classified ADDED / MODIFIED / REMOVED in the Behavior delta, and does every REMOVED row say what happens to existing data and users? [Gap]". -->
+
+<!-- custom:start -->
+<!-- custom:end -->

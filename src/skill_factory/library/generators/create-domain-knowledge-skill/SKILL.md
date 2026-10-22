@@ -20,11 +20,12 @@ If the repository is large, list its modules with a one-line purpose each and go
 
 ## Step 2 — Map the base rules
 
-Read `references/base-rules.md`. For each rule DK1–DK8: adopted, adapted, or "not adopted" with a reason. DK5 (labels, no invention) and DK8 (no personal data or secrets) are never "not adopted".
+Read `references/base-rules.md`. For each rule DK1–DK9: adopted, adapted, or "not adopted" with a reason. DK5 (labels, no invention), DK8 (no personal data or secrets) and DK9 (challenge new and fuzzy words) are never "not adopted".
 
 ## Step 3 — Propose
 
-- Draft glossary rows from labels, entity names and documents; mark each `VERIFIED` (path) or `OPEN`.
+- Draft glossary rows from labels, entity names and documents; mark each `VERIFIED` (path) or `OPEN`. Fill "Avoid saying" from words that name the same thing in different places (labels vs code vs documents vs past tickets).
+- List overloaded words (one word, two meanings) as candidates for the fuzzy-word examples.
 - Draft entity cards with status values and the transitions found in code (who triggers each, where).
 - Draft the roles × scopes × actions matrix from permission checks; mark gaps `OPEN`.
 - Draft the business-rule catalog with `file:symbol` locations.
@@ -74,6 +75,8 @@ Writing rules: only facts with a label (`VERIFIED` + path, `CONFIRMED`, `OPEN`);
 - A request to add a status to an entity that has a lifecycle — are all transitions and who triggers them asked?
 - A request about who may see or change some data — is the roles × scopes matrix used?
 - A request that uses a synonym of a glossary term — is it mapped to the right entity?
+- A request with an overloaded word — does the agent name the candidate terms and ask which one, instead of picking?
+- A statement about behavior that the code contradicts — is the contradiction raised as a question?
 
 ## Step 8 — Description
 
@@ -93,7 +96,8 @@ Follow `~/.claude/skill-factory/core/versioning.md` (work under `## Unreleased`,
 
 ## Resources
 
-- `references/base-rules.md` — DK1–DK8 with reasons
+- `references/base-rules.md` — DK1–DK9 with reasons
 - `references/detection.md` — where each kind of domain fact is usually found, per stack
 - `templates/` — `SKILL.md.tmpl`, `01–05` (suggested shapes)
+- `references/sources.md` — external sources and ideas not adopted
 - `checklist.md` — topic checks
