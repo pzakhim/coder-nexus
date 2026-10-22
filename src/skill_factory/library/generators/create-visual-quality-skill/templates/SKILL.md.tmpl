@@ -1,0 +1,41 @@
+---
+name: visual-quality
+description: How the Quality Engineer of {{project_name}} checks UI fidelity against the approved design - named reference or labelled baseline, a screen x state x viewport matrix captured like for like with {{browser_tool}}, a comparison by layout, spacing, typography, design tokens, shared components, icons, UI states, responsiveness, copy and basic accessibility, and deviations classified as blocking or minor. Use whenever comparing a screen with its design or mockup, checking visual regressions or reviewing UI before release in {{fe_dir}}.
+---
+
+# Visual Quality — {{project_name}}
+
+<!-- GEN: Why: the reference, the matrix and the verdict rule must be fixed before the first screenshot, or comparisons turn into opinions. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+References: {{reference_sources}} · Tool: {{browser_tool}} · Evidence: `{{evidence_path}}`
+
+## Steps
+
+1. Pick the **reference** (approved design at its revision, or the labelled pre-change baseline) ([01]({{ref_01}})).
+2. Build the **matrix**: screens × states × viewports × role/theme ([01]({{ref_01}})).
+3. **Capture** like for like ([02]({{ref_02}})).
+4. **Compare** by dimension ([03]({{ref_03}})).
+5. **Classify** deviations and give the verdict ([04]({{ref_04}})).
+
+## Verdict
+
+- Any blocking deviation → `{{fail_word}}`.
+- Missing reference → `BLOCKED`; state that could not be produced → `NOT_RUN`.
+- Only minor deviations, or deviations covered by a recorded decision ({{decision_notation}}) → `{{pass_word}}` with the list.
+
+## Never
+
+- Change styles or code to make a screen match.
+- Judge by taste; suggestions go to a separate list.
+- Update the approved baseline without {{baseline_approver}}'s approval.
+- Show secrets or personal data in screenshots.
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/quality-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Behavior is proven by {{quality_acceptance_link}}; results go into {{quality_reporting_link}}.
+- UI standards: {{ui_standards_links}}
+
+<!-- custom:start -->
+<!-- custom:end -->

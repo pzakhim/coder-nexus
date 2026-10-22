@@ -37,6 +37,7 @@ Distribution: `skill-factory list | get` (CLI, `src/skill_factory/`). Next distr
 | 12 | `create-quality-environment-skill` | `quality-environment` | Quality Assurance | Built (1.0.0) |
 | 13 | `create-quality-acceptance-skill` | `quality-acceptance` | Quality Assurance | Built (1.0.0) |
 | 14 | `create-quality-reporting-skill` | `quality-reporting` | Quality Assurance | Built (1.0.0) |
+| 15 | `create-visual-quality-skill` | `visual-quality` | Quality Assurance (optional) | Built (1.0.0) |
 
 None has been trial-run in a real workspace yet.
 
@@ -67,7 +68,7 @@ None has been trial-run in a real workspace yet.
 |---|---|---|
 | 10 ✅ | `create-security-review-skill` | Threat-focused review: authorization matrix, data scopes, injection, secrets, dependency CVEs, PII in logs. Takes over bug-hunt dimension 5 when the Security role exists |
 
-### Milestone E — Quality Assurance Pack
+### Milestone E — Quality Assurance Pack (generators 11–15 built)
 
 | # | Generator | Why |
 |---|---|---|
@@ -75,7 +76,7 @@ None has been trial-run in a real workspace yet.
 | 12 ✅ | `create-quality-environment-skill` | Stack up, seed/cleanup, stubs for external providers (labelled in reports), never touch others' stacks |
 | 13 ✅ | `create-quality-acceptance-skill` | Acceptance tests, branched: `fe/` drives a real browser (states, permissions, environment switch, console/network), `be/` drives the real API (403 matrix, persistence, side effects, workers) |
 | 14 ✅ | `create-quality-reporting-skill` | Revision-bound evidence, PASS / FAIL / BLOCKED / NOT_RUN, defects to the coder with reproduction; never fixes code |
-| 15 | `create-visual-quality-skill` *(optional)* | Compare UI with the approved design/mockups |
+| 15 ✅ | `create-visual-quality-skill` *(optional)* | Compare UI with the approved design/mockups |
 
 Each milestone ends with a trial run in a real workspace before the next starts.
 
