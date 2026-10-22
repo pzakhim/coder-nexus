@@ -11,7 +11,7 @@ Every generator follows [core/workflow.md](../../src/skill_factory/library/core/
 | **Engineering Pack** | Code Writer | clean-architecture · incremental-implementation · clean-code · unit-testing · code-simplification · bug-hunt (`quick`) · root-cause-debugging · database-migrations · secure-coding-standards |
 | **Code Review Pack** (`-p reviewer`) | Code Reviewer | code-review · bug-hunt (`standard`/`deep`) · grades against clean-architecture, clean-code, unit-testing, secure-coding-standards, database-migrations ([reviewer-skill-family](../../src/skill_factory/library/core/reviewer-skill-family.md)) |
 | **Application Security Pack** (`-p security`) | Security | security-review · secure-coding-standards ([security-skill-family](../../src/skill_factory/library/core/security-skill-family.md)) |
-| **Quality Assurance Pack** | Quality Engineer (QA/QC) | quality-planning · quality-environment · quality-acceptance · quality-reporting · visual-quality (optional) |
+| **Quality Assurance Pack** (`-p quality`) | Quality Engineer (QA/QC) | quality-planning · quality-environment · quality-acceptance · quality-reporting · visual-quality (optional) |
 | *Later:* Delivery Planning Pack | Planning, Spec | requirements-specification · implementation-planning · api-contract-design |
 
 Each pack gets a `core/<pack>-skill-family.md` (ownership, vocabulary, who wins on conflict) when its first generator is built. Engineering uses [core/coder-skill-family.md](../../src/skill_factory/library/core/coder-skill-family.md).
@@ -33,6 +33,7 @@ Distribution: `skill-factory list | get` (CLI, `src/skill_factory/`). Next distr
 | 8 | `create-database-migrations-skill` | `database-migrations` | Engineering (backend) | Built (1.0.0) |
 | 9 | `create-code-review-skill` | `code-review` | Code Review | Built (1.0.0) |
 | 10 | `create-security-review-skill` | `security-review` | Application Security, Code Review | Built (1.0.0) |
+| 11 | `create-quality-planning-skill` | `quality-planning` | Quality Assurance | Built (1.0.0) |
 
 None has been trial-run in a real workspace yet.
 
@@ -67,7 +68,7 @@ None has been trial-run in a real workspace yet.
 
 | # | Generator | Why |
 |---|---|---|
-| 11 | `create-quality-planning-skill` | Test cases from approved specs with AC → test traceability; flags untestable AC right after the requirements gate |
+| 11 ✅ | `create-quality-planning-skill` | Test cases from approved specs with AC → test traceability; flags untestable AC right after the requirements gate |
 | 12 | `create-quality-environment-skill` | Stack up, seed/cleanup, stubs for external providers (labelled in reports), never touch others' stacks |
 | 13 | `create-quality-acceptance-skill` | Acceptance tests, branched: `fe/` drives a real browser (states, permissions, environment switch, console/network), `be/` drives the real API (403 matrix, persistence, side effects, workers) |
 | 14 | `create-quality-reporting-skill` | Revision-bound evidence, PASS / FAIL / BLOCKED / NOT_RUN, defects to the coder with reproduction; never fixes code |
@@ -82,11 +83,11 @@ Each milestone ends with a trial run in a real workspace before the next starts.
 
 ## Open decisions
 
-1. **Integration tests** (repositories on a real DB): written by the Code Writer (as in erp) or by the Quality Engineer?
-2. **Browser tool for `quality-acceptance` fe/:** chrome-devtools MCP, Playwright, or Claude in Chrome.
+1. **Browser tool for `quality-acceptance` fe/:** chrome-devtools MCP, Playwright, or Claude in Chrome.
 
 ## Decisions taken
 
+0. **Integration-test owner is chosen per workspace** at the quality-planning gate (default: Code Writer; the Quality Engineer owns API acceptance and UI end-to-end) — `core/quality-skill-family.md`.
 0. **Security mode is chosen per workspace** at the security-review gate: a separate Security role (owns bug-hunt dimension 5) or the Code Reviewer runs it for triggered changes.
 1. **Two kinds in one product.** Fixed packs (extension sync, `.agents/plugins/coder-nexus/`) and Skill Factory (`skill-factory get`, `.agents/skills/`, owned by the workspace). Workspace skills override fixed skills of the same name or topic (Code Writer and Code Reviewer roles); generators never write into `.agents/plugins/coder-nexus/`.
 2. Coder Nexus `plugins/core/skills/*` and `plugins/packs/*/skills/*` (read from this repo) are **read-only base inputs** (P1).

@@ -1,0 +1,34 @@
+# 03 — Case design
+
+<!-- GEN: Why: most escaped defects live off the happy path, and vague expected results can never fail. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules Q4, Q8–Q11. Techniques from references/case-design.md that fit this workspace; permission matrix with real roles and environments. -->
+
+## Categories to cover for each feature
+
+- [ ] Happy path for every BDD scenario
+- [ ] Validation errors (each rule in the AC)
+- [ ] Permissions: {{roles}} × {{environments}} — including a direct API call that must return `403`
+- [ ] UI states: loading, empty (no data vs no match), error + retry, populated
+- [ ] Boundaries: empty, first/last page, limits
+- [ ] External failures: {{providers}} timeout / error (stubbed and labelled)
+- [ ] Repeated submit / concurrent edit where relevant
+- [ ] Out-of-scope guard: nothing from "scope out" implemented
+- [ ] Regression: {{regression_areas}}
+
+## Case format
+
+```
+<CASE-ID>  (covers <AC-ID> | regression | out-of-scope guard)   priority <P1|P2|P3>   level <api | ui | visual | manual>
+Given:  <data and state, with its source>
+When:   <action, as user or API caller>
+Then:   <observable result: screen / message / persisted data / status code>
+Target: <environment, route or endpoint, role>
+```
+
+## Priority
+
+P1 — {{p1_areas}} · P2 — validation, states, regression · P3 — cosmetic, rare edges. Run P1 first.
+
+<!-- custom:start -->
+<!-- custom:end -->

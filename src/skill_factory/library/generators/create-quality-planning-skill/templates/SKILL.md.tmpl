@@ -1,0 +1,48 @@
+---
+name: quality-planning
+description: How the Quality Engineer of {{project_name}} turns approved specs into a test plan - testability review after requirements, acceptance criteria to test cases with two-way traceability, coverage of happy paths, validation, permissions per role and environment, UI states and boundaries, the cheapest proving level (API acceptance, UI end-to-end, visual), safe data and environments. Use whenever planning tests for a feature, reviewing a spec for testability or writing test cases in {{dirs}}.
+---
+
+# Quality Planning — {{project_name}}
+
+<!-- GEN: Why: the planning steps and the independence rule must be visible before any case is written. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+Specs: `{{spec_root}}` · Plan: `{{plan_location}}` · IDs: {{id_scheme}}
+
+## Steps
+
+1. **Testability review** right after the requirements gate — questions back for vague AC ([01]({{ref_01}})).
+2. **Trace** every AC and scenario to cases ([02]({{ref_02}})).
+3. **Design cases** by category with concrete expected results and priority ([03]({{ref_03}})).
+4. **Pick the level** per case ([04]({{ref_04}})).
+5. **Data and environment** per case ([05]({{ref_05}})).
+6. **Get the plan approved** before execution ([06]({{ref_06}})).
+
+## Non-negotiables
+
+- Specs are the source of truth; never the implementation plan or the code.
+- Every AC is covered; every case cites its AC (or is regression / out-of-scope guard).
+- Happy, validation, permission (role × environment), UI states and boundaries are all covered.
+- Expected results are observable and concrete.
+- Never change an expectation to match what the code does.
+
+## Test levels and owners
+
+<!-- GEN: From references/test-levels.md as confirmed at the gate (integration-test owner included). -->
+| Level | Owner |
+|---|---|
+| Unit | {{unit_owner}} |
+| Integration | {{integration_owner}} |
+| API acceptance | {{api_owner}} |
+| UI end-to-end | {{ui_owner}} |
+| Visual | {{visual_owner}} |
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/quality-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Execution: {{quality_acceptance_link}} · Environment: {{quality_environment_link}} · Reporting: {{quality_reporting_link}}
+- Developer unit tests: {{unit_testing_link}}
+
+<!-- custom:start -->
+<!-- custom:end -->

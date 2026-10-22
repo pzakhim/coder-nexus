@@ -27,7 +27,7 @@ CODER = [
     "create-secure-coding-standards-skill",
     "create-database-migrations-skill",
 ]
-NON_CODER = ["create-code-review-skill", "create-security-review-skill"]
+NON_CODER = ["create-code-review-skill", "create-security-review-skill", "create-quality-planning-skill"]
 ALL = CODER + NON_CODER
 
 

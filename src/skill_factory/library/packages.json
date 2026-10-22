@@ -23,5 +23,8 @@
   "security": [
     "create-secure-coding-standards-skill",
     "create-security-review-skill"
+  ],
+  "quality": [
+    "create-quality-planning-skill"
   ]
 }
