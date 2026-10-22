@@ -9,7 +9,7 @@ Coder Nexus installs agent roles, skills and rules into your project. Your host 
 - **Agent roles**: Spec Writer, Designer (UI/UX), Planning, Code Writer, Code Reviewer, Test Runner, Docs Writer.
 - **Approval gates**: you approve requirements, design and the plan before any code is written.
 - **Stack packs**: Flutter, Backend (preview), Frappe UI (preview). Several packs can live in one workspace.
-- **Skill Factory** *(new in 3.0)*: 17 generators that write skills tailored to *your* project — architecture, clean code, unit tests, debugging, migrations, Git workflow and versioning, code review, security, QA and visual checks. Your generated skills take priority over pack skills on the same topic.
+- **Skill Factory** *(new in 3.0)*: 22 generators that write skills tailored to *your* project — domain knowledge, requirements, planning, API contracts, change impact, architecture, clean code, unit tests, debugging, migrations, Git workflow and versioning, code review, security, QA and visual checks. Your generated skills take priority over pack skills on the same topic.
 - **MCP tools** via the `coder-nexus` CLI: task intake, UI/UX design tooling, validators.
 - **Architecture dashboard** to see how the pieces fit.
 
@@ -35,10 +35,11 @@ Pack skills are the same for every project. Skill Factory generators study *your
 
 | Package | For | Generators |
 |---|---|---|
-| `coder` | Code Writer | clean architecture, incremental implementation, clean code, unit testing, simplification, bug hunt, root-cause debugging, secure coding, database migrations, Git workflow |
+| `coder` | Code Writer | clean architecture, incremental implementation, clean code, unit testing, simplification, bug hunt, root-cause debugging, secure coding, database migrations, Git workflow, API contracts |
 | `reviewer` | Code Reviewer | code review, bug hunt, security review and the coding standards it grades against |
 | `security` | Security | secure coding standards, security review |
-| `quality` | Quality Engineer | test planning, test environment, acceptance tests, QA reporting, visual quality |
+| `quality` | Quality Engineer | test planning, test environment, acceptance tests, QA reporting, visual quality, domain knowledge |
+| `planning` | Spec Writer, Planning | domain knowledge, requirements specification, change impact analysis, implementation planning, API contract design |
 
 The `skill-factory` command is installed together with the `coder-nexus` CLI.
 

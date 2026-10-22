@@ -56,10 +56,11 @@ Defined in [`src/skill_factory/library/packages.json`](../../src/skill_factory/l
 
 | Package | Generators |
 |---|---|
-| `coder` | create-clean-architecture-skill · create-incremental-implementation-skill · create-clean-code-skill · create-unit-testing-skill · create-code-simplification-skill · create-bug-hunt-skill · create-root-cause-debugging-skill · create-secure-coding-standards-skill · create-database-migrations-skill · create-git-workflow-skill |
-| `reviewer` | create-code-review-skill · create-bug-hunt-skill · create-clean-architecture-skill · create-clean-code-skill · create-unit-testing-skill · create-secure-coding-standards-skill · create-database-migrations-skill · create-security-review-skill · create-git-workflow-skill |
+| `coder` | create-clean-architecture-skill · create-incremental-implementation-skill · create-clean-code-skill · create-unit-testing-skill · create-code-simplification-skill · create-bug-hunt-skill · create-root-cause-debugging-skill · create-secure-coding-standards-skill · create-database-migrations-skill · create-git-workflow-skill · create-api-contract-design-skill |
+| `reviewer` | create-code-review-skill · create-bug-hunt-skill · create-clean-architecture-skill · create-clean-code-skill · create-unit-testing-skill · create-secure-coding-standards-skill · create-database-migrations-skill · create-security-review-skill · create-git-workflow-skill · create-api-contract-design-skill |
 | `security` | create-secure-coding-standards-skill · create-security-review-skill |
-| `quality` | create-quality-planning-skill · create-quality-environment-skill · create-quality-acceptance-skill · create-quality-reporting-skill · create-visual-quality-skill |
+| `quality` | create-quality-planning-skill · create-quality-environment-skill · create-quality-acceptance-skill · create-quality-reporting-skill · create-visual-quality-skill · create-domain-knowledge-skill |
+| `planning` | create-domain-knowledge-skill · create-requirements-specification-skill · create-change-impact-analysis-skill · create-implementation-planning-skill · create-api-contract-design-skill |
 
 Planned packages and generators: [skill-factory-roadmap.md](skill-factory-roadmap.md).
 

@@ -12,7 +12,7 @@ Every generator follows [core/workflow.md](../../src/skill_factory/library/core/
 | **Code Review Pack** (`-p reviewer`) | Code Reviewer | code-review · bug-hunt (`standard`/`deep`) · grades against clean-architecture, clean-code, unit-testing, secure-coding-standards, database-migrations ([reviewer-skill-family](../../src/skill_factory/library/core/reviewer-skill-family.md)) |
 | **Application Security Pack** (`-p security`) | Security | security-review · secure-coding-standards ([security-skill-family](../../src/skill_factory/library/core/security-skill-family.md)) |
 | **Quality Assurance Pack** (`-p quality`) | Quality Engineer (QA/QC) | quality-planning · quality-environment · quality-acceptance · quality-reporting · visual-quality (optional) |
-| *Later:* Delivery Planning Pack | Planning, Spec | requirements-specification · implementation-planning · api-contract-design |
+| **Spec & Planning Pack** (`-p planning`) | Spec Writer, Planning | domain-knowledge · requirements-specification · change-impact-analysis · implementation-planning · api-contract-design ([planning-skill-family](../../src/skill_factory/library/core/planning-skill-family.md)) |
 
 Each pack gets a `core/<pack>-skill-family.md` (ownership, vocabulary, who wins on conflict) when its first generator is built. Engineering uses [core/coder-skill-family.md](../../src/skill_factory/library/core/coder-skill-family.md).
 
@@ -41,6 +41,11 @@ Distribution: `skill-factory list | get` (CLI, `src/skill_factory/`). Next distr
 | 14 | `create-quality-reporting-skill` | `quality-reporting` | Quality Assurance | Built (1.0.0) |
 | 15 | `create-visual-quality-skill` | `visual-quality` | Quality Assurance (optional) | Built (1.0.0) |
 | 16 | `create-git-workflow-skill` | `git-workflow` | Engineering, Code Review | Built (1.0.0); runtime steps in the fixed core skill `git-preflight` |
+| 17 | `create-domain-knowledge-skill` | `domain-knowledge` | Spec & Planning, Quality | Built (1.0.0) |
+| 18 | `create-requirements-specification-skill` | `requirements-specification` | Spec & Planning | Built (1.0.0) |
+| 19 | `create-change-impact-analysis-skill` | `change-impact-analysis` | Spec & Planning | Built (1.0.0) |
+| 20 | `create-implementation-planning-skill` | `implementation-planning` | Spec & Planning | Built (1.0.0) |
+| 21 | `create-api-contract-design-skill` | `api-contract-design` | Spec & Planning, Engineering, Code Review | Built (1.0.0) |
 
 None has been trial-run in a real workspace yet.
 
@@ -86,7 +91,6 @@ Each milestone ends with a trial run in a real workspace before the next starts.
 ### Later
 
 - `create-<pack>-skills` orchestrators: one Context Card and one question round for a whole pack.
-- Delivery Planning Pack.
 
 ## Reference sources (to integrate later)
 
