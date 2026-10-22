@@ -1,0 +1,48 @@
+---
+name: security-review
+description: How {{project_name}} reviews security-relevant changes - triggers, a short threat model per change, the authorization matrix and data-scope isolation, injection, client-side and secret checks, outbound calls, files, dependencies and crypto, exploit-scenario findings with CRITICAL-to-LOW severity and a security sign-off, without live exploitation. Use whenever reviewing changes to authentication, permissions, tenant or environment data, secrets, uploads, external URLs or dependencies in {{dirs}}.
+---
+
+# Security Review — {{project_name}}
+
+<!-- GEN: Why: when, who and how deep must be clear before reviewing, and the sign-off must read the same for everyone. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+Run by: {{security_mode}} <!-- GEN: "the Security role, in parallel with the Code Reviewer" or "the Code Reviewer, for triggered changes" -->
+
+## When
+
+Triggered by: {{triggers}} — see [01]({{ref_01}}). Deep review for {{deep_areas}}.
+
+## Order
+
+1. Fix the revision; stay read-only ([01]({{ref_01}})).
+2. Write the threat model for the change ([02]({{ref_02}})).
+3. Fill the authorization matrix; check data scopes ([03]({{ref_03}})).
+4. Run the checks for the branch ([04]({{ref_04}})).
+5. Findings as exploit scenarios → sign-off ([05]({{ref_05}})).
+6. Report through the approved channel ([06]({{ref_06}})).
+
+## Sign-off
+
+| Findings | Verdict |
+|---|---|
+| CONFIRMED CRITICAL / HIGH | `{{changes_word}}` |
+| PLAUSIBLE CRITICAL / HIGH | `{{blocked_word}}` until the named evidence arrives |
+| MEDIUM / LOW only | `{{approved_word}}` with findings listed (fixed when cheap) |
+| None | `{{approved_word}}` — "no security finding" |
+
+## Never
+
+- Exploit shared or production environments, or use real credentials/personal data in tests or reports.
+- Edit code or tests during the review.
+- Report a finding without an exploit scenario.
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/security-skill-family.md; link existing skills or write "not set up in this workspace". -->
+- The rules code is written against: {{secure_coding_link}}
+- General review and routing: {{code_review_link}}; bug-hunt dimension 5: {{bug_hunt_dimension_5_rule}}
+
+<!-- custom:start -->
+<!-- custom:end -->

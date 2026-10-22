@@ -27,8 +27,8 @@ CODER = [
     "create-secure-coding-standards-skill",
     "create-database-migrations-skill",
 ]
-REVIEWER_ONLY = ["create-code-review-skill"]
-ALL = CODER + REVIEWER_ONLY
+NON_CODER = ["create-code-review-skill", "create-security-review-skill"]
+ALL = CODER + NON_CODER
 
 
 def run(capsys, *argv: str) -> tuple[int, str, str]:
@@ -56,6 +56,7 @@ def test_packages_reference_existing_generators():
     packages = load_packages()
     assert packages["coder"] == CODER
     assert set(packages["reviewer"]) >= {"create-code-review-skill", "create-bug-hunt-skill"}
+    assert set(packages["security"]) == {"create-secure-coding-standards-skill", "create-security-review-skill"}
     for members in packages.values():
         for name in members:
             assert (GENERATORS_DIR / name / "SKILL.md").is_file(), f"package member {name} does not exist"

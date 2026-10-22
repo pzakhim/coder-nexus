@@ -13,7 +13,7 @@ Rules shared by the Code Review Pack generators. The reviewer reuses the Enginee
 | `unit-testing` | Rubric for case coverage and assertion strength; rerun the suite | Tests axis |
 | `secure-coding-standards` | Rubric for input, authorization, scopes, secrets | Security axis |
 | `database-migrations` | Rubric for schema/data changes | Migrations axis (backend) |
-| `security-review` *(planned)* | Deeper threat review by the Security role | Changes flagged by review triggers |
+| `security-review` | Threat-focused review (Security role, or the reviewer in reviewer mode) — see [security-skill-family.md](security-skill-family.md) | Changes matching the review triggers |
 
 When a rubric skill is missing in the workspace, `code-review` falls back to its own short checklist for that axis and says "not set up in this workspace".
 

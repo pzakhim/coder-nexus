@@ -17,9 +17,11 @@
     "create-clean-code-skill",
     "create-unit-testing-skill",
     "create-secure-coding-standards-skill",
-    "create-database-migrations-skill"
+    "create-database-migrations-skill",
+    "create-security-review-skill"
   ],
   "security": [
-    "create-secure-coding-standards-skill"
+    "create-secure-coding-standards-skill",
+    "create-security-review-skill"
   ]
 }

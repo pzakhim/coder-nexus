@@ -1,0 +1,32 @@
+# 01 — Scope and triggers
+
+<!-- GEN: Why: reviewing the right changes at the right depth is what makes a security review affordable on every phase. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules SR1, SR13, SR14 with the workspace's triggers, mode, revision notation and channel. -->
+
+## Triggers
+
+A change needs this review when it touches:
+
+- [ ] Authentication, sessions, tokens
+- [ ] Authorization guards, roles/capabilities, environment rules
+- [ ] Data scopes ({{scope_list}}), cache keys, background jobs, exports
+- [ ] Secrets, credentials, personal data
+- [ ] File uploads/parsing, user-supplied URLs, redirects
+- [ ] New or upgraded dependencies
+- [ ] {{workspace_triggers}}
+
+Deep review (callers one level further, every matrix cell) for: {{deep_areas}}.
+
+## Mode
+
+{{mode_description}} <!-- GEN: separate Security role (owns bug-hunt dimension 5) or Code Reviewer calls this skill -->
+
+## Revision and boundaries
+
+- Review the exact revision from the handoff ({{revision_notation}}); read-only.
+- No live exploitation of shared or production environments; evidence from existing tests, local/disposable stacks ({{local_stack}}) or traced code paths.
+- No real secrets or personal data in notes or reports; findings shared only via {{disclosure_channel}}.
+
+<!-- custom:start -->
+<!-- custom:end -->

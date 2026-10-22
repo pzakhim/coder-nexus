@@ -1,0 +1,29 @@
+# 05 — Findings and verdict
+
+<!-- GEN: Why: exploit scenarios are actionable and testable, and a fixed sign-off keeps security from being ignored or endless. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules SR11, SR12 mapped to the workspace's finding IDs and verdict words. -->
+
+## Finding row
+
+| ID | Severity | Verdict | File:line | Weakness | Exploit scenario | Evidence | Fix direction |
+|---|---|---|---|---|---|---|---|
+| `{{finding_id_example}}` | `HIGH` | `CONFIRMED` | `{{path}}:42` | One sentence | given … → when … → then … | Traced path / test output | What must change |
+
+No exploit scenario → no finding. "Consider hardening" is not a finding.
+
+## Severity
+
+| Level | Meaning | Workspace level |
+|---|---|---|
+| `CRITICAL` | Cross-tenant data access, auth bypass, remote code execution, secret exposure | {{critical_map}} |
+| `HIGH` | Privilege escalation inside a tenant, scope leak needing some access, injection with limited reach | {{high_map}} |
+| `MEDIUM` | Needs unusual conditions or limited impact | {{medium_map}} |
+| `LOW` | Defence-in-depth gap without direct impact | {{low_map}} |
+
+## Verdict
+
+Per the sign-off table in `SKILL.md`. Recurring weakness types → propose a rule in {{secure_coding_link}}.
+
+<!-- custom:start -->
+<!-- custom:end -->
