@@ -6,7 +6,7 @@
 
 - Client: {{client_approach}} <!-- GEN: generated from the contract, or one shared wrapper at <path> -->
 - Errors: mapped once in {{error_mapping_location}}
-- Retries and timeouts: {{retry_rules}}
+- Retries and timeouts: {{retry_rules}}; a timeout is an unknown outcome — retry with the same idempotency key or check status
 - Mocks: {{mock_tool}} at `{{mock_path}}`, built from the contract and updated in the same change
 - Evidence: say "mock" or "live <environment>" for every integration result; fixture success is not live success.
 

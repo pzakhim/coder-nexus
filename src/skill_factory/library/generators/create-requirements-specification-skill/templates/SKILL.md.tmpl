@@ -1,22 +1,23 @@
 ---
 name: requirements-specification
-description: How {{project_name}} writes requirements inside the Coder Nexus grill-me process - its requirement sources ({{sources_summary}}), the questions to ask per dimension, the edge cases never skipped, how business rules and acceptance criteria are written, how bugs are specified, and when Gate 1 is ready. Use whenever a new ticket or request arrives, a spec, requirements.md, BR or AC is written or reviewed, or a bug is reported in {{project_name}}, even if the user just pastes a ticket.
+description: How {{project_name}} writes requirements inside the Coder Nexus grilling process - its requirement sources ({{sources_summary}}), the questions to ask per dimension, the edge cases never skipped, how business rules and acceptance criteria are written, how changes and bugs are specified, and what the Gate 1 review asks. Use whenever a new ticket or request arrives, a spec, requirements.md, BR or AC is written or reviewed, or a bug is reported in {{project_name}}, even if the user just pastes a ticket.
 ---
 
 # Requirements Specification — {{project_name}}
 
-<!-- GEN: Why: the fixed grill-me process says how to ask; this skill says what to ask and how to write it in this workspace, on one screen. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Why: the fixed grilling process says how to ask; this skill says what to ask and how to write it in this workspace, on one screen. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
 <!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
 
-This skill adds workspace content to the Coder Nexus `grill-me` process and `requirements.md` template. Their gates, laws and sections stay as they are.
+This skill adds workspace content to the Coder Nexus `grilling` process, `gate-review` spec mode and `requirements.md` template. Their gates, laws and sections stay as they are.
 
 ## Always
 
-- Use the terms of the domain skill; add a missing term there before using it.
+- Use the glossary terms of the domain skill verbatim; a synonym is a defect. Add a missing term there before using it.
 - Ask only questions that serve a confirmed goal; one question at a time, recommendation first.
 - Check every mandatory edge-case category ([03]({{ref_03}})) against the item; record "not applicable" with the reason.
-- Write AC as observable behavior that QA can test ([04]({{ref_04}})).
-- Present Gate 1 only when the ready checklist passes ([05]({{ref_05}})).
+- Write AC as observable behavior that QA can test, with no vague words; write success signals that can be measured ([04]({{ref_04}})).
+- For a change, classify each affected BR and AC as ADDED / MODIFIED / REMOVED against the built code ([04]({{ref_04}})).
+- Present Gate 1 only after the review questions find nothing open ([05]({{ref_05}})).
 
 Documents for the user are written in {{team_language}}; code names stay as in code.
 
@@ -25,8 +26,8 @@ Documents for the user are written in {{team_language}}; code names stay as in c
 1. Sources and intake ([01]({{ref_01}})).
 2. Question bank ([02]({{ref_02}})).
 3. Mandatory edge cases ([03]({{ref_03}})).
-4. Writing BR, AC and bug specs ([04]({{ref_04}})).
-5. Ready checklist ([05]({{ref_05}})).
+4. Writing BR, AC, deltas and bug specs ([04]({{ref_04}})).
+5. Gate 1 review questions ([05]({{ref_05}})).
 
 ## Relationship with other skills
 

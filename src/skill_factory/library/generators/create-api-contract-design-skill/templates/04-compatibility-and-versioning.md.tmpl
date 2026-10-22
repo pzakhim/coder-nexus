@@ -4,6 +4,8 @@
 
 <!-- GEN: Rule AP6. Link the contract list and bump rules of git-workflow instead of restating them. -->
 
+Prefer adding over modifying. Any observable behavior (error text, ordering, defaults, extra fields, timing) may already be relied on by a client (Hyrum's Law): a change to it is checked against the clients below before it is called compatible.
+
 | Change | Compatible? | How to do it |
 |---|---|---|
 | Add an optional field or endpoint | Yes | Add to the contract, clients ignore unknown fields |
@@ -13,6 +15,8 @@
 | Remove an endpoint | No | {{remove_path}} |
 
 Versioning: {{versioning_rule}} · Deprecation: {{deprecation_rule}}
+
+One live version per API (One-Version Rule): extend it instead of forking a parallel version; a new version, when unavoidable, comes with the retirement date of the old one.
 
 Clients that must keep working: {{supported_clients}}
 

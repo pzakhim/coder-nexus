@@ -6,7 +6,7 @@ argument-hint: "[module or area]"
 
 # Create Change Impact Analysis Skill
 
-Goal: produce `<workspace>/.agents/skills/change-impact-analysis/` — how to find, with evidence, everything a change to existing behavior touches in this workspace, and which regression tests follow. The result is written into the fixed `change-impact.md` template (AC delta, code impact, regression and migration); this skill supplies where to look and how.
+Goal: produce `<workspace>/.agents/skills/change-impact-analysis/` — how to find, with evidence, everything a change to existing behavior touches in this workspace, and which regression tests follow. The result is written into the fixed `change-impact.md` template (Coder Nexus `work-item-contract` skill, `templates/change-impact.md.tpl`: baseline, behavior delta as ADDED / MODIFIED / REMOVED, AC delta, code impact, regression and migration); this skill supplies where to look and how.
 
 User input: $ARGUMENTS
 
@@ -18,14 +18,14 @@ Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P
 
 ## Step 2 — Map the base rules
 
-Read `references/base-rules.md`. For each rule CX1–CX7: adopted, adapted, or "not adopted" with a reason. CX1 (evidence) and CX6 (no "no impact" without evidence) are never "not adopted".
+Read `references/base-rules.md`. For each rule CX1–CX7 (CX7 uses the ADDED / MODIFIED / REMOVED vocabulary of `requirements-specification` RS10): adopted, adapted, or "not adopted" with a reason. CX1 (evidence) and CX6 (no "no impact" without evidence) are never "not adopted".
 
 ## Step 3 — Propose
 
 - Impact map: for each impact category the workspace has, where to look and the exact command.
 - Tracing recipes for the common starting points (an entity field, an API endpoint, a business rule, a shared component, a permission).
 - Regression selection: which suites or cases cover which module, and the commands to run them.
-- One past change re-analysed with the proposed recipes, to show the result.
+- One past change re-analysed with the proposed recipes, to show the result, including its behavior delta (ADDED / MODIFIED / REMOVED) and AC delta.
 
 ## Step 4 — Gate (user confirms)
 
@@ -36,7 +36,7 @@ AskUserQuestion, ≤ 4 questions per round, recommendation first:
 | Q1 | Impact categories that exist in this workspace | Those found in Step 1 |
 | Q2 | Tracing tools and commands | `rg` plus the language's own tools found in Step 1 |
 | Q3 | Regression suites per module | As mapped from test folders and CI |
-| Q4 | When the analysis is mandatory | Change and bug-fix job types, and every work item v2+ |
+| Q4 | When the analysis is mandatory | Every work item `v2+` (a change: a feature or refactor delivered as a new `vN`), and bugfixes on built code |
 
 ## Step 5 — Author
 
@@ -86,4 +86,5 @@ Follow `~/.claude/skill-factory/core/versioning.md` (work under `## Unreleased`,
 - `references/base-rules.md` — CX1–CX7 with reasons
 - `references/detection.md` — where dependencies, consumers and tests are found, per stack
 - `templates/` — `SKILL.md.tmpl`, `01–04` (suggested shapes)
+- `references/sources.md` — external sources and ideas not adopted
 - `checklist.md` — topic checks

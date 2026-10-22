@@ -5,9 +5,10 @@
 <!-- GEN: Rules CX3, CX5, CX6, CX7. Keep the template's sections and names. -->
 
 - **Baseline:** previous approved documents and the actual code revision; note where the old design differs from the code.
-- **AC delta:** every previous AC is Keep / Add / Change / Remove, compared with the code at the baseline revision.
+- **Behavior delta:** each affected `BR-NN`, `W-NN`, endpoint or screen is ADDED / MODIFIED / REMOVED against the code at the baseline revision, with previous (as built) and new behavior, goal or `D-NN`, reason and evidence. Check the built code before choosing: behavior that is not built yet is ADDED, never MODIFIED. A REMOVED row says what happens to existing data and users.
+- **AC delta:** each affected AC is Add / Change / Remove (unaffected: Keep) and traces to a behavior row.
 - **Code impact:** one row per hit with evidence (path or command result), impact kind, risk; "behavior changes" rows become plan tasks, "regression only" rows become tests.
-- **Regression and migration:** the suites from [03]({{ref_03}}); data migrations follow the migration skill.
+- **Regression and migration:** the suites from [03]({{ref_03}}); each REMOVED behavior has its migration (existing data, users, clients still relying on it); data migrations follow the migration skill.
 - **Contract breaks:** {{contract_break_rule}}
 - **Unknowns:** listed as `Q-NN`, never as "none".
 

@@ -22,6 +22,8 @@ Example: `{{example_endpoint}}`
 {{error_shape}}
 ```
 
+This is the only definition of the error envelope; every endpoint in the contract references it (`{{error_schema_ref}}`) instead of redefining it.
+
 | Status | Used for |
 |---|---|
 {{status_rows}}
@@ -29,6 +31,18 @@ Example: `{{example_endpoint}}`
 ## Safe mutations
 
 {{idempotency_rules}}
+
+| Topic | Rule here |
+|---|---|
+| Which endpoints take a key | {{idempotent_endpoints}} |
+| Where the key comes from | Made once by the client per intent and reused on every retry ({{key_source}}) |
+| Claim | One atomic write guarded by a unique constraint in {{key_store}}; never check-then-act |
+| Same key, different payload | Rejected with {{payload_mismatch_status}}, never the first response replayed |
+| Duplicate while the first runs | {{in_flight_answer}} <!-- GEN: reject with conflict / wait bounded / accepted + status URL — one deliberate choice --> |
+| Timeout | Unknown outcome: retry with the same key or check status |
+| Retention | {{key_retention}} — at least the longest retry path |
+
+<!-- GEN: no endpoint is retried by clients → one line saying so, and which endpoints are documented as unsafe to retry. -->
 
 ## Known drift
 

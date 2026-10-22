@@ -14,7 +14,10 @@ This skill adds workspace content to the Coder Nexus `planning-and-task-breakdow
 ## Always
 
 - Order inside a behavior: {{order_summary}} ([01]({{ref_01}})).
-- Every task: file scope, what it produces, and a check that runs ([02]({{ref_02}})).
+- `implementation-plan.md` has, above `## AC coverage`, `## Global constraints` (exact spec values) and `## Review focus` (≤ 5 uncovered inputs, each owned by a task) ([01]({{ref_01}})).
+- Riskiest behavior first after PHASE-00; prefactor first; wide renames run expand → migrate → contract ([01]({{ref_01}})).
+- Every task: file scope, signatures it produces, and a check that runs; sized by this repository's history, no function bodies ([02]({{ref_02}})).
+- Tests and docs live in each phase; never a final testing phase.
 - PHASE-00 covers this workspace's readiness items ([03]({{ref_03}})).
 - Each phase ends at the Definition of Done ([04]({{ref_04}})).
 - Branch, base and merge targets come from the branch `D-NN`; production merges and tags are commands for the user.
