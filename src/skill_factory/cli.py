@@ -55,9 +55,10 @@ def _cmd_list(args: argparse.Namespace) -> int:
         print(json.dumps(rows, indent=2, ensure_ascii=False))
         return EXIT_OK
     width = max(len(g.name) for g in generators)
+    package_width = max(len(",".join(g.packages) or "-") for g in generators)
     for g in generators:
         packages = ",".join(g.packages) or "-"
-        print(f"{g.name:<{width}}  {g.version:<7} {packages:<8} {_first_sentence(g.description)}")
+        print(f"{g.name:<{width}}  {g.version:<7} {packages:<{package_width}}  {_first_sentence(g.description)}")
     return EXIT_OK
 
 

@@ -1,0 +1,21 @@
+# 01 — Trust boundaries and input
+
+<!-- GEN: Why: every injection, overflow and logic abuse starts with input nobody checked at the place it entered. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rule SC1 + the boundary list from references/deriving-the-model.md, with real paths and the workspace's validation layer. -->
+
+## Where untrusted data enters
+
+| Boundary | Path | Validated by |
+|---|---|---|
+| {{boundary}} | `{{path}}` | {{validator}} |
+
+## Rules
+
+- Validate at the boundary with {{validation_tool}} <!-- GEN: e.g. Pydantic request schemas, zod schemas -->: types, required fields, allow-lists, length/size limits.
+- Reject invalid input with the workspace's error contract; never "clean up" input silently.
+- Data from external providers ({{providers}}) and from queues is untrusted too.
+- Never trust client-side validation alone; it is UX.
+
+<!-- custom:start -->
+<!-- custom:end -->

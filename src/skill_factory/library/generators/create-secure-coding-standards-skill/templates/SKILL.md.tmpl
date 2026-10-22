@@ -1,0 +1,49 @@
+---
+name: secure-coding-standards
+description: Secure coding standards of {{project_name}} - validate input at trust boundaries, authorize every operation per object, keep tenant/environment/owner scopes isolated, no injection or XSS, keep secrets and personal data out of code, logs and bundles, control outbound calls and files, fail closed. Use whenever writing or reviewing code that handles input, permissions, scoped data, secrets, files, URLs or new dependencies in {{dirs}}.
+---
+
+# Secure Coding Standards — {{project_name}}
+
+<!-- GEN: Why: the non-negotiables and the workspace's security model must be visible while coding, not only at review. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+## Non-negotiables
+
+1. Validate untrusted input at the boundary; reject, do not guess.
+2. Authorize every operation on the server, per object; deny by default. UI hiding is UX only.
+3. Every query, cache key, file path and job carries its scope ({{scope_list}}).
+4. No string-built SQL, shell, template or path from input.
+5. No secrets or personal data in code, logs, URLs, client bundles or error messages.
+6. Fail closed: an error in validation or authorization denies.
+
+## Security model (summary)
+
+<!-- GEN: One short table each, from references/deriving-the-model.md; details in 01–03. -->
+| Item | This workspace |
+|---|---|
+| Authentication | {{authn}} |
+| Authorization | {{authz_summary}} — guards in {{guard_location}} |
+| Data scopes | {{scopes_summary}} |
+| Secrets | {{secrets_summary}} |
+
+## Which file to read
+
+<!-- GEN: Flat: references/01–06. Branched: shared/01–03, 05, 06 + be/04, fe/04 with a "Working in" column. Remove rows for files merged away. -->
+| Doing | Read |
+|---|---|
+| Accepting input, adding an endpoint/handler | `{{ref_01}}` |
+| Permission checks, scoped data | `{{ref_02}}` |
+| Secrets, logging, error messages | `{{ref_03}}` |
+| SQL, shell, paths, HTML, URLs, files, outbound calls | `{{ref_04}}` |
+| Adding a dependency | `{{ref_05}}` |
+| Handing off a security-relevant change | `{{ref_06}}` |
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Where guards and validation live: {{clean_architecture_link}}
+- Finding what slipped through: {{bug_hunt_link}} (dimension 5); deeper review: {{security_review_link}}
+
+<!-- custom:start -->
+<!-- custom:end -->

@@ -24,6 +24,7 @@ CODER = [
     "create-code-simplification-skill",
     "create-bug-hunt-skill",
     "create-root-cause-debugging-skill",
+    "create-secure-coding-standards-skill",
 ]
 
 
@@ -110,7 +111,7 @@ def test_list_package_as_json(capsys):
     rows = json.loads(out)
     assert code == 0
     assert [r["name"] for r in rows] == CODER
-    assert all(r["packages"] == ["coder"] and SEMVER_RE.match(r["version"]) for r in rows)
+    assert all("coder" in r["packages"] and SEMVER_RE.match(r["version"]) for r in rows)
 
 
 def test_list_unknown_package_is_a_usage_error(capsys):

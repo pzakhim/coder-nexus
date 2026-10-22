@@ -1,0 +1,13 @@
+# 05 — Dependencies
+
+<!-- GEN: Why: every dependency is code you run without reading it. Kind: Suggested — keep the purpose, adapt the structure; may merge into 06 (core/authoring-guide.md). -->
+
+<!-- GEN: Rule SC11 with the workspace's dependency process (who approves, lock files, audit command). -->
+
+- Add a dependency only when a few lines of code or an existing dependency cannot do the job; give the reason in the handoff.
+- Approval: {{dependency_approval}} <!-- GEN: e.g. "ask before changing pyproject.toml dependencies" -->
+- Versions are locked in {{lock_files}}.
+- Check advisories with `{{audit_command}}` before adding; avoid abandoned packages.
+
+<!-- custom:start -->
+<!-- custom:end -->

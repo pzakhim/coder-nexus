@@ -1,0 +1,20 @@
+# 04 — Stack risks{{branch_suffix}}
+
+<!-- GEN: Why: injection, XSS, SSRF and unsafe file handling are stack-specific; the safe pattern must sit next to the unsafe one, with this workspace's own helpers. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules SC4, SC5, SC9, SC10 (+ SC7 for fe). Rows from references/risks-by-stack.md that apply to this branch; the Safe column names the workspace's real helper/component where one exists. -->
+
+| Risk | Unsafe | Safe here |
+|---|---|---|
+| {{risk}} | {{unsafe}} | {{safe}} |
+
+## Existing protections to reuse
+
+- {{protections}} <!-- GEN: e.g. network allow-list module for outbound URLs, sanitiser component, path helper -->
+
+## Gates
+
+{{security_gates}} <!-- GEN: e.g. bandit / eslint-plugin-security / semgrep / AST tests; or "none — reviewer checks by hand" -->
+
+<!-- custom:start -->
+<!-- custom:end -->

@@ -6,6 +6,10 @@
     "create-unit-testing-skill",
     "create-code-simplification-skill",
     "create-bug-hunt-skill",
-    "create-root-cause-debugging-skill"
+    "create-root-cause-debugging-skill",
+    "create-secure-coding-standards-skill"
+  ],
+  "security": [
+    "create-secure-coding-standards-skill"
   ]
 }
