@@ -32,6 +32,7 @@ NON_CODER = ["create-code-review-skill", "create-security-review-skill", "create
 PLANNING = [
     "create-domain-knowledge-skill",
     "create-requirements-specification-skill",
+    "create-change-impact-analysis-skill",
 ]
 ALL = CODER + NON_CODER + PLANNING
 

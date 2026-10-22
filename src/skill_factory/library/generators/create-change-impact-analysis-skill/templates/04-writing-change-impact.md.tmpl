@@ -1,0 +1,15 @@
+# 04 — Writing change-impact.md
+
+<!-- GEN: Why: the fixed template is part of Gate 1 for v2+; filled consistently it shows reviewers exactly what changes. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules CX3, CX5, CX6, CX7. Keep the template's sections and names. -->
+
+- **Baseline:** previous approved documents and the actual code revision; note where the old design differs from the code.
+- **AC delta:** every previous AC is Keep / Add / Change / Remove, compared with the code at the baseline revision.
+- **Code impact:** one row per hit with evidence (path or command result), impact kind, risk; "behavior changes" rows become plan tasks, "regression only" rows become tests.
+- **Regression and migration:** the suites from [03]({{ref_03}}); data migrations follow the migration skill.
+- **Contract breaks:** {{contract_break_rule}}
+- **Unknowns:** listed as `Q-NN`, never as "none".
+
+<!-- custom:start -->
+<!-- custom:end -->

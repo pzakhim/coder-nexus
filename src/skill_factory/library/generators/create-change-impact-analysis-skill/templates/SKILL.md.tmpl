@@ -1,0 +1,36 @@
+---
+name: change-impact-analysis
+description: How {{project_name}} finds what a change to existing behavior affects - tracing from the changed field, API, rule, component or permission to screens, API consumers, data and reports, jobs and integrations, with evidence - and which regression tests follow, written into change-impact.md. Use whenever a change request, bug fix or new version of an existing feature is specified or planned in {{project_name}}, or someone asks what a change touches, even if they only ask to rename or tweak something.
+---
+
+# Change Impact Analysis — {{project_name}}
+
+<!-- GEN: Why: changes to existing behavior break things far from the diff; the evidence rule and when to run the analysis must be clear on one screen. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+Run it for: {{mandatory_when}}
+
+## Rules
+
+- Start from what changes; trace with the recipes ([02]({{ref_02}})) and record each command and result.
+- Check every impact category in the map ([01]({{ref_01}})).
+- Each hit is "behavior changes" (a task) or "regression only" (a test).
+- Not settled by tracing → a `Q-NN`, never "no impact".
+- A contract break is flagged for versioning and for its consumers.
+
+## Read next
+
+1. Impact map ([01]({{ref_01}})).
+2. Tracing recipes ([02]({{ref_02}})).
+3. Regression selection ([03]({{ref_03}})).
+4. Writing change-impact.md ([04]({{ref_04}})).
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/planning-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Entities, rules, roles × scopes: {{domain_knowledge_link}}
+- Test cases from the regression list: {{quality_planning_link}}
+- Contract list and version bump: {{git_workflow_link}}
+
+<!-- custom:start -->
+<!-- custom:end -->

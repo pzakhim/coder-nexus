@@ -35,6 +35,7 @@
   ],
   "planning": [
     "create-domain-knowledge-skill",
-    "create-requirements-specification-skill"
+    "create-requirements-specification-skill",
+    "create-change-impact-analysis-skill"
   ]
 }
