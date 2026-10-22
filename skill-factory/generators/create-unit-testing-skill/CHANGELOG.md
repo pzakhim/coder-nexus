@@ -1,6 +1,13 @@
-# Changelog — create-unit-test-skill
+# Changelog — create-unit-testing-skill
 
 Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see `~/.claude/skill-factory/core/sync-protocol.md`). Bump rules: `~/.claude/skill-factory/core/versioning.md`.
+
+## 2.0.0 — 2026-10-22
+
+- Renamed: generator `create-unit-test-skill` → `create-unit-testing-skill`; generated skill `unit-test` → `unit-testing` (output `<workspace>/.agents/skills/unit-testing/`). (major)
+
+**Affects:** the skill folder name and its `SKILL.md` `name`.
+**Migration:** `git mv .agents/skills/unit-test .agents/skills/unit-testing`, set `name: unit-testing`, then update inbound links (P3: list them, ask, edit only link lines). No rule change. No workspace was registered with 1.0.0.
 
 ## 1.0.0 — 2026-10-22
 

@@ -2,6 +2,10 @@
 
 Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see `~/.claude/skill-factory/core/sync-protocol.md`).
 
+## Unreleased
+
+- Changed: sibling skill name `unit-test` → `unit-testing` in the Step 4 gate list; generated sibling links should point to `.agents/skills/unit-testing/`. (patch)
+
 ## 1.1.0 — 2026-10-22
 
 - Output table gains Kind + Why columns. **Mandatory:** `SKILL.md`, task loop (02), phase completion (03), verification (06), and rules I1, I4, I5, I10, I11, I14. Other files are suggested shapes and may merge (e.g. 04 + 05 into 03 for a light plan format).

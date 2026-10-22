@@ -1,63 +1,87 @@
 # Roadmap
 
-## Scope
+The factory is a knowledge base the agent uses to write workspace-specific skills. Skills are named by **discipline**, not by role, because several roles share them; each role loads a **pack** (a list of skills). Generators are named `create-<skill>-skill`.
 
-The factory is a knowledge base the agent uses to write workspace-specific skills. It will hold many kinds of skills over time; the first goal is the **delivery agent system**, role by role:
+Every generator follows [core/workflow.md](core/workflow.md), writes `<workspace>/.agents/skills/<name>/`, supports the flat and branched (`shared/ + be/ + fe/`) layouts, and is versioned per [core/versioning.md](core/versioning.md). Manual workspaces only (Step 0).
 
-| Order | Role | Skills (generators) | Status |
+## Packs
+
+| Pack | Role | Skills |
+|---|---|---|
+| **Engineering Pack** | Code Writer | clean-architecture · incremental-implementation · clean-code · unit-testing · code-simplification · bug-hunt (`quick`) · root-cause-debugging · database-migrations · secure-coding-standards |
+| **Code Review Pack** | Code Reviewer | code-review · bug-hunt (`standard`/`deep`) · grades against clean-architecture, clean-code, unit-testing |
+| **Application Security Pack** | Security | security-review · secure-coding-standards |
+| **Quality Assurance Pack** | Quality Engineer (QA/QC) | quality-planning · quality-environment · quality-acceptance · quality-reporting · visual-quality (optional) |
+| *Later:* Delivery Planning Pack | Planning, Spec | requirements-specification · implementation-planning · api-contract-design |
+
+Each pack gets a `core/<pack>-skill-family.md` (ownership, vocabulary, who wins on conflict) when its first generator is built. Engineering uses [core/coder-skill-family.md](core/coder-skill-family.md).
+
+## Status
+
+| # | Generator | Skill | Pack | Status |
+|---|---|---|---|---|
+| 0 | `create-clean-architecture-skill` | `clean-architecture` | Engineering | Built (1.1.1) |
+| 1 | `create-incremental-implementation-skill` | `incremental-implementation` | Engineering | Built (1.1.0) + Unreleased patch |
+| 2 | `create-clean-code-skill` | `clean-code` | Engineering | Built (1.0.0) |
+| 3 | `create-unit-testing-skill` | `unit-testing` | Engineering | Built (2.0.0, renamed) |
+| 4 | `create-code-simplification-skill` | `code-simplification` | Engineering | Built (1.0.0) |
+| 5 | `create-bug-hunt-skill` | `bug-hunt` | Engineering, Code Review | Built (1.0.0) |
+
+None has been trial-run in a manual workspace yet.
+
+## Next — in this order
+
+### Milestone A — Prove the Engineering Pack (before building more)
+
+**A1. Trial run on erp-knowledge-platform** (manual workspace, already has matching skills → **adopt**): run generators 0–5 one by one, record provenance, compare with/without skill (`core/trial-run.md`), fix the generators, release the batch. Why first: six generators are still unproven; finding a structural problem now is cheaper than repeating it in nine more.
+
+### Milestone B — Complete the Engineering Pack
+
+| # | Generator | Why | Base inputs |
 |---|---|---|---|
-| 1 | **Code Writer** | clean-architecture, incremental-implementation, clean-code, unit-test, code-simplification, bug-hunt | **Current focus** (below) |
-| 2 | Code Reviewer | review rubric, bug-hunt (review effort), architecture/clean-code review | Later |
-| 3 | Test Runner | verification, integration tests, visual verification | Later |
-| 4 | Planning | implementation planning, task breakdown | Later |
-| 5 | Spec / Brainstorm | brainstorming, requirements specification | Later |
+| 6 | `create-root-cause-debugging-skill` | Red checks are where the Code Writer spends most time; reproduce → isolate → hypothesise → smallest fix → regression test; no fake fallbacks or test edits to go green | Coder Nexus `bug-hunt` verify step, workspace incident fixes |
+| 7 | `create-secure-coding-standards-skill` | Write it safe the first time: input validation at trust boundaries, object-level authorization, injection, secrets/PII, data-scope isolation. Shared with the Security pack | erp RBAC/scope rules, bug-hunt dimension 5 |
+| 8 | `create-database-migrations-skill` | Hard-to-undo changes: idempotency, locks, backfills, ordering, rollback (BE only) | erp `be-database-migration` |
+| — | incremental-implementation minor | Add git hygiene (scoped commits, messages, no unrelated files) instead of a new skill; release with the Unreleased patch | — |
 
-Each role gets its own `core/<role>-skill-family.md` (ownership + vocabulary) when its first generator is built.
+### Milestone C — Code Review Pack
 
----
+| # | Generator | Why |
+|---|---|---|
+| 9 | `create-code-review-skill` | Review process: fixed revision, order of axes (bug-hunt first, then compliance), finding format, verdicts, rounds and escalation; grades with the Engineering skills |
 
-# Code Writer skills
+### Milestone D — Application Security Pack
 
-Each generator follows [core/workflow.md](core/workflow.md), writes `<workspace>/.agents/skills/<name>/`, supports the flat and branched layouts, and is versioned and synced like `create-clean-architecture-skill`. Rules every coder skill shares live in [core/coder-skill-family.md](core/coder-skill-family.md); topic knowledge that is the same for every workspace lives in the generator; only workspace facts go into the generated skill.
+| # | Generator | Why |
+|---|---|---|
+| 10 | `create-security-review-skill` | Threat-focused review: authorization matrix, data scopes, injection, secrets, dependency CVEs, PII in logs. Takes over bug-hunt dimension 5 when the Security role exists |
 
-## Phases
+### Milestone E — Quality Assurance Pack
 
-| Phase | Generator | Generated skill | Status |
-|---|---|---|---|
-| 0 | `create-clean-architecture-skill` | `clean-architecture` | Built (1.1.1), trial in a manual workspace pending |
-| 1 | `create-incremental-implementation-skill` | `incremental-implementation` | Built (1.1.0), trial in a manual workspace pending |
-| 2 | `create-clean-code-skill` | `clean-code` | Built (1.0.0), trial in a manual workspace pending |
-| 3 | `create-unit-test-skill` | `unit-test` | Built (1.0.0), trial in a manual workspace pending |
-| 4 | `create-code-simplification-skill` | `code-simplification` | Built (1.0.0), trial in a manual workspace pending |
-| 5 | `create-bug-hunt-skill` | `bug-hunt` | Built (1.0.0), trial in a manual workspace pending |
+| # | Generator | Why |
+|---|---|---|
+| 11 | `create-quality-planning-skill` | Test cases from approved specs with AC → test traceability; flags untestable AC right after the requirements gate |
+| 12 | `create-quality-environment-skill` | Stack up, seed/cleanup, stubs for external providers (labelled in reports), never touch others' stacks |
+| 13 | `create-quality-acceptance-skill` | Acceptance tests, branched: `fe/` drives a real browser (states, permissions, environment switch, console/network), `be/` drives the real API (403 matrix, persistence, side effects, workers) |
+| 14 | `create-quality-reporting-skill` | Revision-bound evidence, PASS / FAIL / BLOCKED / NOT_RUN, defects to the coder with reproduction; never fixes code |
+| 15 | `create-visual-quality-skill` *(optional)* | Compare UI with the approved design/mockups |
 
-Each phase ends with: generator `VERSION 1.0.0` + `CHANGELOG.md`, symlink in `~/.claude/skills/`, a trial run in a manual workspace, and the ROADMAP status updated.
+Each milestone ends with a trial run in a manual workspace before the next starts.
 
-## Phase 2 — `create-clean-code-skill`
-- **Gate item:** naming table per stack + size thresholds + error/logging policy.
-- **Generated content:** naming (files, classes, functions, variables, domain glossary) · size limits · errors & logging · types, constants, comments · dead/debug code · self-check (grep, linters, gates) · review severities (P1/P2/P3).
-- **Base inputs:** Coder Nexus `plugins/core/skills/clean-code`, existing workspace `clean-code` skills, linter configs.
+### Later
 
-## Phase 3 — `create-unit-test-skill`
-- **Gate item:** test layout (location, naming) + tooling + fake/mock policy.
-- **Generated content:** what to test per layer (mapped to clean-architecture) · location & naming · AAA structure · fakes vs mocks · fixtures, factories, determinism · edge-case checklist · commands, coverage gate, TDD mode.
-- **Base inputs:** Coder Nexus pack slot `<stack>-unit-test`, workspace `be-unit-testing` / `fe-testing-and-verification`.
+- `create-<pack>-skills` orchestrators: one Context Card and one question round for a whole pack.
+- Delivery Planning Pack.
 
-## Phase 4 — `create-code-simplification-skill`
-- **Gate item:** smell → technique catalog + stop criteria.
-- **Generated content:** when/scope (diff only, after green tests) · smell catalog · behavior safety · stop criteria · report format.
-- **Base inputs:** Coder Nexus `code-simplification`, `ponytail`, workspace no-wrapper rules.
+## Open decisions
 
-## Phase 5 — `create-bug-hunt-skill`
-- **Gate item:** effort levels + finding format + confirmation rule.
-- **Generated content:** when to run (self-check at phase end, review) · effort levels · bug classes per stack · how a finding is confirmed (reproduction or failing test) · finding format and severity · fix loop.
-- **Base inputs:** Coder Nexus `plugins/core/skills/bug-hunt`, workspace `bug-hunt` skills.
+1. **Security:** a separate agent reviewing in parallel with the Reviewer, or a skill the Reviewer calls for sensitive code?
+2. **Integration tests** (repositories on a real DB): written by the Code Writer (as in erp) or by the Quality Engineer?
+3. **Browser tool for `quality-acceptance` fe/:** chrome-devtools MCP, Playwright, or Claude in Chrome.
 
-## Later
-- `create-coder-skills` orchestrator: run phases 1–5 with one Context Card and one round of shared questions.
-- `create-secure-coding-skill`, `create-integration-test-skill`.
+## Decisions taken
 
-## Decisions
-1. **Manual workspaces only.** The factory generates, adopts and syncs skills only in workspaces whose agent setup is maintained by hand. A workspace synced by Coder Nexus (`.agents/plugins/coder-nexus/`, e.g. `AIFactory/examples/*`) gets its skills from the extension; changes for it belong in the Coder Nexus plugin sources. Every generator stops at Step 0 for such a workspace.
-2. Coder Nexus `plugins/core/skills/*` (read from this repo) remain a **read-only base input** (P1) for the generators.
-3. Trial runs for each phase use a manual workspace (e.g. a copy of a real project without Coder Nexus), not `AIFactory/examples`.
+1. **Manual workspaces only.** Workspaces synced by Coder Nexus (`.agents/plugins/coder-nexus/`, e.g. `AIFactory/examples/*`) get skills from the extension; generators stop at Step 0.
+2. Coder Nexus `plugins/core/skills/*` and `plugins/packs/*/skills/*` (read from this repo) are **read-only base inputs** (P1).
+3. Trial runs use a manual workspace, not `AIFactory/examples`.
+4. Names: discipline-based skills grouped into role packs; existing generators keep their names except `create-unit-testing-skill` (renamed 2026-10-22).

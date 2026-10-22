@@ -29,7 +29,7 @@ skill-factory/
     create-clean-architecture-skill/          # VERSION, CHANGELOG.md, SKILL.md, references/, stacks/, templates/
     create-incremental-implementation-skill/  # VERSION, CHANGELOG.md, SKILL.md, references/, templates/
     create-clean-code-skill/                  # VERSION, CHANGELOG.md, SKILL.md, references/, templates/
-    create-unit-test-skill/                   # VERSION, CHANGELOG.md, SKILL.md, references/, templates/
+    create-unit-testing-skill/                # VERSION, CHANGELOG.md, SKILL.md, references/, templates/
     create-code-simplification-skill/         # VERSION, CHANGELOG.md, SKILL.md, references/, templates/
     create-bug-hunt-skill/                    # VERSION, CHANGELOG.md, SKILL.md, references/, templates/
   sync-workspace-skills/         # skill: status table + sync, workspace by workspace
@@ -57,7 +57,7 @@ ln -s ~/.claude/skill-factory/generators/create-clean-code-skill ~/.claude/skill
 ```
 
 ```bash
-ln -s ~/.claude/skill-factory/generators/create-unit-test-skill ~/.claude/skills/create-unit-test-skill
+ln -s ~/.claude/skill-factory/generators/create-unit-testing-skill ~/.claude/skills/create-unit-testing-skill
 ```
 
 ```bash
@@ -78,7 +78,7 @@ Run the commands from the repository root. Generators refer to shared files as `
 
 | Goal | Run in the workspace |
 |---|---|
-| Create a workspace skill | `/create-clean-architecture-skill`, `/create-incremental-implementation-skill`, `/create-clean-code-skill`, `/create-unit-test-skill`, `/create-code-simplification-skill`, `/create-bug-hunt-skill` |
+| Create a workspace skill | `/create-clean-architecture-skill`, `/create-incremental-implementation-skill`, `/create-clean-code-skill`, `/create-unit-testing-skill`, `/create-code-simplification-skill`, `/create-bug-hunt-skill` |
 | Adopt an existing, unregistered skill | Run its generator (it detects the skill and adopts it) |
 | Sync this workspace after the base changed | `/sync-workspace-skills` |
 | Check / sync every workspace | `/sync-workspace-skills all` |

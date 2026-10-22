@@ -1,12 +1,12 @@
 ---
-name: create-unit-test-skill
-description: Write a workspace's own unit-test skill from the skill-factory knowledge base - what to test per layer, required happy/negative/edge cases, test location and naming, fakes vs mocks at port boundaries, fixtures and determinism, assertion quality, commands and evidence - for any stack and for fullstack repos with backend and frontend branches. Use whenever the user wants to set up, standardize or update how the coder agent writes developer unit tests in a manually maintained workspace, or says things like "tạo skill unit test", "chuẩn viết test", "test cho coder", "quy chuẩn unit test", even if they do not say "skill". Detects the test framework, fixtures and layout, gets them confirmed, writes .agents/skills/unit-test/, then trial-runs it on real code.
+name: create-unit-testing-skill
+description: Write a workspace's own unit-testing skill from the skill-factory knowledge base - what to test per layer, required happy/negative/edge cases, test location and naming, fakes vs mocks at port boundaries, fixtures and determinism, assertion quality, commands and evidence - for any stack and for fullstack repos with backend and frontend branches. Use whenever the user wants to set up, standardize or update how the coder agent writes developer unit tests in a manually maintained workspace, or says things like "tạo skill unit test", "chuẩn viết test", "test cho coder", "quy chuẩn unit test", even if they do not say "skill". Detects the test framework, fixtures and layout, gets them confirmed, writes .agents/skills/unit-testing/, then trial-runs it on real code.
 argument-hint: "[stack/framework] [test framework]"
 ---
 
-# Create Unit Test Skill
+# Create Unit Testing Skill
 
-Goal: produce `<workspace>/.agents/skills/unit-test/` — how the Code Writer proves its changes with **developer unit tests** in this workspace: what to test, where, with which doubles, and what counts as evidence. Integration, end-to-end and visual checks belong to the Test Runner role (a later skill family) and are only referenced here.
+Goal: produce `<workspace>/.agents/skills/unit-testing/` — how the Code Writer proves its changes with **developer unit tests** in this workspace: what to test, where, with which doubles, and what counts as evidence. Integration, end-to-end and visual checks belong to the Test Runner role (a later skill family) and are only referenced here.
 
 User input: $ARGUMENTS
 
@@ -62,7 +62,7 @@ Writing rules: keep each template's purpose, give every rule its reason, real pa
 1. Pointer in `CLAUDE.md` / `AGENTS.md` (unless an equivalent exists):
    ```markdown
    ## Unit tests
-   Developer unit tests follow `.agents/skills/unit-test/SKILL.md`.
+   Developer unit tests follow `.agents/skills/unit-testing/SKILL.md`.
    ```
 2. Offer to link it from the coder and reviewer role files (P3).
 3. If `incremental-implementation` exists, check its task-level check (02-C / 06) uses this skill's focused command.
@@ -87,7 +87,7 @@ Per the authoring guide: workspace name; situations (writing or changing code th
 
 ## Update mode
 
-Existing `.agents/skills/unit-test/` (or workspace test skills such as `be-unit-testing`): registered → sync (`~/.claude/skill-factory/core/sync-protocol.md`); not registered → adopt (P3, P5: keep existing fixtures conventions, evidence locations, check ownership).
+Existing `.agents/skills/unit-testing/` (or a legacy `.agents/skills/unit-test/`, or workspace test skills such as `be-unit-testing`): registered → sync (`~/.claude/skill-factory/core/sync-protocol.md`); not registered → adopt (P3, P5: keep existing fixtures conventions, evidence locations, check ownership).
 
 ## Changing this generator
 

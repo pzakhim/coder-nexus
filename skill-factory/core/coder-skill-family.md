@@ -9,9 +9,9 @@ Rules shared by every coder-skill generator. Each generated skill states its own
 | Skill (`.agents/skills/<name>/`) | Answers | When the Code Writer uses it | Wins on conflict over |
 |---|---|---|---|
 | `incremental-implementation` | How to execute an approved phase: order, scope, checkpoints, handoff | Start and end of every phase, between tasks | — (process; it calls the others) |
-| `clean-architecture` | Where code goes, who may import whom | Before creating files/folders | clean-code, unit-test, simplification |
+| `clean-architecture` | Where code goes, who may import whom | Before creating files/folders | clean-code, unit-testing, simplification |
 | `clean-code` | How to write each line/function | While coding | simplification |
-| `unit-test` | How to prove behavior | While coding (TDD when the plan asks) | simplification |
+| `unit-testing` | How to prove behavior | While coding (TDD when the plan asks) | simplification |
 | `code-simplification` | How to reduce the diff without changing behavior | After checks pass, on the diff only | — |
 | `bug-hunt` | How to find real defects in a diff | Self-check at phase end; review | — |
 

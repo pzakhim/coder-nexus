@@ -1,4 +1,4 @@
-# Checklist — unit-test
+# Checklist — unit-testing
 
 Run this and `~/.claude/skill-factory/core/checklist-common.md`.
 
