@@ -34,6 +34,7 @@
     "create-visual-quality-skill"
   ],
   "planning": [
-    "create-domain-knowledge-skill"
+    "create-domain-knowledge-skill",
+    "create-requirements-specification-skill"
   ]
 }
