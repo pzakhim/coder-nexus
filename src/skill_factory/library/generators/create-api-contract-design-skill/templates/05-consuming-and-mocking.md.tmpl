@@ -1,0 +1,14 @@
+# 05 — Consuming and mocking
+
+<!-- GEN: Why: clients and mocks that drift from the contract hide integration defects until production. Kind: Suggested (Mandatory when the repository has a client) — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules AP7, AP8, AP9. Branched layout: this file lives in fe/. -->
+
+- Client: {{client_approach}} <!-- GEN: generated from the contract, or one shared wrapper at <path> -->
+- Errors: mapped once in {{error_mapping_location}}
+- Retries and timeouts: {{retry_rules}}
+- Mocks: {{mock_tool}} at `{{mock_path}}`, built from the contract and updated in the same change
+- Evidence: say "mock" or "live <environment>" for every integration result; fixture success is not live success.
+
+<!-- custom:start -->
+<!-- custom:end -->

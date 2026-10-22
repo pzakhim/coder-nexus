@@ -1,0 +1,17 @@
+# 03 — Auth and data scopes
+
+<!-- GEN: Why: an endpoint that skips the scope check returns other users' data; the rule must be stated per endpoint. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rule AP5. Roles and scopes from domain-knowledge; enforcement mechanics from secure-coding-standards. -->
+
+- Authentication: {{auth_mechanism}}
+- Every endpoint in the contract states: allowed roles, the data scope applied, and the error returned when denied ({{denied_status}}).
+- Scope enforcement lives in {{scope_enforcement_location}}; never only in the client.
+
+| Endpoint | Roles | Scope | Denied → |
+|---|---|---|---|
+{{endpoint_rows}}
+<!-- GEN: a few representative endpoints; the full list stays in the contract. -->
+
+<!-- custom:start -->
+<!-- custom:end -->

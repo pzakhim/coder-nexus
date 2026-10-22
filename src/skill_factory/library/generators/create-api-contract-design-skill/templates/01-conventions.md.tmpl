@@ -1,0 +1,38 @@
+# 01 — Conventions
+
+<!-- GEN: Why: one naming, response and error shape makes every endpoint predictable for clients and reviewers. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules AP1, AP2, AP3, AP8. Real endpoints as examples; drift listed, not hidden. -->
+
+## Naming
+
+{{naming_rules}}
+
+Example: `{{example_endpoint}}`
+
+## Success response
+
+```json
+{{success_shape}}
+```
+
+## Errors
+
+```json
+{{error_shape}}
+```
+
+| Status | Used for |
+|---|---|
+{{status_rows}}
+
+## Safe mutations
+
+{{idempotency_rules}}
+
+## Known drift
+
+{{drift_list}} <!-- GEN: endpoints that do not follow the conventions yet; new endpoints follow the conventions. -->
+
+<!-- custom:start -->
+<!-- custom:end -->

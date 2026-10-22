@@ -34,6 +34,7 @@ PLANNING = [
     "create-requirements-specification-skill",
     "create-change-impact-analysis-skill",
     "create-implementation-planning-skill",
+    "create-api-contract-design-skill",
 ]
 ALL = CODER + NON_CODER + PLANNING
 

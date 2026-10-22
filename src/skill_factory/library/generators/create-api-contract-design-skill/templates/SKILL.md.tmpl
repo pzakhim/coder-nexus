@@ -1,0 +1,38 @@
+---
+name: api-contract-design
+description: How {{project_name}} designs, changes and consumes its APIs - contract first in {{contract_source}}, naming, response and error shape, pagination and filtering, auth and data scopes per endpoint, backward compatibility and breaking changes, idempotency, clients and mocks, and honest contract evidence. Use whenever adding or changing an endpoint or payload, writing the API part of design.md, handling API errors, integrating a client or building mocks in {{project_name}}, even if the user only asks to add a field.
+---
+
+# API Contract Design — {{project_name}}
+
+<!-- GEN: Why: API mistakes reach every client at once, so contract-first and the compatibility rule must be in front of the agent before it changes an endpoint. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+<!-- GEN: Branched layout: route <be_dir> → references/be/, <fe_dir> → references/fe/, shared conventions in references/shared/. -->
+
+Style: {{api_style}} · Source of truth: `{{contract_source}}` · Base path: `{{base_path}}`
+
+## Always
+
+- Write or update the contract before the code; code, clients and mocks follow it.
+- Use the shared naming, response and error shape ([01]({{ref_01}})).
+- State who may call each endpoint and which data it may touch ([03]({{ref_03}})).
+- Removing, renaming or changing the meaning of anything is breaking: give a compatible path and a deprecation note, and flag it for the version bump ([04]({{ref_04}})).
+- Say whether evidence ran against a mock or the real endpoint.
+
+## Read next
+
+1. Conventions ([01]({{ref_01}})).
+2. Pagination and filtering ([02]({{ref_02}})).
+3. Auth and data scopes ([03]({{ref_03}})).
+4. Compatibility and versioning ([04]({{ref_04}})).
+5. Consuming and mocking ([05]({{ref_05}})).
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/planning-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Roles and data scopes: {{domain_knowledge_link}}
+- Enforcing authorization: {{secure_coding_link}}
+- Contract list and version bump: {{git_workflow_link}}
+
+<!-- custom:start -->
+<!-- custom:end -->
