@@ -1,0 +1,33 @@
+---
+name: implementation-planning
+description: How {{project_name}} turns an approved design into phases and tasks - the order inside one behavior ({{order_summary}}), task shape and the real check for each kind of task, PHASE-00 readiness items, the Definition of Done, branch and hotfix tasks, and what is a handoff. Use whenever writing or reviewing implementation-plan.md or phase files, splitting work, or choosing checks for tasks in {{project_name}}, even if the user only asks to plan or estimate a feature.
+---
+
+# Implementation Planning — {{project_name}}
+
+<!-- GEN: Why: the fixed planning skill says how to slice; this skill says how slices look in this repository, on one screen. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+<!-- GEN: Branched layout: route <be_dir> → references/be/, <fe_dir> → references/fe/, shared files in references/shared/. -->
+
+This skill adds workspace content to the Coder Nexus `planning-and-task-breakdown` process: phases stay vertical behaviors, PHASE-00 stays first, one Code Writer runs the tasks in order, `validate_plan_slices` stays clean.
+
+## Always
+
+- Order inside a behavior: {{order_summary}} ([01]({{ref_01}})).
+- Every task: file scope, what it produces, and a check that runs ([02]({{ref_02}})).
+- PHASE-00 covers this workspace's readiness items ([03]({{ref_03}})).
+- Each phase ends at the Definition of Done ([04]({{ref_04}})).
+- Branch, base and merge targets come from the branch `D-NN`; production merges and tags are commands for the user.
+- Work outside this workspace is a handoff, not a task.
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/planning-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Where files go: {{clean_architecture_link}}
+- Tests in each task: {{unit_testing_link}}
+- Schema changes: {{database_migrations_link}}
+- API tasks: {{api_contract_link}}
+- Changes to existing behavior: {{change_impact_link}}
+
+<!-- custom:start -->
+<!-- custom:end -->

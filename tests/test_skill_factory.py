@@ -33,6 +33,7 @@ PLANNING = [
     "create-domain-knowledge-skill",
     "create-requirements-specification-skill",
     "create-change-impact-analysis-skill",
+    "create-implementation-planning-skill",
 ]
 ALL = CODER + NON_CODER + PLANNING
 
