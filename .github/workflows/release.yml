@@ -59,7 +59,7 @@ jobs:
 
       - name: Package VS Code Extension (.vsix)
         run: |
-          npx -y @vscode/vsce package --no-dependencies -o "coder-nexus-${VERSION}.vsix"
+          npx -y @vscode/vsce package --no-dependencies --readme-path README.extension.md -o "coder-nexus-${VERSION}.vsix"
 
       - name: Publish to Open VSX
         env:
