@@ -1,0 +1,31 @@
+# 02 — Isolate and hypothesize
+
+<!-- GEN: Why: a small search space and one falsifiable hypothesis at a time find the cause fastest. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules D4–D6. Keep the symptom rows from references/techniques.md that matter here, with real examples from recent fixes if possible. -->
+
+## Isolate
+
+- What changed since the last green run: `git diff {{last_green_ref}}`, `git log -p -- <path>`.
+- Smallest failing case: narrow the input, the path, the data.
+- Regressions: `git bisect run <failing command>` (clean tree only).
+- Callers and call paths: {{tracing_tool}} <!-- GEN: e.g. GitNexus context/query, rg -n "<symbol>" -->
+
+## Hypothesize
+
+One at a time; write each down:
+
+```
+H1: <suspected cause> → check: <command or read> → result: confirmed | ruled out
+```
+
+Change one variable per check. When a hypothesis is confirmed, ask "why" again until you reach the defect, then look for the same mistake elsewhere in the diff.
+
+## Symptom → first moves
+
+| Symptom | First moves | Typical cause here |
+|---|---|---|
+| {{symptom}} | {{first_moves}} | {{typical_cause}} |
+
+<!-- custom:start -->
+<!-- custom:end -->

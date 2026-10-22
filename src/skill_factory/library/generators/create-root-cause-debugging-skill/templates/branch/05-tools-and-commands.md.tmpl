@@ -1,0 +1,26 @@
+# 05 — Tools and commands{{branch_suffix}}
+
+<!-- GEN: Why: real commands and tracing tools turn the loop into actions; agents cannot use interactive debuggers. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rule D13. From the workspace's scripts and gates (P2), then references/tools-by-stack.md. Run location explicit. -->
+
+Run from: `{{run_dir}}`
+
+| Need | Command |
+|---|---|
+| Reproduce one failure | `{{reproduce_cmd}}` |
+| Rerun failed only | `{{rerun_failed_cmd}}` |
+| Verbose / stop at first | `{{verbose_cmd}}` |
+| Analyzer / types on one file | `{{analyze_cmd}}` |
+| Bisect a regression | `git bisect run {{bisect_cmd}}` |
+
+## Tracing
+
+{{tracing_rules}} <!-- GEN: e.g. GitNexus query/context/impact + its mandatory rules; or `rg -n` for callers -->
+
+## Logs
+
+{{log_access}}
+
+<!-- custom:start -->
+<!-- custom:end -->

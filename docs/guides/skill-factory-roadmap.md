@@ -23,11 +23,12 @@ Distribution: `skill-factory list | get` (CLI, `src/skill_factory/`). Next distr
 | # | Generator | Skill | Pack | Status |
 |---|---|---|---|---|
 | 0 | `create-clean-architecture-skill` | `clean-architecture` | Engineering | Built (1.1.1) |
-| 1 | `create-incremental-implementation-skill` | `incremental-implementation` | Engineering | Built (1.1.0) + Unreleased patch |
+| 1 | `create-incremental-implementation-skill` | `incremental-implementation` | Engineering | Built (1.1.0) + Unreleased (patch, minor) |
 | 2 | `create-clean-code-skill` | `clean-code` | Engineering | Built (1.0.0) |
 | 3 | `create-unit-testing-skill` | `unit-testing` | Engineering | Built (2.0.0, renamed) |
 | 4 | `create-code-simplification-skill` | `code-simplification` | Engineering | Built (1.0.0) |
 | 5 | `create-bug-hunt-skill` | `bug-hunt` | Engineering, Code Review | Built (1.0.0) |
+| 6 | `create-root-cause-debugging-skill` | `root-cause-debugging` | Engineering | Built (1.0.0) |
 
 None has been trial-run in a real workspace yet.
 
@@ -41,7 +42,7 @@ None has been trial-run in a real workspace yet.
 
 | # | Generator | Why | Base inputs |
 |---|---|---|---|
-| 6 | `create-root-cause-debugging-skill` | Red checks are where the Code Writer spends most time; reproduce → isolate → hypothesise → smallest fix → regression test; no fake fallbacks or test edits to go green | Coder Nexus `bug-hunt` verify step, workspace incident fixes |
+| 6 ✅ | `create-root-cause-debugging-skill` | Red checks are where the Code Writer spends most time; reproduce → isolate → hypothesise → smallest fix → regression test; no fake fallbacks or test edits to go green | Coder Nexus `bug-hunt` verify step, workspace incident fixes |
 | 7 | `create-secure-coding-standards-skill` | Write it safe the first time: input validation at trust boundaries, object-level authorization, injection, secrets/PII, data-scope isolation. Shared with the Security pack | erp RBAC/scope rules, bug-hunt dimension 5 |
 | 8 | `create-database-migrations-skill` | Hard-to-undo changes: idempotency, locks, backfills, ordering, rollback (BE only) | erp `be-database-migration` |
 | — | incremental-implementation minor | Add git hygiene (scoped commits, messages, no unrelated files) instead of a new skill; release with the Unreleased patch | — |

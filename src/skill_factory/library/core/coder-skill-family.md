@@ -14,6 +14,7 @@ Rules shared by every coder-skill generator. Each generated skill states its own
 | `unit-testing` | How to prove behavior | While coding (TDD when the plan asks) | simplification |
 | `code-simplification` | How to reduce the diff without changing behavior | After checks pass, on the diff only | — |
 | `bug-hunt` | How to find real defects in a diff | Self-check at phase end; review | — |
+| `root-cause-debugging` | How to fix a known failure (red check, confirmed finding) at its root | When a check is red or a defect must be fixed | — (fix scope follows incremental-implementation) |
 
 Workspace decisions (`D-NN` or equivalent) and the approved plan override every skill for the phase they cover.
 

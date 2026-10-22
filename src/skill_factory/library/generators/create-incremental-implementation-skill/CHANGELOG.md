@@ -4,6 +4,7 @@ Each entry lists what changed, which generated files it affects, and how to migr
 
 ## Unreleased
 
+- Added: phase completion (03) links root-cause-debugging for failing checks; root-cause-debugging added to the sibling skills in Step 4. (minor)
 - Changed: Step 0 — generators now run in workspaces also synced by Coder Nexus; they never write into `.agents/plugins/coder-nexus/` or extension-regenerated role files, and the workspace skill overrides the fixed one. Generator distributed with `skill-factory get`. (patch)
 - Changed: sibling skill name `unit-test` → `unit-testing` in the Step 4 gate list; generated sibling links should point to `.agents/skills/unit-testing/`. (patch)
 

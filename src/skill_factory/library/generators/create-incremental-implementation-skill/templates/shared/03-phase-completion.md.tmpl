@@ -17,6 +17,7 @@ When every task is ticked:
 
 ## When a check fails
 
+- Debug it per {{root_cause_debugging_link}} (reproduce → isolate → root-cause fix + regression test).
 - Fix it **within the approved scope**.
 - If the fix changes behavior, API, architecture, dependencies or a component contract → stop and return to {{gate_for_changes}}.
 - Never weaken a test, add a fake fallback or hide an error to turn a check green.

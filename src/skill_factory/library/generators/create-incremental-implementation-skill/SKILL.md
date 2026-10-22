@@ -41,7 +41,7 @@ Confirm in one AskUserQuestion round where possible:
 2. Approval gates that must be passed before coding
 3. Verification commands per branch (task-level check, phase suite, visual check) — from `references/verification-by-stack.md` + the workspace's real scripts
 4. Handoff format and who records results
-5. Sibling skills to call (clean-architecture, clean-code, unit-testing, code-simplification, bug-hunt): existing ones linked, missing ones noted
+5. Sibling skills to call (clean-architecture, clean-code, unit-testing, code-simplification, bug-hunt, root-cause-debugging): existing ones linked, missing ones noted
 
 ## Step 5 — Author
 

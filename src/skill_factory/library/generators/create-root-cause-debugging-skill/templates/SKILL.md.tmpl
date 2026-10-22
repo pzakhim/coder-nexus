@@ -1,0 +1,43 @@
+---
+name: root-cause-debugging
+description: How the Code Writer of {{project_name}} fixes a failing check or a confirmed defect - reproduce, read the real error, isolate, one hypothesis at a time, root-cause fix at the right layer with a regression test, never green-wash, stop and escalate on time. Use whenever a test, build or analyzer is red, or a bug must be fixed, in {{dirs}}.
+---
+
+# Root Cause Debugging — {{project_name}}
+
+<!-- GEN: Why: this skill is read under pressure, so the loop and the never-list must fit on one screen. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+## The loop
+
+1. **Reproduce** with one command that fails reliably; read the whole first error ([01]({{ref_01}})).
+2. **Isolate** — what changed since green, smallest failing case, bisect ([02]({{ref_02}})).
+3. **Hypothesize** one cause at a time; check it; log it ([02]({{ref_02}})).
+4. **Fix the root cause** at the right layer, smallest change in scope; **regression test** first ([03]({{ref_03}})).
+5. **Stop** when it is the environment, when attempts run out, or when the fix changes a contract ([04]({{ref_04}})).
+6. **Report** cause, fix, test, evidence, what was ruled out ([06]({{ref_06}})).
+
+## Never
+
+- Edit, skip or weaken a test to make it pass.
+- Add fake fallbacks, broad catches, sleeps or retries to hide a failure.
+- Loosen types/assertions or disable lint/gates.
+- Change code to work around a broken environment, or touch a stack you did not start.
+- Leave debug output behind.
+
+## Rules
+
+<!-- GEN: One row per rule from references/base-rules.md as adopted/adapted. Why = one clause in the workspace's terms. -->
+| # | Rule | Why |
+|---|---|---|
+| {{id}} | {{rule}} | {{why}} |
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Unknown defects are found by {{bug_hunt_link}}; this skill fixes known ones.
+- Regression tests follow {{unit_testing_link}}; placement of the fix follows {{clean_architecture_link}}.
+- Out-of-scope fixes go back to the gate per {{incremental_link}}.
+
+<!-- custom:start -->
+<!-- custom:end -->

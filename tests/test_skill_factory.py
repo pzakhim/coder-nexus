@@ -23,6 +23,7 @@ CODER = [
     "create-unit-testing-skill",
     "create-code-simplification-skill",
     "create-bug-hunt-skill",
+    "create-root-cause-debugging-skill",
 ]
 
 
