@@ -1,0 +1,35 @@
+# 03 — Effort, severity and report
+
+<!-- GEN: Why: coder and reviewer use one scale and one format, so findings can be acted on and compared across rounds. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules H9–H11, H14 mapped to the workspace's finding levels and report location. -->
+
+## Severity
+
+| Bug severity | Meaning | Workspace finding |
+|---|---|---|
+| `BLOCKER` | Data loss/corruption, {{scope_breach}}, authorization bypass, crash/hang on a normal path, approved behavior broken | {{blocker_mapping}} |
+| `MAJOR` | Wrong result or crash on a realistic edge path ({{edge_examples}}), resource leak | {{major_mapping}} |
+| `MINOR` | Wrong only in a rare or self-correcting case | {{minor_mapping}} |
+
+## Report
+
+Write to `{{report_location}}`, most severe first, `CONFIRMED` before `PLAUSIBLE`:
+
+| ID | Severity | Verdict | File:line | Defect | Failure scenario | Evidence | Fix direction |
+|---|---|---|---|---|---|---|---|
+| `BH-01` | `MAJOR` | `CONFIRMED` | `{{example_path}}:42` | One sentence | given … → when … → then … | Traced path or command output | What must change, not the code |
+
+End with one line:
+
+```
+bug-hunt: <n> CONFIRMED, <m> PLAUSIBLE (effort <level>, dimensions <list>)
+bug-hunt: no defect found (effort <level>, dimensions <list>)
+```
+
+## Not defects
+
+Reuse, simplification or efficiency without a failure → a `NOTE` line for code-simplification; never blocks.
+
+<!-- custom:start -->
+<!-- custom:end -->

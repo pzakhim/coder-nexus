@@ -29,7 +29,7 @@ Each generator follows [core/workflow.md](core/workflow.md), writes `<workspace>
 | 2 | `create-clean-code-skill` | `clean-code` | Built (1.0.0), trial in a manual workspace pending |
 | 3 | `create-unit-test-skill` | `unit-test` | Built (1.0.0), trial in a manual workspace pending |
 | 4 | `create-code-simplification-skill` | `code-simplification` | Built (1.0.0), trial in a manual workspace pending |
-| 5 | `create-bug-hunt-skill` | `bug-hunt` | Planned |
+| 5 | `create-bug-hunt-skill` | `bug-hunt` | Built (1.0.0), trial in a manual workspace pending |
 
 Each phase ends with: generator `VERSION 1.0.0` + `CHANGELOG.md`, symlink in `~/.claude/skills/`, a trial run in a manual workspace, and the ROADMAP status updated.
 

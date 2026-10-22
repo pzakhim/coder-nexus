@@ -1,0 +1,32 @@
+# 01 — Scope and candidates
+
+<!-- GEN: Why: a fixed revision, its callers and a systematic cold pass are where real defects are found. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules H2–H5 with the workspace's revision notation (handoff snapshot), caller search tool and intent documents. -->
+
+## Fix the scope
+
+- Revision: {{revision_rule}} <!-- GEN: e.g. "the snapshot in handoff H-NN: base commit + staged/unstaged/untracked files of the phase" -->
+- Read every changed hunk with its whole enclosing function or class.
+- For each changed public symbol (signature, return type, nullability, raised errors, response shape, route, JSON key, hook return), find callers with `{{caller_search}}` and read them. A broken caller outside the diff is in scope.
+
+## Cold pass first
+
+Hunt from the code **before** reading {{intent_docs}}. Read them afterwards only to decide whether a suspicious behavior is intended ({{decision_notation}}).
+
+## Seven dimensions
+
+Write each suspicion as `file:line — hypothesis`.
+
+1. **Logic and data flow** — wrong condition/operator, off-by-one, inverted flag, wrong variable, lost value, unit/timezone/rounding.
+2. **Error and edge paths** — null/missing, empty, first/last page, failed {{external_calls}}, timeout, retry, partial success, validation bypass.
+3. **State, async and lifecycle** — {{async_examples}}, stale response, double submit, unreleased resource.
+4. **Contract and caller breakage** — callers get another type/null/error/status; {{contract_pairs}} no longer match.
+5. **Security, scope and data safety** — {{security_scope_examples}}, injection, secrets/personal data in logs.
+6. **Stack and project patterns** — every applicable row of `{{ref_05}}`.
+7. **Test blind spots** — would an existing test fail if the candidate were real? If not, record the missing test.
+
+`quick`: dimensions 1–4 on changed hunks only.
+
+<!-- custom:start -->
+<!-- custom:end -->

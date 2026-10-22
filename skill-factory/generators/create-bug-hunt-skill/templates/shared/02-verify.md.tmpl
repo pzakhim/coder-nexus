@@ -1,0 +1,23 @@
+# 02 — Verify (try to disprove)
+
+<!-- GEN: Why: a candidate that survives an honest attempt to refute it is worth the reader's time; everything else is noise. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules H6–H8 with the workspace's entry points and read-only commands. -->
+
+For each candidate:
+
+1. **Trace** the real path from an entry point ({{entry_points}}) to the line; read guards, defaults, dependencies and framework behavior on the way. Do not assume.
+2. **Write the scenario** with concrete values:
+   ```
+   given <input/state> → when <action> → then <wrong result>
+   ```
+3. **Run a read-only command** when it decides the question: {{readonly_commands}}. Quote the result. Never modify application code or tests during the hunt.
+4. **Classify:**
+   - `CONFIRMED` — path traced end to end with nothing preventing the failure, or a command demonstrated it.
+   - `PLAUSIBLE` — depends on something not visible ({{not_visible_examples}}); name exactly what would confirm it.
+   - Rejected — a guard, caller contract or framework behavior prevents it; drop it.
+
+No failure scenario → no finding. "Might be fragile", "consider handling errors" and style remarks are not findings.
+
+<!-- custom:start -->
+<!-- custom:end -->
