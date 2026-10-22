@@ -1,0 +1,38 @@
+---
+name: quality-acceptance
+description: How the Quality Engineer of {{project_name}} executes the approved test plan on the reviewed revision - frontend cases in a real browser with {{fe_tool}} (real states, permissions per role, environment switch, persistence after reload, console and network), backend cases through the real API with {{be_tool}} (auth per role, status codes, persisted data, side effects, 403 for forbidden calls), evidence per case, PASS/FAIL/BLOCKED/NOT_RUN and re-tests. Use whenever running acceptance or end-to-end tests, testing on the real web app or API, or re-testing after a fix in {{dirs}}.
+---
+
+# Quality Acceptance — {{project_name}}
+
+<!-- GEN: Why: preconditions, the case loop and the never-list must be in front of the Quality Engineer before the first click or request. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+Tools: frontend {{fe_tool}} (fallback {{fe_fallback}}) · backend {{be_tool}} (fallback {{be_fallback}})
+
+## Before the first case
+
+- Review `{{approved_word}}` for this revision; plan approved; environment ready and recorded ([01]({{ref_01}})).
+
+## For every case
+
+1. Run the steps as written with the tool ([03]({{ref_03}})).
+2. Verify the observable result — and persistence by reload / read-back.
+3. Save evidence under `{{evidence_path}}` ([02]({{ref_02}})).
+4. Record `PASS` / `FAIL` / `BLOCKED` / `NOT_RUN`.
+5. `FAIL` → defect report with reproduction ([04]({{ref_04}})).
+
+## Never
+
+- Edit application code or tests.
+- Report a result you did not observe with the tool; an unreachable tool means `BLOCKED`.
+- Use real users' accounts, mutate production, or put secrets in evidence.
+- Soften an expected result to make a case pass.
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/quality-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Cases: {{quality_planning_link}} · Environment: {{quality_environment_link}} · Final report: {{quality_reporting_link}}
+
+<!-- custom:start -->
+<!-- custom:end -->

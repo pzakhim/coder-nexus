@@ -1,0 +1,26 @@
+# 03 — Execution{{branch_suffix}}
+
+<!-- GEN: Why: the real tool, its exact operations and the branch-specific checks turn a case into reproducible evidence. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Frontend (fe/03): rule A5 + the operations map for the tool chosen at the gate (references/tool-detection.md), with the workspace's base URL, viewports, roles, environment switch and known console/network baseline noise. Backend (be/03): rule A6 with the chosen API tool, how a token/session per role is obtained (no values), the permission matrix and side-effect checks. Keep only the branch's part. -->
+
+Tool: {{tool}} (fallback {{fallback}}) · Target: {{base_url}}
+
+## Operations
+
+| Need | How with {{tool}} |
+|---|---|
+| {{operation}} | {{how}} |
+
+## Checks for every flow
+
+- {{branch_checks}}
+  <!-- GEN fe: produce loading/empty/error/populated for real; capability-driven visibility per role (separate sessions per role); environment switch refetches the right scope; reload to confirm persistence; console errors, hydration warnings and unexpected 4xx/5xx after each flow (baseline noise: {{baseline_noise}}); viewports {{viewports}}; modal focus/escape. -->
+  <!-- GEN be: real auth per role; status code + response shape; persisted data read back; side effects (jobs, audit logs, worker results); each changed mutating endpoint called directly by a lower role expecting 403; repeat calls for idempotency where relevant. -->
+
+## When the tool fails
+
+Unreachable or erroring tool → try the fallback once; still failing → affected cases `BLOCKED` with the tool error. Never describe results without tool output.
+
+<!-- custom:start -->
+<!-- custom:end -->

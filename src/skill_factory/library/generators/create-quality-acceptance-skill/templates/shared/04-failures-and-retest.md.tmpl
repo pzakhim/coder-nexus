@@ -1,0 +1,30 @@
+# 04 — Failures and re-test
+
+<!-- GEN: Why: a reproducible defect is fixed in one round, and the right re-test scope catches what the fix broke. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules A10, A12, A14 with the workspace's defect channel, IDs and severity scale (link quality-reporting when it exists). -->
+
+## Defect report
+
+```
+<DEFECT-ID>  case <CASE-ID>  severity <level>  @ <revision>  env <environment>  role <role>
+Step:        <the step that failed>
+Expected:    <from the plan>
+Actual:      <observed>
+Evidence:    <files>
+Reproduce:   <minimal steps / request>
+Suspected:   <area, if obvious — not a code fix>
+```
+
+Send to {{defect_channel}} for the Code Writer.
+
+## Flaky results
+
+Rerun a failing case once. Different outcomes → report it as flaky with both results; never `PASS`.
+
+## Re-test after a fix
+
+On the new, re-reviewed revision: rerun the failed cases and the regression cases touching the same area; update the environment record.
+
+<!-- custom:start -->
+<!-- custom:end -->

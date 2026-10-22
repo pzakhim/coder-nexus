@@ -26,6 +26,7 @@
   ],
   "quality": [
     "create-quality-planning-skill",
-    "create-quality-environment-skill"
+    "create-quality-environment-skill",
+    "create-quality-acceptance-skill"
   ]
 }
