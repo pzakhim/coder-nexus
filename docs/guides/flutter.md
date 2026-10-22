@@ -10,7 +10,6 @@ A profile tells the agents where the project's reusable building blocks (base sc
 |---|---|---|
 | `external-standard` | has no shared foundation or design system | use standard Flutter widgets and add only the structure the feature needs |
 | `external-structured` | already has its own core layer or design system | inspect and reuse the existing patterns and components |
-| `imespro` | is built on the organization's shared foundation packages | read each package's guide and reuse its APIs |
 
 All profiles ship in the same Flutter pack; no extra install is needed.
 
@@ -30,25 +29,7 @@ coder-nexus setup flutter --profile external-standard
 
 Run against another folder with `--project /absolute/path/to/project`. Without `--profile`, setup asks you.
 
-For the shared-packages profile, setup can clone the packages next to your project. Point it at your Git group first:
-
-```sh
-export CODER_NEXUS_CORE_GIT=ssh://git@your-git-host/your-group
-```
-
-```sh
-coder-nexus setup flutter --profile imespro
-```
-
-Typical layout afterwards:
-
-```text
-workspace-parent/
-├── your-app/
-└── <shared packages>/
-```
-
-Git access uses your existing SSH or credential-helper setup. `READY` means setup is done, not that the app builds or features pass.
+`READY` means setup is done, not that the app builds or features pass.
 
 ## How the profile is used
 
