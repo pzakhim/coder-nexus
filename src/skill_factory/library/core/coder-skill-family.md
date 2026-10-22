@@ -17,6 +17,7 @@ Rules shared by every coder-skill generator. Each generated skill states its own
 | `root-cause-debugging` | How to fix a known failure (red check, confirmed finding) at its root | When a check is red or a defect must be fixed | — (fix scope follows incremental-implementation) |
 | `secure-coding-standards` | How to write it safe: input, authorization, data scopes, secrets, injection | While coding anything that touches input, permissions, scoped data, secrets, files or URLs | clean-code, code-simplification (never simplify a guard away) |
 | `database-migrations` | How schema/data changes are designed, verified and delivered (backend) | Any table, column, index, constraint or backfill change | — (sensitive data follows secure-coding-standards) |
+| `api-contract-design` | API naming, response/error shape, pagination, scopes per endpoint, compatibility, clients and mocks | Adding or changing an endpoint, payload or client call | clean-code (for API shape); see [planning-skill-family.md](planning-skill-family.md) |
 | `git-workflow` | Which base a task branches from, branch/commit names, merges, hotfix propagation, versions | Task start, after Gate 1, every commit, PR and release proposal | — (never merges to production, tags or deploys; overrides the fixed `git-preflight` defaults) |
 
 Workspace decisions (`D-NN` or equivalent) and the approved plan override every skill for the phase they cover.

@@ -27,6 +27,7 @@ CODER = [
     "create-secure-coding-standards-skill",
     "create-database-migrations-skill",
     "create-git-workflow-skill",
+    "create-api-contract-design-skill",
 ]
 NON_CODER = ["create-code-review-skill", "create-security-review-skill", "create-quality-planning-skill", "create-quality-environment-skill", "create-quality-acceptance-skill", "create-quality-reporting-skill", "create-visual-quality-skill"]
 PLANNING = [
@@ -36,7 +37,7 @@ PLANNING = [
     "create-implementation-planning-skill",
     "create-api-contract-design-skill",
 ]
-ALL = CODER + NON_CODER + PLANNING
+ALL = list(dict.fromkeys(CODER + NON_CODER + PLANNING))
 
 
 def run(capsys, *argv: str) -> tuple[int, str, str]:
@@ -112,8 +113,20 @@ def test_git_workflow_generator_keeps_production_human():
         assert (GENERATORS_DIR / "create-git-workflow-skill" / "references" / "presets" / f"{preset}.md").is_file()
 
 
+def test_planning_generators_stay_domain_neutral():
+    family = (CORE_DIR / "planning-skill-family.md").read_text(encoding="utf-8")
+    assert "Generic generators, specific skills" in family
+    for name in PLANNING:
+        text = "".join(p.read_text(encoding="utf-8") for p in (GENERATORS_DIR / name).rglob("*") if p.suffix in {".md", ".tmpl"})
+        assert "planning-skill-family.md" in text, name
+        for word in ("WMS", "warehouse", "stock"):
+            assert word not in text, f"{name}: domain-specific word {word!r}"
+    assert "domain-knowledge" in rendered_agent("spec_writer.md")
+    assert "implementation-planning" in rendered_agent("planning.md")
+
+
 def test_roles_let_workspace_skills_override_fixed_skills():
-    for role in ("code_writer.md", "code_reviewer.md"):
+    for role in ("code_writer.md", "code_reviewer.md", "spec_writer.md", "planning.md"):
         content = rendered_agent(role)
         assert "## Workspace skills override" in content
         assert ".agents/skills/" in content and "skill-factory get" in content

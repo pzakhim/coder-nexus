@@ -12,6 +12,8 @@ Rules shared by the Quality Assurance Pack generators. The Quality Engineer veri
 | `quality-reporting` | QC | Evidence, verdicts and defect reports | After execution |
 | `visual-quality` *(optional)* | QC | Comparison with the approved design | UI features |
 
+Inputs from the Spec & Planning family ([planning-skill-family.md](planning-skill-family.md)): `domain-knowledge` gives roles × scopes for permission cases; `change-impact-analysis` gives the regression list.
+
 ## Test levels and owners (default — confirmed per workspace)
 
 | Level | Proves | Owner |

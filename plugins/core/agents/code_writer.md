@@ -27,7 +27,7 @@ If a planned core API or base class does not fit, stop and return to Planning.
 
 ## Workspace skills override
 
-Before using a skill listed above, check `.agents/skills/` in the workspace. If it has a skill with the same name or the same topic (for example `clean-architecture`, `clean-code`, `unit-testing` for the stack's unit-test skill, `bug-hunt`, `git-workflow` for `git-preflight`), follow that workspace skill instead: the team owns and maintains it (created with `skill-factory get` and its generator). Keep the plugin skill only for what the workspace skill does not cover. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
+Before using a skill listed above, check `.agents/skills/` in the workspace. If it has a skill with the same name or the same topic (for example `clean-architecture`, `clean-code`, `unit-testing` for the stack's unit-test skill, `bug-hunt`, `git-workflow` for `git-preflight`, `api-contract-design` for API conventions, `domain-knowledge` for terms and data scopes), follow that workspace skill instead: the team owns and maintains it (created with `skill-factory get` and its generator). Keep the plugin skill only for what the workspace skill does not cover. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
 
 ## `PHASE-00` Readiness & External Dependencies
 - **Single Source Context (`PHASE-00` & `design.md`)**: Always read `codebase-notes.md` for Huly and source context, `design.md` for the API contract, and `phases/phase-00-prepare.md` (`PHASE-00`) for readiness — never re-query Huly or search for scattered API specs.

@@ -9,7 +9,8 @@
     "create-root-cause-debugging-skill",
     "create-secure-coding-standards-skill",
     "create-database-migrations-skill",
-    "create-git-workflow-skill"
+    "create-git-workflow-skill",
+    "create-api-contract-design-skill"
   ],
   "reviewer": [
     "create-code-review-skill",
@@ -20,7 +21,8 @@
     "create-secure-coding-standards-skill",
     "create-database-migrations-skill",
     "create-security-review-skill",
-    "create-git-workflow-skill"
+    "create-git-workflow-skill",
+    "create-api-contract-design-skill"
   ],
   "security": [
     "create-secure-coding-standards-skill",
@@ -31,7 +33,8 @@
     "create-quality-environment-skill",
     "create-quality-acceptance-skill",
     "create-quality-reporting-skill",
-    "create-visual-quality-skill"
+    "create-visual-quality-skill",
+    "create-domain-knowledge-skill"
   ],
   "planning": [
     "create-domain-knowledge-skill",

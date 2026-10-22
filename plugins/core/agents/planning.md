@@ -22,6 +22,10 @@ MCP tools (e.g. `get_project_structure`, `validate_proposal_spec`, `validate_pla
 
 Own technical architecture design (`design.md` at Gate 2) and implementation sequencing (`implementation-plan.md` & `phases/` at Gate 3) for an approved `.superpowers/work-items/<slug>/vN/requirements.md` and `codebase-notes.md` (or `brief.md` for small phase-free items).
 
+## Workspace skills override
+
+Before using a skill listed above, check `.agents/skills/` in the workspace. Use `domain-knowledge` for terms, entities and data scopes; `implementation-planning` with `planning-and-task-breakdown` for phase order, task shape, checks, PHASE-00 items and the Definition of Done; `api-contract-design` for the API section of `design.md`; `change-impact-analysis` for changes to existing behavior; `clean-architecture` for `{{slot:clean-architecture}}`; `git-workflow` over `git-preflight` defaults. Follow the workspace skill for the content it covers (the team owns it, created with `skill-factory get` and its generator); keep the Coder Nexus gates, `grill-me` laws, templates and validators exactly as they are. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
+
 ## 0. Role Boundary & Bidirectional Coordination with `spec_writer`
 
 - **Clear Division of Ownership (No Overlap with `spec_writer`)**: `spec_writer` owns business behavior, business Input/Output of integrations, and expected observable states in `requirements.md` and `codebase-notes.md`. `planning` writes the API contract into `design.md`, keeps Huly context where spec_writer recorded it (`codebase-notes.md`), plans **`PHASE-00` (`phases/phase-00-prepare.md`)** as readiness only, agrees with the user on test data, designs the integration architecture and data pipeline, and performs **Codebase & foundation class mapping** (exact component/class names and any `Core gap`). The stack rules below detail each side.

@@ -13,6 +13,8 @@ Rules shared by the Code Review Pack generators. The reviewer reuses the Enginee
 | `unit-testing` | Rubric for case coverage and assertion strength; rerun the suite | Tests axis |
 | `secure-coding-standards` | Rubric for input, authorization, scopes, secrets | Security axis |
 | `database-migrations` | Rubric for schema/data changes | Migrations axis (backend) |
+| `api-contract-design` | Rubric for API shape, scopes per endpoint, breaking changes | API axis |
+| `change-impact-analysis` | Rubric for whether a change to existing behavior covered its callers, consumers and regression tests | Changes to existing behavior, v2+ |
 | `git-workflow` | Rubric for branch, PR target, commit names, hotfix propagation, breaking-change marking | Branch checks |
 | `security-review` | Threat-focused review (Security role, or the reviewer in reviewer mode) — see [security-skill-family.md](security-skill-family.md) | Changes matching the review triggers |
 
