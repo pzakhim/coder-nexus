@@ -30,6 +30,7 @@ Distribution: `skill-factory list | get` (CLI, `src/skill_factory/`). Next distr
 | 5 | `create-bug-hunt-skill` | `bug-hunt` | Engineering, Code Review | Built (1.0.0) |
 | 6 | `create-root-cause-debugging-skill` | `root-cause-debugging` | Engineering | Built (1.0.0) |
 | 7 | `create-secure-coding-standards-skill` | `secure-coding-standards` | Engineering, Application Security | Built (1.0.0) |
+| 8 | `create-database-migrations-skill` | `database-migrations` | Engineering (backend) | Built (1.0.0) |
 
 None has been trial-run in a real workspace yet.
 
@@ -39,13 +40,13 @@ None has been trial-run in a real workspace yet.
 
 **A1. Trial run on erp-knowledge-platform** (already has matching skills → **adopt**; start with `skill-factory get -p coder`): run generators 0–5 one by one, record provenance, compare with/without skill (`core/trial-run.md`), fix the generators, release the batch. Why first: six generators are still unproven; finding a structural problem now is cheaper than repeating it in nine more.
 
-### Milestone B — Complete the Engineering Pack
+### Milestone B — Complete the Engineering Pack (generators 6–8 built; git-hygiene minor pending)
 
 | # | Generator | Why | Base inputs |
 |---|---|---|---|
 | 6 ✅ | `create-root-cause-debugging-skill` | Red checks are where the Code Writer spends most time; reproduce → isolate → hypothesise → smallest fix → regression test; no fake fallbacks or test edits to go green | Coder Nexus `bug-hunt` verify step, workspace incident fixes |
 | 7 ✅ | `create-secure-coding-standards-skill` | Write it safe the first time: input validation at trust boundaries, object-level authorization, injection, secrets/PII, data-scope isolation. Shared with the Security pack | erp RBAC/scope rules, bug-hunt dimension 5 |
-| 8 | `create-database-migrations-skill` | Hard-to-undo changes: idempotency, locks, backfills, ordering, rollback (BE only) | erp `be-database-migration` |
+| 8 ✅ | `create-database-migrations-skill` | Hard-to-undo changes: idempotency, locks, backfills, ordering, rollback (BE only) | erp `be-database-migration` |
 | — | incremental-implementation minor | Add git hygiene (scoped commits, messages, no unrelated files) instead of a new skill; release with the Unreleased patch | — |
 
 ### Milestone C — Code Review Pack

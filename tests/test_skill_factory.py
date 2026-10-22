@@ -25,6 +25,7 @@ CODER = [
     "create-bug-hunt-skill",
     "create-root-cause-debugging-skill",
     "create-secure-coding-standards-skill",
+    "create-database-migrations-skill",
 ]
 
 

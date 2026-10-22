@@ -56,7 +56,7 @@ Defined in [`src/skill_factory/library/packages.json`](../../src/skill_factory/l
 
 | Package | Generators |
 |---|---|
-| `coder` | create-clean-architecture-skill · create-incremental-implementation-skill · create-clean-code-skill · create-unit-testing-skill · create-code-simplification-skill · create-bug-hunt-skill · create-root-cause-debugging-skill · create-secure-coding-standards-skill |
+| `coder` | create-clean-architecture-skill · create-incremental-implementation-skill · create-clean-code-skill · create-unit-testing-skill · create-code-simplification-skill · create-bug-hunt-skill · create-root-cause-debugging-skill · create-secure-coding-standards-skill · create-database-migrations-skill |
 | `security` | create-secure-coding-standards-skill (security-review planned) |
 
 Planned packages and generators: [skill-factory-roadmap.md](skill-factory-roadmap.md).

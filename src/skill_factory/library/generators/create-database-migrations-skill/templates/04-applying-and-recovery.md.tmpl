@@ -1,0 +1,32 @@
+# 04 — Applying and recovery
+
+<!-- GEN: Why: when a migration fails on a shared target, the authority check and the recovery plan are the only things that matter. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules M2, M10, M11 with the workspace's authority model, backup commands and state names. -->
+
+## Before applying to a shared target
+
+- [ ] Explicit authorisation for **this** target from {{authority}}
+- [ ] Target identity recorded (host/database/environment — no secrets)
+- [ ] Backup taken with `{{backup_cmd}}`; recovery steps written down
+- [ ] Rollout order agreed with API and workers
+
+Rolling back code does not roll back data; a backup listing is not a restore rehearsal.
+
+## Apply and check
+
+1. `{{apply_cmd}}` (cwd `{{run_dir}}`)
+2. Postchecks: {{postchecks}} <!-- GEN: schema, data invariants, indexes, API/worker smoke -->
+3. Report the state with evidence:
+
+| State | Meaning |
+|---|---|
+| `NOT_REQUIRED` | No schema change (give the reason) |
+| `PENDING` | Prepared, not applied |
+| `READY_FOR_HANDOFF` | Packet complete ([05]({{ref_05}})), not yet sent |
+| `APPLIED_UNVERIFIED` | Applied, postchecks not done |
+| `VERIFIED_IN_TARGET` | Applied and postchecks passed — with executor, time, target, revision |
+| `FAILED` | Name the step and the recovery taken |
+
+<!-- custom:start -->
+<!-- custom:end -->

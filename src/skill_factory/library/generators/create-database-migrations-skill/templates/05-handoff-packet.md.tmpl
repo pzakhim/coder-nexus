@@ -1,0 +1,24 @@
+# 05 — Handoff packet
+
+<!-- GEN: Why: whoever applies the migration can do it safely only from a complete, secret-free description. Kind: Suggested — keep the purpose, adapt the structure; Mandatory when the Code Writer may not apply to shared targets (core/authoring-guide.md). -->
+
+<!-- GEN: Rule M12 with the workspace's owner role and where packets are stored. -->
+
+```
+Owner:          {{owner_role}}
+Target:         <host/database/environment — no secrets>
+Revision:       <commit / image>
+Files & order:  <migration files, order, hashes>
+Commands:       <exact commands with cwd; secret configuration by reference only>
+Prerequisites:  <app version, flags, maintenance window>
+Backup/recovery:<commands and steps>
+Impact:         <locks, row counts, backfill duration>
+Sequencing:     <API / worker deploy order>
+Postchecks:     <queries and smoke checks with expected results>
+Acceptance:     <evidence that proves VERIFIED_IN_TARGET>
+```
+
+Store it in {{packet_location}}. Preparing the packet is not sending it: share it only when the user authorises that.
+
+<!-- custom:start -->
+<!-- custom:end -->

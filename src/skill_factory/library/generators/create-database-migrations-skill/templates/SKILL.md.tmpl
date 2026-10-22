@@ -1,0 +1,41 @@
+---
+name: database-migrations
+description: How {{project_name}} designs, verifies and delivers database schema and data changes with {{runner}} - real runner and targets, authority to apply, expand/backfill/contract, idempotent ALTERs, existing data and locks, disposable-DB verification, backup and recovery, migration states and the handoff packet. Use whenever adding or changing tables, columns, indexes, constraints or backfills in {{be_dir}}.
+---
+
+# Database Migrations — {{project_name}}
+
+<!-- GEN: Why: migrations are hard to undo, so the never-list and the delivery path must be in front of the agent before it touches a database. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+Runner: {{runner}} · Engine: {{engine}} · Migrations in `{{migrations_path}}`
+
+## Never
+
+- Deliver a migration with {{forbidden_commands}} — they reset, clone or seed data.
+- Apply to a target you were not explicitly authorised for; credentials are not authority.
+- Edit a migration that has already been deployed — add a new one.
+- Put a secret value in a migration, a command or a handoff.
+- Treat "the app started" or "a migrations row exists" as proof.
+
+## The path
+
+1. Know the runner and the target ([01]({{ref_01}})).
+2. Design: expand → backfill → contract, existing data, locks, scopes ([02]({{ref_02}})).
+3. Verify on a disposable DB: clean install, upgrade with data, rerun ([03]({{ref_03}})).
+4. Authorised? Back up, apply in rollout order, postcheck, report the state ([04]({{ref_04}})).
+   Not authorised? Prepare the handoff packet ([05]({{ref_05}})).
+
+## States
+
+`NOT_REQUIRED` (reason) · `PENDING` · `READY_FOR_HANDOFF` · `APPLIED_UNVERIFIED` · `VERIFIED_IN_TARGET` · `FAILED`
+<!-- GEN: Keep the workspace's own state names if it has them (P5). -->
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Where migration files live: {{clean_architecture_link}}
+- Personal or secret data moved by a migration: {{secure_coding_link}}
+
+<!-- custom:start -->
+<!-- custom:end -->

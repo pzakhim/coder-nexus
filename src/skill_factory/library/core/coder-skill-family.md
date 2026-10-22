@@ -16,6 +16,7 @@ Rules shared by every coder-skill generator. Each generated skill states its own
 | `bug-hunt` | How to find real defects in a diff | Self-check at phase end; review | — |
 | `root-cause-debugging` | How to fix a known failure (red check, confirmed finding) at its root | When a check is red or a defect must be fixed | — (fix scope follows incremental-implementation) |
 | `secure-coding-standards` | How to write it safe: input, authorization, data scopes, secrets, injection | While coding anything that touches input, permissions, scoped data, secrets, files or URLs | clean-code, code-simplification (never simplify a guard away) |
+| `database-migrations` | How schema/data changes are designed, verified and delivered (backend) | Any table, column, index, constraint or backfill change | — (sensitive data follows secure-coding-standards) |
 
 Workspace decisions (`D-NN` or equivalent) and the approved plan override every skill for the phase they cover.
 
