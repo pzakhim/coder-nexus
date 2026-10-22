@@ -9,7 +9,7 @@ Rules shared by the Quality Assurance Pack generators. The Quality Engineer veri
 | `quality-planning` | QA | Which test cases prove each acceptance criterion, at which level, with which data | After the requirements gate (testability), then before execution |
 | `quality-environment` | QA | How the stack, data and stubs are prepared safely | Before execution |
 | `quality-acceptance` | QC | How cases are executed: `fe/` real browser, `be/` real API — tools detected per workspace | Once per feature (and after fixes) |
-| `quality-reporting` *(planned)* | QC | Evidence, verdicts and defect reports | After execution |
+| `quality-reporting` | QC | Evidence, verdicts and defect reports | After execution |
 | `visual-quality` *(planned, optional)* | QC | Comparison with the approved design | UI features |
 
 ## Test levels and owners (default — confirmed per workspace)

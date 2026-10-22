@@ -1,0 +1,44 @@
+---
+name: quality-reporting
+description: How the Quality Engineer of {{project_name}} reports a test run - revision and environment, per-case results with evidence, acceptance-criteria coverage, a verdict by criteria where NOT_RUN and BLOCKED never count as passed, defects with re-test history, limitations such as stubbed providers, and evidence without secrets. Use whenever writing a test report, an acceptance verdict, a QA summary or a re-test summary for {{dirs}}.
+---
+
+# Quality Reporting — {{project_name}}
+
+<!-- GEN: Why: the verdict rule and the honesty rules must be fixed, because a report is only as useful as it is trustworthy. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+
+Report location: `{{report_location}}` · Recorded in: {{results_record}} by {{results_owner}}
+
+## Verdict
+
+| Verdict | When |
+|---|---|
+| `{{accepted_word}}` | Every AC `PASS`, all P1 cases `PASS`, no open BLOCKER/HIGH defect |
+| `{{changes_word}}` | Any blocking defect |
+| `{{blocked_word}}` | Required evidence could not be produced (environment, tool, data) |
+
+## Honesty rules
+
+- `NOT_RUN` and `BLOCKED` are never counted as passed; show the denominator.
+- An AC passes only when all its cases pass.
+- Limitations (stubs, not-run cases, uncovered roles/environments, flaky cases) are listed at the top.
+- Expected results are never edited in the report; deviations are listed.
+- No secrets, tokens or personal data in any evidence.
+
+## Which file to read
+
+| Doing | Read |
+|---|---|
+| Writing the report | `{{ref_01}}` |
+| Computing coverage and the verdict | `{{ref_02}}` |
+| Listing and tracking defects | `{{ref_03}}` |
+| Attaching evidence, sending the report | `{{ref_04}}` |
+
+## Relationship with other skills
+
+<!-- GEN: Per ~/.claude/skill-factory/core/quality-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Per-case results come from {{quality_acceptance_link}}; cases and AC from {{quality_planning_link}}; environment record from {{quality_environment_link}}.
+
+<!-- custom:start -->
+<!-- custom:end -->

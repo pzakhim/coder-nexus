@@ -1,0 +1,27 @@
+# 01 — Report structure
+
+<!-- GEN: Why: readers find the verdict first and can check every line behind it. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules RP1, RP2, RP11. Start from references/report-template.md; use the workspace's section names, IDs and location; fullstack keeps separate BE and FE results tables. -->
+
+Write to `{{report_location}}` (one file per round: `{{report_naming}}`).
+
+## Top of the report (always)
+
+- Verdict + one-line reason
+- Counts with denominator
+- AC coverage summary
+- Open blocking defects
+- Limitations
+
+## Body
+
+1. Context: revision (+ review report link), plan version, environment record
+2. AC coverage table
+3. Results table(s): {{results_tables}} <!-- GEN: e.g. "Backend (API)" and "Frontend (browser)" -->
+4. Defects
+5. Deviations from the plan
+6. Re-test history
+
+<!-- custom:start -->
+<!-- custom:end -->
