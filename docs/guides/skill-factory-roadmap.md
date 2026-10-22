@@ -18,14 +18,16 @@ Each pack gets a `core/<pack>-skill-family.md` (ownership, vocabulary, who wins 
 
 ## Status
 
+All generators were reset to **1.0.0** on 2026-10-22 (first release; no workspace had synced an earlier version).
+
 Distribution: `skill-factory list | get` (CLI, `src/skill_factory/`). Next distribution steps: `skill-factory diff`, then an extension command.
 
 | # | Generator | Skill | Pack | Status |
 |---|---|---|---|---|
-| 0 | `create-clean-architecture-skill` | `clean-architecture` | Engineering | Built (1.1.1) |
-| 1 | `create-incremental-implementation-skill` | `incremental-implementation` | Engineering | Built (1.1.0) + Unreleased (patch, minor) |
+| 0 | `create-clean-architecture-skill` | `clean-architecture` | Engineering | Built (1.0.0) |
+| 1 | `create-incremental-implementation-skill` | `incremental-implementation` | Engineering | Built (1.0.0) |
 | 2 | `create-clean-code-skill` | `clean-code` | Engineering | Built (1.0.0) |
-| 3 | `create-unit-testing-skill` | `unit-testing` | Engineering | Built (2.0.0, renamed) |
+| 3 | `create-unit-testing-skill` | `unit-testing` | Engineering | Built (1.0.0) |
 | 4 | `create-code-simplification-skill` | `code-simplification` | Engineering | Built (1.0.0) |
 | 5 | `create-bug-hunt-skill` | `bug-hunt` | Engineering, Code Review | Built (1.0.0) |
 | 6 | `create-root-cause-debugging-skill` | `root-cause-debugging` | Engineering | Built (1.0.0) |
