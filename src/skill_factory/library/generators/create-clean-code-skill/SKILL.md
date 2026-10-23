@@ -22,12 +22,13 @@ Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P
 | Formatter / linter / type checker configs | `pyproject.toml` (`ruff`, `black`, `mypy`, `pyright`), `.eslintrc*`/`eslint.config.*`, `.prettierrc*`, `tsconfig.json` (`strict`), `analysis_options.yaml`, `.golangci.yml` |
 | Gates that already enforce code rules | Architecture/clean-code tests (e.g. AST tests for debug calls, swallowed exceptions), CI lint steps, check scripts |
 | Real naming in use | 10–20 file, class and function names per layer, to infer conventions instead of imposing new ones |
+| Module-level state, helpers and exports | Module-level assignments per layer, generic `utils`/`helpers`/`common` files, package entry files and wildcard exports, the language's private convention (C15–C17) |
 | Domain glossary | Glossary in docs/notes; recurring business terms in code |
-| Base input (read-only) | `<coder repo>/plugins/core/skills/clean-code/SKILL.md` (Coder Nexus source) |
+| Base input (read-only) | `references/base-rules.md` (this generator's own base rules) |
 
 ## Step 2 — Map the base rules
 
-Read `references/base-rules.md`. For each rule C1–C14, decide: already enforced by a gate (cite it), adopted as written, adapted (workspace contract differs — e.g. a Result type instead of exceptions), or "not adopted" with a reason. Mandatory rules (C1, C3, C4, C10, C11, C14) are never "not adopted".
+Read `references/base-rules.md`. For each rule C1–C17, decide: already enforced by a gate (cite it), adopted as written, adapted (workspace contract differs — e.g. a Result type instead of exceptions), or "not adopted" with a reason. Mandatory rules (C1, C3, C4, C10, C11, C14, C15, C16, C17) are never "not adopted". For C15–C17, take the language's private convention, entry-file names and the real export lists from the workspace before proposing.
 
 ## Step 3 — Propose
 
@@ -96,7 +97,8 @@ Bump `VERSION` and add a `CHANGELOG.md` entry with **Affects** and **Migration**
 
 ## Resources
 
-- `references/base-rules.md` — C1–C14 with reasons, default severity, where each goes
+- `references/base-rules.md` — C1–C17 with reasons, default severity, where each goes
+- `references/sources.md` — external sources behind C15–C17 and ideas not adopted
 - `references/naming-by-stack.md` — naming conventions per stack and layer
 - `references/self-check-by-stack.md` — formatter, linter, type checker and grep checks per stack
 - `~/.claude/skill-factory/core/splitting-protocol.md` — who decides what when splitting; fallback without clean-architecture

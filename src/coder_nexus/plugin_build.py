@@ -13,19 +13,19 @@ Source layout::
 
 A pack skill installs as `<stack>-<name>`. `{{slot:x}}` renders to the installed name: in a
 pack file to that pack's skill, in core/layer files to the skill of every installed pack that
-the file serves. A workspace may install several packs (e.g. Flutter app + Backend service);
-role agents are the core agent followed by each layer overlay (once) and each pack overlay.
+the file serves. A projection holds exactly one pack (3.2.0: a workspace has one stack); role
+agents are the core agent followed by the pack's layer overlays and the pack overlay.
 
 Output layout (default `plugins/dist/`)::
 
     packs.json                  installable packs and their status
-    <layout>-<a+b+...>/
+    <layout>-<stack>/
         projection.json         {"packs", "status", "stubs", "problems", "managed", "remove", ...}
         files/                  tree relative to the destination root
 
-`layout` is `workspace` (root = the workspace folder; every combination of packs) or `global`
-(root = the host's global plugins folder; one pack). Installers delete every `remove` and
-`managed` path, then copy `managed`.
+`layout` is `workspace` (root = the workspace folder) or `global` (root = the host's global
+plugins folder); both are built once per pack. Installers delete every `remove` and `managed`
+path, then copy `managed`, so installing another pack replaces the previous one.
 
 Standard library only: extension tests and CI run this without project dependencies.
 """
@@ -33,7 +33,6 @@ Standard library only: extension tests and CI run this without project dependenc
 from __future__ import annotations
 
 import argparse
-import itertools
 import json
 import os
 import re
@@ -123,13 +122,12 @@ def load_slots(plugins_dir: Path) -> dict[str, str]:
     return _read_json(plugins_dir / "core" / "slots.json").get("slots", {})
 
 
+def load_required_slots(plugins_dir: Path) -> list[str]:
+    return _read_json(plugins_dir / "core" / "slots.json").get("required", [])
+
+
 def combo_key(packs: list[str]) -> str:
     return "+".join(sorted(set(packs)))
-
-
-def workspace_combos(plugins_dir: Path = PLUGINS_DIR) -> list[list[str]]:
-    packs = available_packs(plugins_dir)
-    return [list(c) for n in range(1, len(packs) + 1) for c in itertools.combinations(packs, n)]
 
 
 STUB_TEMPLATES = {
@@ -288,9 +286,14 @@ def project_bundle(plugins_dir: Path, packs: list[str], out: Path, agents_out: P
     unknown_packs = sorted(set(packs) - set(available_packs(plugins_dir)))
     if not packs or unknown_packs:
         raise ValueError(f"unknown or empty pack selection: {unknown_packs or packs}")
+    loaded = [load_pack(plugins_dir, stack) for stack in packs]
+    required_slots = load_required_slots(plugins_dir)
+    for pack in loaded:
+        for req in required_slots:
+            if req not in pack.get("slots", {}) or req in pack.get("not_applicable", []):
+                raise ValueError(f"packs/{pack['stack']}: required slot {req} missing or not_applicable")
     out.mkdir(parents=True)
     agents_dest = agents_out or out / "agents"
-    loaded = [load_pack(plugins_dir, stack) for stack in packs]
     layer_users: dict[str, list[str]] = {}
     for pack in loaded:
         for layer in pack["layers"]:
@@ -444,10 +447,13 @@ def _status(loaded: list[dict]) -> str:
 
 
 def build_variant(packs: list[str] | str, layout: str, out: Path, plugins_dir: Path = PLUGINS_DIR) -> Path:
-    """Build one projection. `packs` is a list or a combo key such as `flutter+backend`."""
+    """Build the projection of one pack (`packs` is the stack name or a one-item list)."""
     packs = sorted(set(packs.split("+") if isinstance(packs, str) else packs))
-    if layout == "global" and len(packs) != 1:
-        raise ValueError("a global projection holds exactly one pack")
+    if len(packs) != 1:
+        raise ValueError(
+            f"a projection holds exactly one pack, got {combo_key(packs) or 'none'}; "
+            "replace the installed pack instead of combining packs"
+        )
     key = combo_key(packs)
     target = out / f"{layout}-{key}"
     _remove(target)
@@ -484,8 +490,8 @@ def build_variant(packs: list[str] | str, layout: str, out: Path, plugins_dir: P
 def build(out: Path = DEFAULT_OUT, plugins_dir: Path = PLUGINS_DIR) -> list[Path]:
     _remove(out)
     out.mkdir(parents=True)
-    targets = [build_variant(combo, "workspace", out, plugins_dir) for combo in workspace_combos(plugins_dir)]
-    targets += [build_variant([stack], "global", out, plugins_dir) for stack in available_packs(plugins_dir)]
+    targets = [build_variant([stack], layout, out, plugins_dir)
+               for layout in LAYOUTS for stack in available_packs(plugins_dir)]
     _write_json(out / "packs.json", {"packs": [
         {key: load_pack(plugins_dir, stack)[key] for key in ("stack", "title", "status")}
         for stack in available_packs(plugins_dir)

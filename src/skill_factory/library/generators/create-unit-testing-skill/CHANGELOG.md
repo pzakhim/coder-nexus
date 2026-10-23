@@ -2,6 +2,13 @@
 
 Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see `~/.claude/skill-factory/core/sync-protocol.md`). Bump rules: `~/.claude/skill-factory/core/versioning.md`.
 
+## 1.1.0 — 2026-10-23
+
+- Updated base input path from legacy `unit-test` to `unit-testing`.
+
+**Affects:** generator base input resolution.
+**Migration:** none required for existing workspace skills.
+
 ## 1.0.0 — 2026-10-22
 
 First version.
@@ -11,7 +18,7 @@ First version.
 - Mandatory: `SKILL.md`, what to test, location & naming, doubles & fixtures, running & evidence. Suggested: test quality, test boundaries.
 - Layouts: flat `references/01–06`; branched `be/01–05`, `fe/01–05`, `shared/06`.
 - Step 0 (never write into Coder Nexus-managed files; workspace skills override fixed ones), trial run and description steps.
-- Output path: `<workspace>/.agents/skills/unit-test/`.
+- Output path: `<workspace>/.agents/skills/unit-testing/`.
 - Renamed: generator `create-unit-test-skill` → `create-unit-testing-skill`; generated skill `unit-test` → `unit-testing` (output `<workspace>/.agents/skills/unit-testing/`).
 
 **Affects:** all generated files.

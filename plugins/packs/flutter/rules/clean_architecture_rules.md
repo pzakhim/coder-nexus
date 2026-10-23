@@ -1,6 +1,6 @@
 # Clean Architecture Rules for Flutter Projects
 
-Apply the approved profile through [core-usage](../skills/core-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
+Apply the approved profile through [core-package-usage](../skills/core-package-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
 
 > **Source:** Senior Flutter Standards · AIFactory-Coder
 > **Applies to:** Flutter Client code generated or changed under an approved feature version and behavior phase.
@@ -59,9 +59,9 @@ Register a new module through `lib/modules/modules_di.dart`. Keep an existing ap
 
 1. **Keep the diff focused.** Reuse existing platform and module capabilities. Format changed Dart files as needed; avoid repository-wide formatting and unrelated refactors.
 2. **Preserve data provenance.** Follow plugin-root `shared_contracts/api_handshake_protocol.md`. Approved contract-derived fixtures support UI/contract checks only; live acceptance requires real services. Never fabricate business records, source availability or production success fallbacks. Missing required evidence is `BLOCKED`.
-3. **Read before building UI.** Inspect the visual and selected foundation via `{{slot:core-usage}}`. iMESPro reads the Kit GUIDE: one fitting row → reuse; several → user choice; no fit → compose or record a Core gap. External-structured uses Client components/tokens; external-standard uses standard Flutter. Confirm real signatures and approved Visual AC.
+3. **Read before building UI.** Inspect the visual and selected foundation via `{{slot:core-package-usage}}`. iMESPro reads the Kit GUIDE: one fitting row → reuse; several → user choice; no fit → compose or record a Core gap. External-structured uses Client components/tokens; external-standard uses standard Flutter. Confirm real signatures and approved Visual AC.
 4. **Resolve multi-screen behavior.** For a flow with multiple screens, document the applicable state owner, navigation/back behavior, failure paths, input dependencies and validation timing, step-up security, and post-flow effects. Mark inapplicable axes N/A with a reason. Do not invent security or cache behavior.
 5. **Protect test integrity.** Never delete, disable, or weaken an assertion merely to make a failing implementation pass. Diagnose whether the production code or the test contradicts the approved AC. A legitimate test change requires the same scope and review as a code change; return to the affected approval gate if the AC itself changes.
 6. **Verify the reviewed revision.** Analyzer, tests, and required runtime visual checks must run against the relevant code revision. `NOT_RUN` and `BLOCKED` are not `PASS`; changing code invalidates affected earlier evidence.
 
-See the bundled [feature module reference](../skills/clean-architecture/references/03_feature_module.md), [UI discovery matrix](../../../core/skills/feature-planner/references/03_ui_ux_intake_and_discovery_matrix.md), and [Client check contract](../skills/verification/references/01_client_check_contract.md) for detailed procedures.
+See the bundled [feature module reference](../skills/clean-architecture/references/03_feature_module.md), [UI discovery matrix](../../../core/skills/delivery-workflow/references/03_ui_ux_intake_and_discovery_matrix.md), and [Client check contract](../skills/verification/references/01_client_check_contract.md) for detailed procedures.

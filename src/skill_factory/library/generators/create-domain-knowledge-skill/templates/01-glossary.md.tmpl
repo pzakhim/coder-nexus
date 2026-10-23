@@ -2,12 +2,20 @@
 
 <!-- GEN: Why: specs, plans, tests and code must use one name per business thing. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
 
-<!-- GEN: Rule DK1, DK5. Terms from translation files, entity names and documents; keep an existing glossary verbatim (P5). -->
+<!-- GEN: Rule DK1, DK5, DK9. Terms from translation files, entity names and documents; keep an existing glossary verbatim (P5). -->
 
 | Term ({{team_language}}) | Code name(s) | Meaning | Avoid saying | Label |
 |---|---|---|---|---|
 {{glossary_rows}}
 <!-- GEN: e.g. | Đơn hàng | `Order`, `order_id` | A customer's request to buy items | "phiếu", "bill" | VERIFIED `src/orders/models.py:Order` | — illustration only -->
+
+"Avoid saying" is checked by `gate-review` spec mode: one of these words in a goal, BR, AC or scenario is a finding.
+
+## New and fuzzy words
+
+1. A word not in this table, overloaded, or listed under "Avoid saying": name the term(s) it could mean and ask which one, one question at a time ("{{fuzzy_word_example}}"). <!-- GEN: e.g. "Do you mean Customer or User? A Customer pays, a User signs in." — illustration only; use a real overloaded word of this workspace. -->
+2. A statement about how something works: compare it with the code ({{code_check_hint}}); a contradiction becomes a `Q-NN` that quotes both. <!-- GEN: where to look first, e.g. the entity card in 02 and the enforcement location in 04. -->
+3. The answer is a `D-NN`; add the term here in the same work item, labelled `CONFIRMED` or `VERIFIED`.
 
 <!-- custom:start -->
 <!-- custom:end -->

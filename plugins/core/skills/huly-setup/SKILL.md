@@ -48,7 +48,7 @@ Activate when the user asks to set up, connect, log in to, fix or check Huly (fo
    - `open_task_count`
    - **one open task**: `first_task.id`, `first_task.title`, `first_task.status`, `first_task.priority`
 
-   If `first_task` is `null`, say the connection works but the user has no open tasks. Offer to continue with `huly-task-runner` (task detail and acceptance criteria).
+   If `first_task` is `null`, say the connection works but the user has no open tasks. Offer to continue with `huly-task-intake` (task detail and acceptance criteria).
 
 ## Exit codes
 

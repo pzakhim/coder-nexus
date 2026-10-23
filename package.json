@@ -2,7 +2,7 @@
   "name": "coder-nexus",
   "displayName": "Coder Nexus",
   "description": "The hub for your AI Factory - agents, MCPs, and project scaffolding",
-  "version": "3.0.1",
+  "version": "3.2.0",
   "publisher": "IMP-AIFactory",
   "engines": {
     "vscode": "^1.75.0"
@@ -14,7 +14,6 @@
   "keywords": [
     "antigravity",
     "flutter",
-    "frappe",
     "backend",
     "clean-architecture",
     "huly",
@@ -45,23 +44,19 @@
       },
       {
         "command": "coder-nexus.installWorkspace",
-        "title": "Coder Nexus: Sync Stacks to Workspace (Auto-Detect)"
+        "title": "Coder Nexus: Sync Stack to Workspace (Auto-Detect)"
       },
       {
         "command": "coder-nexus.installWorkspaceFlutter",
-        "title": "Coder Nexus: Add Flutter Pack to Workspace"
-      },
-      {
-        "command": "coder-nexus.installWorkspaceFrappe",
-        "title": "Coder Nexus: Add Frappe UI Pack to Workspace (preview)"
+        "title": "Coder Nexus: Install Flutter Pack in Workspace"
       },
       {
         "command": "coder-nexus.installWorkspaceBE",
-        "title": "Coder Nexus: Add Backend Pack to Workspace (preview)"
+        "title": "Coder Nexus: Install Backend Pack in Workspace (preview)"
       },
       {
         "command": "coder-nexus.installWorkspaceFE",
-        "title": "Coder Nexus: Add Frontend (Flutter) Pack to Workspace"
+        "title": "Coder Nexus: Install Frontend (Flutter) Pack in Workspace"
       },
       {
         "command": "coder-nexus.installGlobal",

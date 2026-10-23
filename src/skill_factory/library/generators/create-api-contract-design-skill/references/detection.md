@@ -10,7 +10,8 @@ Read-only. Skip what the workspace does not have.
 | Errors | Exception handlers, error middleware, error-code enums, translation keys for messages |
 | Pagination | Shared pagination helpers, base list views, `page`/`limit`/`cursor` parameters |
 | Auth and scopes | Auth middleware, dependency injectors, guards, permission decorators, query scope filters |
-| Versioning | `/v1/` prefixes, version headers, changelogs, deprecation headers |
+| Versioning | `/v1/` prefixes, version headers, changelogs, deprecation headers; how many versions are live at once |
+| Idempotency | `Idempotency-Key` headers, request-ID columns with unique constraints, dedup tables, client retry interceptors |
 | Clients | Generated SDKs, `axios`/`fetch` wrappers, `dio`/`retrofit` services, API service classes in mobile apps |
 | Mocks | Mockoon environments, MSW handlers, WireMock stubs, fixture folders |
 | Consumers | Other apps in the repo, documented partners, mobile versions still supported (ask the user) |
@@ -19,4 +20,5 @@ Read-only. Skip what the workspace does not have.
 rg --files -g "*openapi*" -g "*swagger*" -g "*.proto" -g "schema.graphql"
 rg -n "@(app|router)\.(get|post|put|patch|delete)|@(Get|Post|Put|Patch|Delete)\(|path\(" <be_dir>
 rg -n "exception_handler|ErrorHandler|@Catch|errorCode" <be_dir>
+rg -n -i "idempotency|request_id|dedup" <be_dir> <fe_dir>
 ```

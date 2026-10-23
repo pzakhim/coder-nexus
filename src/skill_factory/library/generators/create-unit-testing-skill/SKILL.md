@@ -24,7 +24,7 @@ Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P
 | Shared fixtures / factories / fakes | `conftest.py`, `tests/helpers`, `test/fixtures`, existing in-memory fakes of ports |
 | Real test names | 10–20 test names to infer the naming convention |
 | Gates | CI test steps, coverage thresholds, architecture tests |
-| Base input (read-only) | Coder Nexus `plugins/packs/<stack>/skills/unit-test/SKILL.md` (and templates) from the repo |
+| Base input (read-only) | Coder Nexus `plugins/packs/<stack>/skills/unit-testing/SKILL.md` (and templates) from the repo, or `references/base-rules.md` |
 
 ## Step 2 — Map the base rules
 

@@ -1,16 +1,57 @@
 {
   "stack": "backend",
-  "title": "Backend",
-  "status": "preview",
+  "title": "Backend (Python)",
+  "status": "maintained",
   "layers": [],
   "slots": {
     "architecture-design": "architecture-design",
     "clean-architecture": "clean-architecture",
-    "unit-test": "unit-test",
+    "unit-testing": "unit-testing",
     "code-review": "code-review",
-    "verification": "verification"
+    "verification": "verification",
+    "clean-code": "clean-code",
+    "secure-coding-standards": "secure-coding-standards",
+    "code-simplification": "code-simplification",
+    "root-cause-debugging": "root-cause-debugging",
+    "bug-hunt": "bug-hunt"
   },
-  "extra": ["api-contracts", "work-items"],
-  "not_applicable": ["core-usage", "visual-verification", "ux-kit"],
-  "markers": ["pytest", "ORM", "ORMs", "SQLAlchemy", "Prisma", "GORM", "FastAPI", "gRPC"]
+  "extra": [
+    "fastapi",
+    "realtime",
+    "postgres",
+    "database-migrations",
+    "api-contract-design"
+  ],
+  "not_applicable": [
+    "core-package-usage",
+    "visual-quality",
+    "ui-kit-mapping"
+  ],
+  "markers": [
+    "Python",
+    "python",
+    "pytest",
+    "FastAPI",
+    "fastapi",
+    "SQLAlchemy",
+    "Alembic",
+    "asyncpg",
+    "Pydantic",
+    "uvicorn",
+    "pyproject.toml",
+    "mypy",
+    "ORM",
+    "ORMs",
+    "Prisma",
+    "GORM",
+    "gRPC"
+  ],
+  "generated_from": {
+    "clean-code": "create-clean-code-skill@1.1.0",
+    "code-simplification": "create-code-simplification-skill@1.1.0",
+    "secure-coding-standards": "create-secure-coding-standards-skill@1.1.0",
+    "unit-testing": "create-unit-testing-skill@1.1.0",
+    "root-cause-debugging": "create-root-cause-debugging-skill@1.1.0",
+    "bug-hunt": "create-bug-hunt-skill@1.1.0"
+  }
 }

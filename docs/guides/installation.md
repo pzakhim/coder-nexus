@@ -19,34 +19,34 @@ Open your project and run one of these commands from the Command Palette (`Cmd+S
 
 | Command | Result |
 |---|---|
-| Coder Nexus: Sync Stacks to Workspace (Auto-Detect) | Detects supported stacks (root and two folder levels down) and lets you tick one or more |
-| Coder Nexus: Add Flutter Pack to Workspace | Adds the Flutter pack to the packs already installed |
-| Coder Nexus: Add Backend Pack to Workspace (preview) | Adds the Backend pack |
-| Coder Nexus: Add Frappe UI Pack to Workspace (preview) | Adds the Frappe UI pack |
+| Coder Nexus: Sync Stack to Workspace (Auto-Detect) | Detects supported stacks (root and two folder levels down) and lets you pick one |
+| Coder Nexus: Install Flutter Pack in Workspace | Installs the Flutter pack |
+| Coder Nexus: Install Backend Pack in Workspace (preview) | Installs the Backend pack |
 | Coder Nexus: Sync Plugin to Antigravity Global Config | Installs the Flutter pack globally (`~/.gemini/config/plugins/coder-nexus/`) |
 | Coder Nexus: Show Architecture Dashboard | Opens the architecture viewer |
+
+A workspace holds **one pack**. Installing the same pack again refreshes it. Installing a different pack asks you to confirm, then replaces the installed one; packs are never merged.
 
 ### What gets written
 
 | Path | Content |
 |---|---|
-| `.agents/agents/<role>.md` | Each agent role, followed by the rules of every selected pack |
-| `.agents/plugins/coder-nexus/skills/` | Shared skills plus `<stack>-*` skills for each pack |
+| `.agents/agents/<role>.md` | Each agent role, followed by the rules of the installed pack |
+| `.agents/plugins/coder-nexus/skills/` | Shared skills plus the pack's `<stack>-*` skills |
 | `.agents/plugins/coder-nexus/mcp_config.json` | How the host starts the MCP server |
-| `.agents/stack.json` | The selected packs and the folders each one owns |
+| `.agents/stack.json` | The installed pack and the folders it owns |
 
-Example `stack.json` for a monorepo:
+Example `stack.json` for a Flutter app in a subfolder:
 
 ```json
 {
   "packs": [
-    { "stack": "backend", "status": "preview", "paths": ["services/api"] },
     { "stack": "flutter", "status": "maintained", "paths": ["apps/mobile"] }
   ]
 }
 ```
 
-Agents apply the rules of the pack that owns the files they are editing. Edit `paths` if auto-detection guessed wrong; re-syncing keeps your paths.
+Edit `paths` if auto-detection guessed wrong; re-syncing the same pack keeps your paths.
 
 ### Tips
 - Re-syncing replaces only generated files. Keep your own customizations outside `.agents/plugins/coder-nexus/` and `.agents/agents/`.
@@ -81,10 +81,10 @@ Install the bundle into a project. Always pass `--workspace`; without it the bun
 uv run coder-nexus install-plugin --pack flutter --workspace /absolute/path/to/project
 ```
 
-Several packs (merged with those already in `stack.json`; add `--replace` to install exactly these):
+A workspace holds one pack. To switch a workspace to another pack, replace the installed one:
 
 ```sh
-uv run coder-nexus install-plugin --pack flutter --pack backend --workspace /absolute/path/to/monorepo
+uv run coder-nexus install-plugin --pack backend --replace --workspace /absolute/path/to/project
 ```
 
 With this route `mcp_config.json` runs the server from your checkout, so keep the checkout and its environment in place.
@@ -117,10 +117,10 @@ For contributors. Plugin sources are split by responsibility and combined by `py
 |---|---|---|
 | `plugins/core/agents/` | Stack-neutral role process (gates, handoffs, task loop) | `.agents/agents/<role>.md` |
 | `plugins/layers/<layer>/agents/` | Rules shared by a group of stacks (e.g. frontend) | Appended to each role |
-| `plugins/packs/<stack>/agents/` | Stack-specific rules | Appended per selected pack |
+| `plugins/packs/<stack>/agents/` | Stack-specific rules | Appended for the installed pack |
 | `plugins/core/skills/` | Stack-neutral process skills | `skills/<name>/` |
-| `plugins/packs/<stack>/skills/<slot>/` | Stack knowledge for one slot (`clean-architecture`, `unit-test`, …) | `skills/<stack>-<slot>/` |
+| `plugins/packs/<stack>/skills/<slot>/` | Stack knowledge for one slot (`clean-architecture`, `unit-testing`, …) | `skills/<stack>-<slot>/` |
 
 Core files refer to stack knowledge as `{{slot:<name>}}`, rendered to `<stack>-<name>`. Every slot listed in `plugins/core/slots.json` must resolve to a skill. A pack either implements it, marks it `not_applicable` (agents record `N/A`), or, for a preview pack only, gets a placeholder that makes agents stop with `BLOCKED` instead of borrowing another stack's rules.
 
-The build fails a maintained pack when a declared skill is missing, a link is broken, or a file mentions another stack's markers.
+The build produces one projection per pack and layout (`workspace-backend`, `workspace-flutter`, `global-backend`, `global-flutter`); packs are not combined. It fails a maintained pack when a declared skill is missing, a link is broken, or a file mentions another stack's markers.

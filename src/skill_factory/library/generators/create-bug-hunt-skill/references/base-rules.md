@@ -1,6 +1,6 @@
 # Base rules (generic, every workspace)
 
-Generalised from Coder Nexus `plugins/core/skills/bug-hunt` and the bug-hunt practice of a real fullstack workspace. Each rule goes into the generated skill with the workspace's facts (vocabulary, report location, commands) **and its reason**, or is marked "not adopted" with a reason.
+Generalised from Coder Nexus bug-hunt base rules and the bug-hunt practice of a real fullstack workspace. Each rule goes into the generated skill with the workspace's facts (vocabulary, report location, commands) **and its reason**, or is marked "not adopted" with a reason.
 
 | # | Rule | Why | Goes into |
 |---|---|---|---|

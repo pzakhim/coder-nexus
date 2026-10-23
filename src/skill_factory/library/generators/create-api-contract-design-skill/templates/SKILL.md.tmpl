@@ -14,9 +14,10 @@ Style: {{api_style}} · Source of truth: `{{contract_source}}` · Base path: `{{
 ## Always
 
 - Write or update the contract before the code; code, clients and mocks follow it.
-- Use the shared naming, response and error shape ([01]({{ref_01}})).
+- Use the shared naming, response and error shape; reference the one error envelope, never redefine it ([01]({{ref_01}})).
+- Idempotency keys are claimed atomically, a changed payload under the same key is rejected, and a timeout is an unknown outcome ([01]({{ref_01}})).
 - State who may call each endpoint and which data it may touch ([03]({{ref_03}})).
-- Removing, renaming or changing the meaning of anything is breaking: give a compatible path and a deprecation note, and flag it for the version bump ([04]({{ref_04}})).
+- Prefer adding over modifying. Removing, renaming or changing the meaning or observable behavior of anything is breaking: give a compatible path and a deprecation note, flag it for the version bump, and keep one live version ([04]({{ref_04}})).
 - Say whether evidence ran against a mock or the real endpoint.
 
 ## Read next

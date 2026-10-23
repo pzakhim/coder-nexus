@@ -195,10 +195,10 @@ def cmd_install_plugin(args: argparse.Namespace) -> int:
     """Handle `coder-nexus install-plugin` (source checkout only).
 
     - --workspace <path>: installs <workspace>/.agents/plugins/coder-nexus, the composed role
-      agents in .agents/agents and .agents/stack.json. Packs are added to the ones already
-      recorded in stack.json unless --replace is given.
-    - --global (or no --workspace): installs ~/.gemini/config/plugins/coder-nexus with one pack.
-    Packs come from --pack (repeatable) or the legacy --plugin fe|be / --framework flags.
+      agents in .agents/agents and .agents/stack.json. A workspace holds one pack: when stack.json
+      records a different one, nothing is touched unless --replace is given.
+    - --global (or no --workspace): installs ~/.gemini/config/plugins/coder-nexus.
+    The pack comes from --pack (exactly one) or the legacy --plugin fe|be / --framework flags.
     """
     repo_root = REPO_ROOT
     plugins_dir = repo_root / "plugins"
@@ -209,10 +209,21 @@ def cmd_install_plugin(args: argparse.Namespace) -> int:
     if unknown:
         print(f"❌ Unknown pack(s): {', '.join(unknown)} (available: {', '.join(available_packs(plugins_dir))})", file=sys.stderr)
         return 1
+    if len(requested) != 1:
+        print("❌ Install exactly one pack (flutter or backend); pass a single --pack", file=sys.stderr)
+        return 1
     manifest = _read_json(plugins_dir / "core" / "bundle_manifest.json")
     if not manifest.get("plugin_version"):
         print("❌ Plugin bundle manifest is missing plugin_version", file=sys.stderr)
         return 1
+    if args.workspace and not getattr(args, "replace", False):
+        installed = sorted({
+            pack.get("stack") for pack in read_stack_file(Path(args.workspace).resolve()).get("packs", [])
+            if pack.get("stack") in available_packs(plugins_dir)
+        } - set(requested))
+        if installed:
+            print(f"❌ workspace has {', '.join(installed)}; pass --replace to switch", file=sys.stderr)
+            return 1
 
     installs: list[tuple[Path, list[str], Path | None]] = []
     if args.is_global or not args.workspace:
@@ -226,22 +237,15 @@ def cmd_install_plugin(args: argparse.Namespace) -> int:
                 except OSError as exc:
                     print(f"❌ Failed to remove legacy plugin: {exc}", file=sys.stderr)
                     return 1
-        if len(requested) != 1:
-            print("❌ A global install holds exactly one pack; pass a single --pack", file=sys.stderr)
-            return 1
         installs.append((global_plugins_dir / PLUGIN_NAME, requested, None))
 
     if args.workspace:
         ws_path = Path(args.workspace).resolve()
-        existing = [] if getattr(args, "replace", False) else [
-            pack["stack"] for pack in read_stack_file(ws_path).get("packs", []) if pack.get("stack") in available_packs(plugins_dir)
-        ]
-        packs = sorted(set(existing) | set(requested))
         destination = ws_path / ".agents" / "plugins" / PLUGIN_NAME
         for legacy in LEGACY_PLUGINS:
             _remove_legacy_workspace_entry(ws_path, plugins_dir / legacy, ws_path / ".agents" / "plugins" / legacy)
             _remove_path(ws_path / ".agents" / "plugins" / legacy)
-        installs.append((destination, packs, ws_path))
+        installs.append((destination, requested, ws_path))
 
     try:
         for destination, packs, workspace in installs:

@@ -18,7 +18,7 @@ Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and, 
 
 | Field | Where to look |
 |---|---|
-| Existing process skills | `.agents/skills/` and `.claude/skills/`: `incremental-implementation`, `work-item(s)`, `implementation-planning`, `dev-team*`, `feature-planner`... |
+| Existing process skills | `.agents/skills/` and `.claude/skills/`: `incremental-implementation`, `work-item(s)`, `implementation-planning`, `dev-team*`, `delivery-workflow`... |
 | Coder role files | `.agents/agents/*coder*`, `*writer*`, `coordinator*`; `AGENTS.md` sections on delivery flow |
 | Validators / gates scripts | e.g. `validate_dossier.py`, CI checks on plan files |
 | Base input (read-only) | `<coder repo>/plugins/core/skills/incremental-implementation/SKILL.md` (Coder Nexus source, read from the repo, not from a workspace) |

@@ -1,6 +1,6 @@
 # FE-BE API Handshake Protocol
 
-Quy ước chuẩn kết nối và chuyển giao giữa các **Frontend pack** (Client UI) và **Backend pack** (API Service). Hai bên có thể nằm ở hai workspace riêng, hoặc cùng một workspace monorepo; khi đó mỗi bên chỉ sửa các đường dẫn mà pack của mình sở hữu trong `.agents/stack.json`.
+Quy ước chuẩn kết nối và chuyển giao giữa các **Frontend pack** (Client UI) và **Backend pack** (API Service). Hai bên nằm ở hai workspace riêng (mỗi workspace cài đúng một pack); mỗi bên chỉ sửa các đường dẫn mà pack của workspace đó sở hữu trong `.agents/stack.json`.
 
 ---
 

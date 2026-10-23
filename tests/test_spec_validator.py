@@ -302,7 +302,7 @@ SPEC_WRITER_CODEBASE_NOTES = """# Codebase Notes: Versioned Spec Writer
 ## 6. Change Log
 | Date | Role | Summary |
 |---|---|---|
-| 2026-10-06 | `spec_writer` | Completed Gate 1 `grill-me` rounds and locked in `D-01`..`D-02`. |
+| 2026-10-06 | `spec_writer` | Completed Gate 1 `grilling` rounds and locked in `D-01`..`D-02`. |
 """
 
 
@@ -335,7 +335,7 @@ Developer approves each stage; the Hub reads Huly only.
 | **BR-01** | Developer confirms requirements and `codebase-notes.md` before design begins. | G-01 | `D-01` |
 
 ## 4. Behavioral Scenarios
-- **Given** a new feature request, **When** `spec_writer` runs `grill-me`, **Then** each open `Q-NN` is asked one at a time and locked into `D-NN` (`AC-01`, `D-01`).
+- **Given** a new feature request, **When** `spec_writer` runs `grilling`, **Then** each open `Q-NN` is asked one at a time and locked into `D-NN` (`AC-01`, `D-01`).
 
 ## 5. Acceptance criteria
 | AC ID | Observable behavior | Source | Status | Goal |

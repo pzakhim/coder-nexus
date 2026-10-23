@@ -815,11 +815,11 @@
       <div class="grid-2">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">📱 Frontend packs: Flutter / Frappe UI (Client)</div>
+            <div class="card-title">📱 Frontend pack: Flutter (Client)</div>
             <span class="tag tag-blue">Client Workspace</span>
           </div>
           <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">
-            Chuyên trách toàn bộ tầng Client (Flutter / Frappe UI), quản lý State, UI Kit Components, Presentation Clean Architecture, và Developer Unit Test.
+            Chuyên trách toàn bộ tầng Client (Flutter), quản lý State, UI Kit Components, Presentation Clean Architecture, và Developer Unit Test.
           </p>
           <div class="inspector-section" style="margin-bottom:0.75rem;">
             <h4>Cấu trúc Phân lớp FE:</h4>
@@ -831,10 +831,10 @@
           </div>
           <div class="inspector-section">
             <h4>Tools & Skills riêng biệt:</h4>
-            <span class="tag tag-blue">core-usage</span>
+            <span class="tag tag-blue">core-package-usage</span>
             <span class="tag tag-blue">get_ux_error_patterns</span>
             <span class="tag tag-blue">validate_architecture_code</span>
-            <span class="tag tag-green">flutter-unit-test</span>
+            <span class="tag tag-green">flutter-unit-testing</span>
             <span class="tag tag-green">flutter-clean-architecture</span>
           </div>
         </div>
@@ -859,9 +859,9 @@
             <h4>Tools & Skills riêng biệt:</h4>
             <span class="tag tag-purple">huly_get_my_tasks</span>
             <span class="tag tag-purple">huly_get_task_detail</span>
-            <span class="tag tag-green">be-work-items</span>
-            <span class="tag tag-green">be-clean-architecture</span>
-            <span class="tag tag-green">be-api-contracts</span>
+            <span class="tag tag-green">work-item-contract</span>
+            <span class="tag tag-green">backend-clean-architecture</span>
+            <span class="tag tag-green">backend-api-contract-design</span>
           </div>
         </div>
       </div>
@@ -924,7 +924,7 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">📱 Ma trận Các Dạng Framework FE & Logic Xử Lý Từng Agent</div>
-          <span class="tag tag-blue">Flutter & Frappe</span>
+          <span class="tag tag-blue">Flutter</span>
         </div>
         <p style="color:var(--text-muted); font-size:0.85rem;">
           Mỗi Agent dùng chung (core) cộng với rules của pack sẽ kích hoạt bộ Skills, Rules và Logic xử lý chuyên biệt tùy theo Framework của dự án mà không gây thừa thãi:
@@ -943,42 +943,28 @@
             </thead>
             <tbody>
               <tr>
-                <td rowspan="2"><strong>Spec Writer</strong><br><span class="tag tag-blue">Technical BA</span></td>
+                <td><strong>Spec Writer</strong><br><span class="tag tag-blue">Technical BA</span></td>
                 <td><span class="tag tag-blue">Flutter</span></td>
                 <td>
-                  <span class="tag tag-green">flutter/feature-planner</span><br>
-                  <span class="tag tag-green">shared/work-items</span><br>
-                  <span class="tag tag-green">shared/huly-task-runner</span>
+                  <span class="tag tag-green">core/delivery-workflow</span><br>
+                  <span class="tag tag-green">core/work-item-contract</span><br>
+                  <span class="tag tag-green">core/huly-task-intake</span>
                 </td>
                 <td>
-                  <code>core-usage</code><br>
+                  <code>core-package-usage</code><br>
                   <code>ask_question</code>
                 </td>
                 <td>
-                  Đọc GUIDE của <code>app_core</code> / <code>app_util</code> / <code>app_ui_kit</code> qua <code>core-usage</code>. Phân tích API Backend (Live vs Swagger vs FE Self-Mock). Xuất <code>brief.md</code>, <code>requirements.md</code> (BDD Gherkin), <code>design.md</code>. Dừng tại <strong>TP-1</strong> & <strong>TP-2</strong>.
-                </td>
-              </tr>
-              <tr>
-                <td><span class="tag tag-purple">Frappe</span></td>
-                <td>
-                  <span class="tag tag-purple">frappe/ui-catalog</span><br>
-                  <span class="tag tag-green">shared/work-items</span>
-                </td>
-                <td>
-                  <code>ask_question</code><br>
-                  <code>view_file</code>
-                </td>
-                <td>
-                  Phân tích DocType Schema (Child tables, Single DocTypes), trường dữ liệu và quan hệ Link. Lựa chọn Frappe UI Vue 3 components (Button, Dialog, FormControl, ListView).
+                  Đọc GUIDE của <code>app_core</code> / <code>app_util</code> / <code>app_ui_kit</code> qua <code>core-package-usage</code>. Phân tích API Backend (Live vs Swagger vs FE Self-Mock). Xuất <code>brief.md</code>, <code>requirements.md</code> (BDD Gherkin), <code>design.md</code>. Dừng tại <strong>TP-1</strong> & <strong>TP-2</strong>.
                 </td>
               </tr>
 
               <tr>
-                <td rowspan="2"><strong>Planning Agent</strong><br><span class="tag tag-blue">Tech Lead</span></td>
+                <td><strong>Planning Agent</strong><br><span class="tag tag-blue">Tech Lead</span></td>
                 <td><span class="tag tag-blue">Flutter</span></td>
                 <td>
-                  <span class="tag tag-green">flutter/feature-planner</span><br>
-                  <span class="tag tag-green">flutter/planning-and-task-breakdown</span>
+                  <span class="tag tag-green">core/delivery-workflow</span><br>
+                  <span class="tag tag-green">core/implementation-planning</span>
                 </td>
                 <td>
                   <code>validate_plan_slices</code><br>
@@ -989,30 +975,18 @@
                   Quét nhanh context song song với BA. Phân rã <code>implementation_plan.md</code> thành các Phase lát cắt (Domain/Data -> Cubit/State -> UI/Screen). <strong>Định nghĩa rõ DoD Unit Test</strong> cho Coder trong từng Phase. Dừng tại <strong>TP-3</strong>.
                 </td>
               </tr>
-              <tr>
-                <td><span class="tag tag-purple">Frappe</span></td>
-                <td>
-                  <span class="tag tag-green">shared/work-items</span>
-                </td>
-                <td>
-                  <code>ask_question</code>
-                </td>
-                <td>
-                  Phân rã kế hoạch thành các Phase: Phase 1 Tạo DocType JSON & Migrations -> Phase 2 Python Controller & Whitelist APIs -> Phase 3 Frappe UI Vue 3 Screens/Modals.
-                </td>
-              </tr>
 
               <tr>
-                <td rowspan="2"><strong>Code Writer</strong><br><span class="tag tag-blue">Senior Dev</span></td>
+                <td><strong>Code Writer</strong><br><span class="tag tag-blue">Senior Dev</span></td>
                 <td><span class="tag tag-blue">Flutter</span></td>
                 <td>
                   <span class="tag tag-green">flutter-clean-architecture</span><br>
-                  <span class="tag tag-green">flutter-unit-test</span><br>
-                  <span class="tag tag-green">clean-code</span>
+                  <span class="tag tag-green">flutter-unit-testing</span><br>
+                  <span class="tag tag-green">flutter-clean-code</span>
                 </td>
                 <td>
                   <code>get_project_structure</code><br>
-                  <code>core-usage</code><br>
+                  <code>core-package-usage</code><br>
                   <code>write_to_file</code><br>
                   <code>replace_file_content</code><br>
                   <code>run_command</code>
@@ -1021,28 +995,14 @@
                   <strong>Chỉ viết Code + Developer Unit Test</strong>. Không viết docstring hay comment (để Reviewer viết). Tái sử dụng widget từ <code>app_ui_kit</code>. Tự chạy <code>flutter test</code> kiểm chứng 100% pass trước khi giao review.
                 </td>
               </tr>
-              <tr>
-                <td><span class="tag tag-purple">Frappe</span></td>
-                <td>
-                  <span class="tag tag-purple">frappe/clean-architecture</span>
-                </td>
-                <td>
-                  <code>write_to_file</code><br>
-                  <code>replace_file_content</code><br>
-                  <code>run_command</code>
-                </td>
-                <td>
-                  Tạo DocType JSON, viết Python Controller kế thừa <code>Document</code>, triển khai Whitelist API methods (<code>@frappe.whitelist()</code>), xây dựng giao diện Vue 3 với <code>frappe-ui</code>. Tự test API qua bench console.
-                </td>
-              </tr>
 
               <tr>
-                <td rowspan="2"><strong>Code Reviewer</strong><br><span class="tag tag-blue">Tech Lead / Gatekeeper</span></td>
+                <td><strong>Code Reviewer</strong><br><span class="tag tag-blue">Tech Lead / Gatekeeper</span></td>
                 <td><span class="tag tag-blue">Flutter</span></td>
                 <td>
                   <span class="tag tag-green">flutter-code-review</span><br>
                   <span class="tag tag-green">flutter-clean-architecture</span><br>
-                  <span class="tag tag-green">flutter-unit-test</span>
+                  <span class="tag tag-green">flutter-unit-testing</span>
                 </td>
                 <td>
                   <code>validate_architecture_code</code><br>
@@ -1054,26 +1014,13 @@
                   Thẩm định 5-Axis Clean Architecture. <strong>Đánh giá tính khách quan của Unit Test</strong> (Edge cases, AAA, Mocktail). <strong>Tự tay bổ sung docstrings/comments</strong>. Trình bày Artifact và kích hoạt <strong>TP-4</strong>.
                 </td>
               </tr>
-              <tr>
-                <td><span class="tag tag-purple">Frappe</span></td>
-                <td>
-                  <span class="tag tag-purple">frappe/clean-architecture</span>
-                </td>
-                <td>
-                  <code>replace_file_content</code><br>
-                  <code>ask_question</code>
-                </td>
-                <td>
-                  Kiểm soát an toàn dữ liệu: Quyền hạn DocType (<code>has_permission</code>), SQL Injection (<code>frappe.db.sql</code>), logic Hooks. Viết docstring cho các Whitelist APIs.
-                </td>
-              </tr>
 
               <tr>
-                <td rowspan="2"><strong>Test Runner</strong><br><span class="tag tag-blue">Independent QA</span></td>
+                <td><strong>Test Runner</strong><br><span class="tag tag-blue">Independent QA</span></td>
                 <td><span class="tag tag-blue">Flutter</span></td>
                 <td>
                   <span class="tag tag-green">flutter-verification</span><br>
-                  <span class="tag tag-green">flutter-visual-verification</span>
+                  <span class="tag tag-green">flutter-visual-quality</span>
                 </td>
                 <td>
                   <code>run_command</code><br>
@@ -1081,19 +1028,6 @@
                 </td>
                 <td>
                   <strong>QA Độc lập</strong>: Tuyệt đối không bám theo plan của Coder. Lấy <code>brief.md</code> (Scope In/Out) và <code>requirements.md</code> (BDD Gherkin, AC-NN) làm SSOT. Chạy <code>flutter test</code> toàn diện, <code>flutter analyze</code>. Nếu lỗi -> Dừng tại <strong>TP-5</strong> yêu cầu Coder sửa.
-                </td>
-              </tr>
-              <tr>
-                <td><span class="tag tag-purple">Frappe</span></td>
-                <td>
-                  <span class="tag tag-green">shared/work-items</span>
-                </td>
-                <td>
-                  <code>run_command</code><br>
-                  <code>view_file</code>
-                </td>
-                <td>
-                  Chạy bộ kiểm thử tự động của Frappe: <code>bench run-tests --doctype &lt;Name&gt;</code>, kiểm thử API status codes, và kiểm thử UI E2E Cypress.
                 </td>
               </tr>
 

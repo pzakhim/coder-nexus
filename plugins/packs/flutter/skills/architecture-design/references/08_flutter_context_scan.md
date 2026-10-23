@@ -1,16 +1,16 @@
 # 08 — Flutter Context Scan and Module Routing
 
-Stack details for the core `feature-planner` context scan (scope classification `INIT` / `EXTEND` / `CORE IMPACT` stays in the core skill) and for the `dev-team` coordinator's Step 0 and Step 2A.
+Stack details for the core `delivery-workflow` context scan (scope classification `INIT` / `EXTEND` / `CORE IMPACT` stays in the core skill) and for the `dev-team` coordinator's Step 0 and Step 2A.
 
 ## Detection (Step 0)
 
-- `pubspec.yaml` and `lib/*.dart` identify a Flutter Client (Target Platform: `mobile`). Foundation/UI authority is resolved through [core-usage](../../core-usage/SKILL.md) from Client evidence.
+- `pubspec.yaml` and `lib/*.dart` identify a Flutter Client (Target Platform: `mobile`). Foundation/UI authority is resolved through [core-package-usage](../../core-package-usage/SKILL.md) from Client evidence.
 
 ## Workspace scan
 
 Scan the actual Flutter Client at `${workspaceFolder}` before proposing a feature design. Read `pubspec.yaml` for package names and installed dependencies, inspect `lib/modules/` for the business owner, and inspect `lib/core/`, `lib/commons/widgets/`, routing and DI where relevant. Resolve imports from the Client; do not copy a package name or API from an example.
 
-Planning (Step 2A): resolve and record the profile via [core-usage](../../core-usage/SKILL.md), start from `requirements.md` and `codebase-notes.md`, and inspect the target module, router and DI. Only iMESPro runs company setup and reads `../app-*/guidance/GUIDE.md`; external profiles inspect Client foundations or standard Flutter. Planning owns the Data Pipeline architecture (`DataSource`/`Model`/`Repo`/`Cubit`/DI).
+Planning (Step 2A): resolve and record the profile via [core-package-usage](../../core-package-usage/SKILL.md), start from `requirements.md` and `codebase-notes.md`, and inspect the target module, router and DI. Only iMESPro runs company setup and reads `../app-*/guidance/GUIDE.md`; external profiles inspect Client foundations or standard Flutter. Planning owns the Data Pipeline architecture (`DataSource`/`Model`/`Repo`/`Cubit`/DI).
 
 ## Scope classification — Flutter specifics
 

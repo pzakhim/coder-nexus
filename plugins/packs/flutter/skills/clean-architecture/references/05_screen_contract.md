@@ -1,6 +1,6 @@
 # Screen contract for Flutter Client work
 
-Apply the approved profile through [core-usage](../../core-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
+Apply the approved profile through [core-package-usage](../../core-package-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
 
 > Source: Screen contract and architectural guidelines. Always inspect the active workspace definitions of `BaseScreen`, `BaseScreenState`, tracking state, and responsive mixin. A commented-out or missing class is evidence of an unavailable API, not a usable import or proof of runtime behavior.
 

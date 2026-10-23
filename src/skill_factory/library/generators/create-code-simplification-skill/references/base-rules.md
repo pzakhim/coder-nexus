@@ -1,6 +1,6 @@
 # Base rules (generic, every workspace)
 
-Generalised from Coder Nexus `plugins/core/skills/code-simplification`, `plugins/ponytail` and the simplification standard of a real fullstack workspace. Goal: code a newcomer understands on first read — not the fewest lines. Each rule goes into the generated skill with the workspace's facts **and its reason**, or is marked "not adopted" with a reason.
+Generalised from Coder Nexus simplification base rules, `plugins/ponytail` and the simplification standard of a real fullstack workspace. Goal: code a newcomer understands on first read — not the fewest lines. Each rule goes into the generated skill with the workspace's facts **and its reason**, or is marked "not adopted" with a reason.
 
 | # | Rule | Why | Severity | Goes into |
 |---|---|---|---|---|

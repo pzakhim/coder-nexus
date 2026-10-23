@@ -1,12 +1,12 @@
 ---
 name: create-implementation-planning-skill
-description: Write a workspace's own implementation-planning skill from the skill-factory knowledge base - how Planning orders work inside one vertical behavior for this repository (for example contract, migration, backend, frontend, wiring), what one task looks like, the real check command for each kind of task, the workspace's PHASE-00 readiness items (environments, test accounts per role, seed data, mocks, migrations, feature flags), the Definition of Done per phase, branch and hotfix tasks from git-preflight, and what is a handoff rather than a task - inside the fixed planning-and-task-breakdown process, for any stack and for fullstack repos. Use whenever the user wants to set up, standardize or update how implementation plans and phases are written in a workspace, or says things like "tạo skill lập kế hoạch", "chia phase thế nào", "task nhỏ cỡ nào", "plan cho coder", even if they do not say "skill". Writes .agents/skills/implementation-planning/, then trial-runs it on real approved designs.
+description: Write a workspace's own implementation-planning skill from the skill-factory knowledge base - how Planning orders work inside one vertical behavior for this repository (for example contract, migration, backend, frontend, wiring), what one task looks like, the real check command for each kind of task, the workspace's PHASE-00 readiness items (environments, test accounts per role, seed data, mocks, migrations, feature flags), the Definition of Done per phase, branch and hotfix tasks from git-preflight, and what is a handoff rather than a task - inside the fixed implementation-planning process, for any stack and for fullstack repos. Use whenever the user wants to set up, standardize or update how implementation plans and phases are written in a workspace, or says things like "tạo skill lập kế hoạch", "chia phase thế nào", "task nhỏ cỡ nào", "plan cho coder", even if they do not say "skill". Writes .agents/skills/implementation-planning/, then trial-runs it on real approved designs.
 argument-hint: "[be_dir] [fe_dir]"
 ---
 
 # Create Implementation Planning Skill
 
-Goal: produce `<workspace>/.agents/skills/implementation-planning/` — how Planning turns an approved design into phases and tasks that fit this repository: the order inside a behavior, task shape and real checks, PHASE-00 items and the Definition of Done. It works inside the fixed `planning-and-task-breakdown` skill (vertical behavior phases, PHASE-00, AC coverage, one Code Writer running tasks in order, `validate_plan_slices`); it never changes those.
+Goal: produce `<workspace>/.agents/skills/implementation-planning/` — how Planning turns an approved design into phases and tasks that fit this repository: the order inside a behavior, task shape and real checks, PHASE-00 items and the Definition of Done. It works inside the fixed `implementation-planning` skill (vertical behavior phases, PHASE-00, AC coverage, one Code Writer running tasks in order, `validate_plan_slices`); it never changes those.
 
 User input: $ARGUMENTS
 
@@ -22,12 +22,13 @@ Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P
 | Past plans | `.superpowers/work-items/*/v*/implementation-plan.md` and `phases/`, `docs/features/**` — which ones were delivered without rework |
 | Checks | Analyzer, linter, type checker, test commands per branch with cwd; CI jobs |
 | Readiness tools | Migration runner, seed scripts, mock servers, feature flags, test accounts |
-| Change size | Typical PR size (`git log --shortstat`), files per commit |
+| Change size | Typical PR size (`git log --shortstat`), files per commit, which commits needed rework (for the XS–XL scale) |
+| Spec values and gaps | Item-wide values approved specs pin (for Global constraints) and inputs past reviews or bugs showed uncovered (for Review focus) |
 | Sibling skills | `clean-architecture`, `unit-testing`, `database-migrations`, `git-workflow`, `api-contract-design`, `change-impact-analysis` |
 
 ## Step 2 — Map the base rules
 
-Read `references/base-rules.md`. For each rule IP1–IP9: adopted, adapted, or "not adopted" with a reason. IP3 (paths from clean-architecture), IP4 (a real check per task) and IP8 (out-of-workspace work is a handoff) are never "not adopted".
+Read `references/base-rules.md`. For each rule IP1–IP17: adopted, adapted, or "not adopted" with a reason. IP3 (paths from clean-architecture), IP4 (a real check per task), IP8 (out-of-workspace work is a handoff) and IP17 (tests and docs inside each phase) are never "not adopted". Where each idea came from: `references/sources.md`.
 
 ## Step 3 — Propose
 
@@ -35,7 +36,8 @@ Read `references/base-rules.md`. For each rule IP1–IP9: adopted, adapted, or "
 - Task shape and the check command for each kind of task (per branch).
 - PHASE-00 items this workspace needs, each `[EXECUTE]` or `[INFO_NOTE]`.
 - Definition of Done per phase (per branch).
-- Task-size guidance taken from the repository's history, not a number from the generator.
+- Task sizes XS–XL taken from the repository's history, not a number from the generator, with the split triggers (IP12).
+- Global-constraint kinds and common review-focus gaps seen in past specs and reviews (IP10, IP11).
 
 ## Step 4 — Gate (user confirms)
 
@@ -73,7 +75,7 @@ Writing rules: real paths, commands with cwd and tool names; every rule with its
 
 ## Step 7 — Trial run
 
-`~/.claude/skill-factory/core/trial-run.md`. Re-plan one or two features whose design was approved and delivered. Compare with and without the skill: phase order, task size, checks that actually run, PHASE-00 completeness, how many tasks the real delivery had to add.
+`~/.claude/skill-factory/core/trial-run.md`. Re-plan one or two features whose design was approved and delivered. Compare with and without the skill: phase order, task size, checks that actually run, PHASE-00 completeness, how many tasks the real delivery had to add, whether the review-focus lines match defects the delivery really met.
 
 ## Step 8 — Description
 
@@ -93,7 +95,8 @@ Follow `~/.claude/skill-factory/core/versioning.md` (work under `## Unreleased`,
 
 ## Resources
 
-- `references/base-rules.md` — IP1–IP9 with reasons
+- `references/base-rules.md` — IP1–IP17 with reasons
+- `references/sources.md` — external sources, ideas taken, ideas not adopted
 - `references/detection.md` — where layout, checks, readiness tools and past plans are found
 - `templates/` — `SKILL.md.tmpl`, `01–04` (suggested shapes)
 - `checklist.md` — topic checks

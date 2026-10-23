@@ -1,12 +1,12 @@
 # 06 — UI Component Mapping and 4 Visual States
 
-Apply the approved profile through [core-usage](../../core-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
+Apply the approved profile through [core-package-usage](../../core-package-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
 
 Guide for the `UI design system` section of `design.md`.
 
 ## 1. Read, then decide (Flutter)
 
-Source of truth: `../app-ui-kit/guidance/GUIDE.md` (decision table §1), read through the `{{slot:core-usage}}` skill. Screen base, paged list and form label live in the app_core guide.
+Source of truth: `../app-ui-kit/guidance/GUIDE.md` (decision table §1), read through the `{{slot:core-package-usage}}` skill. Screen base, paged list and form label live in the app_core guide.
 
 For each UI element in the requirements:
 

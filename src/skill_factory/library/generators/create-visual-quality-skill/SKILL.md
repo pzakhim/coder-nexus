@@ -25,7 +25,7 @@ Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P
 | Evidence rules | Where screenshots may be saved (some tools only write inside the workspace), naming |
 | Viewports and themes | Target desktop/tablet/mobile sizes, light/dark |
 | Visual diff tooling | Playwright `toHaveScreenshot`, pixelmatch, or none — only if installed |
-| Base inputs (read-only) | Coder Nexus visual-verification slot skills and the UX validator docs, if available |
+| Base inputs (read-only) | Coder Nexus `visual-quality` slot skills and the UX validator docs, if available |
 
 ## Step 2 — Map the base rules
 

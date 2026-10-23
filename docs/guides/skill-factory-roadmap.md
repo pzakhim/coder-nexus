@@ -92,7 +92,9 @@ Each milestone ends with a trial run in a real workspace before the next starts.
 
 - `create-<pack>-skills` orchestrators: one Context Card and one question round for a whole pack.
 
-## Reference sources (to integrate later)
+## Reference sources
+
+**Integrated on 2026-10-22** into the Spec & Planning generators (`requirements-specification`, `domain-knowledge`, `change-impact-analysis`, `implementation-planning`, `api-contract-design`) and the fixed core skills `grilling`, `requirements-elicitation`, `solution-options`, `cold-reader-check`, `gate-review`, `architecture-decision-records`, `work-item-contract`, `implementation-planning` and both `architecture-design` packs. Each one cites its sources, pinned to a commit, in `references/sources.md`, with the ideas not adopted and why. The git-workflow rows below are not integrated yet.
 
 Ideas and structure only; rewrite them in the factory's Q-NN → D-NN and gate vocabulary, never copy text, and cite the source in the generator's `references/`. Stars checked on 2026-10-22.
 

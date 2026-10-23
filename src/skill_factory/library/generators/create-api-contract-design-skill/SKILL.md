@@ -6,7 +6,7 @@ argument-hint: "[be_dir] [fe_dir]"
 
 # Create API Contract Design Skill
 
-Goal: produce `<workspace>/.agents/skills/api-contract-design/` — how this workspace designs, changes and consumes its APIs: the source of truth, naming, response and error shape, pagination, auth and scopes, compatibility and versioning, client consumption and mocks. It extends the fixed backend `api-contracts` skill and the API section of `{{slot:architecture-design}}`; the handshake evidence policy (`shared_contracts/api_handshake_protocol.md`) stays as it is.
+Goal: produce `<workspace>/.agents/skills/api-contract-design/` — how this workspace designs, changes and consumes its APIs: the source of truth, naming, response and error shape, pagination, auth and scopes, compatibility and versioning, client consumption and mocks. It extends the fixed backend `api-contract-design` skill and the API section of `{{slot:architecture-design}}`; the handshake evidence policy (`shared_contracts/api_handshake_protocol.md`) stays as it is.
 
 User input: $ARGUMENTS
 
@@ -14,13 +14,13 @@ Follow `~/.claude/skill-factory/core/workflow.md`, starting with **Step 0**. Own
 
 ## Step 1 — Context Card (+ API facts)
 
-Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P1–P2 (`~/.claude/skill-factory/core/existing-project.md`). Then collect, read-only (`references/detection.md`): API style (REST, RPC, GraphQL), contract files (OpenAPI, schemas), route declarations, serializers/DTOs, error handlers and codes, pagination helpers, auth middleware, version paths, API clients in front ends and mobile apps, mock configs, and external consumers.
+Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P1–P2 (`~/.claude/skill-factory/core/existing-project.md`). Then collect, read-only (`references/detection.md`): API style (REST, RPC, GraphQL), contract files (OpenAPI, schemas), route declarations, serializers/DTOs, error handlers and codes, pagination helpers, auth middleware, version paths, idempotency keys and their store, API clients in front ends and mobile apps, mock configs, and external consumers.
 
 GraphQL or event-only workspaces: keep the same topics, adapted to their vocabulary (schema, resolvers, events); say so in the report.
 
 ## Step 2 — Map the base rules
 
-Read `references/base-rules.md`. For each rule AP1–AP9: adopted, adapted, or "not adopted" with a reason. AP1 (one source of truth), AP6 (compatibility) and AP9 (fixture is not live) are never "not adopted".
+Read `references/base-rules.md`. For each rule AP1–AP9: adopted, adapted, or "not adopted" with a reason. AP1 (one source of truth), AP6 (compatibility) and AP9 (fixture is not live) are never "not adopted". Where each idea came from: `references/sources.md`.
 
 ## Step 3 — Propose
 
@@ -69,7 +69,7 @@ Writing rules: real endpoints, files and commands; every rule with its reason; n
 
 - Design the endpoint(s) for a new list screen: naming, pagination, errors, scopes.
 - Rename or remove a field that a client already uses: is it flagged as breaking, with a compatible path and a deprecation note?
-- A mutation that may be retried by a mobile client: idempotency considered?
+- A mutation that may be retried by a mobile client: key from the intent, atomic claim, changed payload rejected, in-flight duplicate answer, timeout treated as unknown?
 
 ## Step 8 — Description
 
@@ -90,6 +90,7 @@ Follow `~/.claude/skill-factory/core/versioning.md` (work under `## Unreleased`,
 ## Resources
 
 - `references/base-rules.md` — AP1–AP9 with reasons
+- `references/sources.md` — external sources, ideas taken, ideas not adopted
 - `references/detection.md` — where routes, schemas, errors, auth and clients are found, per stack
 - `templates/` — `SKILL.md.tmpl`, `01–05` (suggested shapes)
 - `checklist.md` — topic checks

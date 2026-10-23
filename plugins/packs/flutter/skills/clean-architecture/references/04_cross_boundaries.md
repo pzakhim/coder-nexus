@@ -1,6 +1,6 @@
 # 04 — Cross-Module Boundaries and Composition
 
-Apply the approved profile through [core-usage](../../core-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
+Apply the approved profile through [core-package-usage](../../core-package-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
 
 > **Sources:** Senior AGENTS, DI and routing rules.
 > **Scope:** Dependencies between feature modules and their shared composition root.
@@ -15,4 +15,4 @@ A feature may consume another module's published Domain use case, entity or para
 
 ## UI ownership
 
-Keep widgets used only by one feature under `lib/modules/<feature>/presentation/widgets/`. Move a widget to `lib/commons/widgets/` only when actual multiple-module reuse warrants it and the change is approved. Check the `app_ui_kit` GUIDE (via `{{slot:core-usage}}`) and shared widgets before introducing a private widget.
+Keep widgets used only by one feature under `lib/modules/<feature>/presentation/widgets/`. Move a widget to `lib/commons/widgets/` only when actual multiple-module reuse warrants it and the change is approved. Check the `app_ui_kit` GUIDE (via `{{slot:core-package-usage}}`) and shared widgets before introducing a private widget.

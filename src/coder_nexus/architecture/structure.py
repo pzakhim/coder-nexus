@@ -104,7 +104,7 @@ def _build_root_blueprint() -> dict[str, Any]:
         ],
         "sources": [
             "plugins/packs/flutter/rules/clean_architecture_rules.md",
-            "plugins/packs/flutter/skills/core-usage/SKILL.md",
+            "plugins/packs/flutter/skills/core-package-usage/SKILL.md",
             "../app-core/guidance/GUIDE.md",
             "../app-util/guidance/GUIDE.md",
             "../app-ui-kit/guidance/GUIDE.md",
@@ -157,7 +157,7 @@ def _build_module_blueprint(feature: str) -> dict[str, Any]:
         "composition_root": "Must be registered in lib/modules/modules_di.dart",
         "sources": [
             "plugins/packs/flutter/rules/clean_architecture_rules.md",
-            "plugins/packs/flutter/skills/core-usage/SKILL.md",
+            "plugins/packs/flutter/skills/core-package-usage/SKILL.md",
             "../app-core/guidance/GUIDE.md",
             "../app-util/guidance/GUIDE.md",
             "../app-ui-kit/guidance/GUIDE.md",

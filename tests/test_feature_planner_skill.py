@@ -9,7 +9,7 @@ from .rendered import rendered_agent
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN = ROOT / "plugins"
 SKILLS = PLUGIN / "core" / "skills"
-PLANNER = SKILLS / "feature-planner"
+PLANNER = SKILLS / "delivery-workflow"
 FEATURE_PATH = "docs/features/<module>/<feature>/vN/"
 
 
@@ -20,34 +20,39 @@ def read(relative: str) -> str:
 
 
 def test_three_gates_and_versioned_handoff():
-    router = read("core/skills/feature-planner/SKILL.md")
+    router = read("core/skills/delivery-workflow/SKILL.md")
     spec = read("core/agents/spec_writer.md")
-    brainstorm = read("core/skills/brainstorming/SKILL.md")
-    planning = read("core/skills/planning-and-task-breakdown/SKILL.md")
-    rubric = read("core/skills/feature-planner/references/02_interview_rubric_and_gates.md")
-    for content in (router, brainstorm, planning, rubric):
+    planning = read("core/skills/implementation-planning/SKILL.md")
+    for content in (router, spec, planning):
         assert FEATURE_PATH in content
         assert "Gate 1" in content
         assert "Gate 2" in content
-        assert "Gate 3" in content or content is brainstorm
+        assert "Gate 3" in content
         assert "APPROVED_BY_SPEC" in content or "actual user approval" in content or "user approval" in content
+    # Former interview rubric: groups now in grilling mode spec, gate files and approval rule in work-item-contract.
+    rubric = read("core/skills/grilling/modes/spec.md")
+    assert "Gate 1" in rubric
+    for group in ("Data / API", "Business / State", "UI / Variant", "UX / Quality", "Integration"):
+        assert group in rubric
+    contract = read("core/skills/work-item-contract/SKILL.md")
+    assert "Gate 1" in contract and "Gate 2" in contract and "Gate 3" in contract
+    assert "only the user approves" in contract
     assert "all linked phase files" in router
     assert "ask_question" in spec
     assert "Gate 1" in spec and "Gate 2" in spec
     assert "Planning owns task breakdown" in spec
     assert "Docs Writer records phase as-built evidence" in spec
     assert "coordinator owns status and approval references" in spec
-    for stage in ("1A", "1B", "1C", "Mockoon", "grill-me", "codebase-notes.md"):
+    # Gate 1 flow has a single home (spec_writer §3); dev-team coordinates it.
+    for stage in ("1A", "1B", "1C", "Mockoon", "grilling", "codebase-notes.md"):
         assert stage in spec
-        assert stage in brainstorm
         assert stage in read("core/skills/dev-team/SKILL.md")
-        assert stage in read("core/skills/work-items/SKILL.md")
     planning_agent = read("core/agents/planning.md")
     coder_agent = read("core/agents/code_writer.md")
     arch_design = read("packs/flutter/skills/architecture-design/SKILL.md")
     incremental = read("core/skills/incremental-implementation/SKILL.md")
-    phase_rules = read("core/skills/planning-and-task-breakdown/references/01_phase_slicing_rules.md")
-    phase_tpl = read("core/skills/work-items/templates/phase.md.tpl")
+    phase_rules = read("core/skills/implementation-planning/references/01_phase_slicing_rules.md")
+    phase_tpl = read("core/skills/work-item-contract/templates/phase.md.tpl")
     work_phase_tpl = phase_tpl
     assert "Pre-Design Counter-Review" in planning_agent
     assert "Pre-Design Counter-Review" in arch_design
@@ -70,15 +75,22 @@ def test_three_gates_and_versioned_handoff():
 
 
 def test_versioned_manifest_files_exist_and_legacy_is_explicit():
+    router = (PLANNER / "SKILL.md").read_text(encoding="utf-8")
+    assert router.startswith("---")
+    assert "name: delivery-workflow" in router and "description:" in router
     manifest = json.loads((PLANNER / "references/manifest.json").read_text(encoding="utf-8"))
     assert manifest["version"] == "1.3.0"
+    assert manifest["skill_name"] == "delivery-workflow"
+    assert len(manifest["references"]) == 3
+    assert len(manifest["templates"]) == 7
+    assert len(manifest["legacy_templates"]) == 3
     assert len(manifest["three_gate_approvals"]) == 3
     assert set(manifest["templates"]) == {
-        "../work-items/templates/requirements.md.tpl",
-        "templates/change_impact.md.tpl",
+        "../work-item-contract/templates/requirements.md.tpl",
+        "../work-item-contract/templates/change-impact.md.tpl",
         "templates/design.md.tpl",
-        "../work-items/templates/implementation-plan.md.tpl",
-        "../work-items/templates/phase.md.tpl",
+        "../work-item-contract/templates/implementation-plan.md.tpl",
+        "../work-item-contract/templates/phase.md.tpl",
         "templates/as_built.md.tpl",
         "templates/feature_readme.md.tpl",
     }
@@ -90,9 +102,9 @@ def test_versioned_manifest_files_exist_and_legacy_is_explicit():
 
 def test_templates_cover_version_impact_ac_and_real_evidence():
     tpl = PLANNER / "templates"
-    shared = SKILLS / "work-items" / "templates"
+    shared = SKILLS / "work-item-contract" / "templates"
     requirements = (shared / "requirements.md.tpl").read_text(encoding="utf-8")
-    impact = (tpl / "change_impact.md.tpl").read_text(encoding="utf-8")
+    impact = (shared / "change-impact.md.tpl").read_text(encoding="utf-8")
     plan = (shared / "implementation-plan.md.tpl").read_text(encoding="utf-8")
     phase = (shared / "phase.md.tpl").read_text(encoding="utf-8")
     built = (tpl / "as_built.md.tpl").read_text(encoding="utf-8")
@@ -128,9 +140,9 @@ def test_downstream_agents_read_same_version_and_write_actual_evidence():
 def test_pre_release_visual_cases_keep_real_data_and_reviewed_goldens():
     runner = read("core/agents/test_runner.md")
     verification = read("packs/flutter/skills/verification/SKILL.md")
-    visual = read("packs/flutter/skills/visual-verification/SKILL.md")
+    visual = read("packs/flutter/skills/visual-quality/SKILL.md")
     report = read("packs/flutter/skills/verification/templates/verification_report.md.tpl")
-    phase = read("core/skills/work-items/templates/phase.md.tpl")
+    phase = read("core/skills/work-item-contract/templates/phase.md.tpl")
     assert "Code Review report" in runner
     assert "test-case matrix" in runner
     assert "Remain read-only toward `lib/` and `test/`" in runner
@@ -144,24 +156,14 @@ def test_pre_release_visual_cases_keep_real_data_and_reviewed_goldens():
 
 
 def test_visual_intake_and_reuse_stay_bound_to_real_sources():
-    router = read("core/skills/feature-planner/SKILL.md")
-    brainstorm = read("core/skills/brainstorming/SKILL.md")
-    matrix = read("core/skills/feature-planner/references/03_ui_ux_intake_and_discovery_matrix.md")
-    for content in (router, brainstorm, matrix):
+    router = read("core/skills/delivery-workflow/SKILL.md")
+    spec = read("core/agents/spec_writer.md")
+    matrix = read("core/skills/delivery-workflow/references/03_ui_ux_intake_and_discovery_matrix.md")
+    for content in (router, matrix):
         assert "Visual Intake Gate" in content
+    for content in (router, spec, matrix):
         assert "VISUAL_INPUT_MISSING" in content
-        assert "core-usage" in content or "app_ui_kit" in content
+        assert "core-package-usage" in content or "app_ui_kit" in content
+    assert "only `READ` counts as visual input" in spec
     assert "48x48 dp" in matrix
     assert "4.5:1" in matrix
-
-
-def test_public_workflow_skills_are_portable():
-    for name in (
-        "brainstorming",
-        "planning-and-task-breakdown",
-        "incremental-implementation",
-    ):
-        content = (SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
-        assert content.startswith("---\n")
-        assert f"name: {name}" in content
-        assert "file:///Users/" not in content

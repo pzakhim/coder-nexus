@@ -8,7 +8,7 @@ Coder Nexus installs agent roles, skills and rules into your project. Your host 
 
 - **Agent roles**: Spec Writer, Designer (UI/UX), Planning, Code Writer, Code Reviewer, Test Runner, Docs Writer.
 - **Approval gates**: you approve requirements, design and the plan before any code is written.
-- **Stack packs**: Flutter, Backend (preview), Frappe UI (preview). Several packs can live in one workspace.
+- **Stack packs**: Flutter, Backend (preview). One pack per workspace.
 - **Skill Factory** *(new in 3.0)*: 22 generators that write skills tailored to *your* project — domain knowledge, requirements, planning, API contracts, change impact, architecture, clean code, unit tests, debugging, migrations, Git workflow and versioning, code review, security, QA and visual checks. Your generated skills take priority over pack skills on the same topic.
 - **MCP tools** via the `coder-nexus` CLI: task intake, UI/UX design tooling, validators.
 - **Architecture dashboard** to see how the pieces fit.
@@ -17,7 +17,7 @@ Coder Nexus installs agent roles, skills and rules into your project. Your host 
 
 **1. Install the CLI.** Click **Coder Nexus** in the status bar → **Install / Update CLI**. A terminal opens and installs everything it needs.
 
-**2. Sync agents into your project.** Open your project. Click **Sync Now** when prompted, or run **Coder Nexus: Sync Stacks to Workspace (Auto-Detect)** from the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and tick your stacks.
+**2. Sync agents into your project.** Open your project. Click **Sync Now** when prompted, or run **Coder Nexus: Sync Stack to Workspace (Auto-Detect)** from the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and pick your stack.
 
 **3. Check your setup.** Run **Coder Nexus: Doctor / Check Environment & CLI**.
 
@@ -52,12 +52,12 @@ Open the Command Palette and type **Coder Nexus**, or click **Coder Nexus** in t
 | Quick Actions Menu | All actions in one menu |
 | Install / Update CLI | Install or update the `coder-nexus` CLI |
 | Doctor / Check Environment & CLI | Check that the CLI and project setup are ready |
-| Sync Stacks to Workspace (Auto-Detect) | Detect stacks and install agents into the project |
-| Add Flutter / Backend / Frappe UI Pack to Workspace | Add one more pack to the project |
+| Sync Stack to Workspace (Auto-Detect) | Detect stacks and install the picked pack into the project |
+| Install Flutter / Backend Pack in Workspace | Install that pack (asks before replacing a different installed pack) |
 | Sync Plugin to Antigravity Global Config | Install the Flutter pack globally |
 | Show Architecture Dashboard | Open the architecture overview |
 
-The sync writes to `.agents/` in your project: roles in `agents/`, skills in `plugins/coder-nexus/`, and `stack.json` mapping each pack to its folders (edit it if detection guessed wrong).
+The sync writes to `.agents/` in your project: roles in `agents/`, skills in `plugins/coder-nexus/`, and `stack.json` mapping the pack to its folders (edit it if detection guessed wrong).
 
 ## Useful CLI commands
 

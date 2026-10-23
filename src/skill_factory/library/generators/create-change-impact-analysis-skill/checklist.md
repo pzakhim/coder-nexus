@@ -8,4 +8,5 @@ Run this and `~/.claude/skill-factory/core/checklist-common.md`.
 - [ ] Each tracing recipe has runnable commands with cwd
 - [ ] Regression suites map to modules with real commands
 - [ ] The fixed `change-impact.md` sections are kept; the skill says how to fill them
+- [ ] Behavior delta rows use ADDED / MODIFIED / REMOVED against the built code; AC delta rows use Add / Change / Remove / Keep and trace to them; each REMOVED row says what happens to existing data and users
 - [ ] The trial re-analysis was compared with a real past change

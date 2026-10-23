@@ -1,6 +1,6 @@
 # Client Cross-Branch Boundary Checklist
 
-Apply the approved profile through [core-usage](../../core-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
+Apply the approved profile through [core-package-usage](../../core-package-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
 
 Inspect the real Client checkout and exact `BASE_REVISION` → `REVIEW_REVISION` diff, including relevant uncommitted changes.
 

@@ -28,7 +28,7 @@ The Code Reviewer reuses these skills as rubrics; see [reviewer-skill-family.md]
 
 - Refer to siblings by path: `.agents/skills/<name>/SKILL.md`. If a sibling does not exist yet, write "not set up in this workspace" instead of a dead link, and add a CHANGELOG-free note in the generated skill's custom block only if the user wants one.
 - Fullstack: link the branch file when it exists (e.g. `.agents/skills/clean-architecture/references/be/05-dependency-rules.md`).
-- Coder Nexus generic skills (`plugins/core/skills/*`) are base inputs for generators, never runtime links from a workspace skill.
+- Coder Nexus base rules and fixed skills are base inputs for generators, never runtime links from a workspace skill.
 
 ## Shared vocabulary
 

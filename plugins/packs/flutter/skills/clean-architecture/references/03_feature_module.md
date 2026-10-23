@@ -1,6 +1,6 @@
 # 03 — Feature Module Structure and Layer Contracts
 
-Apply the approved profile through [core-usage](../../core-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
+Apply the approved profile through [core-package-usage](../../core-package-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
 
 > **Sources:** Senior Clean Architecture guide, state-management and DI rules.
 > **Scope:** `lib/modules/<feature>/`; compare this blueprint with the actual Client and approved design.

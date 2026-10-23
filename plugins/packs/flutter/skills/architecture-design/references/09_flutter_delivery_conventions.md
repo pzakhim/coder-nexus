@@ -1,6 +1,6 @@
 # 09 — Flutter Delivery Conventions
 
-Flutter values for the stack placeholders used by the core `dev-team`, `feature-planner`, `brainstorming`, `clean-code`, `code-simplification` and `docs` skills and the core feature templates.
+Flutter values for the stack placeholders used by the core `dev-team`, `delivery-workflow`, `clean-code`, `code-simplification` and `user-documentation` skills and the core feature templates.
 
 ## Profiles and kit matching
 
@@ -12,8 +12,8 @@ Flutter values for the stack placeholders used by the core `dev-team`, `feature-
 
 ## Implementation, tests and evidence
 
-- Code Writer implements business logic and UI according to [clean-architecture](../../clean-architecture/SKILL.md) and the selected [core-usage](../../core-usage/SKILL.md) profile.
-- Developer unit tests (AAA, `unit-test` slot) cover UseCases, Mappers and Cubits under `test/modules/<feature>/`.
+- Code Writer implements business logic and UI according to [clean-architecture](../../clean-architecture/SKILL.md) and the selected [core-package-usage](../../core-package-usage/SKILL.md) profile.
+- Developer unit tests (AAA, `unit-testing` slot) cover UseCases, Mappers and Cubits under `test/modules/<feature>/`.
 - Local self-verification: `dart format` (or project linter), `flutter analyze`, and the targeted `flutter test` suite. Phase task files use `.dart` paths and acceptance checks such as `flutter analyze <path>`.
 - Screen visual baseline (when approved): use the Client's approved golden harness and dependencies for stable applicable states; generate a baseline only for independent visual review. Goldens supplement runtime UI evidence. A golden requires a reviewed baseline and a Client-approved dev dependency; the pre-release command must not update goldens.
 - Reviewer inspects generated `.png` golden screenshot artifacts with `view_file` for layout fidelity, safe areas, touch targets and contrast.
