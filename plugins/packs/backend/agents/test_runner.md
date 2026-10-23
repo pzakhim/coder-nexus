@@ -1,14 +1,14 @@
 ---
 skills:
-  - backend-api-contracts
+  - backend-api-contract-design
+  - backend-postgres
+  - backend-realtime
 ---
-## Backend rules
+## Backend rules (Python + FastAPI + PostgreSQL)
 
-Backend acceptance runs through the real API, following `acceptance-testing` and `{{slot:verification}}`:
-- **Source of truth**: `requirements.md` (`BR-NN`, `AC-NN`), `codebase-notes.md` (read-only), and `api_contract.json` & `design.md` (JSON schemas, expected status codes, headers and error shapes), never developer unit test assumptions.
-- **Boundary**: `code_writer` owns developer unit tests (`tests/unit/`), graded by `code_reviewer`. `test_runner` owns:
-  1. **Contract compliance**: actual HTTP payloads against the agreed schema (types, required keys, nullability).
-  2. **Business rule scenarios**: every `AC-NN` through integration tests or API requests with real auth per role.
-  3. **Edge and failure paths**: invalid payload → 400, missing auth → 401/403 (including a direct forbidden call), entity not found → 404, server error handling.
-  4. **Data integrity**: persisted data read back; transaction atomicity and rollback under failure.
-- Map every executed test to an `AC-NN` and report `PASS`, `FAIL`, `BLOCKED` or `NOT_RUN` per case with evidence rows. `NOT_RUN`, `BLOCKED` or `UNVERIFIED` never count as `PASS`.
+Backend acceptance runs through the real API, following `quality-acceptance` and `{{slot:verification}}`:
+- **Environment**: the reviewed revision running against a test database (`DATABASE_URI` from the workspace `.env`, never production) with `alembic upgrade head` applied; record the Alembic head revision in the environment record.
+- **Through the API**: calls with real tokens per role (an HTTP client or `httpx`), checking status codes, response bodies against `api_contract.json`, and a direct call with another actor's or tenant's id refused per the contract.
+- **Persisted data** (`backend-postgres`): read rows back with the pack's Postgres MCP in restricted (read-only) mode or a `SELECT` against the test database; check that a failed multi-table write left nothing behind.
+- **Realtime** (`backend-realtime`): connect a WebSocket / SSE client per role, trigger the event through the API and check that only in-scope clients receive it, including after a reconnect when the design names one.
+- Developer unit tests are the Code Writer's and were graded in review; do not count them as acceptance evidence.

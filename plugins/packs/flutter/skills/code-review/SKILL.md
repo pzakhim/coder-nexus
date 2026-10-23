@@ -5,7 +5,7 @@ description: Review approved Flutter behavior phases across correctness, simplic
 
 # Flutter Code Review and Architecture Validation
 
-Reviewer stays read-only toward implementation and tests; write review artifacts only. Return necessary edits to Code Writer and require affected checks on the new revision. Read `{{slot:core-usage}}` for the approved foundation policy; external Client conventions require source inspection, never inferred company bases.
+Reviewer stays read-only toward implementation and tests; write review artifacts only. Return necessary edits to Code Writer and require affected checks on the new revision. Read `{{slot:core-package-usage}}` for the approved foundation policy; external Client conventions require source inspection, never inferred company bases.
 
 
 For new Client work, review `.superpowers/work-items/<slug>/vN/brief.md`, optional design/plan/phase and Docs Writer output against the same code revision. Use `work-item-contract` for type-specific evidence; a phase-free work item is valid. Run Flutter analyzer and visual checks when affected, not for a docs-only change. The `docs/features/` contract below applies to historical features.
@@ -33,7 +33,7 @@ These are code-review checks after the three user approval gates for specificati
    - `gate_status: UNVERIFIED` means the lexical validator cannot prove syntax or integration; run the approved Client analyzer on the same tree. Investigate warnings in context and include `unsupported_checks` in the report. Supported lexical rules are listed in [the rule source matrix](references/02_rule_source_matrix.md).
 2. **Integrated behavior check:** Apply [the cross-branch checklist](references/03_cross_branch_checklist.md). Pass the same explicit `architecture_profile` to `validate_module_architecture` only when a complete module is affected. `FAILED` blocks; `UNVERIFIED` or warnings require explicit Client inspection and evidence before approval. For a scoped UI-only phase, record the full-module check `N/A` with reason and inspect affected boundaries directly.
    - **Reuse & Mockoon isolation audit**: every need in the approved `Core usage` / `Client Core Mapping` table uses its mapped component, shared widgets from earlier phases are reused, `lib/` contains zero `MockDataSource` classes, and Unit Tests cover both Pass/Default and Fail scenarios from `design.md`.
-   - For UI impact, use `{{slot:visual-verification}}` on the approved target and inspect real screenshots/video and logs against Visual AC before approval. Code that compiles but materially deviates from the approved design requires changes.
+   - For UI impact, use `{{slot:visual-quality}}` on the approved target and inspect real screenshots/video and logs against Visual AC before approval. Code that compiles but materially deviates from the approved design requires changes.
 
 Do not demand empty Domain, Data or DI classes for a scoped UI-only phase. When a phase introduces a screen-scoped Cubit, review its factory lifetime and disposal. Do not treat a lexical pass as analyzer, test or runtime evidence. Reviewer owns analyzer, developer Unit Test grading, and applicable UI evidence needed for its decision; Test Runner runs UI/Widget/Visual acceptance checks and build after `APPROVED` on the same tree. This ordering avoids a review/verification dependency cycle.
 

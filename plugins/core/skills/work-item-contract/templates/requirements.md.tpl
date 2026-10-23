@@ -13,7 +13,7 @@
 
 ## 0. Goals
 
-> Confirmed with the user before any other question ([goal framing](../../goal-framing/SKILL.md)). Every BR, AC, design element and phase serves one of these. Anything else is a non-goal.
+> Confirmed with the user before any other question ([goal framing](../../requirements-elicitation/SKILL.md)). Every BR, AC, design element and phase serves one of these. Anything else is a non-goal.
 
 | Goal ID | Goal (outcome: actor + result) | Success signal (observable) | Source | Status |
 |---|---|---|---|---|

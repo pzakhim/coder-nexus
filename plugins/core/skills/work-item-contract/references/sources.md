@@ -30,8 +30,8 @@ External ideas adapted into this contract, rewritten in this repo's vocabulary (
 | Lite vs full spec rigor levels | OpenSpec concepts | The Type and its sequence row already decide which files are needed |
 | Project constitution file with versioned amendments | spec-kit constitution | Stack rules live in stack packs and workspace skills; a second rule file would compete with them. Only the "shared non-negotiable rule" idea was kept |
 | `DONE_WITH_CONCERNS` as its own status | superpowers implementer prompt | One status `READY_FOR_REVIEW` with an optional Concerns list keeps the shared status set small |
-| Executor "rulings" on plan defects | superpowers executing-plans | No self-approval: plan defects go through `plan-change-request` |
+| Executor "rulings" on plan defects | superpowers executing-plans | No self-approval: plan defects go through `change-control` |
 | Review triage log and per-plan frontmatter (route, risk, review depth, loop counter) | BMAD plan template | Review findings live in the revision-bound report under `vN/reviews/`; review depth and the 3-round cap are fixed by the process |
 | Implementer commits per task | superpowers implementer prompt | Commits belong to the coordinator flow (`git-preflight`) |
-| Backend copy's "task slices across Clean Architecture layers" | backend `work-item-contract` | Conflicts with vertical behavior phases in `planning-and-task-breakdown` |
+| Backend copy's "task slices across Clean Architecture layers" | backend `work-item-contract` | Conflicts with vertical behavior phases in `implementation-planning` |
 | Backend copy's `implement-plan.md` file name | backend `work-item-contract` | The validated name is `implementation-plan.md` |

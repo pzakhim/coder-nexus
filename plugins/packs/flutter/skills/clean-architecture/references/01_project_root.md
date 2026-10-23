@@ -1,6 +1,6 @@
 # 01 — Project Root and Boot Sequence
 
-Apply the approved profile through [core-usage](../../core-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
+Apply the approved profile through [core-package-usage](../../core-package-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
 
 > **Sources:** Clean Architecture and Flutter modular blueprint.
 > **Scope:** Root structure of the Flutter Client. Inspect the actual workspace before applying this blueprint.

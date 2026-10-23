@@ -1,6 +1,6 @@
 # Base rules (generic, every workspace)
 
-Each rule goes into the generated skill with the workspace's real layout, commands and tools **and its reason**, or is marked "not adopted" with a reason. The fixed `planning-and-task-breakdown` rules (vertical behavior phases, mandatory PHASE-00, AC coverage, one Code Writer running tasks in order, `validate_plan_slices`) always apply.
+Each rule goes into the generated skill with the workspace's real layout, commands and tools **and its reason**, or is marked "not adopted" with a reason. The fixed `implementation-planning` rules (vertical behavior phases, mandatory PHASE-00, AC coverage, one Code Writer running tasks in order, `validate_plan_slices`) always apply.
 
 | # | Rule | Why | Goes into |
 |---|---|---|---|

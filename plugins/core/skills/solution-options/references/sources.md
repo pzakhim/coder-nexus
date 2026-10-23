@@ -19,6 +19,6 @@ Ideas were rewritten in this repository's vocabulary (`G-NN`, `Q-NN`, `D-NN`, Ga
 | One-pager in `docs/ideas/` or a design doc in `docs/superpowers/specs/` with an Approaches part | idea-refine, brainstorming | Work items have a fixed folder contract; options live only in the Decision Log, never in `requirements.md` or `design.md` |
 | "10x version at massive scale" lens | idea-refine | Pushes past the confirmed goals (goal lock); only the 10x simpler lens is kept |
 | Spike (throwaway build) to choose between approaches | brainstorming | Nothing is built before the gates approve; designer revisions already give the user something to react to |
-| Visual companion for side-by-side options | brainstorming | `ux-mockup` already owns visuals; designer mode describes variants in steps and draws only the chosen one |
+| Visual companion for side-by-side options | brainstorming | `ui-ux-design` already owns visuals; designer mode describes variants in steps and draws only the chosen one |
 | Settling "how it gets made" choices as the agent's own sensible defaults | brainstorming | Conflicts with "confirm every inference"; a default the user never chose becomes a `Q-NN` |
 | Mandatory deep-module glossary (module, interface, adapter) | codebase-design | Core stays stack-neutral and uses the workspace's own vocabulary; only the comparison criteria are kept |

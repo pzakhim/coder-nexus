@@ -1,6 +1,6 @@
 # Plan and task contract
 
-The single home of the **format** of `implementation-plan.md` and `phases/phase-NN-*.md`: plan-level sections, task fields, how a task check is judged, what is frozen at Gate 3 and how plan changes are logged. Planning writes these files; Code Writer, Code Reviewer and Test Runner read them. How to plan *well* (slicing, sizing, order) stays in [`planning-and-task-breakdown`](../../planning-and-task-breakdown/SKILL.md); how to *change* an approved plan is [`plan-change-request`](../../plan-change-request/SKILL.md). Other files point here instead of restating these rules.
+The single home of the **format** of `implementation-plan.md` and `phases/phase-NN-*.md`: plan-level sections, task fields, how a task check is judged, what is frozen at Gate 3 and how plan changes are logged. Planning writes these files; Code Writer, Code Reviewer and Test Runner read them. How to plan *well* (slicing, sizing, order) stays in [`implementation-planning`](../../implementation-planning/SKILL.md); how to *change* an approved plan is [`change-control`](../../change-control/SKILL.md). Other files point here instead of restating these rules.
 
 ## 1. Plan-level sections (`implementation-plan.md`)
 
@@ -40,7 +40,7 @@ Any other text, or an unticked box, means `PHASE-01` may not start. The Code Wri
 | Field | Rule | Reason |
 |---|---|---|
 | Scope / Files | Every file the task creates or modifies; nothing outside it is edited | Edits outside the list are unreviewed scope |
-| Reused Components | Spelled as in `design.md`'s reuse mapping (`{{slot:core-usage}}` where the stack defines one) | The Code Writer must not choose a different foundation locally |
+| Reused Components | Spelled as in `design.md`'s reuse mapping (`{{slot:core-package-usage}}` where the stack defines one) | The Code Writer must not choose a different foundation locally |
 | Consumes | Character-for-character equal to an earlier **Produces** line or to a symbol that exists in the code | The Code Writer sees one task at a time and must not guess a neighbour's names |
 | Produces | Only symbols a later task or phase consumes | Anything else is an internal detail, not a contract |
 | Acceptance Criteria | One runnable check (the stack's analyzer on the touched path, a named test, a request against a running target) plus its cwd. The heading word stays "Acceptance Criteria" | A check without a cwd cannot be re-run identically by the reviewer |
@@ -49,7 +49,7 @@ Any other text, or an unticked box, means `PHASE-01` may not start. The Code Wri
 Rules for **Expected**:
 
 - It must be able to fail. "No errors" is valid only for a check that reports errors; "works" is never valid.
-- For a test-first task (`test-first`), state both runs: the red run and the reason it fails, then the green run.
+- For a test-first task (`{{slot:unit-testing}}`), state both runs: the red run and the reason it fails, then the green run.
 - It comes from the approved documents (`AC-NN`, `BR-NN`, `D-NN`, design), never from what the current code happens to output.
 
 ## 3. Triage after every check
@@ -59,8 +59,8 @@ The Code Writer compares the real output with **Expected** and records one of:
 | Triage | Means | Action |
 |---|---|---|
 | `MATCH` | The output is the Expected result | Record the evidence row, tick `- [x]`, re-read the plan, take the next task |
-| `CODE_WRONG` | Correct code would produce Expected; this code does not | Fix through `root-cause-debugging`; never tick on a partial match |
-| `PLAN_WRONG` | Correct code cannot produce Expected (broken command, missing symbol, contradicts a `D-NN`) | Stop and raise a `plan-change-request`; the task stays unticked |
+| `CODE_WRONG` | Correct code would produce Expected; this code does not | Fix through `{{slot:root-cause-debugging}}`; never tick on a partial match |
+| `PLAN_WRONG` | Correct code cannot produce Expected (broken command, missing symbol, contradicts a `D-NN`) | Stop and raise a plan change request (`change-control`); the task stays unticked |
 
 Never edit the check, the test or the **Expected** line to make the output match. Reason: a check bent to the code proves nothing, and only Planning may amend the plan.
 

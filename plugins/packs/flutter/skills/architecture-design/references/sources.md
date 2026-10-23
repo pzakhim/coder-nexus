@@ -18,5 +18,5 @@ Ideas were rewritten in this repo's vocabulary (`G-NN`, `AC-NN`, `D-NN`, `PHASE-
 | Open Questions section in the design | OpenSpec design template | `design.md` must have 0 open questions (`DESIGN-005`); questions live in `codebase-notes.md` |
 | Separate memlog, spine document and `AD-n` IDs | BMAD architecture | `codebase-notes.md` and `D-NN` already hold the decision log; one home per fact |
 | Verify library versions on the web before binding | BMAD architecture | The approved foundation profile and `pubspec.yaml` decide versions in this pack |
-| Separate ADR files | agent-skills ADRs | Optional `decision-records` skill owns ADR promotion; this skill keeps `D-NN` |
+| Separate ADR files | agent-skills ADRs | Optional `architecture-decision-records` skill owns ADR promotion; this skill keeps `D-NN` |
 | New Goals / Non-Goals section in `design.md` | OpenSpec design template | Goals live in `requirements.md`; `## Goal alignment` already maps them |

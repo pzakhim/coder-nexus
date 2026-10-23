@@ -16,7 +16,7 @@ Single homes of every hand-off format (other skills point here, never restate):
 | [plan-and-task-contract](references/plan-and-task-contract.md) | Plan-level sections, task fields with **Expected**, `MATCH` / `CODE_WRONG` / `PLAN_WRONG` triage, frozen vs amendable after Gate 3, `## Plan change log` |
 | [handoff-and-status](references/handoff-and-status.md) | Hand-off per role pair, every status word, evidence row, review and test report shapes, where each record lives under `vN/` |
 
-Changing an approved plan: [`plan-change-request`](../plan-change-request/SKILL.md).
+Changing an approved plan: [`change-control`](../change-control/SKILL.md).
 
 ## Folder and versions
 

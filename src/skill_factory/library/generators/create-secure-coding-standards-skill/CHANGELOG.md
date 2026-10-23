@@ -2,6 +2,13 @@
 
 Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see `~/.claude/skill-factory/core/sync-protocol.md`). Bump rules: `~/.claude/skill-factory/core/versioning.md`.
 
+## 1.1.0 — 2026-10-23
+
+- Unified slot generator versioning for Coder Nexus v3.2.0 core-pack decoupling.
+
+**Affects:** generator metadata.
+**Migration:** none required for existing workspace skills.
+
 ## 1.0.0 — 2026-10-22
 
 First version.

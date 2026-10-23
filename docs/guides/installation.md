@@ -119,7 +119,7 @@ For contributors. Plugin sources are split by responsibility and combined by `py
 | `plugins/layers/<layer>/agents/` | Rules shared by a group of stacks (e.g. frontend) | Appended to each role |
 | `plugins/packs/<stack>/agents/` | Stack-specific rules | Appended for the installed pack |
 | `plugins/core/skills/` | Stack-neutral process skills | `skills/<name>/` |
-| `plugins/packs/<stack>/skills/<slot>/` | Stack knowledge for one slot (`clean-architecture`, `unit-test`, …) | `skills/<stack>-<slot>/` |
+| `plugins/packs/<stack>/skills/<slot>/` | Stack knowledge for one slot (`clean-architecture`, `unit-testing`, …) | `skills/<stack>-<slot>/` |
 
 Core files refer to stack knowledge as `{{slot:<name>}}`, rendered to `<stack>-<name>`. Every slot listed in `plugins/core/slots.json` must resolve to a skill. A pack either implements it, marks it `not_applicable` (agents record `N/A`), or, for a preview pack only, gets a placeholder that makes agents stop with `BLOCKED` instead of borrowing another stack's rules.
 

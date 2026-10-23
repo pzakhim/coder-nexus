@@ -22,7 +22,7 @@ Ideas were rewritten in this repo's vocabulary (`G-NN`, `BR-NN`, `AC-NN`, `W-NN`
 | `[Assumption]` marker and "Dependencies & Assumptions" category | spec-kit checklist | Conflicts with "confirm every inference" and the no-Assumptions rule. An inference becomes a `Q-NN`. |
 | 80% traceability threshold | spec-kit checklist | Replaced by a stricter rule: every item carries a tag and an ID or the section where text is missing. |
 | Offering remediation edits for the top N issues | spec-kit analyze | Replaced by the resolution table: meaning-preserving fixes by the owner, everything else through `Q-NN`. |
-| Persona, innovation and vision "theater", strategic thesis, counter-metrics, shape fit | BMAD PRD rubric | `requirements.md` is a short work-item spec, not a PRD; goals and their success signals are owned by `goal-framing`. |
+| Persona, innovation and vision "theater", strategic thesis, counter-metrics, shape fit | BMAD PRD rubric | `requirements.md` is a short work-item spec, not a PRD; goals and their success signals are owned by `requirements-elicitation`. |
 | `[ASSUMPTION]` index, `[NOTE FOR PM]` callouts, open-items density | BMAD PRD rubric | Conflicts with 0 `OPEN` `Q-NN` before a gate and no assumptions. |
 | Parallel multi-lens reviewer subagents writing to a `reviews/` folder and an HTML report | BMAD reviewer gate | `vN/reviews/` belongs to the Code Reviewer; one fresh read-only reviewer is enough for a document gate. |
 | Reviewer applies the clear fixes itself | BMAD reviewer gate | The reviewer stays read-only; the owning role fixes only meaning-preserving issues after the report. |

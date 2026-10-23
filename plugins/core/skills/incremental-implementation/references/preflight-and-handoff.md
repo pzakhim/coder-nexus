@@ -47,7 +47,7 @@ Blocker: <what is missing, who can unblock>   (BLOCKED only)
 Noticed but not touching: <path - observation> | none
 ```
 
-From review round 2 on, add `## Review reply (round N)` with the per-finding reply table from `receiving-review` (reply words in [hand-off and status](../../work-item-contract/references/handoff-and-status.md) §3).
+From review round 2 on, add `## Review reply (round N)` with the per-finding reply table from `review-resolution` (reply words in [hand-off and status](../../work-item-contract/references/handoff-and-status.md) §3).
 
 Rules:
 

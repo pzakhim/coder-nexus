@@ -1,6 +1,6 @@
 # Mode: designer — workflow, screens, states, viewports (`designer`)
 
-Use with [SKILL.md](../SKILL.md). The detailed interview, proposal format and viewport command live in `ux-mockup` → [workflow interview](../../ux-mockup/references/01_workflow_interview.md); this file lists which rows the designer owns and how they enter the shared queue. Present alternative flows with `solution-options` (UI flow options) when more than one is viable.
+Use with [SKILL.md](../SKILL.md). The detailed interview, proposal format and viewport command live in `ui-ux-design` → [workflow interview](../../ui-ux-design/references/01_workflow_interview.md); this file lists which rows the designer owns and how they enter the shared queue. Present alternative flows with `solution-options` (UI flow options) when more than one is viable.
 
 ## 1. Before asking
 

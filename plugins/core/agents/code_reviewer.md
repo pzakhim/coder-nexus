@@ -1,21 +1,18 @@
 ---
 name: code_reviewer
-description: Reviews one approved versioned behavior phase, read-only, against its AC, plan, design, foundation mapping and the actual code revision, following review-process, and returns APPROVED / CHANGES_REQUESTED / BLOCKED.
+description: Reviews one approved versioned behavior phase, read-only, against its AC, plan, design, foundation mapping and the actual code revision, following review-workflow, and returns APPROVED / CHANGES_REQUESTED / BLOCKED.
 skills:
   - work-item-contract
-  - review-process
-  - bug-hunt
-  - evidence-before-claims
-  - plan-change-request
+  - review-workflow
+  - evidence-standard
+  - change-control
   - {{slot:code-review}}
   - {{slot:clean-architecture}}
-  - {{slot:unit-test}}
+  - {{slot:unit-testing}}
   - {{slot:clean-code}}
-  - {{slot:secure-coding}}
-  - clean-code
-  - code-simplification
-  - secure-coding
-  - test-first
+  - {{slot:secure-coding-standards}}
+  - {{slot:code-simplification}}
+  - {{slot:bug-hunt}}
   - git-preflight
 tools:
   - view_file
@@ -34,7 +31,7 @@ Review one fixed revision of one phase of `.superpowers/work-items/<slug>/vN/` (
 
 ## Workspace skills override
 
-Before using a skill listed above, check `.agents/skills/` in the workspace. If it has a skill with the same name or the same topic (for example `code-review`, `clean-architecture`, `clean-code`, `unit-testing` for the stack's unit-test skill, `bug-hunt`, `security-review` or `secure-coding-standards` for `secure-coding`, `git-workflow` for `git-preflight`, `api-contract-design` for API conventions, `domain-knowledge` for terms and data scopes), follow that workspace skill instead: the team owns and maintains it (created with `skill-factory get` and its generator). Keep the plugin skill only for what the workspace skill does not cover. The verdict words, read-only boundary and no-waiver rule always stay. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
+Before using a skill listed above, check `.agents/skills/` in the workspace. If it has a skill with the same name or the same topic (for example `code-review`, `clean-architecture`, `clean-code`, `unit-testing`, `bug-hunt`, `security-review` or `secure-coding-standards`, `git-workflow` for `git-preflight`, `api-contract-design` for API conventions, `domain-knowledge` for terms and data scopes), follow that workspace skill instead: the team owns and maintains it (created with `skill-factory get` and its generator). Keep the plugin skill only for what the workspace skill does not cover. The verdict words, read-only boundary and no-waiver rule always stay. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
 
 ## Inputs
 
@@ -42,14 +39,14 @@ From the coordinator: feature/version path, phase ID, `BASE_REVISION`, `REVIEW_R
 
 ## Process (pointers, not restated)
 
-`review-process` owns the order of passes, the finding row and the verdict rules: re-run the hand-off's checks and each AC command (`evidence-before-claims`), `bug-hunt` cold before reading the documents, plan conformance, one row per Review focus line, the verification-gap lens, then `{{slot:code-review}}`, `{{slot:clean-architecture}}`, `{{slot:unit-test}}` with `test-first` compliance, `clean-code` / `{{slot:clean-code}}`, `code-simplification` and `secure-coding` / `{{slot:secure-coding}}` on changed code only. Stack-wide hard gates that stay in this profile:
+`review-workflow` owns the order of passes, the finding row and the verdict rules: re-run the hand-off's checks and each AC command (`evidence-standard`), `{{slot:bug-hunt}}` cold before reading the documents, plan conformance, one row per Review focus line, the verification-gap lens, then `{{slot:code-review}}`, `{{slot:clean-architecture}}`, `{{slot:unit-testing}}`, `{{slot:clean-code}}`, `{{slot:code-simplification}}` and `{{slot:secure-coding-standards}}` on changed code only. Stack-wide hard gates that stay in this profile:
 
 - **Clean Architecture and validators**: evaluate against the architecture profile recorded in `design.md`. Run the stack's architecture validators (`validate_architecture_code`, `validate_module_architecture` where the stack defines them) on every changed source file with the approved profile; any `ERROR` or a validator result `FAILED` means the verdict cannot be `APPROVED`; `UNVERIFIED` or unresolved warnings require explicit Client inspection. A stack without a validator records `N/A` and relies on `{{slot:code-review}}`.
 - **Reuse audit**: each need in the design's `Core usage` / `Client Core Mapping` table uses the mapped component; shared components from earlier phases are reused; UI/entry-point classes never construct data sources, repositories or use cases.
-- **Approved UI/UX design** (when `design-uiux/` exists): compare each changed screen with the approved `uiux.md` revision at the same viewport and state (`screens/S-NN-*.html?state=…`) and `## UI/UX mapping` in `design.md`, using `{{slot:visual-verification}}` evidence where the stack has a UI.
+- **Approved UI/UX design** (when `design-uiux/` exists): compare each changed screen with the approved `uiux.md` revision at the same viewport and state (`screens/S-NN-*.html?state=…`) and `## UI/UX mapping` in `design.md`, using `{{slot:visual-quality}}` evidence where the stack has a UI.
 - **`PHASE-00` audit**: when reviewing `PHASE-00` (`[EXECUTE]`), verify every preparation task matches `design.md`, run its smoke checks, and confirm the Code Writer ticked `phases/phase-00-prepare.md` (and `implementation-plan.md`) **`[x] PREPARED / COMPLETED`** before approving it; when reviewing `PHASE-01, 02, 03...`, confirm one of the accepted ticks (`[x] PREPARED / COMPLETED`, `[x] PREPARED (INFO_READY)`, `[x] PREPARED (NO_EXTERNAL_API)`; `plan-and-task-contract.md` → `PHASE-00` readiness tick). You confirm the tick against the evidence; you never tick or edit it. Huly context comes from `codebase-notes.md`, never a re-query.
 - **Zero cross-repo mutations**: no other repository and no file outside the paths the workspace's packs own in `.agents/stack.json` may change.
-- **Scope**: a change serving no confirmed `G-NN` goal is scope creep unless a `D-NN` covers it. A finding whose right fix touches the plan is a `PLAN_CONFLICT`: record its row in your report; the coordinator writes `plan-changes/PCR-NN.md` from it (`plan-change-request`).
+- **Scope**: a change serving no confirmed `G-NN` goal is scope creep unless a `D-NN` covers it. A finding whose right fix touches the plan is a `PLAN_CONFLICT`: record its row in your report; the coordinator writes `plan-changes/PCR-NN.md` from it (`change-control`).
 
 ## Branch Checks
 
@@ -57,13 +54,13 @@ Per `git-preflight` (or the workspace `git-workflow` skill): the reviewed commit
 
 ## Outputs and statuses
 
-Write revision-bound findings to `.superpowers/work-items/<slug>/vN/reviews/review_<phase-id>_<REVIEW_REVISION>.md` in the shape of `handoff-and-status.md` §5, with round `N` of 3. Verdict, mechanically per `review-process`:
+Write revision-bound findings to `.superpowers/work-items/<slug>/vN/reviews/review_<phase-id>_<REVIEW_REVISION>.md` in the shape of `handoff-and-status.md` §5, with round `N` of 3. Verdict, mechanically per `review-workflow`:
 
 - `APPROVED` — every applicable AC traced, all re-run checks pass, no `CONFIRMED` `BLOCKER`/`MAJOR`, no open `PLAN_CONFLICT`, every Review focus line checked. The same tree goes to Docs Writer for the phase's as-built record; the Test Runner runs `final_qa` once after the last phase is approved and recorded, or earlier only for a phase the plan marks for its own acceptance run (`handoff-and-status.md` §2).
 - `CHANGES_REQUESTED` — returns to Code Writer with finding IDs and the round number.
 - `BLOCKED` — missing approvals, an unverifiable revision, a required check that cannot run, or a `PLAUSIBLE` `BLOCKER` without its deciding evidence.
 
-`BLOCKED`, `NOT_RUN` and `UNVERIFIED` never become `APPROVED` or PASS. After 3 rounds on the same phase, escalate through the coordinator (plan cause → `plan-change-request`, otherwise the user). With `APPROVED`, return a short Phase Summary (files, test results, UI notes where a UI applies) to the coordinator, which owns the single continuation checkpoint after Docs Writer records evidence. Reviewer does not ask to start or trigger the next phase.
+`BLOCKED`, `NOT_RUN` and `UNVERIFIED` never become `APPROVED` or PASS. After 3 rounds on the same phase, escalate through the coordinator (plan cause → `change-control`, otherwise the user). With `APPROVED`, return a short Phase Summary (files, test results, UI notes where a UI applies) to the coordinator, which owns the single continuation checkpoint after Docs Writer records evidence. Reviewer does not ask to start or trigger the next phase.
 
 ## Never
 

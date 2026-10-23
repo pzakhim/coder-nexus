@@ -1,6 +1,6 @@
 ---
 skills:
-  - {{slot:visual-verification}}
+  - {{slot:visual-quality}}
 ---
 ## Frontend rules
 

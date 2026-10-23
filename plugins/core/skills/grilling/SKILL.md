@@ -18,7 +18,7 @@ Act as a rigorous Technical BA (`spec_writer`), UX designer (`designer`) or Tech
 ## 1. The 4 laws
 
 ### Law 1 — Draft first, lock in through the queue
-- Read every source first (request, Huly task and downloads, visuals, API contracts, codebase scan). Ask the job-type question (only when the ticket is not new) and the goal question (`goal-framing`) before anything else.
+- Read every source first (request, Huly task and downloads, visuals, API contracts, codebase scan). Ask the job-type question (only when the ticket is not new) and the goal question (`requirements-elicitation`) before anything else.
 - In the turn the goals are confirmed, write both files in `.superpowers/work-items/<slug>/vN/` (or `docs/features/<module>/<feature>/vN/`): `requirements.md` (`Status: DRAFT`, unresolved spots marked `(Q-NN)`) and `codebase-notes.md` (every gap as an `OPEN` row in `## 0. Question Queue (Q-NN)`, verified facts in `## 3. Verified Baseline Facts & Cross-Agent Notes`). A draft is a checkpoint so nothing is lost between turns, never a gate.
 
 ### Law 2 — Confirm every inference
@@ -37,7 +37,7 @@ Act as a rigorous Technical BA (`spec_writer`), UX designer (`designer`) or Tech
 ## 2. Order, sufficiency and progress
 
 ### 2.1 Sufficiency summary (inside the goal question)
-The goal question (`goal-framing`) tells the user in three lines: **Enough for** (what the read sources settle, cited), **Missing** (every `UNREACHABLE` / `NOT_PROVIDED` source and gap only the user can fill; ask to attach it), **Next** (queued questions by topic, e.g. `~8 questions: 2 scope, 3 workflow, 2 API, 1 edge case`). If a missing source would change the goals, ask for it before confirming them.
+The goal question (`requirements-elicitation`) tells the user in three lines: **Enough for** (what the read sources settle, cited), **Missing** (every `UNREACHABLE` / `NOT_PROVIDED` source and gap only the user can fill; ask to attach it), **Next** (queued questions by topic, e.g. `~8 questions: 2 scope, 3 workflow, 2 API, 1 edge case`). If a missing source would change the goals, ask for it before confirming them.
 
 ### 2.2 Order of the queue
 Ask in dependency order, so an earlier answer can remove a later question:
@@ -76,7 +76,7 @@ A question outside the asker's ownership goes to the owner through the coordinat
 **Who decided.** End the `User Confirmed Decision` cell with `(user choice)` when the user picked or wrote the answer, or `(default accepted)` when the user accepted the agent's recommendation with a yes or a batch confirm. Keep the template columns; `Owner` stays the asking role. Reason: reviewers can see which decisions came from the agent.
 
 ## 4. Facts versus decisions
-- Facts come from the repo, the sources and the stack slots (`{{slot:core-usage}}`); look them up with `rg` or delegate the lookup to a read-only subagent, then record them in `## 3`. Never ask the user a fact.
+- Facts come from the repo, the sources and the stack slots (`{{slot:core-package-usage}}`); look them up with `rg` or delegate the lookup to a read-only subagent, then record them in `## 3`. Never ask the user a fact.
 - A pending lookup blocks only the rows that depend on it; keep asking the others.
 - A fact nobody can reach (closed system, external owner) becomes a questionnaire ([questionnaire](modes/questionnaire.md)) or `BLOCKED`, never a guess.
 

@@ -72,7 +72,7 @@ for (const [command, stack] of [
                     }
                 }
                 for (const ref of ['01_profile_imespro.md', '02_profile_external_structured.md', '03_profile_external_standard.md']) {
-                    assert.ok(fs.existsSync(path.join(installed, 'skills/flutter-core-usage/references', ref)));
+                    assert.ok(fs.existsSync(path.join(installed, 'skills/flutter-core-package-usage/references', ref)));
                 }
             }
             assert.ok(fs.existsSync(path.join(workspace, '.agents/agents/code_reviewer.md')));
@@ -116,7 +116,7 @@ test('a different pack replaces the installed one only after the user confirms; 
         assert.equal(prompts.length, 1);
         assert.match(prompts[0], /Replace it with/);
         assert.deepEqual(stackOf(), [['flutter', ['apps/mobile']]]);
-        assert.ok(fs.readdirSync(skillsDir).includes('flutter-core-usage'));
+        assert.ok(fs.readdirSync(skillsDir).includes('flutter-core-package-usage'));
 
         // Different pack, user confirms: replaced, never merged.
         state.answer = 'Replace';
@@ -125,7 +125,7 @@ test('a different pack replaces the installed one only after the user confirms; 
         assert.deepEqual(errors, []);
         assert.deepEqual(stackOf(), [['backend', ['services/api']]]);
         const skills = fs.readdirSync(skillsDir);
-        assert.ok(skills.includes('backend-api-contracts'));
+        assert.ok(skills.includes('backend-api-contract-design'));
         assert.ok(!skills.some(name => name.startsWith('flutter-')), skills.join(','));
         const writer = fs.readFileSync(path.join(workspace, '.agents/agents/code_writer.md'), 'utf8');
         assert.ok(writer.includes('## Backend rules') && !writer.includes('## Flutter rules'));

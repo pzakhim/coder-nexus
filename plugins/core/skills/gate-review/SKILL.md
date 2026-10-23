@@ -5,7 +5,7 @@ description: Reviews one gate document read-only before the user is asked to app
 
 # Gate Review
 
-Answer one question: **would a builder reading this document, with only the approved inputs beside it, build the same thing the user expects?** Gate review checks the document's text, not running code (`bug-hunt` and `{{slot:code-review}}` do that) and not whether a fresh reader would need to ask questions (`cold-reader-check` does that).
+Answer one question: **would a builder reading this document, with only the approved inputs beside it, build the same thing the user expects?** Gate review checks the document's text, not running code (`{{slot:bug-hunt}}` and `{{slot:code-review}}` do that) and not whether a fresh reader would need to ask questions (`cold-reader-check` does that).
 
 ## 1. Modes and owners
 

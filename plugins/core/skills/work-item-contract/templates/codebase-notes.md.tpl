@@ -25,7 +25,7 @@
 
 ## 0A. Source Inventory
 
-> Every source read or missing for this work item ([goal framing](../../goal-framing/SKILL.md)). Never infer the content of an `UNREACHABLE` / `NOT_PROVIDED` source from its title.
+> Every source read or missing for this work item ([goal framing](../../requirements-elicitation/SKILL.md)). Never infer the content of an `UNREACHABLE` / `NOT_PROVIDED` source from its title.
 
 | Source | Kind | Read status (`READ` \| `UNREACHABLE` \| `NOT_PROVIDED`) | What it contributes / conflicts |
 |---|---|---|---|

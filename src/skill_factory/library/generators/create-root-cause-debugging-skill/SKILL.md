@@ -23,7 +23,7 @@ Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P
 | Focused commands | Re-run only failed tests, run one test verbose, analyzer on one file, build one target |
 | Logs and local stack | Where server/worker/browser logs are; how the local stack is started and the rule about not touching stacks you did not start |
 | Recent incidents | Bug-fix commits (`git log --grep='fix'`) — typical root causes in this codebase |
-| Base inputs (read-only) | Coder Nexus `plugins/core/skills/bug-hunt` (verify step), `plugins/core/skills/incremental-implementation` (back-to-gate rule) |
+| Base inputs (read-only) | `references/base-rules.md` and `work-item-contract` §9 (verify step), `plugins/core/skills/incremental-implementation` (back-to-gate rule) |
 
 ## Step 2 — Map the base rules
 

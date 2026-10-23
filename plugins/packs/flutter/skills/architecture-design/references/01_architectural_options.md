@@ -1,6 +1,6 @@
 # 01 — Straight-Line Architectural Decision (Backed by `codebase-notes.md`)
 
-Apply the approved profile through [core-usage](../../core-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
+Apply the approved profile through [core-package-usage](../../core-package-usage/SKILL.md). Company setup and API examples below are **iMESPro-only**. External profiles use their approved Client mapping or standard Flutter; shared boundaries and evidence rules apply to all.
 
 Guide for Section 1 of `design.md`: **Architectural Decision**.
 

@@ -22,7 +22,7 @@ Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P
 | Vocabulary | Finding IDs, verdict words, severity scale (e.g. `F-BR-NN`, `REQUEST_CHANGES`, `P0–P3`), where reports are written |
 | Project risk areas | Data scopes (tenant/environment), authorization model, money/quantities, migrations/backfills, external providers, release/publish flows — from `CLAUDE.md`, `AGENTS.md`, architecture docs, past incidents/bug fixes in git log |
 | Read-only commands | Focused tests, analyzer, caller search (`rg`, code-intelligence tools such as GitNexus if configured) |
-| Base inputs (read-only) | Coder Nexus `plugins/core/skills/bug-hunt/SKILL.md` |
+| Base inputs (read-only) | `references/base-rules.md` (this generator's own base rules) |
 
 ## Step 2 — Map the base rules
 

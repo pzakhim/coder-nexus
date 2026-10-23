@@ -4,7 +4,7 @@ Instructions for agents working in this **Hub repository**. Treat current code, 
 
 ## 1. Responsibility and boundaries
 
-- **Coder Nexus / AIFactory-Coder (Hub):** Python MCP server in `src/coder_nexus/`, read-only Huly adapter, read-only Figma frame extraction (`src/coder_nexus/figma/`), Clean Architecture references and validators, UI/UX design tooling (`src/coder_nexus/ux/`: HTML kit, `design-uiux/` scaffolding and the UX-001…UX-012 validator), the `core-usage` skill that routes agents to the iMESPro packages (`app_core`, `app_util`, `app_ui_kit`), plugin sources split into stack-neutral `plugins/core/`, shared `plugins/layers/`, stack packs in `plugins/packs/<stack>/` (two packs: Flutter, maintained, and Backend, preview until Phase 2; a projection and a workspace hold exactly one pack; composed by `coder_nexus.plugin_build`; see the [installation guide](docs/guides/installation.md#how-a-projection-is-built)), shared handshake contracts in `plugins/shared_contracts/`, an initial VS Code plugin-sync extension, and the Skill Factory (`src/skill_factory/`, `skill-factory list | get`): generators a workspace copies into `.agents/skills/` and owns, overriding fixed pack skills of the same topic (see [skill-factory guide](docs/guides/skill-factory.md)). Use `uv` for Python commands.
+- **Coder Nexus / AIFactory-Coder (Hub):** Python MCP server in `src/coder_nexus/`, read-only Huly adapter, read-only Figma frame extraction (`src/coder_nexus/figma/`), Clean Architecture references and validators, UI/UX design tooling (`src/coder_nexus/ux/`: HTML kit, `design-uiux/` scaffolding and the UX-001…UX-012 validator), the `core-package-usage` skill that routes agents to the iMESPro packages (`app_core`, `app_util`, `app_ui_kit`), plugin sources split into stack-neutral `plugins/core/`, shared `plugins/layers/`, stack packs in `plugins/packs/<stack>/` (two packs: Flutter, maintained, and Backend, preview until Phase 2; a projection and a workspace hold exactly one pack; composed by `coder_nexus.plugin_build`; see the [installation guide](docs/guides/installation.md#how-a-projection-is-built)), shared handshake contracts in `plugins/shared_contracts/`, an initial VS Code plugin-sync extension, and the Skill Factory (`src/skill_factory/`, `skill-factory list | get`): generators a workspace copies into `.agents/skills/` and owns, overriding fixed pack skills of the same topic (see [skill-factory guide](docs/guides/skill-factory.md)). Use `uv` for Python commands.
 - **Antigravity Flutter Client (separate workspace):** owns its `.env`, resolved package dependencies, approved feature documents under `docs/features/<module>/<feature>/vN/`, implementation under `lib/`, tests, and revision-bound evidence. The iMESPro packages live next to the Client (`../app-core`, `../app-util`, `../app-ui-kit`); `coder-nexus setup flutter --check` proves they are resolved.
 - **Huly:** a source of real task details and acceptance criteria. Hub Huly operations are read-only. A real user request can also supply requirements when no Huly task exists.
 
@@ -20,7 +20,7 @@ Do not describe the agent profiles as an autonomous code generator. They are hos
 
 - Follow the **Ponytail** approach: solve the current problem with the smallest clear change; avoid unused layers, speculative abstractions, and duplicated Kit widgets.
 - Manage Python with `uv`. Keep MCP lookups and validators free of Client writes. Catalog search/spec lookup must remain read-only.
-- For Flutter work, use the `core-usage` skill: pass `coder-nexus setup flutter --check`, read `../app-*/guidance/GUIDE.md`, then decide per need. Reuse a core API or `app_ui_kit` widget when its GUIDE "Use when" fits, even if styling differs from a supplied design; ask when several fit. Otherwise write the simplest Client code under `lib/modules/<feature>/` (shared folder only when two or more modules need it) and record a Core gap in `design.md`. A failed setup gate is a blocker.
+- For Flutter work, use the `core-package-usage` skill: pass `coder-nexus setup flutter --check`, read `../app-*/guidance/GUIDE.md`, then decide per need. Reuse a core API or `app_ui_kit` widget when its GUIDE "Use when" fits, even if styling differs from a supplied design; ask when several fit. Otherwise write the simplest Client code under `lib/modules/<feature>/` (shared folder only when two or more modules need it) and record a Core gap in `design.md`. A failed setup gate is a blocker.
 - Keep Domain independent of Flutter and Data implementations; use the real Client's Data, Presentation, routing, state, and DI conventions. Add only the layers required by the approved behavior.
 - For feature work, honor the three actual user approval gates for requirements, design, and plan. Code Writer implements one ready phase; Reviewer inspects the same revision; Test Runner supplies independent evidence. Neither a validator result nor an agent may self-approve a gate. `NOT_RUN`, `BLOCKED`, and `UNVERIFIED` are not `PASS`.
 - Report exact checks and their limits.
@@ -40,7 +40,7 @@ Do not describe the agent profiles as an autonomous code generator. They are hos
 
 ## 6. Current verification boundary
 
-The Hub currently exposes **9 MCP tools** (the `flutter_ui_kit` catalog tools were removed on 2026-10-13; `validate_ux_design` was added on 2026-10-21) and the plugin ships **7 shared agent profiles** (5 delivery roles plus Designer and Docs Writer) composed with one stack pack per workspace: Flutter (maintained) or Backend (preview until Phase 2). Projections are single-stack (`workspace-flutter`, `workspace-backend`, `global-flutter`, `global-backend`); installing a different pack needs `--replace` and switches the workspace instead of merging. The Frappe UI pack was removed in 3.2.0. The Hub suite passed **320/320 tests** on 2026-10-21. The UI/UX designer flow (workflow interview → HTML design → approval → requirements/design mapping → visual comparison) is contract- and validator-tested only; it has **not** been piloted on a real ticket. The example Client resolved a pinned Kit package, passed analysis and an import probe, and passed its two existing Flutter tests on 2026-10-07. A real approved feature replay through specification, code, review, runtime visual inspection, and acceptance testing has **not** run. Keep that distinction in code review and documentation.
+The Hub currently exposes **9 MCP tools** (the `flutter_ui_kit` catalog tools were removed on 2026-10-13; `validate_ux_design` was added on 2026-10-21) and the plugin ships **7 shared agent profiles** (5 delivery roles plus Designer and Docs Writer) composed with one stack pack per workspace: Flutter (maintained) or Backend (preview until Phase 2). Projections are single-stack (`workspace-flutter`, `workspace-backend`, `global-flutter`, `global-backend`); installing a different pack needs `--replace` and switches the workspace instead of merging. The Frappe UI pack was removed in 3.2.0. The Hub suite passed **346/346 tests** on 2026-10-23. The UI/UX designer flow (workflow interview → HTML design → approval → requirements/design mapping → visual comparison) is contract- and validator-tested only; it has **not** been piloted on a real ticket. The example Client resolved a pinned Kit package, passed analysis and an import probe, and passed its two existing Flutter tests on 2026-10-07. A real approved feature replay through specification, code, review, runtime visual inspection, and acceptance testing has **not** run. Keep that distinction in code review and documentation.
 
 ## 7. Release and tagging protocol
 
@@ -55,3 +55,25 @@ Automated testing, `.vsix` packaging, Open VSX publication (`IMP-AIFactory.coder
   3. Run `uv run pytest -q` and any checks required by the change. Stage only release files and requested work, inspect the staged diff, then commit. Create an **annotated** tag on that exact verified commit with `git tag -a vX.Y.Z -m "Coder Nexus vX.Y.Z"`.
   4. Push the intended branch and **that exact tag** together, for example `git push --atomic origin HEAD:refs/heads/<branch> refs/tags/vX.Y.Z`. Do not push unrelated local tags. If the remote rejects the push, resolve the rejection and revalidate; do not force-push or retag a published version.
   5. Check the tag-triggered [release workflow](.github/workflows/release.yml), the Open VSX version, and the GitHub Release with its `.vsix` asset. A pushed tag or packaged local VSIX alone does not prove publication. If a later step fails after Open VSX succeeded, repair and retry that release; do not create a new version merely to bypass a duplicate publication error.
+
+## 8. Where a skill belongs: core, pack, or Skill Factory
+
+`plugins/core/` is the **shared handshake layer**, like `plugins/shared_contracts/`. It holds only what one role hands to another, so every pack reads the same copy unchanged:
+
+| Touchpoint | Core owns |
+|---|---|
+| specs → plan | requirements and design gates, decision records |
+| plan → coder | plan/task contract, change control |
+| coder → review | hand-off format, finding severity and verdict (`work-item-contract` handoff-and-status §9), evidence standard |
+| tester → `requirements.md` | acceptance-criteria traceability, test report and verdict vocabulary |
+
+Decide placement with two questions:
+
+1. **Does another role consume it as an input or output contract?** → core, stack-neutral, one copy.
+2. **Are the rules common but each stack writes its own body?** (clean-code, secure-coding-standards, code-simplification, unit-testing, root-cause-debugging, bug-hunt, code-review, clean-architecture…) → **not core**. The common rules live in the Skill Factory generator (`src/skill_factory/library/generators/create-*/`, its own `references/base-rules.md`); each pack holds the generated skill in a slot and records the generator version in `pack.json` → `generated_from`; a workspace may override it in `.agents/skills/<name>/`.
+
+Anything that is neither belongs to a single pack only.
+
+- Core agents and skills reach stack knowledge through `{{slot:<name>}}` (registered in [`plugins/core/slots.json`](plugins/core/slots.json)), never by a pack skill path.
+- Do not keep "base rules" in core for generators to read; a generator owns its base rules.
+- Current state: in 3.2.0, the 6 stack skills (`clean-code`, `secure-coding-standards`, `code-simplification`, `unit-testing`, `root-cause-debugging`, `bug-hunt`) live entirely in pack slots and are generated per stack from Skill Factory generators; they have been removed from `plugins/core/skills/`.

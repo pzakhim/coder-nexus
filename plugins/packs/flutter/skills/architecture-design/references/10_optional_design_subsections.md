@@ -1,6 +1,6 @@
 # 10 — Optional Design Subsections and Decision Scope
 
-Apply the approved profile through [core-usage](../../core-usage/SKILL.md). These subsections are optional `###` blocks inside existing `design.md` sections. The validator does not require them; never add them as new `##` sections and never rename a validated heading.
+Apply the approved profile through [core-package-usage](../../core-package-usage/SKILL.md). These subsections are optional `###` blocks inside existing `design.md` sections. The validator does not require them; never add them as new `##` sections and never rename a validated heading.
 
 ## 1. Which decisions belong in `design.md`
 
@@ -29,7 +29,7 @@ A deviation is using something other than the approved foundation component that
 ## 4. Risk → Mitigation (`## Integration, errors, and risks`)
 
 - Only risks that threaten an AC or goal: an unverified endpoint, a kit component missing a state, a slow list, a platform permission.
-- Each mitigation is a check or a design choice with a `PHASE-NN` that owns it. Planning then schedules the riskiest phase first (`planning-and-task-breakdown`).
+- Each mitigation is a check or a design choice with a `PHASE-NN` that owns it. Planning then schedules the riskiest phase first (`implementation-planning`).
 
 ## 5. Migration plan and rollback (`## Integration, errors, and risks`)
 

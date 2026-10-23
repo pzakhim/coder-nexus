@@ -20,7 +20,7 @@ Coder Nexus' fixed skills own the process; workspace skills add content inside i
 
 | Fixed pack owns (never changed by a workspace skill) | Workspace skill adds |
 |---|---|
-| Gates 1/2/3; `grilling` (draft first, confirm every inference, Q-NN → D-NN, one question at a time, 0 open questions); `goal-framing` (sources, job type, G-NN, non-goals) | Domain words, entities, roles × scopes, business rules |
+| Gates 1/2/3; `grilling` (draft first, confirm every inference, Q-NN → D-NN, one question at a time, 0 open questions); `requirements-elicitation` (sources, job type, G-NN, non-goals) | Domain words, entities, roles × scopes, business rules |
 | `work-item-contract`: folder/file contract and templates `requirements.md`, `codebase-notes.md`, `design.md`, `implementation-plan.md`, phase files, `change-impact.md` | Question bank, mandatory edge cases, AC style, vague words, change deltas |
 | `gate-review` (validators first, mode checklist, severities, findings → Q-NN); `cold-reader-check`; `solution-options` (2–3 options → D-NN) | Workspace review questions for `gate-review` spec mode, synonyms to avoid |
 | Validators (`validate_proposal_spec`, `validate_plan_slices`, `validate_ux_design`) and the sections they check | Phase order, task shape, real check commands, PHASE-00 items |
@@ -32,11 +32,11 @@ A workspace skill that would drop a gate, rename a validated section or replace 
 
 | Skill (`.agents/skills/<name>/`) | Answers | Used by | Adds to fixed skill |
 |---|---|---|---|
-| `domain-knowledge` | What the words mean, which entities exist and how their status changes, who may do what on which data, where each business rule lives | Spec Writer, Designer, Planning, Quality Engineer, Code Reviewer | `grilling`, `goal-framing`, `gate-review` (synonyms to avoid) |
-| `requirements-specification` | Where requirements come from, what to ask, which edge cases are mandatory, how BR, AC and change deltas are written, what the Gate 1 review asks | Spec Writer | `grilling`, `goal-framing`, `gate-review` spec mode, `requirements.md` template (`work-item-contract`) |
+| `domain-knowledge` | What the words mean, which entities exist and how their status changes, who may do what on which data, where each business rule lives | Spec Writer, Designer, Planning, Quality Engineer, Code Reviewer | `grilling`, `requirements-elicitation`, `gate-review` (synonyms to avoid) |
+| `requirements-specification` | Where requirements come from, what to ask, which edge cases are mandatory, how BR, AC and change deltas are written, what the Gate 1 review asks | Spec Writer | `grilling`, `requirements-elicitation`, `gate-review` spec mode, `requirements.md` template (`work-item-contract`) |
 | `change-impact-analysis` | What a change to existing behavior touches, with evidence, and which regression tests follow | Spec Writer, Planning, Code Reviewer | `change-impact.md` template (`work-item-contract`) |
-| `implementation-planning` | Phase order inside a behavior, task shape, real checks, PHASE-00 items, Definition of Done | Planning | `planning-and-task-breakdown` |
-| `api-contract-design` | API naming, response and error shape, pagination, auth and scopes, compatibility, how clients consume and mock | Planning, Code Writer, Code Reviewer | `{{slot:architecture-design}}` API section, backend `api-contracts` |
+| `implementation-planning` | Phase order inside a behavior, task shape, real checks, PHASE-00 items, Definition of Done | Planning | `implementation-planning` |
+| `api-contract-design` | API naming, response and error shape, pagination, auth and scopes, compatibility, how clients consume and mock | Planning, Code Writer, Code Reviewer | `{{slot:architecture-design}}` API section, backend `api-contract-design` |
 
 **Who wins on conflict:** approved decisions (`D-NN`) and the approved documents of the work item win over every skill for that item. Then `domain-knowledge` wins on meaning (terms, entities, scopes); `api-contract-design` wins on API shape; `implementation-planning` wins on task order; `requirements-specification` owns the delta vocabulary (ADDED / MODIFIED / REMOVED) that `change-impact-analysis` fills with evidence. Cross-family: `git-workflow` owns branches and versions; `clean-architecture` owns where files go; `secure-coding-standards` owns how authorization is enforced; `quality-planning` owns test cases (it receives the regression list from `change-impact-analysis`).
 
@@ -58,7 +58,7 @@ Rule IDs inside generators use their own prefixes (`DK`, `RS`, `CX`, `IP`, `AP`)
 
 - Refer to siblings by path: `.agents/skills/<name>/SKILL.md`. If a sibling does not exist yet, write "not set up in this workspace".
 - Fullstack: link the branch file when it exists (`references/be/…`, `references/fe/…`, see [layouts.md](layouts.md)).
-- Coder Nexus fixed skills (`plugins/core/skills/*`) are base inputs for generators (P1), never runtime links from a workspace skill.
+- Coder Nexus fixed skills are base inputs for generators (P1), never runtime links from a workspace skill.
 
 ## Facts and their labels
 

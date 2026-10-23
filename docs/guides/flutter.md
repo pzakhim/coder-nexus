@@ -47,8 +47,8 @@ Later roles keep this choice and pass it to the architecture validators. To chan
 
 | Location | Content |
 |---|---|
-| `skills/flutter-core-usage/` (installed) | How each role discovers and reuses foundations |
-| `skills/flutter-core-usage/references/` | One reference per profile |
+| `skills/flutter-core-package-usage/` (installed) | How each role discovers and reuses foundations |
+| `skills/flutter-core-package-usage/references/` | One reference per profile |
 | Each shared package's `guidance/GUIDE.md` | When to use (and not use) each API, with examples |
 
 ## Good to know

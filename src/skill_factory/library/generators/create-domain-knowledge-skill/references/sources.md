@@ -13,7 +13,7 @@ External material read when shaping this generator. Ideas are rewritten in this 
 | Idea | Source | Why not |
 |---|---|---|
 | A root `GLOSSARY.md` (or one per bounded context with a map file) | domain-modeling | The workspace glossary lives in `.agents/skills/domain-knowledge/references/01-glossary.md`; an existing `GLOSSARY.md` is adopted verbatim (P5) instead of creating a second one. |
-| Offering ADRs from this skill | domain-modeling | Decision records belong to Planning (`decision-records`); this skill records meanings, not technical choices. |
+| Offering ADRs from this skill | domain-modeling | Decision records belong to Planning (`architecture-decision-records`); this skill records meanings, not technical choices. |
 | Inventing edge-case scenarios to stress concept boundaries | domain-modeling | Edge cases are owned by `requirements-specification` (RS3, mandatory edge cases); here only the term question is asked. |
 | Updating the glossary silently as soon as the agent thinks a term is settled | domain-modeling | Every new term is confirmed by the user (`D-NN`) or read from code (`VERIFIED`) first; "confirm every inference" applies. |
 | Glossary with cardinality and relationships inside each definition | BMAD PRD template | Relationships and lifecycles live in the entity cards (`02`); the glossary row stays one line. |

@@ -6,7 +6,7 @@ argument-hint: "[be_dir] [fe_dir]"
 
 # Create API Contract Design Skill
 
-Goal: produce `<workspace>/.agents/skills/api-contract-design/` — how this workspace designs, changes and consumes its APIs: the source of truth, naming, response and error shape, pagination, auth and scopes, compatibility and versioning, client consumption and mocks. It extends the fixed backend `api-contracts` skill and the API section of `{{slot:architecture-design}}`; the handshake evidence policy (`shared_contracts/api_handshake_protocol.md`) stays as it is.
+Goal: produce `<workspace>/.agents/skills/api-contract-design/` — how this workspace designs, changes and consumes its APIs: the source of truth, naming, response and error shape, pagination, auth and scopes, compatibility and versioning, client consumption and mocks. It extends the fixed backend `api-contract-design` skill and the API section of `{{slot:architecture-design}}`; the handshake evidence policy (`shared_contracts/api_handshake_protocol.md`) stays as it is.
 
 User input: $ARGUMENTS
 

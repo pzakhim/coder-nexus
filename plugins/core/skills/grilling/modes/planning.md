@@ -11,7 +11,7 @@ Use with [SKILL.md](../SKILL.md). Business behavior is settled at Gate 1; this m
 
 | Topic | Queue a `Q-NN` when |
 |---|---|
-| Core gap | The foundation (`{{slot:core-usage}}`) lacks a component, service or pattern the behavior needs: build it privately, extend the foundation, or change the behavior. |
+| Core gap | The foundation (`{{slot:core-package-usage}}`) lacks a component, service or pattern the behavior needs: build it privately, extend the foundation, or change the behavior. |
 | Core risk | A requirement conflicts with the existing architecture or with overlapping business logic in the code. |
 | Architecture trade-off | Two or more viable layer splits, state approaches, data flows or integration shapes remain after the scan. |
 | Component choice | Several viable kit or framework components match one need. One viable match is chosen without asking and recorded as a fact. |

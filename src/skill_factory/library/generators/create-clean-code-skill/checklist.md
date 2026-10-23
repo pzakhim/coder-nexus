@@ -2,7 +2,8 @@
 
 Run this and `~/.claude/skill-factory/core/checklist-common.md`.
 
-- [ ] Every rule C1–C14 is adopted, adapted to a workspace contract, cited as enforced by a gate, or "not adopted" with a reason; C1, C3, C4, C10, C11, C14 are adopted
+- [ ] Every rule C1–C17 is adopted, adapted to a workspace contract, cited as enforced by a gate, or "not adopted" with a reason; C1, C3, C4, C10, C11, C14, C15, C16, C17 are adopted
+- [ ] C15–C17 use the workspace's real private convention and entry-file names; existing `utils`/`helpers` buckets and wildcard exports are listed as drift, not rewritten outside a task
 - [ ] Naming tables per branch built from real names in the workspace; drift listed
 - [ ] Thresholds match existing numbers or the confirmed defaults; clean-architecture's long-file reference (if it exists) links here instead of repeating them
 - [ ] Error contract and logger are the workspace's real ones

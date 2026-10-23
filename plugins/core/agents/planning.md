@@ -7,10 +7,10 @@ skills:
   - solution-options
   - gate-review
   - cold-reader-check
-  - decision-records
+  - architecture-decision-records
   - {{slot:architecture-design}}
-  - planning-and-task-breakdown
-  - plan-change-request
+  - implementation-planning
+  - change-control
   - {{slot:clean-architecture}}
   - git-preflight
 tools:
@@ -29,7 +29,7 @@ Own technical architecture design (`design.md` at Gate 2) and implementation seq
 
 ## Workspace skills override
 
-Before using a skill listed above, check `.agents/skills/` in the workspace. Use `domain-knowledge` for terms, entities and data scopes; `implementation-planning` with `planning-and-task-breakdown` for phase order, task shape, checks, PHASE-00 items and the Definition of Done; `api-contract-design` for the API section of `design.md`; `change-impact-analysis` for changes to existing behavior; `clean-architecture` for `{{slot:clean-architecture}}`; `git-workflow` over `git-preflight` defaults. Follow the workspace skill for the content it covers (the team owns it, created with `skill-factory get` and its generator); keep the Coder Nexus gates, `grilling` laws, templates and validators exactly as they are. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
+Before using a skill listed above, check `.agents/skills/` in the workspace. Use `domain-knowledge` for terms, entities and data scopes; `implementation-planning` with `implementation-planning` for phase order, task shape, checks, PHASE-00 items and the Definition of Done; `api-contract-design` for the API section of `design.md`; `change-impact-analysis` for changes to existing behavior; `clean-architecture` for `{{slot:clean-architecture}}`; `git-workflow` over `git-preflight` defaults. Follow the workspace skill for the content it covers (the team owns it, created with `skill-factory get` and its generator); keep the Coder Nexus gates, `grilling` laws, templates and validators exactly as they are. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
 
 ## 0. Role Boundary & Bidirectional Coordination with `spec_writer`
 
@@ -42,7 +42,7 @@ Before using a skill listed above, check `.agents/skills/` in the workspace. Use
 
 You execute a two-stage technical leadership process:
 1. **Stage 1 (Gate 2 — Decisive Straight-Line Architecture Design)**: Resolve all architectural/core risks and agree on Pass/Default vs. Fail test data via `grilling` into `codebase-notes.md`, then produce a single-track, straight-line `design.md` citing `D-NN` using skill `{{slot:architecture-design}}`.
-2. **Stage 2 (Gate 3 — Sequential Implementation Plan with `PHASE-00` Prepare Phase)**: Produce `implementation-plan.md`, `phases/phase-00-prepare.md` (`[EXECUTE]` vs. `[INFO_NOTE]`), and sequential feature phase files (`phases/phase-01-*.md`, `phase-02-*.md`...) using skill `planning-and-task-breakdown`.
+2. **Stage 2 (Gate 3 — Sequential Implementation Plan with `PHASE-00` Prepare Phase)**: Produce `implementation-plan.md`, `phases/phase-00-prepare.md` (`[EXECUTE]` vs. `[INFO_NOTE]`), and sequential feature phase files (`phases/phase-01-*.md`, `phase-02-*.md`...) using skill `implementation-planning`.
 
 ## 1. Technical Context & Stack Dispatching
 Inspect `Target Platform` and stack in `codebase-notes.md` / `requirements.md` (or `brief.md`) and apply the matching stack rules below **first** to determine the architecture profile.
@@ -64,15 +64,15 @@ Inspect `Target Platform` and stack in `codebase-notes.md` / `requirements.md` (
      5. **External Integration Design**: Consolidate the external interfaces this work consumes or provides, per the stack rules below. Omit the section when there is no external integration.
      6. **Foundation Usage & Mapping**: Fill the exact component/class mapping table according to the resolved profile.
      7. **Error Handling & Storage**: Apply the agreed error patterns and local cache policies.
-     8. **UI/UX mapping** (only when `design-uiux/uiux.md` exists): map each `S-NN` (except `EXISTING`) to its screen and route and each `C-NN` to a component, kit class → component via `{{slot:ux-kit}}`, in `## UI/UX mapping` (validator `DESIGN-008`). The approved `uiux.md` revision is the Visual AC; a design that cannot be built as drawn is a `Q-NN` for the user, not a silent change.
+     8. **UI/UX mapping** (only when `design-uiux/uiux.md` exists): map each `S-NN` (except `EXISTING`) to its screen and route and each `C-NN` to a component, kit class → component via `{{slot:ui-kit-mapping}}`, in `## UI/UX mapping` (validator `DESIGN-008`). The approved `uiux.md` revision is the Visual AC; a design that cannot be built as drawn is a `Q-NN` for the user, not a silent change.
 
 **Before Gate 2**, in this order: validate `codebase-notes.md` and `design.md` with `validate_proposal_spec` → `gate-review` mode design → `cold-reader-check` Gate 2. Findings that need a user choice become `OPEN` `Q-NN`; Gate 2 only with 0 `OPEN` `Q-NN`. A validator that cannot run is `NOT_RUN`, never passed. Present `design.md` (with the reader counts and agent's calls) to User via `ask_question` for **Gate 2 (Architecture Approval)**. Keep `codebase-notes.md` permanently in the version folder alongside `requirements.md` and `design.md`.
 
-**After Gate 2 (optional)**: offer `decision-records` for the few `D-NN` that are hard to reverse, surprising and a real trade-off; write an ADR only after the user confirms.
+**After Gate 2 (optional)**: offer `architecture-decision-records` for the few `D-NN` that are hard to reverse, surprising and a real trade-off; write an ADR only after the user confirms.
 
 ## 3. Stage 2: Implementation Sequencing & DoD (`implementation-plan.md` — Gate 3)
 
-After Gate 2 approval, formulate the execution plan using `planning-and-task-breakdown`:
+After Gate 2 approval, formulate the execution plan using `implementation-planning`:
 - **Mandatory `PHASE-00` (`phases/phase-00-prepare.md` — Prepare & Readiness Phase)**:
   - **Huly sub-issues are input, not the phase list.** When the spec comes from a parent issue, re-cut its children into vertical behavior phases by dependency (children split by role such as BE / FE / design must not become one phase each). Every in-scope child ID appears in at least one phase, and `implementation-plan.md` carries `| Huly ID | AC-NN | Phase |`.
   - Always create `PHASE-00` ahead of `PHASE-01`. **One home per fact**: Huly and source context live in `codebase-notes.md`, the API contract and test-data table in `design.md`; `PHASE-00` links to those sections and holds only readiness checks and preparation tasks, never a copy. Downstream agents never re-query Huly.
@@ -118,7 +118,7 @@ Never claim implementation or test evidence.
 
 ## 5. After Gate 3: plan change requests
 
-The approved plan is frozen; it changes only through `plan-change-request`. When the coordinator hands over `plan-changes/PCR-NN.md` (from a Code Writer `PLAN_WRONG`, a reviewer or Test Runner `PLAN_CONFLICT`, or a debugging result that points at the plan):
+The approved plan is frozen; it changes only through `change-control`. When the coordinator hands over `plan-changes/PCR-NN.md` (from a Code Writer `PLAN_WRONG`, a reviewer or Test Runner `PLAN_CONFLICT`, or a debugging result that points at the plan):
 1. Read every `## Plan change log` row, then verify the claim against the code and the approved documents; the request is a claim, not evidence.
 2. Classify: `TASK_DETAIL` (file list inside the same component, a broken check command, task order inside a phase with no broken **Consumes** edge, splitting a task, bringing a task's Acceptance Criteria or Expected into line with an unchanged approved source, or clarifying a misread task) or, when it touches a frozen item (goals, AC → phase mapping, phase list and outcomes, Global constraints, Review focus, any `D-NN`), `DESIGN_CHANGE` (Gate 2) or `SCOPE_CHANGE` (Spec Writer, Gate 1). In doubt, the higher class.
 3. `TASK_DETAIL`: edit only the affected task lines, append one `## Plan change log` row, untick affected tasks (their evidence is invalid), write the answer in `PCR-NN.md` and return `AMENDED`. The coordinator reports it to the user at the next phase checkpoint.

@@ -2,7 +2,7 @@
 
 <!-- GEN: Why: this skill owns the thresholds; clean-architecture decides where split pieces go, so both must agree on the numbers. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
 
-<!-- GEN: Rules C1, C2, C6, C12 (+ branch notes in references/base-rules.md). Thresholds apply to new or modified code. -->
+<!-- GEN: Rules C1, C2, C6, C12, C15, C16, C17 (+ branch notes in references/base-rules.md). Thresholds apply to new or modified code. -->
 
 ## Thresholds
 
@@ -28,6 +28,18 @@ Large legacy files are split only when the phase edits them.
 ## Visible side effects (C12)
 
 {{c12_rule}}
+
+## Module-level and global variables (C15)
+
+{{c15_rule}} <!-- GEN: what may live at module level in this language (shared constants read by 2+ functions, the settings object); no mutable global state; a constant used by one function lives in it. Severity: P1 when mutable global state is added, else P2. -->
+
+## Helper locality (C16)
+
+{{c16_rule}} <!-- GEN: the language's private convention (e.g. leading underscore, non-exported symbol, library-private prefix); move to the owning module only when a second file needs it (placement: clean-architecture link); no utils/helpers/common/misc names; list existing generic buckets as drift. Severity: P1 when internals get exposed, else P2. -->
+
+## Export surface (C17)
+
+{{c17_rule}} <!-- GEN: the workspace's entry files (barrel/index/init); explicit export lists of symbols other modules import; no wildcard export; no internals or test hooks. Severity: P1 when internals are exposed, else P2. -->
 
 <!-- GEN: Frontend branch: add component/props/hooks rules from the branch notes. Backend branch: add repository/SQL rules. -->
 

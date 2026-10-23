@@ -19,6 +19,9 @@ Starting points for `05-self-check.md`. Prefer the workspace's real configs, scr
 | C4 swallowed errors | Grep for broad catches; existing AST tests if any |
 | C6 size | `wc -l <changed files>`; linters with max-lines / complexity rules if configured |
 | C9 types | Type checker in strict mode |
+| C15 module-level variables | List new module-level assignments in the diff; count readers and look for reassignment (e.g. Python `grep -nE "^[A-Za-z_]+\s*(:[^=]+)?=" <changed files>`, TS `grep -nE "^(export )?(let|var) " <changed files>`) |
+| C16 helper locality | For each new non-private helper, count importing files (`grep -rln "<name>" <src>`); fewer than two → make it private; flag new `utils`/`helpers`/`common` files |
+| C17 export surface | Wildcard exports in entry files (Python `grep -n "import \*" <entry files>`, TS `grep -nE "export \* from" <entry files>`, Dart `grep -nE "^export .*;$" <entry files>` then check `show`); for each added export, find an importer outside the package |
 | C14 | All of the above on the changed files, then the task's tests |
 
 ## Rules

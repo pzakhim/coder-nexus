@@ -1,6 +1,6 @@
 # Base rules (generic, every workspace)
 
-Generalised from Coder Nexus `plugins/core/skills/clean-code` and the clean-code standard of a real fullstack workspace. Each rule goes into the generated skill with the workspace's facts **and its reason**, adapted to the workspace's contracts, or marked "not adopted" with a reason. If a gate already enforces a rule, cite the gate.
+Generalised from Coder Nexus clean-code base rules and the clean-code standard of a real fullstack workspace. Each rule goes into the generated skill with the workspace's facts **and its reason**, adapted to the workspace's contracts, or marked "not adopted" with a reason. If a gate already enforces a rule, cite the gate.
 
 | # | Rule | Why | Default severity | Goes into |
 |---|---|---|---|---|
@@ -18,8 +18,11 @@ Generalised from Coder Nexus `plugins/core/skills/clean-code` and the clean-code
 | C12 | **Visible side effects.** No DB, network, env reads or heavy work at import/module load (except the one settings object); side effects in clearly named functions. | Hidden side effects break tests and startup order. | P2 | 02 |
 | C13 | **Explicit state changes.** Prefer immutable values; mutate only where the owner is clear. | Shared mutable state is the usual source of order-dependent bugs. | P3 | 04 |
 | C14 | **Self-check before "done".** Run formatter, linter/analyzer, type checker and the task's tests; report what ran. | A rule without a check is a wish; an unrun check is not evidence. | P1 | 05 |
+| C15 | **No meaningless module-level or global variables.** Module level holds only true shared constants (read by two or more functions, never reassigned) and the workspace's configuration object; no mutable global state (runtime caches, counters, registries, singletons written after load); a constant used by one function lives inside that function. | Every module-level name widens what a reader must track; mutable globals cause order-dependent bugs and leak between tests. | P1 when mutable global state is added, else P2 | SKILL, 02 |
+| C16 | **Helper locality.** A helper used by one file stays private in that file; it moves to a shared place only when a second file needs it, into the module that owns the concept (placement per clean-architecture), named for what it does — never `utils`, `helpers`, `common` or `misc`. | A shared helper with one user is a public API nobody asked for; generic buckets become junk drawers. | P1 when internals get exposed, else P2 | SKILL, 02 |
+| C17 | **Export surface.** Package entry files (barrel, index, init files) export only symbols other modules actually import; no wildcard export; never expose internals (private helpers, implementation classes, test hooks). | Every export is a contract to keep; wildcards leak internals and hide unused code. | P1 when internals are exposed, else P2 | SKILL, 02 |
 
-**Never "not adopted":** C1, C3, C4, C10, C11, C14.
+**Never "not adopted":** C1, C3, C4, C10, C11, C14, C15, C16, C17.
 
 ## Severity scale (default)
 

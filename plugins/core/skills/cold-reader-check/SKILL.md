@@ -48,7 +48,7 @@ Never minor, whatever the reader thinks: business rules, permissions and data sc
 ## 5. Limits
 
 - The check never approves, never marks a document `APPROVED`, and never replaces the user's gate answer. "Nothing important left" means the reader found no gap, not that the document is right.
-- It does not judge quality or compliance; that is `gate-review`. It does not hunt code defects; that is `bug-hunt`.
+- It does not judge quality or compliance; that is `gate-review`. It does not hunt code defects; that is `{{slot:bug-hunt}}`.
 - It adds no new section or heading to any gate document or template.
 
 ## References

@@ -1,14 +1,14 @@
 ---
 skills:
-  - {{slot:core-usage}}
+  - {{slot:core-package-usage}}
 ---
 ## Flutter rules
 
-Read the approved profile through `{{slot:core-usage}}`. Company examples in the test audit (`parse_util`, `DataFailure`, `ListViewPagingCubit`) apply only when that API is actually used. External profiles test their own result/state/paging contracts and required failure paths.
+Read the approved profile through `{{slot:core-package-usage}}`. Company examples in the test audit (`parse_util`, `DataFailure`, `ListViewPagingCubit`) apply only when that API is actually used. External profiles test their own result/state/paging contracts and required failure paths.
 
 ### Flutter Checks
 - Evaluate according to `architecture_profile.mode` specified in `design.md`:
-  - **Mode 1 (`imespro`)**: Apply `{{slot:core-usage}}` Reviewer checks (every package's `guidance/GUIDE.md` review checklist): `setup --check` READY; no change under `../app-*`; no Client class reimplementing a core API; domain imports pure (no Flutter, no barrel); every screen extends `BaseScreen`, overrides `getScreen()`/`buildMobilePortrait()`, never `build()`; `Core usage` table matches the code. Any failure is **automatic `CHANGES_REQUESTED` (FAIL)**.
+  - **Mode 1 (`imespro`)**: Apply `{{slot:core-package-usage}}` Reviewer checks (every package's `guidance/GUIDE.md` review checklist): `setup --check` READY; no change under `../app-*`; no Client class reimplementing a core API; domain imports pure (no Flutter, no barrel); every screen extends `BaseScreen`, overrides `getScreen()`/`buildMobilePortrait()`, never `build()`; `Core usage` table matches the code. Any failure is **automatic `CHANGES_REQUESTED` (FAIL)**.
   - **Mode 2 (`external-structured`)**: Verify Coder inherited client's existing base classes and reused client's shared widgets per `Client Core Mapping`. Reject any new redundant/competing base classes.
   - **Mode 3 (`external-standard`)**: Verify Ponytail simplicity, Clean Architecture layer separation, and absence of speculative abstractions.
 - Run `validate_architecture_code` for changed Dart files with `architecture_profile` set to the approved `architecture_profile.mode` (design, or brief for phase-free work). Pass the same value to `validate_module_architecture` for an affected complete module; for scoped UI-only work, record module structure `N/A` with reason and inspect affected imports, state ownership, and integration directly. Never omit the profile: omitted arguments retain legacy iMESPro checks. `FAILED` blocks; `UNVERIFIED` or unresolved warnings require explicit Client inspection. For external-structured, verify actual base inheritance, shared widgets, error/state and DI conventions against the Client Core Mapping; external-standard requires no company classes.

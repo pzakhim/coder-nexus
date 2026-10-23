@@ -1,10 +1,15 @@
 ---
 skills:
-  - backend-api-contracts
+  - backend-api-contract-design
+  - backend-fastapi
+  - backend-postgres
+  - backend-database-migrations
+  - backend-realtime
 ---
-## Backend rules
+## Backend rules (Python + FastAPI + PostgreSQL)
 
-Within the `review-process` passes, `{{slot:code-review}}` adds these backend checks; each failure is a finding graded on the bug-hunt scale:
-1. **Layers and security**: domain entities and repository interfaces have no web or database framework dependency; queries are parameterized (no SQL injection); every endpoint has explicit authentication and object-level authorization guards; multi-table writes run in one transaction with verified rollback on failure.
-2. **Negative-path tests**: tests that only verify 200/201 leave the phase's AC unprotected. Require 400 validation, 401/403 authorization, 404 not found and transaction-failure rollback where the design names them; run the suite yourself via `run_command`.
-3. **API contract**: request/response schemas, status codes and error shapes match `api_contract.json` (or the `design.md` backend contract) exactly. At the closing phase, check end-to-end contract conformity and backend suite health.
+Grade the phase with `{{slot:code-review}}` inside the `review-workflow` passes, using `{{slot:clean-architecture}}`, `{{slot:unit-testing}}`, `{{slot:clean-code}}` and `{{slot:secure-coding-standards}}` for their axes, plus:
+- `backend-api-contract-design` for request/response schemas, status codes and error shapes against `api_contract.json` / `design.md`;
+- `backend-database-migrations` for every Alembic revision (reversible `downgrade`, safe on existing rows, matches the models);
+- `backend-postgres` for query scope, transactions and indexes; `backend-realtime` for event scope and connection handling; `backend-fastapi` for dependency and lifespan wiring.
+- Rerun the checks yourself from the service root with the workspace's prefix (`ruff check`, `mypy`, `pytest` on the phase's test paths) via `run_command`; migrations are applied only to a dev or test database.

@@ -4,20 +4,17 @@ description: Implements one approved behavior phase in the Client workspace, tas
 skills:
   - work-item-contract
   - {{slot:clean-architecture}}
-  - {{slot:unit-test}}
+  - {{slot:unit-testing}}
   - {{slot:clean-code}}
-  - {{slot:secure-coding}}
+  - {{slot:secure-coding-standards}}
+  - {{slot:code-simplification}}
+  - {{slot:root-cause-debugging}}
+  - {{slot:bug-hunt}}
   - {{slot:verification}}
   - incremental-implementation
-  - test-first
-  - root-cause-debugging
-  - receiving-review
-  - evidence-before-claims
-  - plan-change-request
-  - clean-code
-  - code-simplification
-  - secure-coding
-  - bug-hunt
+  - review-resolution
+  - evidence-standard
+  - change-control
   - git-preflight
 tools:
   - view_file
@@ -37,7 +34,7 @@ One Code Writer executes one approved phase (or one bounded brief task for a sma
 
 ## Workspace skills override
 
-Before using a skill listed above, check `.agents/skills/` in the workspace. If it has a skill with the same name or the same topic (for example `clean-architecture`, `clean-code`, `unit-testing` for the stack's unit-test skill, `bug-hunt`, `root-cause-debugging`, `secure-coding-standards` for `secure-coding`, `incremental-implementation`, `git-workflow` for `git-preflight`, `api-contract-design` for API conventions, `domain-knowledge` for terms and data scopes), follow that workspace skill instead: the team owns and maintains it (created with `skill-factory get` and its generator). Keep the plugin skill only for what the workspace skill does not cover. The fixed process (gates, statuses, no self-approval, `plan-change-request`) always stays. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
+Before using a skill listed above, check `.agents/skills/` in the workspace. If it has a skill with the same name or the same topic (for example `clean-architecture`, `clean-code`, `unit-testing`, `bug-hunt`, `root-cause-debugging`, `secure-coding-standards`, `incremental-implementation`, `git-workflow` for `git-preflight`, `api-contract-design` for API conventions, `domain-knowledge` for terms and data scopes), follow that workspace skill instead: the team owns and maintains it (created with `skill-factory get` and its generator). Keep the plugin skill only for what the workspace skill does not cover. The fixed process (gates, statuses, no self-approval, `change-control`) always stays. Never edit `.agents/plugins/coder-nexus/`; it is regenerated on every sync.
 
 ## Inputs
 
@@ -49,11 +46,11 @@ Before using a skill listed above, check `.agents/skills/` in the workspace. If 
 ## Process (pointers, not restated)
 
 - **Phase execution**: `incremental-implementation` — preconditions, pre-flight Consumes/Produces check, the task loop with Expected triage (`MATCH` / `CODE_WRONG` / `PLAN_WRONG`), phase-end checks and hand-off. Formats: `work-item-contract` (`plan-and-task-contract.md`, `handoff-and-status.md`).
-- **Tests**: `test-first` with `{{slot:unit-test}}`; test data comes from the Pass/Default, Fail and Empty rows agreed in `design.md`.
-- **Code quality and safety**: `{{slot:clean-architecture}}`, `clean-code` with `{{slot:clean-code}}`, `secure-coding` with `{{slot:secure-coding}}`; `code-simplification` only for a named smell on green checks.
-- **Failures**: `CODE_WRONG` → `root-cause-debugging`; `PLAN_WRONG`, a mapped component that does not fit, a missing consumed symbol or code that contradicts a `D-NN` → `plan-change-request` (write `plan-changes/PCR-NN.md`, return `BLOCKED`, wait).
-- **Phase end**: `{{slot:verification}}`, then `bug-hunt` at `quick` on your own diff, then `evidence-before-claims` before claiming anything.
-- **Review findings**: `receiving-review`; every fix is a new revision that invalidates affected review and test evidence. After 3 review rounds on the same phase the coordinator escalates.
+- **Tests**: `{{slot:unit-testing}}` (test-first: failing test before new behavior); test data comes from the Pass/Default, Fail and Empty rows agreed in `design.md`.
+- **Code quality and safety**: `{{slot:clean-architecture}}`, `{{slot:clean-code}}`, `{{slot:secure-coding-standards}}`; `{{slot:code-simplification}}` only for a named smell on green checks.
+- **Failures**: `CODE_WRONG` → `{{slot:root-cause-debugging}}`; `PLAN_WRONG`, a mapped component that does not fit, a missing consumed symbol or code that contradicts a `D-NN` → `change-control` (write `plan-changes/PCR-NN.md`, return `BLOCKED`, wait).
+- **Phase end**: `{{slot:verification}}`, then `{{slot:bug-hunt}}` at `quick` on your own diff, then `evidence-standard` before claiming anything.
+- **Review findings**: `review-resolution`; every fix is a new revision that invalidates affected review and test evidence. After 3 review rounds on the same phase the coordinator escalates.
 
 ## Outputs and statuses
 

@@ -22,7 +22,7 @@ Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P
 | Shortcut markers | Comment conventions for deliberate shortcuts (e.g. `ponytail: <ceiling>, <upgrade>`) |
 | Gates | Wrapper/alias AST tests, lint rules for complexity, dead-code checks |
 | Real examples | 3–5 spots of avoidable complexity in recent diffs or long files (single-implementation interfaces, pass-through wrappers, hand-rolled stdlib, deep nesting) — used as catalog examples |
-| Base inputs (read-only) | Coder Nexus `plugins/core/skills/code-simplification/SKILL.md`, `plugins/ponytail/skills/ponytail-review` and `ponytail-audit` |
+| Base inputs (read-only) | `references/base-rules.md` (this generator's own base rules), `plugins/ponytail/skills/ponytail-review` and `ponytail-audit` |
 
 ## Step 2 — Map the base rules
 

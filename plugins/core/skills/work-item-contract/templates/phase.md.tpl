@@ -38,7 +38,7 @@
 Execution Rule:
 1. A single `code_writer` executes tasks strictly in order from top to bottom.
 2. After each task: run Acceptance Criteria -> compare with Expected (MATCH / CODE_WRONG / PLAN_WRONG) -> on MATCH return to this file, tick `- [x]` -> re-read plan and next task specs before writing next task code.
-3. PLAN_WRONG: stop and raise a plan-change-request; never edit the check or Expected.
+3. PLAN_WRONG: stop and raise a plan change request (change-control); never edit the check or Expected.
 Field rules: work-item-contract references/plan-and-task-contract.md.
 -->
 

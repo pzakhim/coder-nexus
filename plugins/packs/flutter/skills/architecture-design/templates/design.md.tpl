@@ -103,7 +103,7 @@ Every element in this design serves a goal from `requirements.md` → `## 0. Goa
 
 ## UI/UX mapping
 
-> Only when `design-uiux/uiux.md` exists; delete this section otherwise. Approved UI/UX revision: {{UiuxRevision}}. Every `S-NN` (except `EXISTING`) and every `C-NN` appears here (`DESIGN-008`). Kit class → widget follows `{{slot:ux-kit}}` §3.
+> Only when `design-uiux/uiux.md` exists; delete this section otherwise. Approved UI/UX revision: {{UiuxRevision}}. Every `S-NN` (except `EXISTING`) and every `C-NN` appears here (`DESIGN-008`). Kit class → widget follows `{{slot:ui-kit-mapping}}` §3.
 
 | Screen / component | Kind | Screen class & route / widget | Kit classes → widgets | Phase / task |
 |---|---|---|---|---|

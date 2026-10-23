@@ -1,6 +1,6 @@
 # 03 — Flutter plan, phase and DoD conventions
 
-The core `planning-and-task-breakdown` and `incremental-implementation` skills are stack-neutral. For a Flutter Client, use these concrete conventions.
+The core `implementation-planning` and `incremental-implementation` skills are stack-neutral. For a Flutter Client, use these concrete conventions.
 
 ## 1. Phase slicing example (Flutter)
 
@@ -43,10 +43,10 @@ Every confirmed goal from `requirements.md` → `## 0. Goals` must reach at leas
 
 ## 4. Review Definition of Done (Flutter)
 
-Use a golden harness only when approved and already available, or when its dependency addition is explicitly approved. Golden evidence supplements required runtime checks; it never proves live integration. Follow `{{slot:visual-verification}}`.
+Use a golden harness only when approved and already available, or when its dependency addition is explicitly approved. Golden evidence supplements required runtime checks; it never proves live integration. Follow `{{slot:visual-quality}}`.
 
 - **Static Analysis Gate**: `flutter analyze` runs on affected files with 0 warnings, 0 errors, and 0 linter violations.
-- **Developer Unit Tests** (`{{slot:unit-test}}`):
+- **Developer Unit Tests** (`{{slot:unit-testing}}`):
   - Entity & Mapper unit tests: Verify transformation logic and null-safety.
   - UseCase unit tests: Verify delegation to Repository with mock parameters.
   - Cubit / Bloc unit tests: Verify expected stream of state emissions using `bloc_test`.

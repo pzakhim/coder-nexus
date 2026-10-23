@@ -41,4 +41,4 @@ Keep the 2-3 strongest (a hybrid may be one), recommend one, and ask it as one `
 
 - `design.md` describes only the chosen design, in one straight line, citing the `D-NN`.
 - `Options Considered` holds each presented design with its main trade-off and why it lost.
-- A decision that is hard to reverse, surprising and a real trade-off may also be promoted by `decision-records`; this skill does not write ADRs.
+- A decision that is hard to reverse, surprising and a real trade-off may also be promoted by `architecture-decision-records`; this skill does not write ADRs.

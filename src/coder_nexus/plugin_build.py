@@ -122,6 +122,10 @@ def load_slots(plugins_dir: Path) -> dict[str, str]:
     return _read_json(plugins_dir / "core" / "slots.json").get("slots", {})
 
 
+def load_required_slots(plugins_dir: Path) -> list[str]:
+    return _read_json(plugins_dir / "core" / "slots.json").get("required", [])
+
+
 def combo_key(packs: list[str]) -> str:
     return "+".join(sorted(set(packs)))
 
@@ -282,9 +286,14 @@ def project_bundle(plugins_dir: Path, packs: list[str], out: Path, agents_out: P
     unknown_packs = sorted(set(packs) - set(available_packs(plugins_dir)))
     if not packs or unknown_packs:
         raise ValueError(f"unknown or empty pack selection: {unknown_packs or packs}")
+    loaded = [load_pack(plugins_dir, stack) for stack in packs]
+    required_slots = load_required_slots(plugins_dir)
+    for pack in loaded:
+        for req in required_slots:
+            if req not in pack.get("slots", {}) or req in pack.get("not_applicable", []):
+                raise ValueError(f"packs/{pack['stack']}: required slot {req} missing or not_applicable")
     out.mkdir(parents=True)
     agents_dest = agents_out or out / "agents"
-    loaded = [load_pack(plugins_dir, stack) for stack in packs]
     layer_users: dict[str, list[str]] = {}
     for pack in loaded:
         for layer in pack["layers"]:

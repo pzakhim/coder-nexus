@@ -1,15 +1,26 @@
 {
   "description": "Stack knowledge slots. Core agents and skills refer to them as {{slot:<name>}}; every pack provides each slot, marks it not_applicable, or (preview packs only) gets a generated BLOCKED placeholder.",
+  "required": [
+    "clean-code",
+    "secure-coding-standards",
+    "code-simplification",
+    "unit-testing",
+    "root-cause-debugging",
+    "bug-hunt"
+  ],
   "slots": {
-    "core-usage": "Which existing foundations, shared components and UI kit the Client reuses, and how to record reuse or gaps.",
+    "core-package-usage": "Which existing foundations, shared components and UI kit the Client reuses, and how to record reuse or gaps.",
     "architecture-design": "Codebase scan, architectural options and the stack's design.md template for Gate 2.",
     "clean-architecture": "Module structure, layer boundaries, contracts and dependency wiring for the stack.",
-    "unit-test": "Developer unit tests for the stack: tools, paths and required pass/fail cases.",
+    "unit-testing": "Developer unit tests for the stack: tools, paths and required pass/fail cases.",
     "code-review": "The stack's review rubric, validators and blocking rules.",
     "verification": "The stack's analyzer, test, build and evidence commands for a reviewed revision.",
-    "visual-verification": "Launching UI targets and capturing revision-bound visual evidence.",
-    "ux-kit": "Where the Client's look comes from (UI kit, Client theme or framework defaults) and how the designer turns it into the HTML kit for UI/UX designs.",
+    "visual-quality": "Launching UI targets and capturing revision-bound visual evidence.",
+    "ui-kit-mapping": "Where the Client's look comes from (UI kit, Client theme or framework defaults) and how the designer turns it into the HTML kit for UI/UX designs.",
     "clean-code": "The stack's language idioms: naming, private and export conventions, debug calls and simplification smells with standard-library replacements.",
-    "secure-coding": "The stack's security risks: unsafe patterns next to their safe counterparts, secret and token storage, and audit commands."
+    "secure-coding-standards": "The stack's security risks: unsafe patterns next to their safe counterparts, secret and token storage, and audit commands.",
+    "code-simplification": "The stack's simplification smells next to their standard-library or framework replacements, behavior-safety rules, stop criteria and the one-line simplify report.",
+    "root-cause-debugging": "Reproducing a known failure in the stack, isolating it with the stack's debuggers, logs and test tools, fixing the cause with a regression test, and when to stop and escalate.",
+    "bug-hunt": "The stack's recurring defect patterns per review dimension, how a candidate is verified before it is reported, and the finding row graded by work-item-contract handoff-and-status section 9."
   }
 }

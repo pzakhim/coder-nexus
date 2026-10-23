@@ -20,7 +20,7 @@ Walk each dimension against the draft and queue a `Q-NN` for every gap the sourc
 |---|---|---|
 | Data / API | Source (`BE_API_READY` / `MOCKOON_MOCKED`), API count and field gaps against the flow (e.g. the flow needs 4 APIs, the request names 3), payload, nullability, errors. `N/A` with reason when there is no network. | `spec_writer` |
 | Business / State | Actor, permission, trigger, transitions, overlapping rules, duplicate actions, unhappy paths. | `spec_writer` |
-| UI / Variant | Design-export source, visual tokens, kit candidates and verified APIs (`{{slot:core-usage}}`). | `designer` (choice between viable kit matches: `planning`) |
+| UI / Variant | Design-export source, visual tokens, kit candidates and verified APIs (`{{slot:core-package-usage}}`). | `designer` (choice between viable kit matches: `planning`) |
 | UX / Quality | Loading, empty, error, disabled, input retention, accessibility, Visual AC. | `designer` when UI, else `spec_writer` |
 | Integration | Owner module, changes to the current business flow, DI, router, affected consumers, regression risk. | `planning` (spec_writer consults through the coordinator) |
 

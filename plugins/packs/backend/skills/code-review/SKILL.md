@@ -9,7 +9,7 @@ Inspects code diffs independently across Two Gates and Four Mandatory Audit Axes
 
 ## 0. Bug hunt first
 
-Run core `bug-hunt` on the fixed scope before the axes below; its dimension 6 uses [the backend bug patterns](references/bug_patterns.md). A `CONFIRMED` `BLOCKER`/`MAJOR` blocks `APPROVED` even when all four axes pass.
+Run `{{slot:bug-hunt}}` on the fixed scope before the axes below; its dimension 6 uses [the backend bug patterns](references/bug_patterns.md). A `CONFIRMED` `BLOCKER`/`MAJOR` blocks `APPROVED` even when all four axes pass.
 
 ## 1. The Two Review Gates
 
@@ -25,7 +25,7 @@ Run core `bug-hunt` on the fixed scope before the axes below; its dimension 6 us
    - Verify Domain entities and repository interfaces have zero dependencies on web/DB frameworks.
    - Verify parameterized queries (zero SQL injection risks) and explicit authentication/authorization guards on all endpoints.
    - Verify transaction management: DB operations that mutate multiple tables must be wrapped in transactions with verified rollback on failure.
-3. **Adversarial Unit Test Audit (Anti-Happy-Path Bias)** (see `{{slot:unit-test}}`):
+3. **Adversarial Unit Test Audit (Anti-Happy-Path Bias)** (see `{{slot:unit-testing}}`):
    - **MANDATORY REJECTION**: If unit tests only verify the **Happy Path** (200/201 valid response) while ignoring error paths, reject with `CHANGES_REQUESTED`!
    - Require unit tests to cover:
      * Validation failures (400 Bad Request on invalid payload types/missing fields).
