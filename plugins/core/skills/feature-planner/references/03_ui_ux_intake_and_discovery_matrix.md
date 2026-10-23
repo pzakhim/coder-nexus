@@ -12,7 +12,7 @@ When the work item has an approved `design-uiux/` revision (skill `ux-mockup`), 
 
 Record the actual design source and observable details: layout hierarchy, spacing and alignment, typography, color and surface tokens, radius/elevation, icons, and required initial/loading/populated/empty/error/interactive states. Cite measured values only when supported by the source or verified Client design system. Map each Visual AC to the relevant UI phase and runtime target.
 
-A UI can pass analyzer and tests yet still be `FAILED` when it materially differs from the approved Designer visual or Visual AC. Verify touch targets (normally at least **48x48 dp** on Android and **44x44 pt** on iOS) and text contrast (normally at least **4.5:1** for regular text) against the project's accessibility requirements. Preserve entered input on recoverable failures when the approved behavior requires it.
+A UI can pass analyzer and tests yet still be `FAIL` when it materially differs from the approved Designer visual or Visual AC. Verify touch targets (normally at least **48x48 dp** on Android and **44x44 pt** on iOS) and text contrast (normally at least **4.5:1** for regular text) against the project's accessibility requirements. Preserve entered input on recoverable failures when the approved behavior requires it.
 
 ## Sequential Reuse Ladder
 

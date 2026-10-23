@@ -37,12 +37,14 @@ def test_extension_sync_requires_an_explicit_command():
     assert "installAntigravityPlugin(context, null, true)" not in activation
     assert "registerCommand('coder-nexus.installWorkspace'" in activation
     assert "registerCommand('coder-nexus.installWorkspaceFlutter'" in activation
-    assert "registerCommand('coder-nexus.installWorkspaceFrappe'" in activation
     assert "registerCommand('coder-nexus.installWorkspaceBE'" in activation
     assert "registerCommand('coder-nexus.installWorkspaceFE'" in activation
     assert "registerCommand('coder-nexus.installGlobal'" in activation
     assert "registerCommand('coder-nexus.showArchitecture'" in activation
     assert (REPO_ROOT / "media" / "architecture.html").exists()
+    assert "frappe" not in source.lower(), "the Frappe pack was removed in 3.2.0"
+    commands = json.loads((REPO_ROOT / "package.json").read_text(encoding="utf-8"))["contributes"]["commands"]
+    assert not [c for c in commands if "frappe" in json.dumps(c).lower()]
 
 
 def test_bundle_manifest_inventory():
@@ -356,7 +358,7 @@ def test_install_projection_update_and_rollback_change_digest(tmp_path):
     assert rolled_back["bundle_digest"] == original["bundle_digest"]
 
 
-@pytest.mark.parametrize("variant", ["flutter", "frappe", "backend", "backend+flutter"])
+@pytest.mark.parametrize("variant", ["flutter", "backend"])
 def test_installed_projection_includes_shared_contract_and_valid_resource_paths(tmp_path, variant):
     destination = tmp_path / "plugin"
     _install_plugin_projection(variant, destination, REPO_ROOT)
@@ -367,7 +369,7 @@ def test_installed_projection_includes_shared_contract_and_valid_resource_paths(
     assert "shared_contracts/api_handshake_protocol.md" in manifest["required_resources"]
     for resource in manifest["required_resources"]:
         assert (destination / resource).is_file(), resource
-    if "flutter" in variant.split("+"):
+    if variant == "flutter":
         for relative in ("skills/work-item-contract/SKILL.md", "rules/clean_architecture_rules.md"):
             document = destination / relative
             for link in re.findall(r"\]\(([^)]+)\)", document.read_text()):
@@ -384,9 +386,9 @@ def test_shared_contract_edit_and_framework_switch_refresh_projection(tmp_path):
     protocol.write_text(protocol.read_text() + "\nProtocol revision changed.\n")
     assert _install_plugin_projection("flutter", destination, REPO_ROOT, plugins_dir=plugins) == "updated"
     assert (destination / "shared_contracts/api_handshake_protocol.md").read_bytes() == protocol.read_bytes()
-    assert _install_plugin_projection("frappe", destination, REPO_ROOT, plugins_dir=plugins) == "updated"
+    assert _install_plugin_projection("backend", destination, REPO_ROOT, plugins_dir=plugins) == "updated"
     assert not (destination / "skills/flutter-core-usage").exists()
-    assert (destination / "skills/frappe-ui-catalog/SKILL.md").is_file()
+    assert (destination / "skills/backend-api-contracts/SKILL.md").is_file()
 
 
 def test_flutter_code_review_skill_structure():
@@ -544,24 +546,61 @@ def test_backend_pack_structure_and_installation(tmp_path):
     installed = tmp_path / ".agents" / "plugins" / "coder-nexus"
     skills = {p.name for p in (installed / "skills").iterdir()}
     assert {"backend-clean-architecture", "backend-api-contracts", "work-item-contract", "grilling"} <= skills
-    assert not any(name.startswith(("flutter-", "frappe-")) for name in skills)
+    assert not any(name.startswith("flutter-") for name in skills)
     stubs = json.loads((installed / "slot_stubs.json").read_text(encoding="utf-8"))
-    assert stubs == {"backend-core-usage": "not_applicable", "backend-visual-verification": "not_applicable", "backend-ux-kit": "not_applicable"}
+    assert stubs == {
+        "backend-core-usage": "not_applicable",
+        "backend-visual-verification": "not_applicable",
+        "backend-ux-kit": "not_applicable",
+        "backend-clean-code": "blocked",  # 3.2.0 Phase 1: filled in Phase 2
+        "backend-secure-coding": "blocked",
+    }
     writer = (tmp_path / ".agents" / "agents" / "code_writer.md").read_text(encoding="utf-8")
     assert "## Backend rules" in writer and "## Frontend rules" not in writer
     meta = json.loads((installed / "installed_version.json").read_text(encoding="utf-8"))
     assert meta["packs"] == ["backend"]
 
 
-def test_cli_adds_packs_to_the_workspace_stack(tmp_path):
+def test_cli_installs_one_pack_per_workspace(tmp_path, capsys):
+    """3.2.0: packs are never combined; a different pack needs --replace and then replaces the installed one."""
     assert cmd_install_plugin(argparse.Namespace(is_global=False, workspace=str(tmp_path), pack=["flutter"])) == 0
-    assert cmd_install_plugin(argparse.Namespace(is_global=False, workspace=str(tmp_path), pack=["backend"])) == 0
+    installed = tmp_path / ".agents/plugins/coder-nexus"
+    before = sorted(str(p.relative_to(tmp_path)) for p in (tmp_path / ".agents").rglob("*"))
+    meta_before = (installed / "installed_version.json").read_text(encoding="utf-8")
+    assert cmd_install_plugin(argparse.Namespace(is_global=False, workspace=str(tmp_path), pack=["backend"])) == 1
+    assert "workspace has flutter; pass --replace to switch" in capsys.readouterr().err
+    assert sorted(str(p.relative_to(tmp_path)) for p in (tmp_path / ".agents").rglob("*")) == before, "nothing removed"
+    assert (installed / "installed_version.json").read_text(encoding="utf-8") == meta_before
     stack = json.loads((tmp_path / ".agents" / "stack.json").read_text(encoding="utf-8"))
-    assert [pack["stack"] for pack in stack["packs"]] == ["backend", "flutter"]
-    assert cmd_install_plugin(argparse.Namespace(is_global=False, workspace=str(tmp_path), pack=["frappe"], replace=True)) == 0
+    assert [pack["stack"] for pack in stack["packs"]] == ["flutter"]
+    assert (tmp_path / ".agents/plugins/coder-nexus/skills/flutter-core-usage").is_dir()
+    assert cmd_install_plugin(argparse.Namespace(is_global=False, workspace=str(tmp_path), pack=["flutter", "backend"])) == 1
+    assert cmd_install_plugin(argparse.Namespace(is_global=False, workspace=str(tmp_path), pack=["backend"], replace=True)) == 0
     stack = json.loads((tmp_path / ".agents" / "stack.json").read_text(encoding="utf-8"))
-    assert [pack["stack"] for pack in stack["packs"]] == ["frappe"]
+    assert [pack["stack"] for pack in stack["packs"]] == ["backend"]
     assert not (tmp_path / ".agents/plugins/coder-nexus/skills/flutter-core-usage").exists()
+    assert (tmp_path / ".agents/plugins/coder-nexus/skills/backend-api-contracts").is_dir()
+
+
+@pytest.mark.parametrize("stack", ["flutter", "backend"])
+def test_plan_change_and_acceptance_skills_install_in_every_projection(tmp_path, stack):
+    """3.2.0: plan-change-request and acceptance-testing are core skills, so both packs ship them."""
+    from coder_nexus.plugin_build import build_variant
+
+    target = build_variant(stack, "workspace", tmp_path)
+    skills = target / "files/.agents/plugins/coder-nexus/skills"
+    for name in ("plan-change-request", "acceptance-testing"):
+        assert f"name: {name}" in (skills / name / "SKILL.md").read_text(encoding="utf-8"), (stack, name)
+
+
+def test_work_item_templates_carry_plan_change_constraints_and_expected():
+    """3.2.0: plans record global constraints, review focus and changes; each task states Expected."""
+    templates = PLUGIN_DIR / "core/skills/work-item-contract/templates"
+    plan = (templates / "implementation-plan.md.tpl").read_text(encoding="utf-8")
+    for heading in ("## Plan change log", "## Global constraints", "## Review focus"):
+        assert re.search(rf"^{re.escape(heading)}\s*$", plan, re.M), heading
+    phase = (templates / "phase.md.tpl").read_text(encoding="utf-8")
+    assert "**Expected**" in phase
 
 
 def test_shared_contracts_protocol_and_templates():
@@ -583,13 +622,17 @@ def test_shared_contracts_protocol_and_templates():
 
 def test_built_projections_apply_identically_for_every_variant(tmp_path):
     """Both installers copy the same built projection; workspace layouts keep one agent copy."""
-    from coder_nexus.plugin_build import apply_projection, available_packs, build, combo_key, workspace_combos
+    from coder_nexus.plugin_build import apply_projection, available_packs, build, build_variant
 
     out = tmp_path / "dist"
     build(out)
-    assert len(workspace_combos()) == 2 ** len(available_packs()) - 1
-    for combo in workspace_combos():
-        key = combo_key(combo)
+    assert available_packs() == ["backend", "flutter"]
+    assert {p.name for p in out.iterdir() if p.is_dir()} == {
+        f"{layout}-{stack}" for layout in ("workspace", "global") for stack in available_packs()
+    }, "3.2.0 builds single-stack projections only"
+    with pytest.raises(ValueError, match="exactly one pack"):
+        build_variant(["backend", "flutter"], "workspace", tmp_path / "combo")
+    for key in available_packs():
         workspace = tmp_path / f"ws-{key}"
         (workspace / ".agents/plugins/coder-nexus-fe").mkdir(parents=True)
         (workspace / ".agents/plugins/coder-nexus-be").mkdir(parents=True)
@@ -600,7 +643,7 @@ def test_built_projections_apply_identically_for_every_variant(tmp_path):
         assert len(list((workspace / ".agents/agents").glob("*.md"))) == 7
         assert not any((workspace / rel).exists() for rel in spec["remove"]), "pre-2.8 plugins must be removed"
         manifest = json.loads((installed / "bundle_manifest.json").read_text(encoding="utf-8"))
-        assert manifest["packs"] == combo
+        assert manifest["packs"] == [key]
         for resource in manifest["required_resources"]:
             assert (installed / resource).is_file(), (key, resource)
         assert spec["problems"] == [], (key, spec["problems"])
@@ -636,18 +679,25 @@ def test_framework_skills_are_prefixed_and_agent_skills_resolve(tmp_path):
 
 def test_preview_pack_gaps_become_blocked_placeholders(tmp_path):
     """2.7.1: every slot a preview pack lacks resolves to a BLOCKED placeholder skill."""
-    from coder_nexus.plugin_build import build_variant
+    from coder_nexus.plugin_build import build_variant, load_pack
 
-    target = build_variant("frappe", "workspace", tmp_path)
+    plugins = tmp_path / "plugins"
+    shutil.copytree(PLUGIN_DIR, plugins, ignore=shutil.ignore_patterns("dist"))
+    assert load_pack(plugins, "backend")["status"] == "preview"
+    slots_file = plugins / "core/slots.json"
+    slots = json.loads(slots_file.read_text(encoding="utf-8"))
+    slots["slots"]["probe-gap"] = "A slot no pack implements yet."
+    slots_file.write_text(json.dumps(slots), encoding="utf-8")
+
+    target = build_variant("backend", "workspace", tmp_path / "out", plugins)
     spec = json.loads((target / "projection.json").read_text(encoding="utf-8"))
     assert spec["status"] == "preview"
     assert spec["problems"] == []
-    assert spec["stubs"]["frappe-unit-test"] == "blocked"
+    assert spec["stubs"]["backend-probe-gap"] == "blocked"
     skills = target / "files/.agents/plugins/coder-nexus/skills"
-    stub = (skills / "frappe-unit-test/SKILL.md").read_text(encoding="utf-8")
-    assert "name: frappe-unit-test" in stub and "BLOCKED" in stub
-    assert (skills / "frappe-ui-catalog/SKILL.md").is_file()
-    assert (skills / "frappe-clean-architecture/SKILL.md").is_file()
+    stub = (skills / "backend-probe-gap/SKILL.md").read_text(encoding="utf-8")
+    assert "name: backend-probe-gap" in stub and "BLOCKED" in stub
+    assert (skills / "backend-clean-architecture/SKILL.md").is_file()
 
 
 def test_maintained_pack_cannot_ship_a_missing_slot(tmp_path):
@@ -662,7 +712,7 @@ def test_maintained_pack_cannot_ship_a_missing_slot(tmp_path):
     with pytest.raises(ValueError, match="flutter-unit-test"):
         build_variant("flutter", "workspace", tmp_path / "out", plugins)
 
-    pack["not_applicable"] = ["unit-test"]
+    pack["not_applicable"] = [*pack.get("not_applicable", []), "unit-test"]
     pack_file.write_text(json.dumps(pack), encoding="utf-8")
     target = build_variant("flutter", "workspace", tmp_path / "out", plugins)
     stub = target / "files/.agents/plugins/coder-nexus/skills/flutter-unit-test/SKILL.md"
@@ -692,10 +742,10 @@ def test_flutter_agents_compose_core_frontend_and_pack_rules():
     assert "flutter-core-usage" in code_writer.split("---", 2)[1]
 
 
-def test_frappe_projection_receives_no_flutter_instructions(tmp_path):
+def test_backend_projection_receives_no_flutter_instructions(tmp_path):
     from coder_nexus.plugin_build import build_variant
 
-    target = build_variant("frappe", "workspace", tmp_path)
+    target = build_variant("backend", "workspace", tmp_path)
     problems = json.loads((target / "projection.json").read_text(encoding="utf-8"))["problems"]
     assert not [p for p in problems if "mentions another stack" in p or "another stack's skill" in p]
 

@@ -101,18 +101,18 @@ def build_parser() -> argparse.ArgumentParser:
     p_install.add_argument(
         "--framework",
         default="flutter",
-        choices=["flutter", "frappe"],
-        help="Target frontend framework: flutter or frappe (only used when plugin=fe), default: flutter",
+        choices=["flutter"],
+        help="Target frontend framework (only used when plugin=fe), default: flutter",
     )
     p_install.add_argument(
         "--pack",
         action="append",
-        help="Stack pack to install (repeatable): flutter, frappe, backend. Overrides --plugin/--framework.",
+        help="Stack pack to install, one pack: flutter or backend. Overrides --plugin/--framework.",
     )
     p_install.add_argument(
         "--replace",
         action="store_true",
-        help="Install exactly the given packs instead of adding them to the packs in .agents/stack.json",
+        help="Switch the workspace to the given pack when .agents/stack.json records a different one",
     )
     p_install.add_argument(
         "--global",
@@ -141,7 +141,7 @@ def cmd_setup_flutter(args: argparse.Namespace) -> int:
         profile=getattr(args, "profile", None),
     )
     if code == 0 and not args.check and (REPO_ROOT / "plugins" / "core").exists():
-        cmd_install_plugin(argparse.Namespace(workspace=str(project_path), pack=["flutter"], is_global=False, replace=False))
+        return cmd_install_plugin(argparse.Namespace(workspace=str(project_path), pack=["flutter"], is_global=False, replace=False))
     return code
 
 

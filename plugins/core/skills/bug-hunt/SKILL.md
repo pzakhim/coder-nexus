@@ -63,7 +63,7 @@ Effort follows the item, not the reviewer's mood:
 
 Report findings most severe first, `CONFIRMED` before `PLAUSIBLE`, using this row:
 
-| ID | Severity | Verdict | File:line | Defect | Failure scenario | Evidence | Fix direction |
+| ID | Severity | Confidence | File:line | Defect | Failure scenario | Evidence | Fix direction |
 |---|---|---|---|---|---|---|---|
 | `BH-01` | `MAJOR` | `CONFIRMED` | `path/file:42` | One sentence | given … → when … → then … | Traced path or command output | What must change, not the code itself |
 
@@ -74,9 +74,9 @@ End with `bug-hunt: <n> CONFIRMED, <m> PLAUSIBLE (effort <level>)`, or `bug-hunt
 - Any `CONFIRMED` `BLOCKER` or `MAJOR` means `CHANGES_REQUESTED`.
 - A `PLAUSIBLE` `BLOCKER` means `BLOCKED` until the named evidence is supplied; other `PLAUSIBLE` findings go to the writer as questions and do not block alone.
 - `MINOR` findings are listed and fixed in the same revision when cheap; they do not block alone.
-- When the same finding returns `CHANGES_REQUESTED` a third time, stop the loop and escalate to the coordinator with both positions; neither agent may waive it.
+- After 3 review rounds on the same phase (`review-process`) without `APPROVED`, stop the loop and escalate to the coordinator with both positions; neither agent may waive it.
 
 ## 7. Roles
 
-- **Reviewer**: run at `standard` (or `deep`) before the stack's compliance checks. Stay read-only; write findings into the review report only.
+- **Reviewer**: run at `standard` (or `deep`) before the stack's compliance checks. Stay read-only; write findings into the review report only, numbered `RV-NN` there (`review-process`).
 - **Code Writer (self-check)**: run at `quick` on your own diff after targeted checks pass and before `READY_FOR_REVIEW`. Fix every `CONFIRMED` finding inside the approved scope, add the missing test, rerun checks, and list remaining `PLAUSIBLE` findings in the handoff. A fix that changes behavior, API or design returns to Planning.

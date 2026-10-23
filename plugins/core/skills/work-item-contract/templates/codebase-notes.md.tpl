@@ -45,7 +45,7 @@
 
 ## 2. Glossary
 
-| Business / UX Term | Technical Equivalent (Entity / State / Field / Endpoint) | Notes |
+| Business / UX Term | Technical Equivalent (Entity / State / Field / Endpoint / Table) | Notes |
 |---|---|---|
 | {{BusinessTerm}} | `{{TechnicalSymbolOrPath}}` | {{DefinitionAndRules}} |
 
@@ -54,7 +54,7 @@
 ## 3. Verified Baseline Facts & Cross-Agent Notes
 
 - **Target Stack & Architecture Profile:** `{{StackOrFramework}}` (`{{FoundationProfileDefinedByStackPack}}`)
-- **Verified Module & Routing Paths:** {{VerifiedPathsFromCodebaseScan}}
+- **Verified Module, Routing / Service Paths and Data Stores:** {{VerifiedPathsAndAffectedTablesFromCodebaseScan}}
 - **Core / UI Kit Discovery (stack foundation skill):** {{VerifiedCoreAndUiKitCandidates}}
 - **Cross-Agent Technical Consultation Notes (`planning` / `code_writer`):** {{VerifiedCrossAgentAnswersOrNone}}
 
@@ -62,7 +62,7 @@
 
 ## 4. Constraints & External Integrations
 
-- **Backend API Integration Status:** `{{BE_API_READY_or_MOCKOON_MOCKED}}`
+- **External API Integration Status:** `{{BE_API_READY_or_MOCKOON_MOCKED_or_NO_EXTERNAL_API}}`
 - **API / Handshake Source:** {{BeApiSpecOrMockoonJsonRef}}
 - **Performance / Security / Offline Constraints:** {{VerifiedConstraintsOrReasonedNone}}
 

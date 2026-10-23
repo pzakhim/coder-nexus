@@ -42,15 +42,25 @@
     "goal-framing",
     "grilling",
     "planning-and-task-breakdown",
+    "plan-change-request",
     "incremental-implementation",
+    "test-first",
+    "root-cause-debugging",
+    "evidence-before-claims",
+    "receiving-review",
+    "review-process",
+    "acceptance-testing",
     "clean-code",
     "code-simplification",
+    "secure-coding",
     "{{slot:visual-verification}}"
   ],
   "handoff_order": [
     "goal-framing",
     "grilling",
     "planning-and-task-breakdown",
-    "incremental-implementation"
+    "incremental-implementation",
+    "review-process",
+    "acceptance-testing"
   ]
 }

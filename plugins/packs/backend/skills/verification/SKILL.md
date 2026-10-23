@@ -27,5 +27,5 @@ Connect directly to upstream artifacts rather than relying on developer unit tes
 
 - Run integration test suites or API test commands via `run_command`.
 - Map every executed test to an `AC-NN` ID from `requirements.md`.
-- Report verdict (`PASS`, `FAILED`, `BLOCKED`) with execution logs and evidence to the coordinator and `docs_writer` for `as-built.md`.
+- Report verdict (`PASS`, `FAIL`, `BLOCKED`) with execution logs and evidence to the coordinator and `docs_writer` for `as-built.md`.
 - `NOT_RUN`, `BLOCKED`, or `UNVERIFIED` can NEVER be counted as `PASS`.

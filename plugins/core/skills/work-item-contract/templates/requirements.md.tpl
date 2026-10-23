@@ -27,7 +27,7 @@
 - **Current baseline & problem**: {{ObservedBaselineAndDesiredResult}}
 - **Scope in**: {{ScopeIn}}
 - **Scope out**: {{ScopeOutOrReasonedNone}}
-- **API & Design sources**: {{BeApiReadyOrMockoonMockedAndVisualSource}}
+- **API & Design sources**: {{ApiStatusReadyMockedOrNoExternalApiHandshakeReferenceAndVisualSourceOrNA}}
 
 ## 2. Actors & Permissions
 
@@ -51,15 +51,18 @@
 
 ### Scenario 1: {{HappyPathTitle}} (`AC-01`, `D-01`)
 - **Given**: {{Precondition}}
-- **When**: {{UserAction}}
-- **Then**: {{ExpectedOutcome}}
+- **When**: {{UserActionRequestOrTrigger}}
+- **Then**: {{ExpectedOutcomeAndSideEffects}}
 
 ### Scenario 2: {{UnhappyOrEdgeCaseTitle}} (`AC-02`, `D-01`)
 - **Given**: {{Precondition}}
-- **When**: {{InvalidInputOrFailureTrigger}}
-- **Then**: {{ExpectedErrorOrEmptyStateBehavior}}
+- **When**: {{InvalidInputUnauthorizedOrFailureTrigger}}
+- **Then**: {{ExpectedErrorEmptyStateOrRollbackBehavior}}
 
 ### Four Mandatory Visual States (UI Work Items)
+
+> Delete this subsection for items with no UI impact.
+
 - **Default / Content**: {{NormalContentExpectation}}
 - **Loading**: {{LoadingExpectation}}
 - **Empty**: {{EmptyStateExpectation}}

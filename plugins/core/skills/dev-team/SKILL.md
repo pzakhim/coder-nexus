@@ -28,7 +28,7 @@ The Gate 1 flow lives in one place: the `spec_writer` agent §3 (1A sources → 
 
 Coordinator duties in Phase 1:
 1. **Start Spec Writer** with the request, supplied files and the Huly task ID (read once by `huly-task-runner`, read-only; downloads in `.superpowers/sources/<ISSUE-ID>/`). Web Standard (React/Next.js/Vue) is TODO — not yet maintained.
-2. **API source** is binary and recorded in `codebase-notes.md`: `BE_API_READY` (spec from Huly BE task, Swagger/OpenAPI or `.md`) or `MOCKOON_MOCKED` (spec_writer locks business Input/Output; planning designs `mocks/<feature>_mockoon.json` and `PHASE-00`). Approved Mockoon fixtures support FE UI/contract checks only; live integration stays pending until a real endpoint is verified.
+2. **API source** has three values, recorded in `codebase-notes.md`: `BE_API_READY` (spec from Huly BE task, Swagger/OpenAPI or `.md`), `MOCKOON_MOCKED` (spec_writer locks business Input/Output; Planning designs the mock and `PHASE-00`) or `NO_EXTERNAL_API` (`PHASE-00` pre-ticked `[x] PREPARED (NO_EXTERNAL_API)`). With `MOCKOON_MOCKED`, approved Mockoon fixtures support UI/contract checks only and live integration stays pending until a real endpoint is verified; the mock's file, rules and smoke checks belong to `{{slot:verification}}` and the stack part of the Planning and Code Writer profiles.
 3. **Call Designer** when Spec Writer reports UI impact (Step 1A-UX); relay its `READY_FOR_SPEC` / `SKIPPED` / `BLOCKED` back to Spec Writer.
 4. **Relay cross-agent questions** (Step 1C): a question about codebase internals or architecture goes to `planning` or `code_writer`, which answers with evidence in `codebase-notes.md` and stops; Spec Writer relays it. Never fabricate an answer.
 5. **Gate 1**: accept it only after Spec Writer reports 0 `OPEN` `Q-NN`, validators run (`NOT_RUN` is not a pass), `gate-review` and `cold-reader-check` done, and the user explicitly approves the exact revisions (with the approved `uiux.md` revision). Stop until then.
@@ -48,8 +48,8 @@ Upon Gate 1 approval, call **Planning** (Tech Lead) for Gate 2 (design) and Gate
      - **Step 1 (Detect)**: If `planning` discovers a **Core Risk / Core Gap**, overlapping/conflicting logic with `requirements.md`, or trade-offs between viable approaches/widgets, `planning` queues `Q-NN` (`OPEN`) in `.superpowers/work-items/<slug>/vN/codebase-notes.md` and reports it to the Coordinator instead of writing `Option A / Option B` into `design.md`.
      - **Step 2 (Internal Alignment via Coordinator)**: The Coordinator relays the technical finding to `spec_writer` (via `send_message` or targeted invocation) so `spec_writer` evaluates business/UX impact and aligns with `planning` on 2–3 viable options built with `solution-options` (including one clear `(Recommended)` choice).
      - **Step 3 (Single User Prompt in Main Chat)**: The Coordinator (or active lead agent) presents one `ask_question` modal at a time in the **Main Chat** summarizing both the technical and business perspectives with the `(Recommended)` option. Once the user decides, `Q-NN` is closed into `D-NN` in `codebase-notes.md`, `spec_writer` updates `requirements.md` if business rules changed, and `planning` proceeds to write a straight-line `design.md` citing `D-NN`.
-2. **Step 2B — Backend API & Mockoon Strategy (`BE_API_READY` vs `MOCKOON_MOCKED`)**:
-   - When `MOCKOON_MOCKED`, `planning` designs the Mockoon environment & route data (`mocks/<feature>_mockoon.json` with 200/400/500 rules) in `design.md` (`Mockoon Trigger & Test Data Table`) and allocates **`PHASE-00` (`phase-00-prepare.md`)** as the initial phase to prepare the Mockoon API mock before feature phases (`PHASE-01`+) integrate the FE layers through the real `RemoteDataSource` (`ApiService`). Never create fake `Mock<Feature>DataSource` classes in `lib/`.
+2. **Step 2B — API source strategy (`BE_API_READY` / `MOCKOON_MOCKED` / `NO_EXTERNAL_API`)**:
+   - When the API is mocked, `planning` designs the mock and its test-data table in `design.md` and allocates **`PHASE-00` (`phase-00-prepare.md`)** to prepare it before feature phases (`PHASE-01`+) integrate through the real remote data access; the stack steps are in `{{slot:verification}}` and the Planning profile's stack part. Feature phases never add fake data sources to the Client source.
    - **Zero Cross-Repo Mutation**: Strictly prohibit tasks that modify Backend repositories, server code, or database schemas.
 3. **Step 2C — Gate 2 (Straight-Line `design.md` Approval), Permanent `codebase-notes.md` Retention, then Sequential Phase & Task Breakdown**:
    - Write `design.md` as a single-track, straight-line forward blueprint citing `D-NN` in `codebase-notes.md` (zero `Option A / Option B` headings, zero `Open Questions`, zero `TBD`). Validate `codebase-notes.md` and `design.md` with `validate_proposal_spec`, then `gate-review` (mode design) and `cold-reader-check` (Gate 2); 0 `OPEN` `Q-NN` before the gate. Present the exact `design.md` revision, including profile/evidence, reuse mapping, API contract and fixture/live verification split. Obtain actual user approval at **Gate 2** before drafting the execution plan.
@@ -62,7 +62,7 @@ Upon Gate 1 approval, call **Planning** (Tech Lead) for Gate 2 (design) and Gate
 4. **Step 2D — Gate 3 (User Negotiation & Plan Freeze)**:
    - Before presenting: `validate_plan_slices` → `gate-review` (mode plan) → `cold-reader-check` (Gate 3), with 0 `OPEN` `Q-NN`.
    - Present `implementation-plan.md` and all linked phase files via `ask_question` with 3 clear options:
-     1. `[Approve Plan & Proceed to Build]`: Freeze specs and plan (`APPROVED_FOR_BUILD`), hand off the first executable phase to a single `code_writer`.
+     1. `[Approve Plan & Proceed to Build]`: Record `APPROVED_FOR_BUILD` (specs and plan frozen); Planning returns `READY_FOR_BUILD` naming the first executable phase, and you assign one `code_writer`.
      2. `[Refine Technical Decisions]`: Adjust task order, mock approach, or scaffolding directly in Planning.
      3. `[Modify Business Scope / Requirements]`: Route back to Spec Writer to revise requirements before replanning.
 
@@ -73,28 +73,36 @@ Upon Gate 1 approval, call **Planning** (Tech Lead) for Gate 2 (design) and Gate
 Execute approved ready phases in strict sequential order (`PHASE-01` $\to$ `PHASE-02` $\to$ ...), one phase at a time. This loop is strictly comprised of the **3 implementation & review roles**:
 
 ### Step 1: Implementation (`code_writer`)
-- Coordinator assigns the current ready phase (along with approved `brief.md`, `requirements.md`, `design.md`, and `phases/phase-NN-*.md`) to **one `code_writer` instance**.
-- **Code-Only Focus**: Implements working business logic and UI according to `{{slot:clean-architecture}}` rules. Does not spend time writing long explanatory docstrings.
-- **Developer Unit Testing**: Writes unit tests following AAA pattern (`{{slot:unit-test}}` skill) for all implemented UseCases, Mappers, and state holders under the Client's feature test path.
-- **Screen Visual Baseline (when approved)**: Use the Client's approved screenshot-baseline harness and dependencies for stable applicable states; generate a baseline only for independent visual review. Follow `{{slot:visual-verification}}`; baselines supplement the required runtime UI evidence.
-- **Local Self-Verification**: Executes the local formatter/linter, the stack's analyzer, and unit test suite via `run_command` (commands: `{{slot:architecture-design}}`). Must achieve 100% green before handing off as `READY_FOR_REVIEW`.
-- If `MOCKOON_MOCKED`: In `PHASE-00`, generates and validates `mocks/<feature>_mockoon.json` (`mockoon-cli` and `curl`). In feature phases (`PHASE-01`+), implements the real `RemoteDataSource` calling `ApiService` (`ApiConfig.domain`) — never fake `Mock<Feature>DataSource` classes in `lib/` and never touches Backend files.
-- **Sequential Task Execution & Plan Re-Grounding**: `code_writer` executes tasks in `phases/phase-NN-*.md` strictly in order from top to bottom (without spawning sub-agents for micro-tasks). After each micro-task's verification, `code_writer` returns to the phase plan file (`phase-NN-*.md`), marks the task done `- [x]`, and re-reads the plan and next task's specifications before writing code for the next task. Never implement multiple tasks in bulk without re-reading the plan.
+- Coordinator assigns the current ready phase (with approved `brief.md`, `requirements.md`, `design.md`, `implementation-plan.md` and `phases/phase-NN-*.md`) to **one `code_writer` instance**. The Code Writer follows `incremental-implementation`: tasks strictly in order, each check triaged against its **Expected** (`MATCH` / `CODE_WRONG` / `PLAN_WRONG`), phase checks via `{{slot:verification}}`, a self `bug-hunt`, and the hand-off at `vN/evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md`. Do not restate or reorder that loop here.
+- `PHASE-00 [EXECUTE]` prepares and smoke-tests what the stack rules say (`{{slot:verification}}`) and the Code Writer ticks it before hand-off; feature phases integrate only the real remote data access, never fake data sources in the Client source and never Backend files.
+- The Code Writer returns `READY_FOR_REVIEW` (optional Concerns), `BLOCKED` or `NEEDS_CONTEXT`; route each as in **Routing** below.
 
 ### Step 2: Independent Code Review (`code_reviewer`)
-- Evaluates code diff and revision across 5 axes: AC compliance, Clean Architecture / framework rules, UI Kit component reuse, Zero Cross-Repo Mutation, and Mock isolation.
-- **Independent Unit Test Audit**: Evaluates Coder's unit test coverage, verifies edge cases and error states, and runs the unit tests independently via `run_command`.
-- **Screen Visual Inspection (if Screen Phase)**: Opens and inspects the generated `.png` baseline screenshot artifacts using `view_file` to verify layout fidelity, safe areas, touch targets, and contrast against `design.md` and the selected profile’s design-system guidance before approving.
-- **Read-only review**: Returns necessary code/documentation findings to Code Writer. Reviewer never edits implementation or tests; a fix requires a new revision and affected review/checks.
-- Verdict: If issues exist, returns `CHANGES_REQUESTED` to Code Writer. If verified, outputs `APPROVED` and generates a Phase Summary Artifact.
+- The Reviewer follows `review-process` on the exact `BASE_REVISION..REVIEW_REVISION`, read-only, re-running the hand-off's checks and AC commands, and writes `vN/reviews/review_<phase-id>_<REVIEW_REVISION>.md`.
+- Verdict `APPROVED` → Step 3 (Docs Writer) on the same tree; the Test Runner waits for Phase 4. `CHANGES_REQUESTED` → back to the same Code Writer with finding IDs and the round number (`receiving-review`). `BLOCKED` → resolve the named blocker before re-assigning.
+- Every fix is a new revision; review and test evidence for the touched code no longer counts.
 
 ### Step 3: Evidence Recording & Handoff Preparation (`docs_writer`)
-- Records actual code/test revisions, unit test pass evidence, command provenance, and review artifact link into `as-built.md`.
+- Records actual code/test revisions, evidence rows, command provenance and the review report link into `as-built.md`.
 - Drafts reader-facing docs if required by phase scope.
-- Prepares the next-phase handoff contract in `as-built.md` before user checkpoint.
+- Prepares the next-phase handoff contract in `as-built.md` before user checkpoint, then returns `RECORDED` (or `BLOCKED`); row shape in `handoff-and-status.md` §8.
+
+### Routing (coordinator only)
+Formats and status words: `work-item-contract` → `handoff-and-status.md`. All hand-offs go through you; no agent starts another.
+
+| Returned | Your move |
+|---|---|
+| `NEEDS_CONTEXT` | Add exactly what was asked (from the approved documents or a relayed question), then re-assign. Never re-assign unchanged. |
+| `BLOCKED` (environment, approval, external dependency, branch) | Resolve it or ask the user; never let a role work around it. |
+| `BLOCKED` naming a `PCR-NN`, or a `PLAN_CONFLICT` / `SCOPE_CHANGE` row in a review or test report | For a report row, write `plan-changes/PCR-NN.md` from it (the Reviewer and Test Runner stay read-only). Send the request to Planning (`plan-change-request`). The Code Writer waits. `AMENDED` → re-assign the phase from the first affected task and list the new `## Plan change log` rows at the next phase checkpoint. `ESCALATED` → ask the user at once with the `Q-NN`; Gate 2 (`DESIGN_CHANGE`) or Gate 1 via Spec Writer (`SCOPE_CHANGE`) re-approves before work resumes. |
+| `CHANGES_REQUESTED` (review) | Back to the Code Writer. **Cap: 3 review rounds on the same phase**; after the third, escalate: a plan cause goes to Planning as a `PCR-NN`, anything else to the user with both positions. Nobody waives a finding. |
+| `FAIL` / `CHANGES_REQUESTED` (Test Runner) | Each failing case goes to the Code Writer under the phase that owns its AC (`## AC coverage`), with its evidence; the fix goes through review again (new revision), then Test Runner re-tests affected cases. The owning phase's 3-round cap counts (`handoff-and-status.md` §2, Test Runner defect). |
+| A third `PCR-NN` on the same task | To the user, whatever its class. |
+
+Verification path per revision: Code Writer evidence → Code Reviewer re-runs it (`APPROVED`) → Docs Writer records it (`RECORDED`) → after the last phase, Test Runner `acceptance-testing` (`final_qa`) on the approved revision → Docs Writer records the verdict. Order: `handoff-and-status.md` §2. `NOT_RUN`, `BLOCKED` and `UNVERIFIED` never become PASS, `APPROVED` or `ACCEPTED` at any step.
 
 ### Step 4: Coordinator User Checkpoint (`ask_question`)
-- Summarizes completed phase results, unit test pass rate, and UI provenance.
+- Summarizes completed phase results, unit test pass rate, UI provenance, and any `AMENDED` `## Plan change log` rows since the last checkpoint (one line each).
 - Presents user checkpoint via `ask_question`:
   - Choice 1 (Recommended): Continue with named next phase.
   - Choice 2: Refine or inspect current phase evidence.
@@ -105,30 +113,18 @@ Execute approved ready phases in strict sequential order (`PHASE-01` $\to$ `PHAS
 
 ## Phase 4 — Final Feature E2E QA Verification (`test_runner`)
 
-Once ALL implementation phases in `implementation-plan.md` have been completed, reviewed, and recorded in `as-built.md`, call **Test Runner** for a single, comprehensive End-to-End QA pass across the fully integrated feature:
+Once ALL implementation phases in `implementation-plan.md` have been completed, reviewed, and recorded in `as-built.md`, call **Test Runner** once (`final_qa`) on the final `APPROVED` revision for a comprehensive End-to-End QA pass across the fully integrated feature; a phase the plan marks for its own acceptance run gets an extra run after that phase is recorded. It follows `acceptance-testing`; do not restate its steps here. What you check before accepting its report:
 
-### Step 1: Independent Test Matrix Derivation
-- **Single Source of Truth (SSOT)**: Derives test-case matrix directly and independently from `requirements.md` (BDD Scenarios and AC table) and `brief.md` (Scope In / Scope Out), completely independent of internal implementation phases.
-- **Out-of-Scope Guard**: Verifies that implementation has NOT touched files or implemented capabilities marked as Out-of-Scope in `brief.md`. Any Out-of-Scope mutation fails verification immediately.
-
-### Step 2: Full-Flow Acceptance & Visual Verification
-- **E2E & Integration Execution**: Executes the stack's UI/component test suites, integration tests, and routing checks across the unified feature (targets: `{{slot:verification}}`).
-- **4 Visual States Inspection**: Verifies runtime or rendered UI across all 4 mandatory visual states: Default, Loading, Empty, Error.
-- **Unit Test Delegation**: Does NOT re-test isolated unit logic (UseCases/Mappers/state holders already verified by `code_reviewer` in Phase 3); focuses strictly on user-facing acceptance criteria, screen flows, and system integration.
-
-### Step 3: Evidence Collection & QA Sign-off
-- Collects terminal evidence (command, exit code, concise output, screenshot artifacts) under `.superpowers/work-items/<slug>/vN/evidence/final_qa/<revision>/`.
-- Produces the comprehensive **Acceptance Criteria Verification Matrix**:
-  | AC ID | BDD Scenario / Expected Behavior | Test Target / Path | Status | Evidence Link |
-  |---|---|---|---|---|
-- Report UI/contract checks and live integration checks separately, with data provenance and contract/code revisions. Approved fixtures may pass their UI/contract checks; required live ACs stay `BLOCKED` or `NOT_RUN` until checked on the real endpoint. Overall `PASS` requires all applicable ACs; never close a handshake using fixtures.
-- If `FAILED`: Sends exact failure trace or visual diff to Coordinator for targeted repair by `code_writer` -> `code_reviewer` -> `test_runner` on the new revision.
+- **Independence**: the test-case matrix comes from `requirements.md` (BDD scenarios, AC table, `## 1.` **Scope in** / **Scope out**; `brief.md` for a phase-free item), `design.md` state matrix and the approved `uiux.md`, never from plan tasks; developer unit tests are not re-run as acceptance; an Out-of-Scope mutation fails verification.
+- **Evidence**: rows under `.superpowers/work-items/<slug>/vN/evidence/final_qa/<revision>/` (stack targets from `{{slot:verification}}`), all 4 visual states for UI items, and the per-AC table defined in `acceptance-testing` → "Per-AC results".
+- UI/contract checks and live integration checks are reported separately, with data provenance and contract/code revisions. Approved fixtures may pass their UI/contract checks; required live ACs stay `BLOCKED` or `NOT_RUN` until checked on the real endpoint. Never close a handshake using fixtures.
+- **Verdict**: `ACCEPTED` only when every applicable AC is `PASS`. On `CHANGES_REQUESTED` (any `FAIL`), route each failure to the Code Writer under its owning phase as in **Routing**: `code_writer` -> `code_reviewer` -> `docs_writer` -> `test_runner` on the new revision. On `BLOCKED`, resolve the blocker first.
 
 ---
 
 ## Phase 5 — Final Handoff & Delivery Closure
 
-Upon successful QA verification (`PASS`):
+Upon successful QA verification (`ACCEPTED`):
 1. **Docs Writer Finalization**: Updates `as-built.md` with final QA matrix, terminal evidence links, and overall feature completion sign-off.
 2. **Component Provenance Breakdown**:
    - **UI Kit Components**: Match the selected profile’s reuse mapping from `{{slot:core-usage}}` (company Core usage, Client Core Mapping, or standard components). Imports resolve in the Client.

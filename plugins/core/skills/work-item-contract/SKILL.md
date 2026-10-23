@@ -1,6 +1,6 @@
 ---
 name: work-item-contract
-description: The shared contract for Client work items - folder and version rules, the 8 Types, which file each gate approves, templates, the goal-lock rule, ownership and the handoff payload. Use whenever an agent creates, reads, writes or hands off anything under .superpowers/work-items/<slug>/vN/.
+description: The shared contract for Client work items - folder and version rules, the 8 Types, which file each gate approves, templates, the goal-lock rule, ownership, the plan and task format, hand-offs and status words. Use whenever an agent creates, reads, writes or hands off anything under .superpowers/work-items/<slug>/vN/, writes or executes a plan task, or returns a status.
 ---
 
 # Work-item contract
@@ -8,6 +8,15 @@ description: The shared contract for Client work items - folder and version rule
 This skill defines **what** agents exchange, not **who runs when**: orchestration lives in `dev-team` and in each agent profile (`agents/*.md`). Plugin files are guidance, not a runtime orchestrator; the host coordinator assigns agents, asks the user, records real approvals and owns item status.
 
 Detail: [work-item contract](references/work-item-contract.md), [type sequences](references/type-sequences.md) (read only the selected row), [Hub tool use](references/tool-usage.md), [sources](references/sources.md).
+
+Single homes of every hand-off format (other skills point here, never restate):
+
+| Reference | Defines |
+|---|---|
+| [plan-and-task-contract](references/plan-and-task-contract.md) | Plan-level sections, task fields with **Expected**, `MATCH` / `CODE_WRONG` / `PLAN_WRONG` triage, frozen vs amendable after Gate 3, `## Plan change log` |
+| [handoff-and-status](references/handoff-and-status.md) | Hand-off per role pair, every status word, evidence row, review and test report shapes, where each record lives under `vN/` |
+
+Changing an approved plan: [`plan-change-request`](../plan-change-request/SKILL.md).
 
 ## Folder and versions
 
@@ -71,14 +80,14 @@ Shared by every role. Reason: work that serves no confirmed goal is scope creep 
 |---|---|---|
 | Spec Writer | `requirements.md`, `codebase-notes.md`, `change-impact.md` (`brief.md` for phase-free items) | `READY_FOR_PLANNING`, findings-only `READY_FOR_VERIFICATION`, or `BLOCKED` |
 | Designer | `design-uiux/` (`uiux.md`, screens, components, mock data, `CHANGELOG.md`) for UI-impact items | `READY_FOR_SPEC`, `SKIPPED`, or `BLOCKED` |
-| Planning | `codebase-notes.md` (`D-NN`), `design.md` (Gate 2), `implementation-plan.md` + `phases/*.md` (Gate 3) | `READY_FOR_BUILD`, `SKIPPED`, or `BLOCKED` |
-| Code Writer | Assigned Client runtime and test files | `READY_FOR_REVIEW` with full diff scope |
-| Docs Writer | Assigned reader-facing docs; phase `as-built.md` after review and tests | `READY_FOR_REVIEW` for reader docs; evidence-backed phase record |
+| Planning | `codebase-notes.md` (`D-NN`), `design.md` (Gate 2), `implementation-plan.md` + `phases/*.md` (Gate 3), `## Plan change log` and `PCR-NN` answers | `READY_FOR_BUILD`, `SKIPPED`, or `BLOCKED`; `AMENDED` or `ESCALATED` for a change request |
+| Code Writer | Assigned Client runtime and test files; task ticks; `writer-handoff.md` | `READY_FOR_REVIEW` with full diff scope (optional Concerns), `BLOCKED`, or `NEEDS_CONTEXT` |
+| Docs Writer | Assigned reader-facing docs; phase `as-built.md` after each `APPROVED` review and after final QA | `READY_FOR_REVIEW` for reader docs; `RECORDED` (or `BLOCKED`) for the as-built record |
 | Code Reviewer | `vN/reviews/` report | `APPROVED`, `CHANGES_REQUESTED`, or `BLOCKED` |
-| Test Runner | `vN/evidence/` report | Per-AC `PASS`, `FAILED`, `BLOCKED`, or `NOT_RUN` |
+| Test Runner | `vN/evidence/` report | Per-AC `PASS`, `FAIL`, `BLOCKED`, or `NOT_RUN`; feature `ACCEPTED`, `CHANGES_REQUESTED`, or `BLOCKED` |
 
 Only Spec Writer and Planning write `codebase-notes.md`; everyone else reads it. The coordinator alone changes item status, checks that `as-built.md` matches the evidence and, after a UI item is verified, updates `.superpowers/ux/screen-catalog.md` (NEW → EXISTING, approved design revision, current screenshot).
 
-**Handoff payload** - every handoff carries: item / version / Type; approved document revisions and user response references; goal IDs and AC IDs in scope; task or phase; base and review revisions; staged / unstaged / untracked scope; affected files; planned checks; UI target and states; for UI items the foundation profile recorded in design (`architecture_profile.mode` where the stack defines one, see `{{slot:core-usage}}`; destinations per `{{slot:clean-architecture}}`); unresolved blockers.
+**Hand-offs** carry the common header and the per-pair payload in [handoff-and-status](references/handoff-and-status.md); a hand-off is a set of claims the receiver re-checks.
 
 `NOT_RUN`, `BLOCKED` and `UNVERIFIED` never become `PASS`; any fix invalidates the affected review and check evidence. Keep Huly read-only and credentials in the Client. No fake business data, APIs, package variants or results.

@@ -14,7 +14,7 @@ A checkpoint follows a completed behavior phase or another approved milestone. C
 - `IN_PROGRESS`: work started on the approved phase.
 - `BLOCKED`: a required decision, source, service, environment or target is unavailable; record the exact blocker.
 - `PASS`: all required AC, review and verification evidence matches the code revision.
-- `FAILED`: an executed check found a defect.
+- `FAIL`: an executed check found a defect (older files write `FAILED`; same meaning).
 
 A code fix invalidates affected evidence and returns that scope to implementation/review/verification. `NOT_RUN` or `BLOCKED` cannot be promoted to `PASS`.
 

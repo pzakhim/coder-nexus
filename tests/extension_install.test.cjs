@@ -18,12 +18,21 @@ const source = fs.readFileSync(path.join(root, 'extension.js'), 'utf8');
 function host(workspace, home, extensionPath = root) {
     const commands = new Map();
     const errors = [];
+    const prompts = [];  // modal questions; `answer` is what the user clicks
+    const state = { answer: undefined };
     const vscode = {
         commands: { registerCommand: (name, fn) => { commands.set(name, fn); return {}; } },
         workspace: { workspaceFolders: [{ uri: { fsPath: workspace } }] },
         window: {
             showErrorMessage: text => errors.push(text),
             showInformationMessage: () => {},
+            showWarningMessage: (text, options) => {
+                if (options && options.modal) {
+                    prompts.push(text);
+                    return Promise.resolve(state.answer);
+                }
+                return Promise.resolve(undefined);
+            },
         },
     };
     const sandbox = {
@@ -32,20 +41,19 @@ function host(workspace, home, extensionPath = root) {
     };
     vm.runInNewContext(source, sandbox, { filename: 'extension.js' });
     sandbox.module.exports.activate({ extensionPath, subscriptions: [] });
-    return { commands, errors };
+    return { commands, errors, prompts, state };
 }
 
 for (const [command, stack] of [
     ['installWorkspaceFlutter', 'flutter'],
-    ['installWorkspaceFrappe', 'frappe'],
     ['installWorkspaceBE', 'backend'],
 ]) {
-    test(`${command} projects the canonical handshake, a valid manifest and stack.json`, () => {
+    test(`${command} projects the canonical handshake, a valid manifest and stack.json`, async () => {
         const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'nexus-install-'));
         try {
             const workspace = path.join(temp, 'workspace');
             const { commands, errors } = host(workspace, path.join(temp, 'home'));
-            commands.get(`coder-nexus.${command}`)();
+            assert.equal(await commands.get(`coder-nexus.${command}`)(), true);
             assert.deepEqual(errors, []);
             const installed = path.join(workspace, '.agents', 'plugins', 'coder-nexus');
             const protocol = 'shared_contracts/api_handshake_protocol.md';
@@ -80,8 +88,8 @@ for (const [command, stack] of [
     });
 }
 
-test('adding a pack keeps the installed ones and removes the pre-2.8 plugins', () => {
-    const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'nexus-multi-'));
+test('a different pack replaces the installed one only after the user confirms; the same pack refreshes', async () => {
+    const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'nexus-replace-'));
     try {
         const workspace = path.join(temp, 'workspace');
         fs.mkdirSync(path.join(workspace, 'apps/mobile'), { recursive: true });
@@ -89,17 +97,38 @@ test('adding a pack keeps the installed ones and removes the pre-2.8 plugins', (
         fs.mkdirSync(path.join(workspace, 'services/api'), { recursive: true });
         fs.writeFileSync(path.join(workspace, 'services/api/pyproject.toml'), '[project]\nname = "api"\n');
         fs.mkdirSync(path.join(workspace, '.agents/plugins/coder-nexus-fe'), { recursive: true });
-        const { commands, errors } = host(workspace, path.join(temp, 'home'));
-        commands.get('coder-nexus.installWorkspaceFlutter')();
-        commands.get('coder-nexus.installWorkspaceBE')();
+        const { commands, errors, prompts, state } = host(workspace, path.join(temp, 'home'));
+        const skillsDir = path.join(workspace, '.agents/plugins/coder-nexus/skills');
+        const stackOf = () => JSON.parse(fs.readFileSync(path.join(workspace, '.agents/stack.json'), 'utf8'))
+            .packs.map(p => [p.stack, p.paths]);
+
+        assert.equal(await commands.get('coder-nexus.installWorkspaceFlutter')(), true);
+        assert.deepEqual(stackOf(), [['flutter', ['apps/mobile']]]);
+        assert.ok(!fs.existsSync(path.join(workspace, '.agents/plugins/coder-nexus-fe')), 'pre-2.8 plugins are removed');
+
+        // Same pack: refresh without asking.
+        assert.equal(await commands.get('coder-nexus.installWorkspaceFE')(), true);
+        assert.deepEqual(prompts, []);
+        assert.deepEqual(stackOf(), [['flutter', ['apps/mobile']]]);
+
+        // Different pack, dialog dismissed: nothing changes.
+        assert.equal(await commands.get('coder-nexus.installWorkspaceBE')(), false);
+        assert.equal(prompts.length, 1);
+        assert.match(prompts[0], /Replace it with/);
+        assert.deepEqual(stackOf(), [['flutter', ['apps/mobile']]]);
+        assert.ok(fs.readdirSync(skillsDir).includes('flutter-core-usage'));
+
+        // Different pack, user confirms: replaced, never merged.
+        state.answer = 'Replace';
+        assert.equal(await commands.get('coder-nexus.installWorkspaceBE')(), true);
+        assert.equal(prompts.length, 2);
         assert.deepEqual(errors, []);
-        const stackFile = JSON.parse(fs.readFileSync(path.join(workspace, '.agents/stack.json'), 'utf8'));
-        assert.deepEqual(stackFile.packs.map(p => [p.stack, p.paths]), [['backend', ['services/api']], ['flutter', ['apps/mobile']]]);
-        const skills = fs.readdirSync(path.join(workspace, '.agents/plugins/coder-nexus/skills'));
-        assert.ok(skills.includes('flutter-core-usage') && skills.includes('backend-api-contracts'));
-        assert.ok(!fs.existsSync(path.join(workspace, '.agents/plugins/coder-nexus-fe')));
+        assert.deepEqual(stackOf(), [['backend', ['services/api']]]);
+        const skills = fs.readdirSync(skillsDir);
+        assert.ok(skills.includes('backend-api-contracts'));
+        assert.ok(!skills.some(name => name.startsWith('flutter-')), skills.join(','));
         const writer = fs.readFileSync(path.join(workspace, '.agents/agents/code_writer.md'), 'utf8');
-        assert.ok(writer.includes('## Stack rules') && writer.includes('## Backend rules') && writer.includes('## Flutter rules'));
+        assert.ok(writer.includes('## Backend rules') && !writer.includes('## Flutter rules'));
     } finally {
         fs.rmSync(temp, { recursive: true, force: true });
     }
@@ -114,15 +143,19 @@ test('detectPacks finds monorepo project roots but not platform shells', () => {
         fs.writeFileSync(path.join(temp, 'pubspec.yaml'), 'name: app\n');
         fs.mkdirSync(path.join(temp, 'android'), { recursive: true });
         fs.writeFileSync(path.join(temp, 'android/build.gradle'), '');
+        fs.mkdirSync(path.join(temp, 'api'), { recursive: true });
+        fs.writeFileSync(path.join(temp, 'api/pyproject.toml'), '[project]\nname = "api"\n');
+        // Frappe was removed in 3.2.0: its markers no longer select a pack.
         fs.mkdirSync(path.join(temp, 'desk'), { recursive: true });
         fs.writeFileSync(path.join(temp, 'desk/package.json'), '{"dependencies":{"frappe-ui":"1"}}');
-        assert.deepEqual(JSON.parse(JSON.stringify(detectPacks(temp))), { flutter: ['.'], frappe: ['desk'] });
+        fs.writeFileSync(path.join(temp, 'desk/hooks.py'), '');
+        assert.deepEqual(JSON.parse(JSON.stringify(detectPacks(temp))), { flutter: ['.'], backend: ['api'] });
     } finally {
         fs.rmSync(temp, { recursive: true, force: true });
     }
 });
 
-test('missing projection fails before replacing a workspace projection', () => {
+test('missing projection fails before replacing a workspace projection', async () => {
     const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'nexus-install-'));
     try {
         const workspace = path.join(temp, 'workspace');
@@ -132,7 +165,7 @@ test('missing projection fails before replacing a workspace projection', () => {
         const extensionPath = path.join(temp, 'extension');
         fs.mkdirSync(path.join(extensionPath, 'plugins/coder-nexus-fe'), { recursive: true });
         const { commands, errors } = host(workspace, path.join(temp, 'home'), extensionPath);
-        commands.get('coder-nexus.installWorkspaceFlutter')();
+        assert.equal(await commands.get('coder-nexus.installWorkspaceFlutter')(), false);
         assert.equal(errors.length, 1);
         assert.equal(fs.readFileSync(path.join(installed, 'existing.txt'), 'utf8'), 'preserve');
     } finally {

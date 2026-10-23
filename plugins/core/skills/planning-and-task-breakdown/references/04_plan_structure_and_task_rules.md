@@ -4,7 +4,7 @@ Rules that make a plan executable by a single Code Writer without asking, and re
 
 ## 1. Two plan-level sections
 
-Place both in `implementation-plan.md` above `## AC coverage`. Neither is checked by `validate_plan_slices`; they are still required by this skill and by `gate-review` `modes/plan.md`. If the template does not show them yet, add the headings yourself.
+Place both in `implementation-plan.md` above `## AC coverage`. Neither is checked by `validate_plan_slices`; they are still required by this skill and by `gate-review` `modes/plan.md`. Their format, and the frozen status they get at Gate 3, are in [plan-and-task-contract.md](../../work-item-contract/references/plan-and-task-contract.md) §1, §4; this section covers how to choose their content.
 
 ### `## Global constraints`
 

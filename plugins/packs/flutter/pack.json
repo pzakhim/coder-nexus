@@ -33,5 +33,9 @@
     "imespro",
     "golden",
     "goldens"
+  ],
+  "not_applicable": [
+    "clean-code",
+    "secure-coding"
   ]
 }

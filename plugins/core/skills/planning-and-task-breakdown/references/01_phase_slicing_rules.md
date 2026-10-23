@@ -38,10 +38,10 @@ Concrete stack examples (file paths, commands, component names) live in `{{slot:
 
 - **`PHASE-00` (`phases/phase-00-prepare.md`) Single Source & Readiness Tick**:
   - Links the Huly context in `codebase-notes.md` and the API contract in `design.md`, so downstream agents (`code_writer`, `code_reviewer`, `test_runner`) know where each fact lives without a second copy.
-  - **`MOCKOON_MOCKED` (`[EXECUTE]`)**: `PHASE-00` includes executable tasks to create `mocks/<feature>_mockoon.json` (implementing all Pass/Default, Empty, and Fail rules from the `Mockoon Trigger & Test Data Table` in `design.md`) and verify `mockoon-cli`. Once `code_writer` finishes and `code_reviewer` approves `PHASE-00`, tick **`[x] PREPARED / COMPLETED`** in `phase-00-prepare.md` and `implementation-plan.md`. Never create fake mock data source classes in Client source.
+  - **`MOCKOON_MOCKED` (`[EXECUTE]`)**: `PHASE-00` includes executable tasks to create `mocks/<feature>_mockoon.json` (implementing all Pass/Default, Empty, and Fail rules from the `Mockoon Trigger & Test Data Table` in `design.md`) and verify `mockoon-cli`. The `code_writer` ticks **`[x] PREPARED / COMPLETED`** in `phase-00-prepare.md` and `implementation-plan.md` before its hand-off; the `code_reviewer` confirms the tick when approving `PHASE-00` and never edits plan documents. Never create fake mock data source classes in Client source.
   - **`BE_API_READY` (`[INFO_NOTE]`)**: `PHASE-00` summarizes the existing BE APIs, whether they have been verified, and whether they match the user-supplied spec, pre-ticking **`[x] PREPARED (INFO_READY)`**.
   - **No External API (`[INFO_NOTE]`)**: Omit the API section in `PHASE-00` and pre-tick **`[x] PREPARED (NO_EXTERNAL_API)`**.
-- **Readiness Gate for `PHASE-01, 02, 03...`**: Feature phases (`PHASE-01`+) only start once `PHASE-00` is ticked **`[x] PREPARED / COMPLETED`**, guaranteeing all data and API contracts are ready so `code_writer` never gets stuck.
+- **Readiness Gate for `PHASE-01, 02, 03...`**: Feature phases (`PHASE-01`+) only start once `PHASE-00` carries one accepted tick (**`[x] PREPARED / COMPLETED`**, `[x] PREPARED (INFO_READY)` or `[x] PREPARED (NO_EXTERNAL_API)`; `work-item-contract` → `plan-and-task-contract.md` → `PHASE-00` readiness tick), guaranteeing all data and API contracts are ready so `code_writer` never gets stuck.
 - Every phase file lists **only** the files that behavior needs. No placeholder classes or empty DI entries for later phases.
 - Shared pieces (an entity, a DI file) belong to the first phase that needs them; later phases extend them.
 - UI-only phases (layout, a new state) are valid vertical slices — they need no Domain/Data work.
@@ -61,15 +61,7 @@ Concrete stack examples (file paths, commands, component names) live in `{{slot:
 Inside each Phase file, the `## Tasks` section lists the ordered micro-tasks that a single `code_writer` executes sequentially from top to bottom (e.g., Domain $\to$ Data $\to$ State $\to$ Screen/Components & Route/DI $\to$ Unit Tests). Do **not** split tasks into `[PARALLEL]` / `[SEQUENTIAL]` tracks or `Join points`.
 
 1. **Task Specification Standard**:
-   Every task entry MUST follow this exact 5-field format:
-   ```markdown
-   - [ ] **Task X.Y**: <Clear Actionable Name>
-     - **Scope / Files**: exact Client source paths following the stack's module layout
-     - **Reused Components**: the entries from the design's `Core usage` / `Client Core Mapping` table this task must use (or the standard framework components when the profile has no mapping)
-     - **Consumes**: symbols/signatures used from earlier tasks or phases, spelled exactly as their **Produces** line (or `none`)
-     - **Produces**: public symbols/signatures later tasks consume (or `none`)
-     - **Acceptance Criteria**: Command or condition to verify this task immediately (e.g. the stack's analyzer on the changed module, unit test pass)
-   ```
+   Every task entry uses the task fields of [plan-and-task-contract.md](../../work-item-contract/references/plan-and-task-contract.md) §2 (Scope / Files, Reused Components, Consumes, Produces, Acceptance Criteria with cwd, Expected). The format lives only there.
 2. **Execution & Plan Re-Grounding Rule (Anti-Bulk Coding)**:
    - Each task requires all preceding tasks in the phase to be marked `- [x]` before starting.
    - **Mandatory Re-Reading of Plan Between Tasks**:

@@ -27,9 +27,9 @@
 
 ## Technical boundary and integration
 
-- **Client Scope (FE):** {{ClientScopeAffectedScreensWidgetsStateOrReasonedNA}}
-- **Backend Dependency:** {{BE_API_READY_or_MOCKOON_MOCKED}}
-- **Handshake / Mockoon Reference:** {{HandshakeContractOrMockoonJsonRefOrNone}}
+- **Affected scope:** {{AffectedScreensStateServicesEndpointsOrDataStoresOrReasonedNA}}
+- **External API dependency:** {{BE_API_READY_or_MOCKOON_MOCKED_or_NO_EXTERNAL_API}}
+- **Handshake / mock reference:** {{HandshakeContractOrMockRefOrNone}}
 
 ## Acceptance and checks
 

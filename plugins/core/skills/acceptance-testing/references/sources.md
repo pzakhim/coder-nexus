@@ -1,0 +1,29 @@
+# Sources
+
+External ideas adapted into `acceptance-testing`, rewritten in this repo's vocabulary (`AC-NN`, `BR-NN`, `W-NN`, `D-NN`, `PHASE-NN`, reviewed revision, `vN/evidence/`). Internal base inputs (read-only): `src/skill_factory/library/generators/create-quality-planning-skill`, `-environment-`, `-acceptance-`, `-reporting-` and `create-visual-quality-skill` (base rules Q1–Q14, E1–E14, A1–A14, RP1–RP12, V1–V12), plus `plugins/core/agents/test_runner.md`.
+
+| Source (link pinned to SHA) | Stars | Idea taken | Where used |
+|---|---|---|---|
+| [anthropics/skills `skills/webapp-testing/SKILL.md`](https://github.com/anthropics/skills/blob/dbd4588f9e1033efb41dad4bef2f7947c8993d44/skills/webapp-testing/SKILL.md) | 183k | Check whether a server is already running before starting one; manage several services (backend + frontend) as one lifecycle | [environment.md](../modes/environment.md) E1, E2, E5 |
+| [anthropics/skills `skills/webapp-testing/SKILL.md`](https://github.com/anthropics/skills/blob/dbd4588f9e1033efb41dad4bef2f7947c8993d44/skills/webapp-testing/SKILL.md) | 183k | Reconnaissance before action: wait until the page is fully loaded, inspect the rendered state, then pick targets from what is rendered | [execution.md](../modes/execution.md) "Executing one case"; SKILL "read the implementation only to find targets" |
+| [anthropics/skills `skills/webapp-testing/SKILL.md`](https://github.com/anthropics/skills/blob/dbd4588f9e1033efb41dad4bef2f7947c8993d44/skills/webapp-testing/SKILL.md) | 183k | Capture console logs during a browser flow | [execution.md](../modes/execution.md) "Health after each flow" |
+| [obra/superpowers `skills/verification-before-completion/SKILL.md`](https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/verification-before-completion/SKILL.md) | 303k | Identify the proving command, run it fresh and complete, read output and exit code, only then claim | SKILL "Evidence before claims"; evidence row in [execution.md](../modes/execution.md) |
+| [obra/superpowers `skills/verification-before-completion/SKILL.md`](https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/verification-before-completion/SKILL.md) | 303k | Another agent's success report is not evidence; verify independently | [execution.md](../modes/execution.md) Order step 1 (re-check the Reviewer's evidence) |
+| [obra/superpowers `skills/verification-before-completion/SKILL.md`](https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/verification-before-completion/SKILL.md) | 303k | "Requirements met" needs a line-by-line checklist, not passing tests | Two-way traceability in [plan.md](../modes/plan.md) and per-AC coverage in [reporting.md](../modes/reporting.md) |
+| [obra/superpowers `skills/verification-before-completion/SKILL.md`](https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/verification-before-completion/SKILL.md) | 303k | Hedging words ("should", "probably") signal an unverified claim | SKILL "Feature verdict" (no softened wording) |
+| [bmad-code-org/BMAD-METHOD `skills/bmad-build/step-03-implement.md`](https://github.com/bmad-code-org/BMAD-METHOD/blob/61e01f82644c4bb533750cfa0d6d61ab61d2cc9b/skills/bmad-build/step-03-implement.md) | 54k | Every row of an edge-case matrix must be covered by a check that actually ran; a skipped or filtered check counts as missing | [plan.md](../modes/plan.md) coverage categories; `NOT_RUN` never `PASS` |
+| [bmad-code-org/BMAD-METHOD `skills/bmad-build/step-03-implement.md`](https://github.com/bmad-code-org/BMAD-METHOD/blob/61e01f82644c4bb533750cfa0d6d61ab61d2cc9b/skills/bmad-build/step-03-implement.md) | 54k | When a check disagrees with the matrix, never edit the expectation; ambiguous rows go back to a human | SKILL "Failures and the fix loop" step 4; triage table in [execution.md](../modes/execution.md) |
+| [bmad-code-org/BMAD-METHOD `skills/bmad-build/step-03-implement.md`](https://github.com/bmad-code-org/BMAD-METHOD/blob/61e01f82644c4bb533750cfa0d6d61ab61d2cc9b/skills/bmad-build/step-03-implement.md) | 54k | Approved content is frozen and read-only after approval; judge against the actual diff, not the implementer's report | SKILL inputs (`## Global constraints`, `## Review focus` read-only); execution on the reviewed tree |
+
+## Not adopted
+
+| Idea | Source | Reason |
+|---|---|---|
+| Bundled helper scripts run as black boxes, and a fixed browser automation library with headless launch | anthropics/skills webapp-testing | Core is stack-neutral; launch commands and tools come from `{{slot:verification}}` / `{{slot:visual-verification}}`. Fetched scripts are never run. |
+| Server wrapper that starts and kills servers around each script | anthropics/skills webapp-testing | Conflicts with "never stop what you did not start"; we probe and reuse, and stop only processes we own. |
+| Saving screenshots to a system temp folder | anthropics/skills webapp-testing | Evidence must be revision-bound under `vN/evidence/<phase-id>/<revision>/`. |
+| Red-green revert cycle for regression tests | obra/superpowers | Belongs to the Code Writer (`test-first`); the Test Runner never edits code. |
+| Implementer fixes audit failures itself before moving on | BMAD step-03 | The Test Runner is read-only; failures go to the Code Writer as a new revision via the coordinator. |
+| Capturing a baseline revision into the plan frontmatter | BMAD step-03 | The revision under test is the one in the `APPROVED` review report; plans are frozen after Gate 3. |
+| Fixed priority labels P1–P3 tied to "HIGH" severity (generator RP4) | create-quality-reporting-skill | Severity uses the shared `bug-hunt` scale `BLOCKER` / `MAJOR` / `MINOR`. |
+| Result word `FAILED` (agent text) | test_runner.md | Shared contract uses `FAIL`; the coordinator aligns the agent text. |

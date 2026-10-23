@@ -21,5 +21,5 @@ Ideas were rewritten in this repo's vocabulary (`AC-NN`, `BR-NN`, `D-NN`, `Q-NN`
 | `[P]` parallel markers and Setup / Foundational / Polish phases | spec-kit tasks | Single Code Writer runs in order; a Foundational or Polish phase is a horizontal slice |
 | Tests optional unless requested | spec-kit tasks | The Review DoD always requires developer tests ([03](03_review_dod_and_testing.md)) |
 | research.md / data-model.md / quickstart.md artifacts and extension hooks | spec-kit plan | `design.md` (Gate 2) and `codebase-notes.md` already hold these facts; one home per fact |
-| Append-only change and review-triage logs inside the plan | BMAD plan template | The plan freezes at Gate 3; progress and results go to `as-built.md` |
+| Review-triage log inside the plan | BMAD plan template | Review findings live in the revision-bound report under `vN/reviews/`; progress and results go to `as-built.md`. (The append-only plan change log was adopted later, in `work-item-contract` plan-and-task-contract §5, for amendments after Gate 3) |
 | Risk level field driving review depth | BMAD plan template | Review depth is fixed by the process; risk is expressed by phase order and each phase's `## Risks` |

@@ -37,9 +37,15 @@ One row for every task whose own text disagrees with itself: the test it specifi
 
 Every value the plan repeats - in a Global Constraints section when the plan has one, otherwise in `## Checkpoints and shared files`, phase code direction or checks - equals its source: limits, page sizes, timeouts, roles, data scopes, messages, API fields and statuses in `requirements.md`, `codebase-notes.md` `## 4.` / `## 5.` and `design.md`. A mismatch is `HIGH`; resolve it in the plan, or raise a `Q-NN` if the spec value itself is in doubt.
 
+## P5. Task checks and Review focus are filled
+
+- Every task has an **Acceptance Criteria** command with its cwd and an **Expected** that can fail and is sourced from the approved documents (`AC-NN`, `BR-NN`, `D-NN`, design), per `work-item-contract` → `plan-and-task-contract.md` §2. A missing cwd, an Expected that cannot fail ("works", "no errors" for a check that reports none) or an Expected taken from current code output is `HIGH`.
+- `## Review focus` lists its lines, each naming an owning task, or reads `None found after checking every AC and BR`. An empty section is `HIGH`.
+
 ## Coverage report (plan)
 
 - P1: pairs checked, mismatches; tasks checked, self-contradictions.
 - P2: `AC n/N` with a building task and a decisive check; BR and `NEW COMPONENT` gaps.
 - P3: plan lines vs requirements + design lines; transcribed bodies found.
 - P4: values compared, mismatches.
+- P5: tasks checked, missing cwd / unfalsifiable or unsourced Expected; Review focus filled or `None found after checking every AC and BR`.
