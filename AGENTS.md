@@ -47,14 +47,36 @@ The Hub currently exposes **9 MCP tools** (the `flutter_ui_kit` catalog tools we
 Automated testing, `.vsix` packaging, Open VSX publication (`IMP-AIFactory.coder-nexus`), and GitHub Release generation are managed by [`.github/workflows/release.yml`](.github/workflows/release.yml).
 
 - **Single Source of Truth (SSOT):** The version is synchronized between [`plugins/core/bundle_manifest.json`](plugins/core/bundle_manifest.json) (`plugin_version`) and [`package.json`](package.json) (`version`) via [`scripts/sync_version.py`](scripts/sync_version.py). Tests dynamically assert compatibility across manifest and package metadata; never re-introduce hardcoded version strings into test suites.
-- **Decide what a push includes:** On every push request, inspect `git status --short --branch`, the current branch and upstream, the working diff, and commits ahead of the target remote branch. Stage only files belonging to the requested work with `git add -- <paths>`; inspect `git diff --cached` and `git diff --cached --check` before committing. Preserve unrelated modified and untracked files, credentials, generated files, and other agents' work. Do not push unrelated existing commits without the user's authorization. Push the current task branch to its intended remote branch; never assume it is `main`. Do not use `git add .`, `git push --all`, or `git push --tags`.
-- **Decide whether to tag:** A routine push sends the scoped commit(s) without a version tag. Create a release tag when the user requests a release/version or a verified extension/plugin milestone is ready to publish. A documentation or CI-only fix after an existing release does not retroactively change that tag. Do not move or reuse a published tag. If the scope or release readiness is uncertain, finish the reviewable changes and ask before publishing a release.
+- **Branch model (Git Flow):**
+  - `develop` is integration. `release/X.Y.Z` is the frozen release candidate. `main` plus tag `vX.Y.Z` is released.
+  - Work branches start from `develop`: `feature/`, `fix/`, `refactor/`, `perf/`, `chore/`, named `<type>/<ticket>-<short-description>`. Hotfixes start from `main` as `hotfix/<ticket>-<short-description>`.
+  - Never commit directly on `develop`, `release/*` or `main`. Keep at most one active `release/*`.
+- **Decide what a push includes:**
+  - On every push request, inspect `git status --short --branch`, the current branch and upstream, the working diff, and the commits ahead of the target remote branch.
+  - Stage only files belonging to the requested work with `git add -- <paths>`. Inspect `git diff --cached` and `git diff --cached --check` before committing.
+  - Preserve unrelated modified and untracked files, credentials, generated files, and other agents' work. Do not push unrelated existing commits without the user's authorization.
+  - An agent may push its own work branch. Merging or pushing into `develop`, `release/*` or `main`, and deleting a remote branch, each need the user's explicit approval for that action.
+  - Do not use `git add .`, `git push --all`, or `git push --tags`.
+- **Merge strategy:**
+  - Squash a work branch into `develop`, and a `fix/` into the active `release/*`.
+  - Use a merge commit for `release/*` → `main` and `hotfix/*` → `main`; never squash a release.
+  - Do not cherry-pick to promote code between lines. Cherry-pick only as a deliberate, stated backport.
+  - Never force-push `develop`, `release/*` or `main`.
+- **Decide whether to tag:**
+  - Any pushed `v*` tag runs the release workflow, which publishes to Open VSX and GitHub. Treat it as a production release.
+  - Tag only a merge commit on `main`, and only after the user approves that release. A routine push carries no tag.
+  - A documentation or CI-only fix after an existing release does not retroactively change that tag. Do not move or reuse a published tag; fix forward with the next version.
+  - If the scope or release readiness is uncertain, finish the reviewable changes and ask before publishing a release.
 - **For a release:**
-  1. Check the latest local and remote tags (`git tag --sort=-v:refname` and `git ls-remote --tags origin`) and choose the next semver version based on the change. Confirm the target tag does not exist on either side.
-  2. Run `python3 scripts/sync_version.py <new_version>` (release notes are generated on the GitHub Release), and refresh only the authorized Client workspace projection. Do not install globally when the user requested workspace-only installation.
-  3. Run `uv run pytest -q` and any checks required by the change. Stage only release files and requested work, inspect the staged diff, then commit. Create an **annotated** tag on that exact verified commit with `git tag -a vX.Y.Z -m "Coder Nexus vX.Y.Z"`.
-  4. Push the intended branch and **that exact tag** together, for example `git push --atomic origin HEAD:refs/heads/<branch> refs/tags/vX.Y.Z`. Do not push unrelated local tags. If the remote rejects the push, resolve the rejection and revalidate; do not force-push or retag a published version.
-  5. Check the tag-triggered [release workflow](.github/workflows/release.yml), the Open VSX version, and the GitHub Release with its `.vsix` asset. A pushed tag or packaged local VSIX alone does not prove publication. If a later step fails after Open VSX succeeded, repair and retry that release; do not create a new version merely to bypass a duplicate publication error.
+  1. Check the latest local and remote tags (`git tag --sort=-v:refname` and `git ls-remote --tags origin`) and propose the next semver version from the commits since the last tag. Confirm that the target tag does not exist on either side. The user decides the version.
+  2. Cut `release/X.Y.Z` from `develop` (approval). On the release branch, run `python3 scripts/sync_version.py <new_version>` (release notes are generated on the GitHub Release) and refresh only the authorized Client workspace projection. Do not install globally when the user requested workspace-only installation. Only fixes land on the release branch, and each fix is also brought back to `develop`.
+  3. Run `uv run pytest -q` and any checks required by the change on the release tip.
+  4. Check that `git log release/X.Y.Z..main` is empty, so every hotfix on `main` is in the release.
+  5. Merge `release/X.Y.Z` into `main` with `git merge --no-ff` (approval). Check that `git diff release/X.Y.Z <merge-commit>` is empty.
+  6. Create an **annotated** tag on that merge commit with `git tag -a vX.Y.Z -m "Coder Nexus vX.Y.Z"`. Push `main` and **that exact tag** together with `git push --atomic origin main refs/tags/vX.Y.Z` (approval). Do not push unrelated local tags. If the remote rejects the push, resolve the rejection and revalidate; do not force-push or retag a published version.
+  7. Check the tag-triggered [release workflow](.github/workflows/release.yml), the Open VSX version, and the GitHub Release with its `.vsix` asset. A pushed tag or packaged local VSIX alone does not prove publication. If a later step fails after Open VSX succeeded, repair and retry that release; do not create a new version merely to bypass a duplicate publication error.
+  8. Merge `main` back into `develop` and delete `release/X.Y.Z` locally and on the remote (approval).
+- **For a hotfix:** branch `hotfix/*` from `main`, test it, then merge it into `main` with a merge commit and tag a PATCH version as in release steps 5–7 (approval). Bring the same change into the active `release/*` (when it contains the affected code) and into `develop`.
 
 ## 8. Where a skill belongs: core, pack, or Skill Factory
 
