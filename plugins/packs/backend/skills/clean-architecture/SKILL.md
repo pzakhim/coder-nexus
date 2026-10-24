@@ -57,7 +57,7 @@ main -> api (routers, deps, error_handlers) -> services -> repositories -> model
 | `schemas` | `pydantic`, `models/enums` | `models` (ORM classes), `sqlalchemy`, `fastapi` | The contract is plain data; enums are shared, tables are not |
 | `core` | standard library, `pydantic`, `pydantic-settings`, crypto/token libraries | anything else in `app`, `fastapi` | Everyone depends on core, so core depends on nobody and stays importable from services |
 
-Checks, the import-linter contract and the grep fallback: [references/02_dependency_rules.md](references/02_dependency_rules.md).
+Checks, the import-linter contract and the ripgrep (`rg`) fallback: [references/02_dependency_rules.md](references/02_dependency_rules.md).
 
 ## Golden rules
 

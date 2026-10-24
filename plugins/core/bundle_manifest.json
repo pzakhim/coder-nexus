@@ -71,6 +71,7 @@
   ],
   "required_resources": [
     "shared_contracts/api_handshake_protocol.md",
+    "shared_contracts/flags_and_statuses.md",
     "core/plugin.json",
     "core/mcp_config.json",
     "packs/flutter/rules/clean_architecture_rules.md",

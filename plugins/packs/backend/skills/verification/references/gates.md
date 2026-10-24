@@ -72,9 +72,9 @@ Same result table as G4. In addition:
 - The test database URL passes the guard in the suite's `conftest.py` (`{{slot:unit-testing}}`). No guard in the workspace → G6 is `BLOCKED` until one exists. Reason: without it nothing stops a run against a real database.
 - `ConnectionRefusedError` / `InvalidPasswordError` / `database "…" does not exist` raised in a fixture → BLOCKED (environment), with the error line.
 
-## G7 Coverage — only with an existing threshold
+## G7 Coverage — `pytest-cov` (installed by `setup tools`)
 
-Where to look: `[tool.coverage.report] fail_under` in `pyproject.toml`, `.coveragerc` `[report]`, `setup.cfg` `[coverage:report]`, or `--cov-fail-under` in `[tool.pytest.ini_options] addopts`.
+Where to look for thresholds: `[tool.coverage.report] fail_under` in `pyproject.toml`, `.coveragerc` `[report]`, `setup.cfg` `[coverage:report]`, or `--cov-fail-under` in `[tool.pytest.ini_options] addopts`.
 
 ```bash
 uv run pytest --cov=<package> --cov-report=term-missing -q
@@ -82,9 +82,8 @@ uv run pytest --cov=<package> --cov-report=term-missing -q
 
 | Outcome | Result |
 |---|---|
-| Total ≥ threshold, tests pass | PASS (quote `TOTAL … 87%` and the threshold) |
+| Total ≥ threshold (or report generated cleanly when no threshold is set), tests pass | PASS (quote `TOTAL … 87%` and any configured threshold) |
 | `FAIL Required test coverage of 85% not reached` | FAIL |
-| No threshold configured | no G7 row; never invent one |
 
 Coverage proves lines ran, not that behavior is asserted; it never replaces the AC rows.
 

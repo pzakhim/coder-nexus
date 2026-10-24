@@ -321,7 +321,7 @@ def _standard_ready(project, monkeypatch):
 def test_setup_flutter_runs_the_flutter_tools_step_and_keeps_its_state(project, monkeypatch, tool_commands, capsys):
     _standard_ready(project, monkeypatch)
     assert sf.run_setup(project, profile="external-standard", assume_yes=True) == 0
-    assert ["flutter", "pub", "add", "--dev", "flutter_lints", "mocktail", "bloc_test"] in tool_commands
+    assert ["flutter", "pub", "add", "--dev", "flutter_lints", "mocktail", "bloc_test", "very_good_analysis", "dart_code_linter"] in tool_commands
     assert (project / "analysis_options.yaml").is_file()
     state = json.loads((project / sf.STATE_FILE).read_text())
     assert state["profile"] == "external-standard"

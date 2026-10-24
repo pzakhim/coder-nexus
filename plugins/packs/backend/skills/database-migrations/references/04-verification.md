@@ -27,9 +27,9 @@ Point Alembic at it the way `env.py` reads the URL (for example `DATABASE_URL=po
 
 Large backfill command: run it with `--dry-run`, then for real, then again (must report 0 rows changed: idempotent), and run V4.
 
-## Optional automated migration tests
+## Automated migration tests (`pytest-alembic`)
 
-If the workspace already has migration tests (for example `pytest-alembic` or a `tests/migrations/` suite running upgrade/downgrade per revision), run them as an extra check: `uv run pytest tests/migrations -q`. Do not add a new testing library in a feature task; propose it as a separate item.
+`pytest-alembic` is installed by default via `coder-nexus setup tools --pack backend`. Run automated migration checks (`uv run pytest --test-alembic -q` or `uv run pytest tests/migrations -q` when a dedicated migration suite exists) to verify upgrade/downgrade cycles and model-revision consistency against the disposable test database.
 
 ## What is not proof
 

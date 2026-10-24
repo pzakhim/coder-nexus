@@ -99,3 +99,21 @@ Anything that is neither belongs to a single pack only.
 - Core agents and skills reach stack knowledge through `{{slot:<name>}}` (registered in [`plugins/core/slots.json`](plugins/core/slots.json)), never by a pack skill path.
 - Do not keep "base rules" in core for generators to read; a generator owns its base rules.
 - Current state: in 3.2.0, the 6 stack skills (`clean-code`, `secure-coding-standards`, `code-simplification`, `unit-testing`, `root-cause-debugging`, `bug-hunt`) live entirely in pack slots and are generated per stack from Skill Factory generators; they have been removed from `plugins/core/skills/`.
+
+### Skill authoring & profile-binding standard (`core`, `packs`, `skill-factory`)
+
+1. **Unified flags & severities ([`plugins/shared_contracts/flags_and_statuses.md`](plugins/shared_contracts/flags_and_statuses.md)):**
+   - Never invent ad-hoc status flags or `P1`/`P2`/`P3` finding severities inside skills.
+   - Deterministic CLI tool gates are strictly `PASS` / `FAIL`.
+   - Reviewer findings use the single 3-tier scale: `BLOCKER` / `MAJOR` / `MINOR`.
+   - Design principles in `clean-code` are mandatory compliance (no per-rule severity column).
+2. **Cohesive `references/` structure (avoid micro-file fragmentation):**
+   - Keep `SKILL.md` concise (< 150 lines) as a routing table and rule index.
+   - Group `references/` into 3–4 cohesive topic files (for `clean-code`: `01-structure-naming-and-types.md`, `02-errors-lifecycle-and-logging.md`, `03-self-check-and-review.md`) instead of splitting into `01`, `02`, `02b`, `04`, `05`, `06`.
+   - Do not create an `assets/` folder unless the skill ships real static artifacts (HTML/CSS kits, JSON schemas, or seed fixtures).
+3. **Profile-specific rules live in `profiles/<profile>/` (`imespro`, `external-structured`, `external-standard`):**
+   - Keep base `SKILL.md` and `references/01..03.md` 100% stack-generic (never hardcode company-specific classes like `BaseScreen`, `app_ui_kit`, or `DataState` in base files).
+   - Place profile-specific contracts in `profiles/{imespro,external-structured,external-standard}/<descriptive-name>.md` (e.g. `foundation-contracts.md`) alongside `references/`, and place `<!-- {{profile_references}} -->` at the bottom of the Reference Guides table in `SKILL.md`.
+   - Each `.md` file inside `profiles/<profile>/` starts with `# <Title>` and `> Topic: <1-line description>`. When syncing to a workspace (`apply_workspace_profile` in [`src/coder_nexus/plugin_build.py`](src/coder_nexus/plugin_build.py), triggered by `install-plugin`, `setup flutter`, or the VS Code extension), all `*.md` files from `profiles/<active_profile>/` (recorded in `.superpowers/setup.json`) are copied into `references/`, injected as table rows at `<!-- {{profile_references}} -->` in `SKILL.md`, and `profiles/` is removed from the installed skill.
+4. **Tests verify structure and runtime behavior, not Markdown prose:**
+   - Write pytest suites for Python CLI/validator behavior, manifest/slot completeness, link resolution, and `apply_workspace_profile`. Do not write brittle substring assertions against English sentences in Markdown skills.

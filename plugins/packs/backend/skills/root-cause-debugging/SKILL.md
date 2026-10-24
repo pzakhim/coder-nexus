@@ -43,7 +43,7 @@ Whatever the pressure. Why: each one removes the protection that found the defec
 | D8 | Regression test at a correct seam: fails for the reported reason, passes with the fix, proven by undoing the fix | Without it the bug returns silently; an unproven red may never have been red |
 | D9 | Never green-wash (list above) | It hides the defect and removes the check that found it |
 | D10 | Environment vs code: database down, missing env var, unapplied migration, stale venv → `BLOCKED`, not code | Code "fixes" for environment problems break the code for everyone else |
-| D11 | Temporary instrumentation is tagged and removed; a grep for the tag returns nothing | Untagged prints survive into review and leak data |
+| D11 | Temporary instrumentation is tagged and removed; a search (`rg -n`) for the tag returns nothing | Untagged prints survive into review and leak data |
 | D12 | Time-box: 3 failed fix attempts → stop; behaviour/API/schema/dependency/architecture changes → `change-control` | Endless attempts burn time and drift out of scope |
 | D13 | Use the workspace's tracing tools and their mandatory rules (code intelligence if configured, else `rg -n`) | Tools trace call paths faster and safer than reading by hand |
 | D14 | Report the fix with evidence rows and what was ruled out; every fix is a new revision | Reviewers verify the reasoning, not just the diff |

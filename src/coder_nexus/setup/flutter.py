@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
+from ..plugin_build import apply_workspace_profile
 from .tools import STATE_FILE, confirm, non_interactive_env, run_tools
 
 CORE_GIT_ENV = "CODER_NEXUS_CORE_GIT"
@@ -428,6 +429,11 @@ def run_setup(
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
     print(f"      {STATE_FILE}")
+    installed_plugin = project / ".agents" / "plugins" / "coder-nexus"
+    if installed_plugin.is_dir():
+        activated = apply_workspace_profile(installed_plugin, selected_profile)
+        if activated:
+            print(f"      Synced profile '{selected_profile}' into {len(activated)} skill reference(s)")
 
     # [6/6] Verification Check
     print("[6/6] Verification check (--check)")

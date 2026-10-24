@@ -1,51 +1,64 @@
 ---
 name: clean-code
-description: Python clean-code rules for a Backend (Python 3.12+ / FastAPI / Pydantic v2 / SQLAlchemy 2.x async) service - no wrappers, no aliases or kept compatibility shims, module-level only for shared constants and settings, leading-underscore private helpers local to their module until a second module needs them, __init__.py exporting only what other packages import, intention-revealing snake_case naming, small focused units with guard clauses, no swallowed exceptions or bare except, typed models over raw dicts, no magic values, visible side effects, and self-checks with ruff, mypy and pytest. Use while the Code Writer implements or refactors Python code in a task, during the self-check before READY_FOR_REVIEW, and when the Code Reviewer grades code craft on a backend diff.
+description: Python clean-code standard for a Backend (Python 3.12+ / FastAPI / Pydantic v2 / SQLAlchemy 2.x async) service - deterministic CLI gates (ruff, mypy) plus mandatory design and semantic rules (no pass-through wrappers or aliases, module locality, explicit export surface, specific exceptions, pure imports, immutable value objects). Use while implementing, refactoring, self-checking before READY_FOR_REVIEW, and reviewing backend code.
 ---
 
 # Backend Clean Code (Python / FastAPI)
 
-Goal: Python code a newcomer reads correctly on first pass and changes in exactly one place. Every rule carries its reason; a finding without a technical reason is not a finding.
+Goal: Python code a newcomer reads correctly on first pass and changes in one place.
+All check flags (`PASS` / `FAIL`) and review severities (`BLOCKER` / `MAJOR` / `MINOR`) follow `shared_contracts/flags_and_statuses.md` and `work-item-contract` (`references/handoff-and-status.md` §9).
 
-Rules follow the C1–C17 baseline of `create-clean-code-skill` (carrying over core CC1–CC15). Graded on the rule-violation scale of [handoff-and-status §9](../work-item-contract/references/handoff-and-status.md).
+---
 
-## Rules
+## 1. Deterministic Tool Gates (`PASS` / `FAIL`)
 
-| # | Rule | Why | Severity | Enforced by |
-|---|---|---|---|---|
-| C1 | **One concept, one place.** No wrappers forwarding without behavior; no aliases or re-export shims kept for old names. | Every hop adds files to open for nothing; two names for one concept never converge. | P1 | Review; `rg` check |
-| C2 | **No dead code.** Remove unused functions, imports (ruff `F401`), variables (`F841`), orphan `TODO`, commented-out code. | Dead code is read, maintained and trusted as if it ran. | P1 | `ruff check` |
-| C3 | **No debug code.** No `print()`, `breakpoint()`, `import pdb`, temporary debug flags. | Noise in logs, data leakage, and a sign of an unverified change. | P1 | `ruff check` (`T10`, `T20`) |
-| C4 | **No swallowed errors.** Catch specific exceptions (`IntegrityError`, `httpx.TimeoutException`); re-raise with `from exc`. `except Exception` only at edges. | Swallowed errors turn loud failures into silent wrong data. | P1 | Review; `rg` check |
-| C5 | **Intention-revealing names.** `snake_case` modules, functions, variables; `PascalCase` classes; `UPPER_SNAKE` constants; verbs for functions. | Names are primary documentation; vague names duplicate concepts. | P2 | Review |
-| C6 | **Small, focused units.** Function ≤ ~30 lines, file ≤ ~300 lines, ≤ 3 parameters (or Pydantic model), nesting ≤ 2 with guard clauses. | Short units are easier to read, test and review. | P2 | `ruff` (C901, PLR09xx); Review |
-| C7 | **No magic values.** Use `enum.StrEnum`, `typing.Literal` or named module constants for statuses, roles, limits. | Scattered literals drift and break silently when one copy changes. | P2 | Review |
-| C8 | **Comments say why.** Explain non-obvious reasons and external constraints; never restate what the Python code clearly expresses. | "What" comments rot; "why" comments save the next reader an investigation. | P3 | Review |
-| C9 | **Full types.** Mypy-clean type hints for signatures and models; no bare `Any`; no unexplained `# type: ignore`. | Type hints catch structural mismatches without executing tests. | P2 | `mypy` |
-| C10 | **Change only task scope.** No drive-by renames, reformatting or refactoring of untouched files. Debt outside diff goes to Concerns. | Unrelated edits bury the real change in review. | P2 | Review |
-| C11 | **Workspace contracts win.** The workspace's configured tools, line length, error hierarchy, DI, and conventions override generic advice. | Generic advice against a verified workspace contract creates two competing styles. | P1 | Review |
-| C12 | **Visible side effects.** No database connection, network call, file I/O or `os.environ` read at import/module load (except settings object). | Import-time I/O breaks unit tests, Alembic migrations, and startup order. | P2 | Review |
-| C13 | **Explicit state changes.** Prefer immutable Pydantic models / frozen dataclasses; mutate only where ownership is explicit. | Mutable global or shared state causes order-dependent test failures and race conditions. | P3 | Review |
-| C14 | **Self-check before done.** Run formatter, linter, type checker, targeted greps, and affected unit tests; report each evidence row. | A rule without an executed check is a wish; an unrun check is NOT_RUN. | P1 | `evidence-standard` |
-| C15 | **No meaningless globals.** Module level holds only shared constants and the settings object; no mutable caches, registries or `global`. | Global mutable state leaks between test cases and async request workers. | P1 mutable, else P2 | `rg` check; Review |
-| C16 | **Helper locality.** Helper used in one module is `_snake_case` in that module. Move only when a second module imports it. Never `utils.py`. | Underscore signals internal scope; generic buckets become junk drawers. | P1 public internal, else P2 | Review |
-| C17 | **Export surface.** `__init__.py` is empty by default; an explicit `__all__` lists only the symbols other packages actually import (tests included); no wildcard imports (`from .x import *`); never export private helpers or test hooks. | Every export is a contract to maintain; wildcards hide origins and leak internals. | P1 leaked internal, else P2 | `ruff check` (`F403`); each `__all__` name has an importer outside the package; Review |
+Installed and configured by `coder-nexus setup tools --pack backend`. Every check below is **binary (`exit 0` = `PASS`, `exit != 0` = `FAIL`)** and must pass before `READY_FOR_REVIEW`:
 
-## Which file to read
+| Tool Gate | Command | Enforces Rules Automatically |
+|---|---|---|
+| **Linter & Complexity** | `uv run ruff check .` | Unused imports/variables (**C2**: `F401`, `F841`), debug `print`/`breakpoint` (**C3**: `T10`, `T20`), bare/blind except (**C4**: `E722`, `BLE001`), naming (**C5**: `N`), cyclomatic complexity (**C6**: `C90`), wildcard imports (**C17**: `F403`) |
+| **Formatter** | `uv run ruff format --check .` | Consistent formatting across touched files |
+| **Static Type Checker** | `uv run mypy .` | Full type annotations, no unguarded `Any`, no unused `# type: ignore` (**C9**) |
+
+---
+
+## 2. Core Design & Craft Principles (Mandatory Compliance)
+
+Rules written below govern design and semantics that static linters cannot infer automatically. When writing or reviewing code, **every rule below is mandatory to follow**:
+
+| # | Principle | Why | Verification |
+|---|---|---|---|
+| **C1** | **One concept, one place.** No pass-through wrappers forwarding without behavior; no compatibility aliases or re-export shims kept for old names. | Every hop adds files to open for nothing; two names for one concept never converge. | Review; `rg` check |
+| **C2** | **No dead code.** Remove unused functions, imports, variables, orphan `TODO`s, and commented-out code blocks. | Dead code is read, maintained, and trusted as if it ran. | `ruff check` (`F401`, `F841`) + Review |
+| **C3** | **No debug leftovers.** No `print()`, `breakpoint()`, `import pdb`, or temporary debug flags in committed code. | Noise in logs, potential data leakage, and sign of an unverified change. | `ruff check` (`T10`, `T20`) |
+| **C4** | **No swallowed errors.** Catch specific exceptions (`IntegrityError`, `httpx.TimeoutException`); re-raise domain errors with `from exc`. `except Exception` only at top-level worker/middleware boundaries with structured logging. | Swallowed errors turn loud failures into silent corrupted data. | `ruff check` (`E722`, `BLE001`) + Review |
+| **C5** | **Intention-revealing names.** `snake_case` modules, functions, variables; `PascalCase` classes; `UPPER_SNAKE` constants; verb phrases for functions, `is_/has_/can_/should_` for booleans. | Names are primary documentation; vague names (`data`, `info`, `process`) hide intent. | `ruff check` (`N`) + Review |
+| **C6** | **Small, focused units.** Function ≤ ~30 lines, file ≤ ~300 lines, ≤ 3 parameters (group cohesive inputs into a Pydantic model/dataclass), nesting ≤ 2 using guard clauses. | Short units with flat control flow are easier to read, test, and review. | `ruff check` (`C90`) + Review |
+| **C7** | **No magic values.** Use `enum.StrEnum`, `typing.Literal`, or named constants for statuses, roles, limits, and timeouts. | Scattered literals drift and break silently when one copy changes. | Review |
+| **C8** | **Comments explain WHY.** Document non-obvious business rationale, invariants, and external constraints; never restate what the Python syntax already says. | "What" comments rot; "why" comments save future readers an investigation. | Review |
+| **C9** | **Full static types.** Explicit type hints on all signatures and models; no bare `Any`; no `# type: ignore[code]` without an inline justification. | Type hints catch contract mismatches before runtime. | `mypy` |
+| **C10** | **Scope discipline.** Modify only files within the approved task/phase scope. Record out-of-scope legacy debt in `Concerns` instead of doing drive-by edits. | Unrelated edits bury the real change in review and create merge conflicts. | `git diff` + Review |
+| **C11** | **Workspace contracts win.** Honor the workspace's configured `pyproject.toml`, error hierarchy, DI (`Depends`), and logging conventions over generic advice. | Competing styles fragment the codebase. | Review |
+| **C12** | **Import-time purity.** No database connection, network call, file I/O, or `os.environ` read at module import time (settings load via `pydantic-settings` + DI). | Import-time side effects break unit test collection, Alembic migrations, and startup order. | Review |
+| **C13** | **Explicit state changes.** Use `frozen=True` dataclasses / immutable Pydantic models for value objects; mutate state only where ownership is explicit. | Shared mutable state causes order-dependent test failures and async race conditions. | Review |
+| **C14** | **Self-check before handoff.** Execute all CLI gates (`ruff`, `mypy`, `rg`, `pytest`) on the committed revision and record each evidence row (`PASS` / `FAIL`). | An unrun check is `NOT_RUN`, never `PASS`. | `evidence-standard` |
+| **C15** | **No mutable module globals.** Module level holds only true constants (`Final`) and logger; never module-level mutable dicts/lists/caches/registries or `global`. | Mutable module state leaks across async workers and test cases. | `rg` check + Review |
+| **C16** | **Helper locality.** A helper used in one module stays private (`_snake_case`) in that module. Move only when a second module imports it, into the owning domain module—never create `utils.py` or `helpers.py`. | Leading underscore enforces internal scope; generic utility buckets become junk drawers. | Review |
+| **C17** | **Explicit export surface.** `__init__.py` is empty by default; if an explicit `__all__` is used, it lists only the symbols other packages actually import; no wildcard imports (`from .x import *`); never export `_private` helpers or test hooks. | Every export is a public contract to maintain; wildcards hide origins and leak internals. | `ruff check` (`F403`) + `rg` check + Review |
+
+---
+
+## 3. Reference Guides
 
 | Topic | Reference |
 |---|---|
-| Naming conventions and glossary | [01 — Naming](references/01-naming.md) |
-| Thresholds, wrappers, globals, locality, exports | [02 — Size and structure](references/02-size-and-structure.md) |
-| Splitting functions or modules over limit | [02b — Splitting](references/02b-splitting.md) |
-| Exceptions, error contracts, structured logging | [03 — Errors and logging](references/03-errors-and-logging.md) |
-| Types, Pydantic vs dataclass, magic values, comments | [04 — Types, constants, comments](references/04-types-constants-comments.md) |
-| Step-by-step commands before hand-off | [05 — Self-check](references/05-self-check.md) |
-| Review severity and grading | [06 — Review severity](references/06-review-severity.md) |
+| Naming, size thresholds, splitting, wrappers, globals, helper locality, exports, static types, constants, and comments | [01 — Structure, Naming & Types](references/01-structure-naming-and-types.md) |
+| Domain exceptions, error chaining, import-time/lifespan purity, and structured logging | [02 — Errors, Lifecycle & Logging](references/02-errors-lifecycle-and-logging.md) |
+| Pre-handoff CLI gates (`PASS` / `FAIL`) and review grading (`BLOCKER` / `MAJOR` / `MINOR`) | [03 — Self-Check & Review](references/03-self-check-and-review.md) |
 
-## Relationship with other skills
+## 4. Relationship with Other Skills
 
-- **Placement and layers**: `{{slot:clean-architecture}}` decides where split pieces go (modules, domains, ports).
-- **Simplifying code**: `{{slot:code-simplification}}` handles smell removal after tests pass.
-- **Security risks**: `{{slot:secure-coding-standards}}` handles authorization, SQL injection, secrets, and sanitization.
-- **Debugging and tests**: `{{slot:root-cause-debugging}}` fixes failing checks; `{{slot:unit-testing}}` drives unit tests.
+- **Layer boundaries & placement**: `{{slot:clean-architecture}}` (enforced via `uv run lint-imports`).
+- **Post-green refactoring**: `{{slot:code-simplification}}`.
+- **Security rules**: `{{slot:secure-coding-standards}}` (and `uv run pip-audit`).
+- **Debugging & unit tests**: `{{slot:root-cause-debugging}}` and `{{slot:unit-testing}}`.

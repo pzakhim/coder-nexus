@@ -52,6 +52,7 @@ Detailed profile guidelines:
    - `external-standard`: the Client has no established foundation to reuse.
 3. Record `mode`, `core_source`, evidence paths and selection rationale in the design. Resolve genuine ambiguity with the user; do not downgrade a broken iMESPro dependency to external to bypass setup.
 4. Only for `imespro`, run `coder-nexus setup flutter --check` in the Client root. `STATUS: READY` permits proceeding; otherwise report `BLOCKED` and the required setup repair. External profiles never run company setup or require company GUIDE files.
+5. Across all profiles (`imespro`, `external-structured`, `external-standard`), verify the Flutter developer toolset (`flutter_lints`, `very_good_analysis`, `dart_code_linter`, `mocktail`, `bloc_test`, `analysis_options`, `ripgrep`, `mockoon-cli`) with `coder-nexus setup tools --pack flutter --check` (or install missing tools via `coder-nexus setup tools --pack flutter -y`).
 
 ### Shared skill dispatch
 Shared skills define the job; these profile references define foundation policy. Company examples/templates in Clean Architecture, design, unit testing and UI references apply only to `imespro`. External structured work uses the approved Client Core Mapping; external standard work uses standard Flutter and only necessary layers. Never introduce `BaseScreen`, `DataState`, `ApiService`, `AppLogger`, `Equatable`, Cubit or a DI library solely because a company example mentions it.

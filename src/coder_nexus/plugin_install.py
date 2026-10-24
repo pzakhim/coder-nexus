@@ -12,11 +12,13 @@ from pathlib import Path
 from .plugin_build import (
     LEGACY_PLUGINS,
     PLUGIN_NAME,
+    apply_workspace_profile,
     available_packs,
     build_variant,
     combo_key,
     load_pack,
     read_stack_file,
+    read_workspace_profile,
     write_stack_file,
 )
 
@@ -95,6 +97,7 @@ def _install_plugin_projection(
     repo_root: Path,
     workspace_agents: bool = False,
     plugins_dir: Path | None = None,
+    profile: str | None = None,
 ) -> str:
     """Install core + `packs` built from source into the plugin folder `destination`.
 
@@ -102,6 +105,7 @@ def _install_plugin_projection(
     """
     plugins_dir = plugins_dir or repo_root / "plugins"
     packs = sorted(set(packs.split("+") if isinstance(packs, str) else packs))
+    active_profile = profile or (read_workspace_profile(destination.parent.parent.parent) if workspace_agents else None)
     manifest = _read_json(plugins_dir / "core" / "bundle_manifest.json")
     shared_contracts = plugins_dir / "shared_contracts"
     if not (shared_contracts / "api_handshake_protocol.md").is_file():
@@ -120,6 +124,8 @@ def _install_plugin_projection(
         "packs": packs,
         "agents_location": "workspace" if workspace_agents else "plugin",
     }
+    if active_profile:
+        metadata["profile"] = active_profile
     existing = _read_json(destination / "installed_version.json") if destination.is_dir() else {}
     if existing == metadata:
         return "unchanged"
@@ -129,6 +135,8 @@ def _install_plugin_projection(
         files = built / "files"
         plugin_rel = _read_json(built / "projection.json")["managed"][0]
         staged_plugin = files / plugin_rel
+        if active_profile:
+            apply_workspace_profile(staged_plugin, active_profile, plugins_dir)
         runtime_config = {
             "mcpServers": {
                 "coder-nexus": {

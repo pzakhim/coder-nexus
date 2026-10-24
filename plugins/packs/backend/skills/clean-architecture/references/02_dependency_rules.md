@@ -13,9 +13,9 @@ The direction is `main → api → services → repositories → models`, with `
 | Schemas never import ORM classes | The contract silently follows the table (a new column appears in responses) |
 | Core imports nothing from `app` | Import cycles at startup; settings that depend on business code |
 
-## 2. Enforce with import-linter (when the workspace has it)
+## 2. Enforce with import-linter (default via `setup tools`)
 
-If `import-linter` is already a dev dependency, keep these contracts in `pyproject.toml` and run `lint-imports` (with the workspace prefix, for example `uv run lint-imports`; cwd: backend root). Adding import-linter to a workspace that does not have it is a `D-NN` with its own task (new dependency, `pyproject.toml` and lock file in scope).
+`import-linter` is installed by default via `coder-nexus setup tools --pack backend`. Keep these contracts in `pyproject.toml` and run `lint-imports` (with the workspace prefix, for example `uv run lint-imports`; cwd: backend root) to verify layer boundaries automatically.
 
 ```toml
 [tool.importlinter]
@@ -60,11 +60,11 @@ forbidden_modules = ["app.api", "app.services", "app.repositories", "app.models"
 Run from the backend root; each command must print nothing.
 
 ```bash
-grep -rnE "^\s*(from|import) (fastapi|starlette)" app/services app/repositories app/models app/schemas app/core
-grep -rnE "^\s*from app\.(repositories|models)(\.| )" app/api/routers
-grep -rnE "^\s*from app\.schemas" app/repositories app/models
-grep -rnE "^\s*from app\.models(\.| )" app/schemas | grep -v "app\.models\.enums"
-grep -rnE "^\s*from app\.(api|services|repositories|models|schemas|db)" app/core
+rg -n "^\s*(from|import) (fastapi|starlette)" app/services app/repositories app/models app/schemas app/core
+rg -n "^\s*from app\.(repositories|models)(\.| )" app/api/routers
+rg -n "^\s*from app\.schemas" app/repositories app/models
+rg -n "^\s*from app\.models(\.| )" app/schemas | rg -v "app\.models\.enums"
+rg -n "^\s*from app\.(api|services|repositories|models|schemas|db)" app/core
 ```
 
 Record the command and its empty output as the evidence row for an architecture check (`evidence-standard`). A hit outside the task's scope is legacy debt: report it in Concerns, do not fix it in this task (`{{slot:clean-code}}` C10).

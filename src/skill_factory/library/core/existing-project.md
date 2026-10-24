@@ -8,7 +8,7 @@ Before proposing anything, look for what the project already decided:
 
 ```bash
 ls .agents/skills .claude/skills 2>/dev/null
-grep -rliE "clean.?code|architecture|folder.?structure|boundar" CLAUDE.md AGENTS.md docs .agents .claude 2>/dev/null
+rg -l -i "clean.?code|architecture|folder.?structure|boundar" CLAUDE.md AGENTS.md docs .agents .claude 2>/dev/null
 ```
 
 - A `clean-code` skill (or similar) usually owns **naming and size thresholds**. Use its numbers in `04` and link to it instead of the defaults; state who owns what.
@@ -29,7 +29,7 @@ Before renaming, moving or deleting any file of the existing skill:
 
 1. List inbound links from the rest of the repo:
    ```bash
-   grep -rnoE "<skill-dir>/(references|scripts|assets)/[A-Za-z0-9_./-]+" --include='*.md' --include='*.py' --include='*.sh' . | grep -v node_modules | grep -v '^./<skill-dir>/'
+   rg -n -o "<skill-dir>/(references|scripts|assets)/[A-Za-z0-9_./-]+" -g "*.md" -g "*.py" -g "*.sh" . | rg -v node_modules | rg -v '^./<skill-dir>/'
    ```
 2. Show the user the list and ask: update those links, or keep the old file names.
 3. Check `git status` for uncommitted changes in the skill and in files you would touch. Read the **working copy** (not `HEAD`), and before deleting a modified file confirm every change in `git diff HEAD -- <file>` is carried into the new files.

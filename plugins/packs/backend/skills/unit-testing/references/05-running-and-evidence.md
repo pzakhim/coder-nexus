@@ -21,9 +21,9 @@ Run from the folder holding `pyproject.toml` (the service root; in a monorepo, t
 | After the task, the touched module | `uv run pytest tests/unit/application/test_orders.py -q` |
 | Phase end, full unit suite | `uv run pytest tests/unit -q` |
 | Lint and types on test code too | `uv run ruff check tests app` and `uv run mypy app tests` (when the workspace runs mypy on tests) |
-| Coverage (only if the workspace already measures it) | `uv run pytest tests/unit --cov=app --cov-report=term-missing` |
+| Coverage (`pytest-cov`, installed by default) | `uv run pytest tests/unit --cov=app --cov-report=term-missing -q` |
 
-Do not introduce a coverage gate (`--cov-fail-under`) without a plan task. Reason: a coverage threshold is a project decision (`D-NN`), and coverage counts lines run, not behaviors proven.
+Do not introduce a new coverage failure threshold (`--cov-fail-under`) without a plan task. Reason: a strict threshold number is a project decision (`D-NN`), and coverage counts lines run, not behaviors proven.
 
 The focused command must match the task-level check in `incremental-implementation` and the task's **Acceptance Criteria** line. Reason: the reviewer reruns exactly that command on the same revision.
 
@@ -32,7 +32,7 @@ The focused command must match the task-level check in `incremental-implementati
 - The `-v` output lists `tests/unit/...::test_<name> PASSED` (or `FAILED` on the red run).
 - The summary line count rose by the number of tests you added: read `N passed, M skipped`.
 - A skip, `xfail`, `xpass`, a deselected test, a missing dependency or `no tests ran` (exit code 5) is **not** a pass and not a red.
-- If the workspace uses `pytest-randomly`, record the printed seed of a failing run and rerun with `-p randomly --randomly-seed=<seed>`. Reason: an order-dependent failure must be reproducible; disabling the plugin (`-p no:randomly`) hides it.
+- `pytest-randomly` is installed by default via `coder-nexus setup tools --pack backend` to catch hidden state ordering bugs; record the printed seed of a failing run and rerun with `-p randomly --randomly-seed=<seed>`. Reason: an order-dependent failure must be reproducible; disabling the plugin (`-p no:randomly`) hides it.
 
 ## Red and green
 

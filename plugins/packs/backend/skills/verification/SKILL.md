@@ -30,13 +30,13 @@ cwd = the service root holding `pyproject.toml`. Run in this order; a later gate
 | G1 | Format | `uv run ruff format --check .` | ruff is configured or listed as a dev dependency |
 | G2 | Lint | `uv run ruff check .` | same |
 | G3 | Types | `uv run mypy <package>` (or the `files` set in `[tool.mypy]`) | mypy is configured or a dev dependency |
-| G4 | Unit tests | `uv run pytest tests/unit -q` | always when `tests/unit` exists |
-| G5 | Migrations | on a disposable DB: `uv run alembic upgrade head`, then `uv run alembic check` | the phase adds or changes models or migrations; always on the closing phase |
+| G4 | Unit tests | `uv run pytest tests/unit -q` (runs with `pytest-asyncio` and `pytest-randomly` installed by `setup tools`) | always when `tests/unit` exists |
+| G5 | Migrations | on a disposable DB: `uv run alembic upgrade head`, `uv run alembic check`, and `uv run pytest --test-alembic -q` (when configured) | the phase adds or changes models or migrations; always on the closing phase |
 | G6 | Integration tests | `uv run pytest tests/integration -q` against the test database | repositories, routers or migrations changed |
-| G7 | Coverage | `uv run pytest --cov=<package> --cov-report=term-missing -q` | only if the workspace sets `fail_under` or `--cov-fail-under` |
+| G7 | Coverage | `uv run pytest --cov=<package> --cov-report=term-missing -q` (`pytest-cov` installed by `setup tools`) | always on phase end to inspect uncovered branches; enforces `fail_under` when configured |
 | G8 | OpenAPI diff | export `app.openapi()` and diff against the agreed contract ([gates](references/gates.md#g8-openapi-diff)) | a route, schema or status code changed |
 
-Extra gates the workspace already configures (`lint-imports` for layer contracts, `pip-audit`) run too; `{{slot:secure-coding-standards}}` owns the audit command. Never add a gate, a threshold or a rule set the workspace does not have. Reason: verification proves the agreed bar, it does not move it.
+Additional standard tools installed by `coder-nexus setup tools --pack backend` (`uv run lint-imports` from `import-linter` when `[tool.importlinter]` is present in `pyproject.toml`, and `uvx pip-audit` / `uv run pip-audit` when dependencies change per `{{slot:secure-coding-standards}}`) run alongside G1–G8. Never invent a custom threshold the workspace does not have. Reason: verification proves the agreed bar, it does not move it.
 
 ## 3. Reading results
 

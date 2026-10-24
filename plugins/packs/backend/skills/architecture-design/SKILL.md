@@ -80,7 +80,7 @@ Every endpoint gets Pass/Default, Fail and (for lists) Empty rows agreed with th
 - Inside a phase, tasks follow the layer order of `{{slot:clean-architecture}}`: model → migration → repository → schemas → service → router + wiring, each with a test, each **Expected** naming the status code, body, row or test name it proves.
 - A schema or contract change that running consumers use follows expand → migrate → contract across phases.
 - Task checks are real invocations with cwd, detected from the workspace (prefix `uv run` / `poetry run` / venv): `ruff check .`, `mypy app`, `pytest tests/services/test_orders.py -q`, `alembic upgrade head`.
-- `PHASE-00` prepares the database, migrations, seed data, test accounts and provider sandboxes: [references/04_phase00_backend.md](references/04_phase00_backend.md).
+- `PHASE-00` prepares the database, migrations, seed data, test accounts, and provider sandboxes or Mockoon mocks: [references/04_phase00_backend.md](references/04_phase00_backend.md).
 
 ## 7. Handshake commitment
 

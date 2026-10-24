@@ -2,17 +2,15 @@
 
 Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see `~/.claude/skill-factory/core/sync-protocol.md`). Bump rules: `~/.claude/skill-factory/core/versioning.md`.
 
-## Unreleased
+## 1.2.0 — 2026-10-24
 
-- Added: C15 no meaningless module-level or global variables — only shared constants read by two or more functions and the settings object; no mutable global state; a one-function constant lives in that function. Default P1 when mutable global state is added, else P2 → `references/02-size-and-structure.md` (`be/02-…`, `fe/02-…`) "Module-level and global variables". (minor)
-- Added: C16 helper locality — private in its file until a second file needs it, then moved to the owning module and named for what it does; no `utils`/`helpers`/`common`/`misc`. Default P1 when internals get exposed, else P2 → `02` "Helper locality". (minor)
-- Added: C17 export surface — entry files export only symbols other modules import; no wildcard export; no internals. Default P1 when internals are exposed, else P2 → `02` "Export surface". (minor)
-- Changed: C15–C17 join the never-"not adopted" set; generated `SKILL.md` rule table gains three rows. (minor)
-- Added: `05-self-check` "Structure greps" row and C15–C17 rows in `references/self-check-by-stack.md`; Step 1 detection row for module-level state, generic helper files and entry files; checklist items. (patch)
-- Added: generator `references/sources.md` (external sources and ideas not adopted). (patch)
+- Consolidated generated `references/` from 6+ fragmented files into 3 cohesive topic files: `01-structure-naming-and-types.md`, `02-errors-lifecycle-and-logging.md`, and `03-self-check-and-review.md`.
+- Split `SKILL.md` into (1) Deterministic Tool Gates (`PASS` / `FAIL`) and (2) Mandatory Core Design Principles (dropping per-rule severity column).
+- Unified review severities to `BLOCKER` / `MAJOR` / `MINOR` (`shared_contracts/flags_and_statuses.md`) and replaced stack-specific generator references with stack-neutral `base-rules.md` and `discovery-and-checks.md`.
+- Added `<!-- {{profile_references}} -->` marker support for `profiles/{imespro,external-structured,external-standard}/`.
 
-**Affects:** `SKILL.md`, `references/02-size-and-structure.md` (`be/02-…`, `fe/02-…`), `references/05-self-check.md` (`be/05-…`, `fe/05-…`).
-**Migration:** find the workspace's private convention, package entry files, wildcard exports, mutable module-level state and generic `utils`/`helpers` files. Add rows C15–C17 to the `SKILL.md` rule table, add the three sections to 02 with the workspace's real conventions, add the structure-grep row to 05. List existing violations as drift; fix them only inside tasks that touch those files. Existing rule IDs and sections keep their names; non-breaking.
+**Affects:** `SKILL.md`, `references/01-structure-naming-and-types.md`, `references/02-errors-lifecycle-and-logging.md`, `references/03-self-check-and-review.md`.
+**Migration:** merge `01`+`02`+`02b`+`04` into `01-structure-naming-and-types.md`, `03` into `02-errors-lifecycle-and-logging.md`, and `05`+`06` into `03-self-check-and-review.md`; update `SKILL.md` to use `PASS`/`FAIL` tool gates and `BLOCKER`/`MAJOR`/`MINOR` review severities.
 
 ## 1.1.0 — 2026-10-23
 

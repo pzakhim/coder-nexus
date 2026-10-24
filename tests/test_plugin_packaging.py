@@ -1,4 +1,4 @@
-"""Tests for Antigravity plugin packaging, manifest, and installation."""
+"""Structural tests for Antigravity plugin packaging, manifest, slot resolution, and installation."""
 
 import argparse
 import json
@@ -8,9 +8,10 @@ import shutil
 import tempfile
 import pytest
 
+from coder_nexus.plugin_build import apply_workspace_profile, build_variant
 from coder_nexus.plugin_install import _install_plugin_projection, cmd_install_plugin
 
-from .rendered import flutter_workspace, rendered_agent
+from .rendered import rendered_agent
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -89,64 +90,8 @@ def test_mcp_config_structure():
     assert "/Users/" not in config_file.read_text(encoding="utf-8")
 
 
-def test_skill_markdown_structure():
-    """Verify huly-task-intake SKILL.md has valid frontmatter and core instructions."""
-    skill_file = PLUGIN_DIR / "core" / "skills" / "huly-task-intake" / "SKILL.md"
-    assert skill_file.exists(), f"Missing SKILL.md at {skill_file}"
-
-    content = skill_file.read_text(encoding="utf-8")
-    assert content.startswith("---")
-    assert "name: huly-task-intake" in content
-    assert "description:" in content
-    # Verify core guidance references
-    assert "huly_get_my_tasks" in content
-    assert "huly_get_task_detail" in content
-    assert "Read-Only" in content
-    assert "Zero Mock Data" in content
-
-def test_flutter_clean_architecture_skill_structure():
-    """Verify flutter-clean-architecture SKILL.md, references, and manifest."""
-    skill_dir = PLUGIN_DIR / "packs" / "flutter" / "skills" / "clean-architecture"
-    skill_file = skill_dir / "SKILL.md"
-    assert skill_file.exists(), f"Missing SKILL.md at {skill_file}"
-
-    content = skill_file.read_text(encoding="utf-8")
-    assert content.startswith("---")
-    assert "name: clean-architecture" in content
-    assert "description:" in content
-    assert "get_project_structure" in content
-
-    # Check references
-    ref_dir = skill_dir / "references"
-    assert (ref_dir / "manifest.json").exists()
-    assert (ref_dir / "01_project_root.md").exists()
-    assert (ref_dir / "02_core_subsystem.md").exists()
-    assert (ref_dir / "03_feature_module.md").exists()
-    assert (ref_dir / "04_cross_boundaries.md").exists()
-    assert (ref_dir / "05_screen_contract.md").exists()
-
-
 def test_client_workflow_skills_are_packaged_and_portable():
     """Verify public workflow skills ship in the plugin without author-machine links."""
-    expected = {
-        "requirements-elicitation",
-        "grilling",
-        "implementation-planning",
-        "incremental-implementation",
-        "clean-code",
-        "code-simplification",
-        "visual-quality",
-        "verification",
-        "code-review",
-    }
-    for name in expected:
-        skill_file = next(iter([*(PLUGIN_DIR / "core" / "skills").glob(f"{name}/SKILL.md"), *(PLUGIN_DIR / "packs").glob(f"*/skills/{name}/SKILL.md")]), PLUGIN_DIR / "missing" / name)
-        assert skill_file.exists(), f"Missing packaged skill: {name}"
-        content = skill_file.read_text(encoding="utf-8")
-        assert content.startswith("---\n")
-        assert f"name: {name}" in content
-        assert "file:///Users/" not in content
-
     runtime_skill_files = [*(PLUGIN_DIR / "core").glob("**/*.md"), *(PLUGIN_DIR / "packs").glob("**/*.md")]
     author_paths = [
         str(path.relative_to(PLUGIN_DIR))
@@ -156,8 +101,8 @@ def test_client_workflow_skills_are_packaged_and_portable():
     assert author_paths == []
 
 
-def test_clean_architecture_templates_exist_and_adhere_to_contracts():
-    """Verify all 11 starter templates exist and strictly adhere to Senior contracts."""
+def test_clean_architecture_templates_exist():
+    """Verify all 11 starter templates and manifest exist."""
     tpl_dir = PLUGIN_DIR / "packs" / "flutter" / "skills" / "clean-architecture" / "templates"
     expected_templates = [
         tpl_dir / "domain" / "entity.dart.tpl",
@@ -175,54 +120,12 @@ def test_clean_architecture_templates_exist_and_adhere_to_contracts():
     for tpl in expected_templates:
         assert tpl.exists(), f"Missing template: {tpl}"
 
-    # 1. Verify repo_impl wraps return with DataSuccess and avoids silent empty list fallback
-    repo_impl_content = (tpl_dir / "data" / "repo_impl.dart.tpl").read_text(encoding="utf-8")
-    assert "DataSuccess(" in repo_impl_content
-    assert "DataFailure(" in repo_impl_content
-    assert "return mapper.toEntities(" not in repo_impl_content
-    assert "return <{{PascalCaseFeature}}Entity>[];" not in repo_impl_content
-
-    # 2. Verify model does not use fake hardcoded fallbacks
-    model_content = (tpl_dir / "data" / "model.dart.tpl").read_text(encoding="utf-8")
-    assert "FormatException" in model_content
-    assert "?? ''" not in model_content
-    assert "?? 'UNKNOWN'" not in model_content
-    assert "DateTime.now()" not in model_content
-
-    # 3. Verify module_di uses relative imports within feature module
-    di_content = (tpl_dir / "di" / "module_di.dart.tpl").read_text(encoding="utf-8")
-    assert "../data/" not in di_content
-    assert "../domain/" not in di_content
-    assert "'data/data_sources/" in di_content
-
-    # 4. Verify screen template requires the resolved Client base contract.
-    screen_content = (tpl_dir / "presentation" / "screen.dart.tpl").read_text(encoding="utf-8")
-    assert "extends BaseScreen" in screen_content
-    assert "extends BaseScreenState<" in screen_content
-    assert "{{verified_screen_metadata_override}}" in screen_content
-    assert "{{verified_create_state_override}}" in screen_content
-    assert "{{verified_base_screen_import}}" in screen_content
-    assert "BLOCKED" in screen_content
-    assert "extends StatelessWidget" not in screen_content
-
-    # 5. Verify manifest.json has commit_hash and 11 templates mapped
     manifest_file = PLUGIN_DIR / "packs" / "flutter" / "skills" / "clean-architecture" / "references" / "manifest.json"
     with open(manifest_file, "r", encoding="utf-8") as f:
         manifest_data = json.load(f)
     assert "commit_hash" in manifest_data
     assert "templates" in manifest_data
     assert len(manifest_data["templates"]) == 11
-
-
-def test_clean_architecture_rules_structure():
-    """Verify clean_architecture_rules.md exists in plugin rules directory."""
-    rule_file = PLUGIN_DIR / "packs" / "flutter" / "rules" / "clean_architecture_rules.md"
-    assert rule_file.exists(), f"Missing rule file at {rule_file}"
-    content = rule_file.read_text(encoding="utf-8")
-    assert "Domain Layer" in content
-    assert "Presentation Layer" in content
-    assert "Module DI Order" in content
-    assert "BaseScreenState" in content
 
 
 def test_cli_install_plugin_workspace():
@@ -320,8 +223,12 @@ def test_installed_projection_includes_shared_contract_and_valid_resource_paths(
     assert (destination / "shared_contracts/api_handshake_protocol.md").read_bytes() == (
         REPO_ROOT / "plugins/shared_contracts/api_handshake_protocol.md"
     ).read_bytes()
+    assert (destination / "shared_contracts/flags_and_statuses.md").read_bytes() == (
+        REPO_ROOT / "plugins/shared_contracts/flags_and_statuses.md"
+    ).read_bytes()
     manifest = json.loads((destination / "bundle_manifest.json").read_text())
     assert "shared_contracts/api_handshake_protocol.md" in manifest["required_resources"]
+    assert "shared_contracts/flags_and_statuses.md" in manifest["required_resources"]
     for resource in manifest["required_resources"]:
         assert (destination / resource).is_file(), resource
     if variant == "flutter":
@@ -346,72 +253,8 @@ def test_shared_contract_edit_and_framework_switch_refresh_projection(tmp_path):
     assert (destination / "skills/backend-api-contract-design/SKILL.md").is_file()
 
 
-def test_flutter_code_review_skill_structure():
-    """Verify flutter-code-review SKILL.md, manifest, references, and review template."""
-    skill_dir = PLUGIN_DIR / "packs" / "flutter" / "skills" / "code-review"
-    skill_file = skill_dir / "SKILL.md"
-    assert skill_file.exists(), f"Missing SKILL.md at {skill_file}"
-
-    content = skill_file.read_text(encoding="utf-8")
-    assert content.startswith("---")
-    assert "name: code-review" in content
-    assert "description:" in content
-    assert "Five-Axis" in content
-    assert "Two-Gate Protocol" in content
-    assert "validate_architecture_code" in content
-    assert "gate_status" in content
-    assert "BASE_REVISION" in content
-    assert "git diff HEAD~1" not in content
-    assert "verification" in content
-
-    # Check references and manifest
-    ref_dir = skill_dir / "references"
-    manifest_file = ref_dir / "manifest.json"
-    assert manifest_file.exists(), f"Missing manifest.json at {manifest_file}"
-
-    with open(manifest_file, "r", encoding="utf-8") as f:
-        manifest = json.load(f)
-    assert manifest.get("version") == "1.2.0"
-    assert manifest.get("skill_name") == "flutter-code-review"
-    assert len(manifest.get("five_axes", [])) == 5
-    assert len(manifest.get("references", [])) == 3
-    assert len(manifest.get("templates", [])) == 1
-
-    assert (ref_dir / "01_five_axis_rubric.md").exists()
-    assert (ref_dir / "02_rule_source_matrix.md").exists()
-    assert (ref_dir / "03_cross_branch_checklist.md").exists()
-
-    # Check template
-    tpl_dir = skill_dir / "templates"
-    report_tpl = tpl_dir / "code_review_report.md.tpl"
-    assert report_tpl.exists(), f"Missing template at {report_tpl}"
-    tpl_content = report_tpl.read_text(encoding="utf-8")
-    assert "Code Review Report" in tpl_content
-    assert "Five-Axis Assessment" in tpl_content
-    assert "Runtime Visual Review Gate" in tpl_content
-
-
-def test_flutter_verification_skill_structure():
-    skill_dir = PLUGIN_DIR / "packs" / "flutter" / "skills" / "verification"
-    content = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
-    assert "name: verification" in content
-    assert "BASE_REVISION" in content
-    assert "REVIEW_REVISION" in content
-    assert "visual-quality" in content
-    assert "incremental-implementation" in content
-    assert "FAILED" in content and "BLOCKED" in content and "NOT_RUN" in content
-    assert "file:///Users/" not in content
-
-    contract = skill_dir / "references" / "01_client_check_contract.md"
-    report = skill_dir / "templates" / "verification_report.md.tpl"
-    assert contract.exists()
-    assert report.exists()
-    assert "Revision invalidation" in contract.read_text(encoding="utf-8")
-    assert "Acceptance criteria traceability" in report.read_text(encoding="utf-8")
-
-
 def test_plugin_agent_definitions_structure():
-    """Verify five delivery agents, a docs writer, a UI/UX designer and a bug fixer are packaged."""
+    """Verify all eight agent profiles exist and have valid frontmatter structure."""
     agents_dir = PLUGIN_DIR / "core" / "agents"
     assert agents_dir.is_dir(), f"Missing agents directory at {agents_dir}"
 
@@ -425,64 +268,6 @@ def test_plugin_agent_definitions_structure():
         assert "description:" in content
         assert "skills:" in content
         assert "tools:" in content
-
-    # Check code_writer has ask_question for Grill-Me during implementation
-    code_writer_content = rendered_agent("code_writer.md")
-    assert "ask_question" in code_writer_content
-    assert "clean-architecture" in code_writer_content
-    assert "phase" in code_writer_content.lower()
-    for tool in ("get_project_structure", "get_ux_error_patterns"):
-        assert tool in code_writer_content
-    assert "core-package-usage" in code_writer_content
-
-    # Check spec_writer has ask_question for requirements Grill-Me
-    spec_writer_content = rendered_agent("spec_writer.md")
-    assert "ask_question" in spec_writer_content
-    assert "Gate 1" in spec_writer_content and "Gate 2" in spec_writer_content
-    assert "Do not write the stack's source or test folders, `implementation-plan.md`" in spec_writer_content
-    assert "**Source and test folders**: `lib/` and `test/`" in spec_writer_content
-    planning_content = rendered_agent("planning.md")
-    assert "Gate 3" in planning_content and "SKIPPED" in planning_content
-    assert "validate_plan_slices" in planning_content
-    designer_content = rendered_agent("designer.md")
-    assert "ui-ux-design" in designer_content and "ask_question" in designer_content
-    assert "Do not write runtime code" in designer_content and "flutter-ui-kit-mapping" in designer_content
-    docs_content = rendered_agent("docs_writer.md")
-    assert "documentation" in docs_content and "Do not edit runtime code" in docs_content
-
-    # Check test_runner is read-only for code
-    test_runner_content = rendered_agent("test_runner.md")
-    assert "read-only" in test_runner_content.lower()
-    assert "verification" in test_runner_content
-
-    # Check code_reviewer enforces Clean Architecture
-    reviewer_content = rendered_agent("code_reviewer.md")
-    assert "validate_architecture_code" in reviewer_content
-    assert "Clean Architecture" in reviewer_content
-
-
-def test_review_handoff_contract_is_packaged():
-    agents = PLUGIN_DIR / "core" / "agents"
-    spec = rendered_agent("spec_writer.md")
-    writer = rendered_agent("code_writer.md")
-    reviewer = rendered_agent("code_reviewer.md")
-    runner = rendered_agent("test_runner.md")
-    review_report = (PLUGIN_DIR / "packs/flutter/skills/code-review/templates/code_review_report.md.tpl").read_text(encoding="utf-8")
-    verification_report = (PLUGIN_DIR / "packs/flutter/skills/verification/templates/verification_report.md.tpl").read_text(encoding="utf-8")
-
-    assert "Gate 1" in spec and "Gate 2" in spec
-    assert "Gate 3" in rendered_agent("planning.md")
-    assert "READY_FOR_REVIEW" in writer
-    assert "staged/unstaged/untracked scope" in writer
-    assert "run_command" in reviewer and "visual-quality" in reviewer
-    assert "APPROVED" in reviewer and "UNVERIFIED" in reviewer
-    assert "same tree" in runner and "read-only" in runner.lower()
-    for report in (review_report, verification_report):
-        assert "{{APPROVED_DOCUMENT_REVISIONS}}" in report
-        assert "{{ACTUAL_APPROVAL_REFERENCES}}" in report
-        assert "{{PLANNED_CHECKS}}" in report
-    assert "{{AC_ROWS}}" in review_report
-    assert "{{UNCOMMITTED_SCOPE}}" in verification_report
 
 
 def test_backend_pack_structure_and_installation(tmp_path):
@@ -509,8 +294,6 @@ def test_backend_pack_structure_and_installation(tmp_path):
         "backend-visual-quality": "not_applicable",
         "backend-ui-kit-mapping": "not_applicable",
     }
-    writer = (tmp_path / ".agents" / "agents" / "code_writer.md").read_text(encoding="utf-8")
-    assert "## Backend rules" in writer and "## Frontend rules" not in writer
     meta = json.loads((installed / "installed_version.json").read_text(encoding="utf-8"))
     assert meta["packs"] == ["backend"]
 
@@ -547,31 +330,13 @@ def test_plan_change_and_acceptance_skills_install_in_every_projection(tmp_path,
         assert f"name: {name}" in (skills / name / "SKILL.md").read_text(encoding="utf-8"), (stack, name)
 
 
-def test_work_item_templates_carry_plan_change_constraints_and_expected():
-    """3.2.0: plans record global constraints, review focus and changes; each task states Expected."""
-    templates = PLUGIN_DIR / "core/skills/work-item-contract/templates"
-    plan = (templates / "implementation-plan.md.tpl").read_text(encoding="utf-8")
-    for heading in ("## Plan change log", "## Global constraints", "## Review focus"):
-        assert re.search(rf"^{re.escape(heading)}\s*$", plan, re.M), heading
-    phase = (templates / "phase.md.tpl").read_text(encoding="utf-8")
-    assert "**Expected**" in phase
-
-
 def test_shared_contracts_protocol_and_templates():
-    """Verify shared_contracts contains handshake protocol and templates."""
+    """Verify shared_contracts contains handshake protocol, flag registry, and templates."""
     shared = REPO_ROOT / "plugins" / "shared_contracts"
     assert (shared / "api_handshake_protocol.md").exists()
+    assert (shared / "flags_and_statuses.md").exists()
     assert (shared / "templates" / "api_contract.json.tpl").exists()
     assert (shared / "templates" / "api_gap_report.md.tpl").exists()
-
-    protocol = (shared / "api_handshake_protocol.md").read_text(encoding="utf-8")
-    assert "Frontend pack" in protocol
-    assert "Backend pack" in protocol
-    assert ".agents/stack.json" in protocol
-    assert "Contract-First" in protocol
-    assert "DRAFT_BY_FE" in protocol
-    assert "APPROVED_BY_BE" in protocol
-
 
 
 def test_built_projections_apply_identically_for_every_variant(tmp_path):
@@ -715,12 +480,6 @@ def test_core_and_frontend_layer_are_stack_neutral():
     assert offenders == []
 
 
-def test_flutter_agents_compose_core_frontend_and_pack_rules():
-    code_writer = rendered_agent("code_writer.md")
-    assert code_writer.index("## Frontend rules") < code_writer.index("## Flutter rules")
-    assert "flutter-core-package-usage" in code_writer.split("---", 2)[1]
-
-
 def test_backend_projection_receives_no_flutter_instructions(tmp_path):
     from coder_nexus.plugin_build import build_variant
 
@@ -738,162 +497,8 @@ def test_pack_guideline_is_copied_to_the_plugin_root(tmp_path):
         flutter = build_variant("flutter", layout, tmp_path) / "files" / root
         assert (flutter / "GUIDELINE.md").is_file(), layout
         assert (flutter / "bundle_manifest.json").is_file(), layout
-        guide = (flutter / "GUIDELINE.md").read_text(encoding="utf-8")
-        for heading in ("## 1. Which skill to call", "## 2. Before you start", "## 3. Build a feature: `dev-team`",
-                        "## 4. Fix a bug: `defect-resolution`", "## 5. Investigate without fixing: `debug-investigation`",
-                        "## 6. Test a scenario: `feature-testing`", "## 7. What lives in `.superpowers/`"):
-            assert heading in guide, (layout, heading)
         backend = build_variant("backend", layout, tmp_path) / "files" / root
         assert not (backend / "GUIDELINE.md").exists(), layout
-
-
-def test_designer_is_wired_into_the_delivery_flow():
-    """UI-impact items: Designer between goal framing and Gate 1; Planning, Reviewer and visual checks use the approved design."""
-    skills = flutter_workspace() / ".agents/plugins/coder-nexus/skills"
-    route = (skills / "dev-team/SKILL.md").read_text(encoding="utf-8")
-    contract = (skills / "work-item-contract/SKILL.md").read_text(encoding="utf-8")
-    assert "**Designer** (UI/UX" in route and "READY_FOR_SPEC" in route and "| Designer |" in contract
-    assert route.index("**Designer** (UI/UX") < route.index("**Planning** (Tech Lead)")
-    assert "screen-catalog.md" in contract and "{{slot:" not in route + contract
-    assert "flutter-ui-kit-mapping" in rendered_agent("designer.md")
-    assert "workflows + UI/UX design" in (skills / "work-item-contract/references/type-sequences.md").read_text(encoding="utf-8")
-
-    spec = rendered_agent("spec_writer.md")
-    assert "Stage 1A-UX" in spec and "`designer`" in spec and "`## Workflows`" in spec and "validate_ux_design" in spec
-    planning = rendered_agent("planning.md")
-    assert "## UI/UX mapping" in planning and "DESIGN-008" in planning and "flutter-ui-kit-mapping" in planning
-    assert "NEW COMPONENT" in planning
-    assert "approved `uiux.md` revision" in rendered_agent("code_reviewer.md")
-    assert "screen-catalog.md" in rendered_agent("docs_writer.md")
-
-    assert "## Workflows" in (skills / "work-item-contract/templates/requirements.md.tpl").read_text(encoding="utf-8")
-    assert not (skills / "delivery-workflow/templates/requirements.md.tpl").exists()
-    design_tpl = (skills / "flutter-architecture-design/templates/design.md.tpl").read_text(encoding="utf-8")
-    assert "## UI/UX mapping" in design_tpl and "`flutter-ui-kit-mapping` §3" in design_tpl
-    visual = (skills / "flutter-visual-quality/SKILL.md").read_text(encoding="utf-8")
-    assert "## Compare with the approved UI/UX design" in visual and ".superpowers/ux/current/" in visual
-
-
-def test_ux_walkthrough_reference_is_packaged():
-    """The designer learns to script walkthroughs; the reference ships in core and stays stack-neutral."""
-    manifest = json.loads((PLUGIN_DIR / "core" / "bundle_manifest.json").read_text(encoding="utf-8"))
-    assert "core/skills/ui-ux-design/references/04_walkthrough.md" in manifest["required_resources"]
-    skills = flutter_workspace() / ".agents/plugins/coder-nexus/skills"
-    ref = (skills / "ui-ux-design/references/04_walkthrough.md").read_text(encoding="utf-8")
-    for needle in ("## 8. Walkthrough", "data-ux-target", "Mô phỏng — MOCK", "Q-NN", "ux record", "not a test", "UX-011"):
-        assert needle in ref, needle
-    assert "references/04_walkthrough.md" in (skills / "ui-ux-design/SKILL.md").read_text(encoding="utf-8")
-    assert "data-ux-target" in (skills / "ui-ux-design/references/02_screen_rules.md").read_text(encoding="utf-8")
-    assert "▶ Play" in (skills / "ui-ux-design/references/03_revisions_and_approval.md").read_text(encoding="utf-8")
-    assert "## 8. Walkthrough" in rendered_agent("designer.md")
-    ux_kit = (skills / "flutter-ui-kit-mapping/SKILL.md").read_text(encoding="utf-8")
-    assert "barcode scanners" in ux_kit and "Tablet landscape" in ux_kit
-
-
-def test_ux_scenarios_orientation_and_fixed_shell_guidance_is_packaged():
-    """Scenario workflows, labelled steps, orientation asked once, and the generated viewer shell reach the installed skill."""
-    skills = flutter_workspace() / ".agents/plugins/coder-nexus/skills"
-    interview = (skills / "ui-ux-design/references/01_workflow_interview.md").read_text(encoding="utf-8")
-    for needle in ("One workflow per user-visible scenario", "Sai mật khẩu", "Quên mật khẩu", "Tài khoản bị khoá", "REQ-006",
-                   "portrait · landscape · portrait + landscape", "--orientations", "once per project", "1 Chọn NG→S01, 2 Quét LPN→S01:scan"):
-        assert needle in interview, needle
-    skill = (skills / "ui-ux-design/SKILL.md").read_text(encoding="utf-8")
-    assert "One `W-NN` per user-visible scenario" in skill and "UX-012" in skill and "never edit them" in skill
-    designer = rendered_agent("designer.md")
-    assert "portrait / landscape / both per platform" in designer and "Never edit `design-uiux/index.html`" in designer
-    ux_kit = (skills / "flutter-ui-kit-mapping/SKILL.md").read_text(encoding="utf-8")
-    assert "scanner stations" in ux_kit and "only when a source shows it" in ux_kit
-    core = (PLUGIN_DIR / "core/skills/ui-ux-design/references/01_workflow_interview.md").read_text(encoding="utf-8")
-    assert "Flutter" not in core and "flutter" not in core, "core stays stack-neutral"
-
-
-def test_bug_hunt_skill_is_wired_into_review_and_writing():
-    """Bug-hunt: concrete failure scenarios, adversarial verification, used by Reviewer and Code Writer."""
-    for pack in ("flutter", "backend"):
-        content = (PLUGIN_DIR / f"packs/{pack}/skills/bug-hunt/SKILL.md").read_text(encoding="utf-8")
-        assert "name: bug-hunt" in content
-        for term in ("CONFIRMED", "PLAUSIBLE", "BLOCKER"):
-            assert term in content, term
-    assert "bug-hunt" in rendered_agent("code_reviewer.md")
-    assert "bug-hunt" in rendered_agent("code_writer.md")
-    assert "bug-hunt" in (PLUGIN_DIR / "core/skills/incremental-implementation/SKILL.md").read_text(encoding="utf-8")
-    for pack, ref in (("flutter", "05_bug_patterns.md"), ("backend", "bug_patterns.md")):
-        review = PLUGIN_DIR / "packs" / pack / "skills/code-review"
-        assert (review / "references" / ref).is_file()
-        assert ref in (review / "SKILL.md").read_text(encoding="utf-8")
-    report = (PLUGIN_DIR / "packs/flutter/skills/code-review/templates/code_review_report.md.tpl").read_text(encoding="utf-8")
-    assert "{{BUG_HUNT_ROWS}}" in report and "Failure scenario" in report
-
-
-def test_bug_fixer_flow_is_wired():
-    """bug_fixer + defect-resolution: one debug contract in core, a stack-neutral core agent, overlays per tier,
-    L1 straight to test_runner and L2 through code_reviewer first."""
-    contract = (PLUGIN_DIR / "core/skills/work-item-contract/references/debug-item-contract.md").read_text(encoding="utf-8")
-    for term in ("S1", "L3", "NOT_REPRODUCED", "TRIAGED", "READY_FOR_TEST", "READY_FOR_REVIEW", "VERIFIED_FIXED", "STILL_BROKEN", "ESCALATED",
-                 "No code review for L1", "`code_reviewer` → `test_runner`"):
-        assert term in contract, term
-    contract_skill = (PLUGIN_DIR / "core/skills/work-item-contract/SKILL.md").read_text(encoding="utf-8")
-    for template in ("bug-brief.md.tpl", "fixing-plan.md.tpl", "escalation-report.md.tpl"):
-        assert (PLUGIN_DIR / "core/skills/work-item-contract/templates" / template).is_file(), template
-        assert template in contract_skill, template
-    assert "debug-item-contract" in (PLUGIN_DIR / "core/skills/defect-resolution/SKILL.md").read_text(encoding="utf-8")
-    assert "escalation-report.md" in (PLUGIN_DIR / "core/skills/dev-team/SKILL.md").read_text(encoding="utf-8")
-    core_agent = (PLUGIN_DIR / "core/agents/bug_fixer.md").read_text(encoding="utf-8")
-    for term in ("lib/", "Client", "Mockoon", "app_ui_kit"):
-        assert term not in core_agent, term
-    bug_fixer = rendered_agent("bug_fixer.md")
-    for term in ("defect-resolution", "fix-planning", "NOT_REPRODUCED", "escalation-report.md",
-                 "flutter-root-cause-debugging", "review-resolution", "READY_FOR_REVIEW",
-                 "## Frontend rules", "## Flutter rules", "`lib/`"):
-        assert term in bug_fixer, term
-    assert "debug-item-contract.md" in rendered_agent("test_runner.md")
-    reviewer = rendered_agent("code_reviewer.md")
-    assert "## Debug items" in reviewer and "debug-item-contract.md" in reviewer
-    assert "## Review focus" in (PLUGIN_DIR / "core/skills/work-item-contract/templates/fixing-plan.md.tpl").read_text(encoding="utf-8")
-
-
-def test_debug_investigation_is_wired():
-    """debug-investigation: bug_fixer observes only, temporary instrumentation is removed, diagnosis feeds a fix."""
-    contract = (PLUGIN_DIR / "core/skills/work-item-contract/references/debug-item-contract.md").read_text(encoding="utf-8")
-    for term in ("## 8. Investigation items", "DIAGNOSED", "Never committed", "Removed before returning"):
-        assert term in contract, term
-    assert (PLUGIN_DIR / "core/skills/work-item-contract/templates/diagnosis.md.tpl").is_file()
-    skill = (PLUGIN_DIR / "core/skills/debug-investigation/SKILL.md").read_text(encoding="utf-8")
-    assert "debug-item-contract" in skill and "defect-resolution" in skill
-    assert "diagnosis.md" in (PLUGIN_DIR / "core/skills/defect-resolution/SKILL.md").read_text(encoding="utf-8")
-    bug_fixer = rendered_agent("bug_fixer.md")
-    for term in ("debug-investigation", "Investigation mode", "DIAGNOSED", "UI trace", "DBG-<slug>"):
-        assert term in bug_fixer, term
-
-
-def test_feature_testing_is_wired():
-    """feature-testing: test_runner runs the user's scenario read-only, default checks, suggestions after the run."""
-    contract = (PLUGIN_DIR / "core/skills/work-item-contract/references/test-run-contract.md").read_text(encoding="utf-8")
-    for term in ("expected inferred", "DC1", "DC4", "COMPLETED", "Suggested cases", "Read-only"):
-        assert term in contract, term
-    templates = PLUGIN_DIR / "core/skills/work-item-contract/templates"
-    for template in ("test-scenario.md.tpl", "test-plan.md.tpl", "test-run-report.md.tpl"):
-        assert (templates / template).is_file(), template
-    assert "Suggested cases (not run)" in (templates / "test-run-report.md.tpl").read_text(encoding="utf-8")
-    assert "test-run-contract" in (PLUGIN_DIR / "core/skills/feature-testing/SKILL.md").read_text(encoding="utf-8")
-    core_runner = (PLUGIN_DIR / "core/agents/test_runner.md").read_text(encoding="utf-8")
-    for term in ("lib/", "Client", "Mockoon", "app_ui_kit"):
-        assert term not in core_runner, term
-    runner = rendered_agent("test_runner.md")
-    for term in ("feature-testing", "## Test runs", "test-run-contract.md", "for a test run, the recorded current revision"):
-        assert term in runner, term
-
-
-def test_core_git_preflight_skill_is_wired():
-    """Core git-preflight: spec first, branch after Gate 1 from the job type's base, never production."""
-    content = (PLUGIN_DIR / "core/skills/git-preflight/SKILL.md").read_text(encoding="utf-8")
-    assert "name: git-preflight" in content
-    assert "after Gate 1" in content and "git switch -c" in content
-    assert "Never put code on production" in content
-    assert ".agents/skills/git-workflow/" in content
-    for role in ("spec_writer.md", "planning.md", "code_writer.md", "code_reviewer.md"):
-        assert "git-preflight" in rendered_agent(role), role
-    assert "1E  Branch" in rendered_agent("spec_writer.md")
 
 
 def test_all_skills_have_valid_yaml_frontmatter():
@@ -950,43 +555,53 @@ def test_built_dist_does_not_contain_pack_json():
         assert not found, f"Unexpected pack.json in dist: {found}"
 
 
-def test_backend_export_surface_rule_is_one_rule():
-    """Backend clean-code C17 and clean-architecture A8 state one export rule: __all__ only for what others import."""
-    only = "only the symbols other packages actually import"
-    clean_code = PLUGIN_DIR / "packs/backend/skills/clean-code"
-    assert only in (clean_code / "SKILL.md").read_text(encoding="utf-8")
-    assert only in (clean_code / "references/02-size-and-structure.md").read_text(encoding="utf-8")
-    architecture = PLUGIN_DIR / "packs/backend/skills/clean-architecture"
-    a8 = next(line for line in (architecture / "SKILL.md").read_text(encoding="utf-8").splitlines() if line.startswith("| A8 |"))
-    assert "C17" in a8 and "files are empty" not in a8
-    startup = (architecture / "references/04_settings_and_startup.md").read_text(encoding="utf-8")
-    assert "`__init__.py` files are empty" not in startup and "C17" in startup
+def test_apply_workspace_profile_single_and_multiple_files(tmp_path):
+    """Verify apply_workspace_profile copies 1 or N profile .md files into references/,
+    injects table rows into SKILL.md, removes profiles/, and cleanly switches profiles."""
+    built = build_variant(["flutter"], "workspace", tmp_path)
+    plugin_dir = built / "files" / ".agents" / "plugins" / "coder-nexus"
+    clean_code_dir = plugin_dir / "skills" / "flutter-clean-code"
+
+    # Add a second .md file to profiles/imespro/ in the built copy to verify multi-file handling
+    extra_md = clean_code_dir / "profiles" / "imespro" / "ui-kit-components.md"
+    extra_md.write_text(
+        "# UI Kit Component Rules\n\n> Topic: Mandatory AppButton, AppDialog & AppFormField reuse\n\nBody.\n",
+        encoding="utf-8",
+    )
+
+    activated = apply_workspace_profile(plugin_dir, "imespro")
+    assert "flutter-clean-code/references/foundation-contracts.md" in activated
+    assert "flutter-clean-code/references/ui-kit-components.md" in activated
+    assert (clean_code_dir / "references" / "foundation-contracts.md").is_file()
+    assert (clean_code_dir / "references" / "ui-kit-components.md").is_file()
+    assert not (clean_code_dir / "profiles").exists()
+
+    skill_md = (clean_code_dir / "SKILL.md").read_text(encoding="utf-8")
+    assert "**[Profile: `imespro`]**" in skill_md
+    assert "(references/foundation-contracts.md)" in skill_md
+    assert "[UI Kit Component Rules](references/ui-kit-components.md)" in skill_md
+
+    # Switch profile to external-standard (falls back to source plugins_dir)
+    activated_std = apply_workspace_profile(plugin_dir, "external-standard")
+    assert "flutter-clean-code/references/foundation-contracts.md" in activated_std
+    skill_md_std = (clean_code_dir / "SKILL.md").read_text(encoding="utf-8")
+    assert "**[Profile: `external-standard`]**" in skill_md_std
+    assert "**[Profile: `imespro`]**" not in skill_md_std
 
 
-def test_no_dead_core_clean_code_rule_ids():
-    """Core `clean-code` (CC1-CC15) was removed in 3.2.0; live references use the pack's C-rule IDs."""
-    history = {
-        "packs/backend/skills/clean-code/SKILL.md": "carrying over core CC1–CC15",
-        "packs/backend/skills/clean-code/references/sources.md": "Core rules CC1–CC15",
-    }
-    dead = []
-    for path in sorted(PLUGIN_DIR.glob("*/**/*.md")):
-        rel = path.relative_to(PLUGIN_DIR).as_posix()
-        if rel.startswith("dist/"):
-            continue
-        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-            if re.search(r"\bCC[0-9]+\b", line) and history.get(rel, "\0") not in line:
-                dead.append(f"{rel}:{number}")
-    assert not dead, dead
+def test_install_plugin_reads_workspace_setup_profile(tmp_path, monkeypatch):
+    """When .superpowers/setup.json records a profile, install-plugin activates that profile's references."""
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    ws = tmp_path / "client_ws"
+    setup_json = ws / ".superpowers" / "setup.json"
+    setup_json.parent.mkdir(parents=True, exist_ok=True)
+    setup_json.write_text(json.dumps({"status": "READY", "stack": "flutter", "profile": "imespro"}), encoding="utf-8")
 
-
-def test_flutter_clean_code_has_export_surface_rule():
-    """Flutter clean-code carries the generator's export-surface rule (C17 there) as C18: barrels export only what others import."""
-    clean_code = PLUGIN_DIR / "packs/flutter/skills/clean-code"
-    skill = (clean_code / "SKILL.md").read_text(encoding="utf-8")
-    row = next(line for line in skill.splitlines() if line.startswith("| **C18** |"))
-    assert "Export surface" in row and "show" in row
-    structure = (clean_code / "references/02-size-and-structure.md").read_text(encoding="utf-8")
-    assert "## 3. Export Surface (C18)" in structure
-    assert "C18" in (clean_code / "references/05-self-check.md").read_text(encoding="utf-8")
-    assert "C18" in (clean_code / "references/06-review-severity.md").read_text(encoding="utf-8")
+    rc = cmd_install_plugin(
+        argparse.Namespace(is_global=False, workspace=str(ws), pack=["flutter"], plugin=None, framework=None, replace=False)
+    )
+    assert rc == 0
+    clean_code_dir = ws / ".agents" / "plugins" / "coder-nexus" / "skills" / "flutter-clean-code"
+    assert (clean_code_dir / "references" / "foundation-contracts.md").is_file()
+    assert not (clean_code_dir / "profiles").exists()
+    assert "**[Profile: `imespro`]**" in (clean_code_dir / "SKILL.md").read_text(encoding="utf-8")

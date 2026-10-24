@@ -9,24 +9,24 @@ Read-only scan of the backend before Gate 2. Every command runs from the backend
 | Package manager | `ls uv.lock poetry.lock requirements*.txt 2>/dev/null` | `uv` / `poetry` / pip + venv, and the prefix every later command uses (`uv run`, `poetry run`, `.venv/bin/`) |
 | Python and dependency versions | `sed -n '/^\[project\]/,/^\[/p' pyproject.toml`; `uv run python -c "import fastapi, pydantic, sqlalchemy; print(fastapi.__version__, pydantic.VERSION, sqlalchemy.__version__)"` | Versions; whether `asyncpg`, `alembic`, `pydantic-settings`, `httpx`, `pytest-asyncio`, `import-linter` are present |
 | Official FastAPI skill | `backend-fastapi` §1 | Path of the bundled skill, or "pinned copy, installed X.Y.Z" |
-| Lint, format, type, test config | `grep -nE "^\[tool\.(ruff|mypy|pytest|importlinter|fastapi)" pyproject.toml` | Ruff rule sets, mypy strictness and plugins, `asyncio_mode`, test paths, entrypoint |
+| Lint, format, type, test config | `rg -n "^\[tool\.(ruff|mypy|pytest|importlinter|fastapi)" pyproject.toml` | Ruff rule sets, mypy strictness and plugins, `asyncio_mode`, test paths, entrypoint |
 | How the app starts | `[tool.fastapi]` entrypoint, `Dockerfile`, `docker-compose*.yml`, `Makefile`, `README` | The real start command for dev and tests |
 
 ## 2. Application structure
 
 | Look at | Where | Record |
 |---|---|---|
-| App factory and lifespan | `grep -rn "FastAPI(" app/`; open the file | `create_app` or module-level app; `lifespan=` or `on_event`; what is created at startup (engine, clients) |
-| Routers | `grep -rn "APIRouter(" app/`; `grep -rn "include_router" app/` | Prefix and tags per router, version prefix (`/api/v1`) if any, router-level dependencies |
-| Dependencies | `app/api/deps.py` or `grep -rn "Depends(" app/ \| head -40` | Session dependency, auth dependency (`get_current_user`), service builders, `Annotated` aliases |
-| Error handling | `grep -rn "exception_handler\|HTTPException" app/` | Error classes, the current error body shape, which status codes are mapped where |
-| Settings | `app/core/settings.py` (or `grep -rn "BaseSettings" app/`), `.env.example` | Field names (never values), required vs defaulted, `DATABASE_URI` name, provider key names |
+| App factory and lifespan | `rg -n "FastAPI\(" app/`; open the file | `create_app` or module-level app; `lifespan=` or `on_event`; what is created at startup (engine, clients) |
+| Routers | `rg -n "APIRouter\(" app/`; `rg -n "include_router" app/` | Prefix and tags per router, version prefix (`/api/v1`) if any, router-level dependencies |
+| Dependencies | `app/api/deps.py` or `rg -n "Depends\(" app/ \| head -40` | Session dependency, auth dependency (`get_current_user`), service builders, `Annotated` aliases |
+| Error handling | `rg -n "exception_handler|HTTPException" app/` | Error classes, the current error body shape, which status codes are mapped where |
+| Settings | `app/core/settings.py` (or `rg -n "BaseSettings" app/`), `.env.example` | Field names (never values), required vs defaulted, `DATABASE_URI` name, provider key names |
 | Auth model | The auth dependency and `app/core/security.py` | Credential type (bearer JWT, session cookie, API key), roles, how the actor's scope (owner, tenant, environment) is resolved |
 | Services | `ls app/services/` | Where business rules and commits live today (or that they live in routers - record it, do not fix it) |
-| Repositories and queries | `ls app/repositories/`; `grep -rn "select(\|session.query" app/ \| head -40` | SQLAlchemy 2 `select` vs legacy `query`, eager loading style, raw SQL |
+| Repositories and queries | `ls app/repositories/`; `rg -n "select\(|session\.query" app/ \| head -40` | SQLAlchemy 2 `select` vs legacy `query`, eager loading style, raw SQL |
 | Models | `ls app/models/`; open `base.py` and the tables the work item touches | Columns, types, nullability, FKs, unique constraints, scope columns, relationships and their `lazy` setting, naming convention |
-| Outbound providers | `grep -rn "httpx\|requests\." app/` | Provider clients, base-URL settings, timeouts, sandbox vs production keys |
-| Realtime | `grep -rn "EventSourceResponse\|StreamingResponse\|WebSocket" app/` | Existing streams, their auth and event format (`backend-realtime`) |
+| Outbound providers | `rg -n "httpx|requests\." app/` | Provider clients, base-URL settings, timeouts, sandbox vs production keys |
+| Realtime | `rg -n "EventSourceResponse|StreamingResponse|WebSocket" app/` | Existing streams, their auth and event format (`backend-realtime`) |
 
 If the layout differs from `{{slot:clean-architecture}}` (feature folders, `crud/` instead of `repositories/`), record the real layout as the convention the design follows.
 
@@ -46,7 +46,7 @@ If the layout differs from `{{slot:clean-architecture}}` (feature folders, `crud
 |---|---|---|
 | Layout | `ls tests/`; `find tests -name conftest.py` | Mirror of `app/` or by type (unit/integration) |
 | Database in tests | `conftest.py` | Real PostgreSQL test database or SQLite; created by `alembic upgrade head` or `create_all`; transaction-per-test rollback or truncation |
-| HTTP client | `grep -rn "ASGITransport\|TestClient" tests/` | `httpx.AsyncClient` with `ASGITransport`, or `TestClient` |
+| HTTP client | `rg -n "ASGITransport|TestClient" tests/` | `httpx.AsyncClient` with `ASGITransport`, or `TestClient` |
 | Auth in tests | fixtures named like `auth_headers`, `user_token`, factories | How a test acts as each role; where test credentials come from (fixtures, `.env.test`), never their values |
 | Baseline run (optional) | `uv run pytest -q` | Pass/fail count before the change, so later failures are attributable. A failing baseline is recorded, not fixed |
 

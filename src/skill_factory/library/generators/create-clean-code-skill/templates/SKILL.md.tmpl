@@ -1,38 +1,39 @@
 ---
 name: clean-code
-description: Clean-code standard of {{project_name}} - names, sizes, errors and logging, types, comments, dead/debug code, self-checks and review severities. Use whenever writing, changing or reviewing code in {{dirs}}.
+description: Clean-code standard of {{project_name}} - deterministic CLI gates, naming, size thresholds, errors and logging, static types, comments, dead/debug code, and review severities. Use whenever writing, changing, or reviewing code in {{dirs}}.
 ---
 
 # Clean Code — {{project_name}}
 
-<!-- GEN: Why: coders and reviewers both check the same rule table, so it must fit on one screen with severities and pointers. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Why: coders and reviewers both check the same rule table, so it must fit on one screen with tool gates, mandatory design principles, and reference pointers. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
 <!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
 
-Confirmed: {{date}} · Layout: {{layout}}
+## 1. Deterministic Tool Gates (`PASS` / `FAIL`)
 
-## Rules
+<!-- GEN: List the workspace's automated CLI checks (linter, formatter, complexity analyzer, type checker). Tool checks are binary (`exit 0` = `PASS`, `exit != 0` = `FAIL`). -->
+| Tool Gate | Command | Enforces Rules Automatically |
+|---|---|---|
+| {{tool_name}} | `{{tool_command}}` | {{enforced_rules}} |
 
-<!-- GEN: One row per rule from references/base-rules.md as adopted/adapted for this workspace (keep existing workspace rule IDs if any, P5). The "Why" is one clause in the workspace's terms. Mark rules enforced by a gate with that gate. -->
-| # | Rule | Why | Severity | Enforced by |
-|---|---|---|---|---|
-| {{id}} | {{rule}} | {{why}} | {{severity}} | {{gate_or_review}} |
+## 2. Core Design & Craft Principles (Mandatory Compliance)
 
-Severity: P1 blocks review · P2 finding · P3 suggestion. Reviewers grade only code changed in the phase.
+<!-- GEN: One row per rule from references/base-rules.md as adopted/adapted for this workspace (keep existing workspace rule IDs if any, P5). The "Why" is one clause in the workspace's terms. No per-rule Severity column: tool gates are PASS/FAIL and design principles are mandatory. -->
+| Rule | Principle | Why | Reference |
+|---|---|---|---|
+| {{id}} | {{rule}} | {{why}} | {{reference_link}} |
 
-## Which file to read
+Reviewers grade findings on the unified `BLOCKER` / `MAJOR` / `MINOR` scale (`shared_contracts/flags_and_statuses.md` §2) and evaluate only code changed in the phase.
 
-<!-- GEN: Flat: references/01–06. Branched: add a "Working in" column (be_dir → be/, fe_dir → fe/), shared/06. Remove rows for files merged away. -->
-| Doing | Read |
+## 3. Reference Guides
+
+| Topic | Reference |
 |---|---|
-| Naming something | `{{ref_01}}` |
-| Is this too long / too nested? | `{{ref_02}}` |
-| Splitting it into pieces | `{{ref_02b}}` |
-| Handling or logging an error | `{{ref_03}}` |
-| Types, constants, comments | `{{ref_04}}` |
-| Before saying "done" | `{{ref_05}}` |
-| Grading a review finding | `{{ref_06}}` |
+| Naming, size thresholds, splitting, wrappers, globals, helper locality, exports, static types, constants, and comments | [01 — Structure, Naming & Types]({{ref_01}}) |
+| Error handling, boundary translation, pure import/render lifecycle, resource disposal, and structured logging | [02 — Errors, Lifecycle & Logging]({{ref_02}}) |
+| Pre-handoff CLI gates (`PASS` / `FAIL`) and review grading (`BLOCKER` / `MAJOR` / `MINOR`) | [03 — Self-Check & Review]({{ref_03}}) |
+<!-- {{profile_references}} -->
 
-## Relationship with other skills
+## 4. Relationship with Other Skills
 
 <!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md; link existing siblings or write "not set up in this workspace". -->
 - Where code goes and where split pieces land: {{clean_architecture_link}} (wins on conflict).

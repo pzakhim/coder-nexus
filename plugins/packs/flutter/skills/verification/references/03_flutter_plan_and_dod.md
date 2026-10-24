@@ -45,7 +45,7 @@ Every confirmed goal from `requirements.md` → `## 0. Goals` must reach at leas
 
 Use a golden harness only when approved and already available, or when its dependency addition is explicitly approved. Golden evidence supplements required runtime checks; it never proves live integration. Follow `{{slot:visual-quality}}`.
 
-- **Static Analysis Gate**: `flutter analyze` runs on affected files with 0 warnings, 0 errors, and 0 linter violations.
+- **Static Analysis & Metrics Gate**: `flutter analyze` (backed by `very_good_analysis` / `flutter_lints`) and `dart run dart_code_linter:metrics analyze lib` run on affected files with 0 warnings, 0 errors, and 0 linter/metrics violations.
 - **Developer Unit Tests** (`{{slot:unit-testing}}`):
   - Entity & Mapper unit tests: Verify transformation logic and null-safety.
   - UseCase unit tests: Verify delegation to Repository with mock parameters.

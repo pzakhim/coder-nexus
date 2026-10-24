@@ -57,11 +57,12 @@ def _snapshot(folder: Path) -> dict[str, str]:
 
 
 def test_catalog_defaults_and_optional_tools():
-    defaults = {t.name for t in tools.CATALOG["flutter"] if t.kind == "dev" and t.default}
-    assert defaults == {"flutter_lints", "mocktail", "bloc_test"}
-    assert {t.name for t in tools.CATALOG["backend"] if t.kind == "dev" and t.default} == {"pytest", "pytest-asyncio", "ruff", "mypy"}
-    optional = {t.name for pack in tools.CATALOG.values() for t in pack if not t.default}
-    assert {"very_good_analysis", "dart_code_linter", "pytest-cov", "import-linter"} <= optional
+    flutter_dev = {t.name for t in tools.CATALOG["flutter"] if t.kind == "dev" and t.default}
+    assert flutter_dev == {"flutter_lints", "mocktail", "bloc_test", "very_good_analysis", "dart_code_linter"}
+    assert all(t.default for t in tools.CATALOG["flutter"])
+    backend_dev = {t.name for t in tools.CATALOG["backend"] if t.kind == "dev" and t.default}
+    assert backend_dev == {"pytest", "pytest-asyncio", "ruff", "mypy", "pytest-cov", "import-linter", "pytest-alembic", "pytest-randomly"}
+    assert all(t.default for t in tools.CATALOG["backend"])
 
 
 def test_check_is_read_only_and_reports_missing(tmp_path, all_on_path, commands, capsys):
@@ -85,9 +86,9 @@ def test_unknown_only_name_is_rejected_with_valid_names(tmp_path, capsys):
 def test_flutter_install_adds_missing_dev_deps_and_analysis_options(tmp_path, all_on_path, commands):
     project = _flutter_project(tmp_path, "  mocktail: ^1.0.0\n")
     assert tools.run_tools(project, "flutter", assume_yes=True) == 0
-    assert ["flutter", "pub", "add", "--dev", "flutter_lints", "bloc_test"] in commands
+    assert ["flutter", "pub", "add", "--dev", "flutter_lints", "bloc_test", "very_good_analysis", "dart_code_linter"] in commands
     options = (project / "analysis_options.yaml").read_text(encoding="utf-8")
-    assert "include: package:flutter_lints/flutter.yaml" in options
+    assert "include: package:very_good_analysis/analysis_options.yaml" in options
     for rule in ("avoid_print", "prefer_const_constructors", "cancel_subscriptions", "close_sinks", "empty_catches"):
         assert rule in options
     after_first = _snapshot(project)
@@ -98,7 +99,7 @@ def test_flutter_install_adds_missing_dev_deps_and_analysis_options(tmp_path, al
 
 
 def test_existing_analysis_options_are_kept_and_only_completed(tmp_path, all_on_path, commands):
-    project = _flutter_project(tmp_path, "  flutter_lints: ^5.0.0\n  mocktail: ^1.0.0\n  bloc_test: ^9.0.0\n")
+    project = _flutter_project(tmp_path, "  flutter_lints: ^5.0.0\n  mocktail: ^1.0.0\n  bloc_test: ^9.0.0\n  very_good_analysis: ^6.0.0\n  dart_code_linter: ^1.0.0\n")
     (project / "analysis_options.yaml").write_text(
         "include: package:very_good_analysis/analysis_options.yaml\n\nlinter:\n  rules:\n    - avoid_print\n",
         encoding="utf-8",
@@ -113,7 +114,7 @@ def test_existing_analysis_options_are_kept_and_only_completed(tmp_path, all_on_
 
 def test_rules_named_only_in_comments_are_added(tmp_path, all_on_path, commands):
     """The `flutter create` template lists rules as comments; those are not enabled."""
-    project = _flutter_project(tmp_path, "  flutter_lints: ^5.0.0\n  mocktail: ^1.0.0\n  bloc_test: ^9.0.0\n")
+    project = _flutter_project(tmp_path, "  flutter_lints: ^5.0.0\n  mocktail: ^1.0.0\n  bloc_test: ^9.0.0\n  very_good_analysis: ^6.0.0\n  dart_code_linter: ^1.0.0\n")
     (project / "analysis_options.yaml").write_text(
         "include: package:flutter_lints/flutter.yaml\n\nlinter:\n  rules:\n"
         "    # avoid_print: false  # Uncomment to disable the `avoid_print` rule\n"
@@ -129,7 +130,7 @@ def test_rules_named_only_in_comments_are_added(tmp_path, all_on_path, commands)
 def test_backend_install_adds_missing_dev_deps_and_tool_sections(tmp_path, all_on_path, commands):
     project = _backend_project(tmp_path, '\n[tool.mypy]\nstrict = true\n')
     assert tools.run_tools(project, "backend", assume_yes=True) == 0
-    assert ["uv", "add", "--dev", "pytest-asyncio", "ruff", "mypy"] in commands
+    assert ["uv", "add", "--dev", "pytest-asyncio", "ruff", "mypy", "pytest-cov", "import-linter", "pytest-alembic", "pytest-randomly"] in commands
     pyproject = (project / "pyproject.toml").read_text(encoding="utf-8")
     assert "[tool.ruff.lint]" in pyproject
     assert pyproject.count("[tool.mypy]") == 1 and "strict = true" in pyproject

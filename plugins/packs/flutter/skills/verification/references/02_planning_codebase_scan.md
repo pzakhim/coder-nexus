@@ -2,8 +2,9 @@
 
 Planning runs this checklist during readiness and gap analysis (core `implementation-planning`, reference 01) before writing tasks for a Flutter Client.
 
-1. **Core packages (BaseScreen, use cases, paging, DataState, ApiService, UI kit)**:
-   - Read the approved profile via `{{slot:core-package-usage}}`: iMESPro runs setup and reads package guides; external-structured inspects Client mappings; external-standard inspects only needed framework/project APIs.
+1. **Core packages & developer tools (BaseScreen, use cases, paging, DataState, ApiService, UI kit, linters, test/mock tools)**:
+   - Read the approved profile via `{{slot:core-package-usage}}`: iMESPro runs `coder-nexus setup flutter --check` and reads package guides; external-structured inspects Client mappings; external-standard inspects only needed framework/project APIs.
+   - Check developer tools across all profiles with `coder-nexus setup tools --pack flutter --check` (ensuring `very_good_analysis`, `dart_code_linter`, `mocktail`, `bloc_test`, `ripgrep`, and `mockoon-cli` are ready; install missing tools via `coder-nexus setup tools --pack flutter -y`).
    - Only an iMESPro setup failure blocks on company dependencies. External profiles never run company setup or require its GUIDE files. Do not invent required missing APIs.
 2. **Routing & Screen Registry**:
    - Check the Client's router configuration.

@@ -78,7 +78,7 @@ Short form; every override with its reason and the safe pattern is in [reference
 
 1. Version and skill path (or the pinned-copy note) are in `codebase-notes.md`.
 2. Every FastAPI symbol you used exists in the installed version (import it once with the workspace prefix).
-3. No overridden pattern slipped in: `grep -rnE "sqlmodel|ORJSONResponse|UJSONResponse|on_event\(" app/` prints nothing, and every path operation in your diff that receives a session or a service dependency is `async def`.
+3. No overridden pattern slipped in: `rg -n "sqlmodel|ORJSONResponse|UJSONResponse|on_event\(" app/` prints nothing, and every path operation in your diff that receives a session or a service dependency is `async def`.
 4. Type and lint checks from `{{slot:verification}}` ran on the changed files (`ruff check .`, `mypy app`), each recorded as an evidence row (`evidence-standard`).
 
 ## References

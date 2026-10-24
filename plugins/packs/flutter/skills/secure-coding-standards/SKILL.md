@@ -24,13 +24,13 @@ Before requesting review for code handling authentication, network transport, or
 
 ```bash
 # 1. Check for hardcoded secrets, passwords, or tokens in source code
-git diff | grep -iE "(api_key|secret|password|bearer|auth_token)\s*=\s*['\"][A-Za-z0-9_\-]{8,}['\"]"
+git diff | rg -i "(api_key|secret|password|bearer|auth_token)\s*=\s*['\"][A-Za-z0-9_\-]{8,}['\"]"
 
 # 2. Check for disabled SSL verification
-git diff | grep -iE "badCertificateCallback\s*=\s*\(.*?\)\s*=>\s*true"
+git diff | rg -i "badCertificateCallback\s*=\s*\(.*?\)\s*=>\s*true"
 
 # 3. Check for plaintext logging of credentials
-git diff | grep -iE "AppLogger\..*?(token|password|auth|secret)"
+git diff | rg -i "AppLogger\..*?(token|password|auth|secret)"
 ```
 
 See [06-review-triggers](references/06-review-triggers.md) for full review triggers and audit steps.

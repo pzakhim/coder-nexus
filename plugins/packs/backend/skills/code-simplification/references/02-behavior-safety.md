@@ -6,7 +6,7 @@ Rules SM1, SM2, SM6 and SM7. Reason: a "simplification" that changes behavior is
 
 Read, for the code you are about to change:
 
-- **Callers**: `git grep -n "<name>" -- app tests`. Also search for string use (route names, `getattr`, settings keys, Celery/ARQ task names, `alembic` env imports) before deleting anything: dynamic use does not show in a symbol search.
+- **Callers**: `rg -n "<name>" app/ tests/`. Also search for string use (route names, `getattr`, settings keys, Celery/ARQ task names, `alembic` env imports) before deleting anything: dynamic use does not show in a symbol search.
 - **FastAPI wiring**: `Depends(...)` chains, `dependency_overrides` in tests, lifespan handlers, middleware and exception handlers that turn exceptions into responses.
 - **Side effects**: database writes, `session.commit()` / `flush()`, outbox or event publishing, cache writes, outbound HTTP calls, logging that audits.
 - **Error paths**: which exception is raised, which handler maps it, which status code and body the client sees.

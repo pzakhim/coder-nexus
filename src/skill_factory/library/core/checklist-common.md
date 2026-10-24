@@ -4,7 +4,7 @@
 - [ ] The user confirmed the gate item before any workspace file was written
 - [ ] Context Card complete; inferred values confirmed; related skills/docs/gates recorded (P1–P2)
 - [ ] Layout matches the workspace (flat / branched)
-- [ ] No `{{` and no `<!-- GEN:` left: `grep -rn -e '{{' -e '<!-- GEN:' .agents/skills/<skill>/`
+- [ ] No `{{` and no `<!-- GEN:` left: `rg -n -e '\{\{' -e '<!-- GEN:' .agents/skills/<skill>/`
 - [ ] English only (quoted section names of other skills excepted); each file < ~200 lines; custom block at the end
 - [ ] Project-specific rules kept; volatile facts only in incremental-adoption (P5)
 - [ ] Uncommitted changes carried over; inbound links updated or kept as agreed; 0 broken links (P3)

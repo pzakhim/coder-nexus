@@ -35,6 +35,7 @@ Run `{{slot:bug-hunt}}` on the fixed scope before the axes below; its dimension 
    - Run the test suite independently via `run_command` to verify all tests pass.
 4. **API Schema Contract Audit**:
    - Verify that endpoint request/response JSON schemas match 100% of `api_contract.json` (or `design.md` backend contract).
+   - When `3RD_PARTY_MOCKOON` is used, audit `mocks/<provider>_mockoon.json` against the agreed trigger table in `design.md`, verify via `mockoon-cli` / `curl`, and confirm `app/` implements only the real HTTP client (`httpx`) without fake provider classes.
 
 ## 3. Verdict
 

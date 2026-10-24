@@ -4,15 +4,15 @@ Detail for [backend verification](../SKILL.md) §4–§5. The rules (probe first
 
 ## PHASE-00 readiness (backend)
 
-A backend item has no mock-server step. Typical `[EXECUTE]` items the plan may list, each with its evidence row:
+A backend item prepares test database, migrations, fixtures, and third-party provider sandboxes or Mockoon mocks (`mocks/<provider>_mockoon.json`). Typical `[EXECUTE]` items the plan may list, each with its evidence row:
 
 | Item | Check (cwd: service root) | Expected |
 |---|---|---|
 | Test database reachable and guarded | `uv run pytest tests/integration --collect-only -q` then one smoke test | collection succeeds; guard rejects a non-test URL (proved by the guard's own test) |
 | Migrations apply from empty | G5 on a disposable database | one head; `upgrade head` exit 0; `alembic check` clean |
 | Seed / fixtures for acceptance roles | the workspace's seed command on the test database | one account per role the plan names (role names only in evidence) |
-| Provider sandbox or approved stub | presence of the sandbox key name in `.env` (never the value), or the stub's scenario file | `D-NN` covers any stub; results labelled `stubbed: <provider>` |
-| Gate tools present | `uv run ruff --version`, `uv run mypy --version`, `uv run pytest --version` | versions recorded in the pre-flight table |
+| Provider sandbox or Mockoon mock | presence of sandbox key in `.env` (if `3RD_PARTY_READY`), or `mockoon-cli start --data mocks/<provider>_mockoon.json` + `curl` smoke test (if `3RD_PARTY_MOCKOON`) | `D-NN` covers external provider mode (`3RD_PARTY_READY` vs `3RD_PARTY_MOCKOON`); results labelled `mockoon: <provider>` when mocked |
+| Gate tools present | `coder-nexus setup tools --pack backend --check` and `uv run ruff --version`, `uv run mypy --version`, `uv run pytest --version` | `TOOLS: READY` (install missing via `coder-nexus setup tools --pack backend -y`); versions recorded in the pre-flight table |
 
 Tick per `plan-and-task-contract` (`[x] PREPARED / COMPLETED`, or `[x] PREPARED (NO_EXTERNAL_API)` with the reason). A frontend client's mock files are never written from the backend item.
 

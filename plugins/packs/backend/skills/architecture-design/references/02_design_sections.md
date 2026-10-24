@@ -44,6 +44,7 @@ For backend services, this section contains the standard non-applicability decla
 ## 7. Integration, Errors, and Risks
 
 - **Error Catalog**: Explicit error bodies, HTTP status codes, and error codes (`ERR_<DOMAIN>_<CODE>`).
+- **Outbound Providers & Mockoon Strategy**: Sandbox credentials (`3RD_PARTY_READY`) or `Mockoon 3rd-Party Trigger & Test Data Table` (`3RD_PARTY_MOCKOON` with `mocks/<provider>_mockoon.json`).
 - **Transaction Boundaries**: Multi-table operations wrapped in atomic async sessions with verified rollback.
 - **Realtime Channels**: SSE or WebSocket streams, message schemas, and replay buffers.
 - **Migration & Rollback**: Safe expand-contract steps, lock duration considerations, and rollback procedures.

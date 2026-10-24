@@ -116,36 +116,27 @@ One row per recorded fact, copied from a report or evidence row, never from a st
 
 ## 9. Finding severity and verdict impact
 
-The one scale every code finding uses, whoever raises it (Code Writer self-check, Code Reviewer, Test Runner defect). The stack skills (`{{slot:bug-hunt}}`, `{{slot:clean-code}}`, `{{slot:code-simplification}}`, `{{slot:secure-coding-standards}}`, `{{slot:code-review}}`) decide **what** is a finding and give rule IDs; this section decides how it is graded and what it does to the verdict. Reason: the writer and the reviewer must read the same severity the same way, whichever stack produced it.
+The single unified scale every code finding uses, whoever raises it (Code Writer self-check, Code Reviewer, Test Runner defect), defined canonically in `shared_contracts/flags_and_statuses.md` §2. The stack skills (`{{slot:bug-hunt}}`, `{{slot:clean-code}}`, `{{slot:code-simplification}}`, `{{slot:secure-coding-standards}}`, `{{slot:code-review}}`) decide **what** is a finding and give rule IDs; this section decides how it is graded and what it does to the verdict.
 
-### Defects (wrong behavior)
+### Unified Severity Scale (`BLOCKER` / `MAJOR` / `MINOR`)
 
-| Severity | Means |
-|---|---|
-| `BLOCKER` | Data loss or corruption, security hole, crash or hang on a normal path, approved AC behavior broken |
-| `MAJOR` | Wrong result or crash on a realistic edge path (empty, failure, retry, last page, slow network), resource leak |
-| `MINOR` | Wrong result only in a rare or self-correcting case |
-
-Confidence: `CONFIRMED` (traced end to end or shown by a command) or `PLAUSIBLE` (names the evidence that would decide it). Every defect names a failure scenario (`given … → when … → then …`); "might be fragile" is not a finding.
-
-### Rule violations (code that behaves correctly but breaks a stack rule)
+Both behavioral defects and stack rule violations use the same three-level scale (do **not** use `P1`/`P2`/`P3` for code findings; `P1`–`P3` is reserved strictly for test-case execution priority order in `quality-acceptance`):
 
 | Severity | Means |
 |---|---|
-| `P1` | A rule the stack skill marks mandatory, or a maintainability trap that spreads (wrapper, kept alias, exposed internals, mutable global, swallowed error, dead or debug code, skipped self-check) |
-| `P2` | Maintainability risk |
-| `P3` | Style or suggestion |
+| `BLOCKER` | 1. **Behavioral / Security defect**: Data loss or corruption, security hole, crash or hang on a normal path, approved AC behavior broken.<br>2. **Failed tool gate**: Any required CLI check defined in `{{slot:verification}}` or `{{slot:clean-code}}` (linter, formatter, static analyzer/type checker, architecture import linter, or test runner) exiting non-zero (`FAIL`).<br>3. **Mandatory design / craft rule violation**: Violation of a core rule in `{{slot:clean-code}}`, `{{slot:clean-architecture}}`, or `{{slot:secure-coding-standards}}` (pass-through wrapper, kept alias, exposed internal helper, mutable module global, swallowed error, layer boundary breach). |
+| `MAJOR` | 1. **Edge-case defect**: Wrong result, crash, or resource leak on a realistic edge path (empty, failure, retry, last page, slow network).<br>2. **Maintainability risk**: Structural smell or localized complexity not already blocked by CLI linters that degrades readability or testability. |
+| `MINOR` | Wrong result only in a rare self-correcting case, or optional style/readability polish. |
 
-A rule violation that also produces a wrong result, crash or leak is graded as a defect instead. Only code changed in the phase is graded; debt outside the diff is a note, never a finding. Test-case priority `P1`–`P3` in `quality-acceptance` is a different field (run order), not a severity.
+Confidence: `CONFIRMED` (traced end to end or shown by a command) or `PLAUSIBLE` (names the evidence that would decide it). Every behavioral defect names a failure scenario (`given … → when … → then …`); every rule violation puts its rule ID first in Problem. Only code changed in the phase is graded; debt outside the diff is a note, never a finding.
 
 ### Verdict impact
 
 | Finding | Effect |
 |---|---|
-| `CONFIRMED` `BLOCKER` or `MAJOR`, or any `P1` | `CHANGES_REQUESTED` |
+| `CONFIRMED` `BLOCKER` or `MAJOR` | `CHANGES_REQUESTED` |
 | `PLAUSIBLE` `BLOCKER` | `BLOCKED` until the named evidence is supplied |
-| Other `PLAUSIBLE`, `MINOR`, `P2` | Listed; fixed in the same revision when inside the phase's Scope / Files and cheap; never block alone |
-| `P3`, `NOTE` | Optional |
+| Other `PLAUSIBLE`, `MINOR` (or localized `MAJOR` maintainability note outside touched scope) | Listed; fixed in the same revision when inside the phase's Scope / Files and cheap; never block alone |
 
 No role lowers a severity to end a round; the 3-round cap and escalation are in `review-workflow`.
 

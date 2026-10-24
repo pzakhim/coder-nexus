@@ -13,6 +13,7 @@ Single homes of every hand-off format (other skills point here, never restate):
 
 | Reference | Defines |
 |---|---|
+| `shared_contracts/flags_and_statuses.md` | Canonical SSOT registry for all `coder-nexus` flags: tool gate results (`PASS`/`FAIL`), unified finding severities (`BLOCKER`/`MAJOR`/`MINOR`), agent statuses, verdicts, and integration modes |
 | [plan-and-task-contract](references/plan-and-task-contract.md) | Plan-level sections, task fields with **Expected**, `MATCH` / `CODE_WRONG` / `PLAN_WRONG` triage, frozen vs amendable after Gate 3, `## Plan change log` |
 | [handoff-and-status](references/handoff-and-status.md) | Hand-off per role pair, every status word, evidence row, review and test report shapes, where each record lives under `vN/` |
 | [debug-item-contract](references/debug-item-contract.md) | The `.superpowers/debug/<bug-slug>/` folder of `defect-resolution`, severity S1–S4, fix level L1–L3 and routing rules, bug status words and hand-offs, the L1 no-review exception, investigation items (`diagnosis.md`, temporary instrumentation) of `debug-investigation` |

@@ -14,8 +14,8 @@ Find how the workspace writes approved plans before proposing anything. Record e
 
 ```bash
 ls -d .superpowers/work-items docs/features plans docs/plans 2>/dev/null
-ls .agents/skills .claude/skills 2>/dev/null | grep -iE "work|plan|implement|dev-team|feature"
-grep -rlE "^- \[ \] \*\*Task" --include='*.md' . 2>/dev/null | grep -v node_modules | head
+ls .agents/skills .claude/skills 2>/dev/null | rg -i "work|plan|implement|dev-team|feature"
+rg -l "^- \[ \] \*\*Task" -g "*.md" . 2>/dev/null | rg -v node_modules | head
 ```
 
 ## What to record

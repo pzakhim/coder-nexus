@@ -47,7 +47,7 @@
     "gRPC"
   ],
   "generated_from": {
-    "clean-code": "create-clean-code-skill@1.1.0",
+    "clean-code": "create-clean-code-skill@1.2.0",
     "code-simplification": "create-code-simplification-skill@1.1.0",
     "secure-coding-standards": "create-secure-coding-standards-skill@1.1.0",
     "unit-testing": "create-unit-testing-skill@1.1.0",

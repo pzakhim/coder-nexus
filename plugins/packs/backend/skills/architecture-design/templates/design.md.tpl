@@ -85,6 +85,7 @@ Not applicable. This is a backend service providing REST/OpenAPI APIs and realti
 ## Integration, errors, and risks
 
 - **Error handling**: Uniform error envelope `{"error": {"code": "...", "message": "...", "details": ...}}`.
+- **Outbound providers & mocking**: {{SandboxCredentialsOrMockoon3rdPartyTable}}
 - **Database transactions**: Multi-statement operations wrapped in `async with session.begin():`.
 - **Migration & rollback**: Reversible Alembic migration script verified against test database.
 

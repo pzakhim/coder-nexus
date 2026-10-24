@@ -1,0 +1,42 @@
+# 01 — Structure, Naming, and Types
+
+<!-- GEN: Why: consolidates naming, size thresholds, code splitting, static types, constants, comments, helper locality, and export surface into one cohesive reference so agents load all authoring rules in a single read. Kind: Mandatory. -->
+
+## 1. Naming Conventions (C5)
+
+| Kind | Convention | Example | Note |
+|---|---|---|---|
+| {{kind}} | `{{convention}}` | `{{example}}` | {{note}} |
+
+- Domain glossary terms are used verbatim; banned vague names: `data`, `info`, `tmp`, `val`, `Manager`, `Helper`, `Utils`, `process()`, `handle()`.
+
+## 2. Size Thresholds & Decomposition (C6)
+
+| Unit | Limit | Remedy when exceeded |
+|---|---|---|
+| Function / method | {{fn_limit}} | Extract cohesive private helper steps. |
+| File / module | {{file_limit}} | Split by responsibility into dedicated modules ({{clean_architecture_link}}). |
+| Parameters | {{param_limit}} | Group cohesive inputs into a typed model/object. |
+| Nesting depth | {{nesting_limit}} | Use guard clauses and early returns. |
+
+### Splitting Oversized Units
+1. Identify distinct responsibilities that vary independently (input validation, domain rules, persistence, external I/O, presentation rendering).
+2. Extract each piece with an intention-revealing name from §1 and place it per {{clean_architecture_link}}.
+3. Update all call sites in the same task and delete the old code without leaving pass-through wrappers or compatibility aliases (**C1**).
+
+## 3. Structure, Globals, Helper Locality, and Export Surface (C1, C15, C16, C17)
+
+- **One concept, one place (C1)**: No pass-through wrappers or compatibility re-export shims.
+- **No mutable module globals (C15)**: Module level holds only shared constants (`{{const_convention}}`), logger, and configuration settings.
+- **Helper locality (C16)**: A helper used in one file stays private (`{{private_convention}}`) in that file; move only when imported by 2+ files into the owning domain module—never create `utils` or `helpers` buckets.
+- **Explicit export surface (C17)**: Package entry/barrel files (`{{entry_file}}`) export only the symbols other modules actually import; no wildcard exports or leaked internals.
+
+## 4. Static Types, Immutability, Constants & Comments (C7, C8, C9, C13)
+
+- **Full static types (C9)**: `{{type_rules}}`
+- **Immutable state & value objects (C13)**: `{{immutability_rules}}`
+- **Named constants & enums (C7)**: `{{constants_rules}}`
+- **Comments explain WHY (C8)**: Explain non-obvious constraints and trade-offs; never restate what the syntax already says.
+
+<!-- custom:start -->
+<!-- custom:end -->
