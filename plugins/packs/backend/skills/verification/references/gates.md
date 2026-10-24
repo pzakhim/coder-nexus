@@ -104,6 +104,6 @@ diff -u <agreed.json> <evidence-dir>/openapi.review.json               # otherwi
 |---|---|
 | Every difference is named in `design.md` / the contract change for this phase | PASS |
 | A removed or renamed path, field, enum value or status code; a field newly required in a request; a response field newly nullable — not in `design.md` | FAIL (breaking for the frontend client) |
-| App cannot be imported without a running service or secrets | BLOCKED; report the import-time side effect to `{{slot:clean-code}}` (CC12) |
+| App cannot be imported without a running service or secrets | BLOCKED; report the import-time side effect to `{{slot:clean-code}}` (C12) |
 
 Contract rules (versioning, error envelope, naming) belong to [api-contract-design](../../api-contract-design/SKILL.md); this gate only shows whether the running code matches what was agreed.

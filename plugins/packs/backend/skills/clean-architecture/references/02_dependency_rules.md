@@ -67,7 +67,7 @@ grep -rnE "^\s*from app\.models(\.| )" app/schemas | grep -v "app\.models\.enums
 grep -rnE "^\s*from app\.(api|services|repositories|models|schemas|db)" app/core
 ```
 
-Record the command and its empty output as the evidence row for an architecture check (`evidence-standard`). A hit outside the task's scope is legacy debt: report it in Concerns, do not fix it in this task (`{{slot:clean-code}}` CC14).
+Record the command and its empty output as the evidence row for an architecture check (`evidence-standard`). A hit outside the task's scope is legacy debt: report it in Concerns, do not fix it in this task (`{{slot:clean-code}}` C10).
 
 ## 4. Allowed shortcuts (and the ones that are not)
 
@@ -75,6 +75,6 @@ Record the command and its empty output as the evidence row for an architecture 
 |---|---|---|
 | A read-only list endpoint with no business rule | Router still calls a service method | The service is where authorization and data scope live; a missing check is invisible in a router-only path |
 | A service needs another resource's data | Call that resource's **repository** from this service, or its service method when a rule applies | Never import another service's private helpers; never let the router stitch two services together |
-| Two services need the same rule | Move it into the service that owns the concept; the other calls it | No `utils.py` / `helpers.py` (`{{slot:clean-code}}` CC4) |
+| Two services need the same rule | Move it into the service that owns the concept; the other calls it | No `utils.py` / `helpers.py` (`{{slot:clean-code}}` C16) |
 | A background job or CLI command | Builds the session and services itself and calls the same service method | Jobs are another entry edge, like routers; no business SQL in jobs |
 | Raw SQL for a heavy report | Inside a repository, as `text()` with bound parameters, returning plain rows mapped by the service | Never string-formatted SQL (`{{slot:secure-coding-standards}}`) |

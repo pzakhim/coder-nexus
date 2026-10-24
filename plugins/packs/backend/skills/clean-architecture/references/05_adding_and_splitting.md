@@ -20,7 +20,7 @@ Not allowed while adding: placeholder files for later phases, empty services "fo
 
 ## 2. When a file is too long
 
-Thresholds come from the workspace's clean-code skill, else `{{slot:clean-code}}` CC7 (~30 lines per function). For files, split when a file holds more than one reason to change, or passes ~300 lines of new or changed code. Split only inside the task that is already changing the file, or as a planned prefactor task (`implementation-planning`), never as a drive-by.
+Thresholds come from the workspace's clean-code skill, else `{{slot:clean-code}}` C6 (~30 lines per function). For files, split when a file holds more than one reason to change, or passes ~300 lines of new or changed code. Split only inside the task that is already changing the file, or as a planned prefactor task (`implementation-planning`), never as a drive-by.
 
 | File | Split into | Keep |
 |---|---|---|
@@ -33,8 +33,8 @@ Thresholds come from the workspace's clean-code skill, else `{{slot:clean-code}}
 Rules for every split:
 
 - Move code without changing behavior, in its own task, and run the same tests before and after (identical pass list). Reason: a split mixed with a behavior change cannot be reviewed.
-- Update every caller in the same task and delete the old location; no alias module that re-exports old names (core `clean-code` CC2).
-- No `utils.py`, `helpers.py`, `common.py`: name the module for what it does, inside the owning layer (core `clean-code` CC4).
+- Update every caller in the same task and delete the old location; no alias module that re-exports old names (`{{slot:clean-code}}` C1).
+- No `utils.py`, `helpers.py`, `common.py`: name the module for what it does, inside the owning layer (`{{slot:clean-code}}` C16).
 
 ## 3. Feature-first workspaces
 

@@ -21,7 +21,7 @@ Internal base inputs (read-only): the previous `plugins/packs/backend/skills/cle
 
 | Idea | Source | Reason |
 |---|---|---|
-| Separate pure domain layer (dataclass entities + `Protocol` repository ports + mappers) for every feature | previous backend skill, generator `full` level, `rules/backend_clean_architecture_rules.md` | One implementation per port is a pass-through layer (`{{slot:clean-code}}` CC1); business rules live in services, tables in models, contract in schemas. A `Protocol` is added when a second implementation exists (A10) |
+| Separate pure domain layer (dataclass entities + `Protocol` repository ports + mappers) for every feature | previous backend skill, generator `full` level, `rules/backend_clean_architecture_rules.md` | One implementation per port is a pass-through layer (`{{slot:clean-code}}` C1); business rules live in services, tables in models, contract in schemas. A `Protocol` is added when a second implementation exists (A10) |
 | Feature-first `modules/<feature>/{api,application,domain,infrastructure}` as the default | generator `stacks/python-fastapi.md` | The approved layout is layered by role; a workspace that already uses feature folders keeps them ([05](05_adding_and_splitting.md) §3) |
 | `api/v1/endpoints/` nesting by default | wshobson fastapi-templates | Versioning is a contract decision ([api-contract-design](../../api-contract-design/SKILL.md)); add a version prefix only when the design requires it |
 | SQLite in-memory test database and `metadata.create_all` in fixtures | wshobson fastapi-templates | PostgreSQL types, constraints and locking differ; tests run on a migrated PostgreSQL test database |

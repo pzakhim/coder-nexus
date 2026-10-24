@@ -29,7 +29,7 @@ Rules follow the C1–C17 baseline of `create-clean-code-skill` (carrying over c
 | C14 | **Self-check before done.** Run formatter, linter, type checker, targeted greps, and affected unit tests; report each evidence row. | A rule without an executed check is a wish; an unrun check is NOT_RUN. | P1 | `evidence-standard` |
 | C15 | **No meaningless globals.** Module level holds only shared constants and the settings object; no mutable caches, registries or `global`. | Global mutable state leaks between test cases and async request workers. | P1 mutable, else P2 | `rg` check; Review |
 | C16 | **Helper locality.** Helper used in one module is `_snake_case` in that module. Move only when a second module imports it. Never `utils.py`. | Underscore signals internal scope; generic buckets become junk drawers. | P1 public internal, else P2 | Review |
-| C17 | **Export surface.** `__init__.py` empty by default or explicit `__all__`; no wildcard imports (`from .x import *`). | Every export is a contract to maintain; wildcards hide origins and leak internals. | P1 leaked internal, else P2 | `ruff check` (`F403`); Review |
+| C17 | **Export surface.** `__init__.py` is empty by default; an explicit `__all__` lists only the symbols other packages actually import (tests included); no wildcard imports (`from .x import *`); never export private helpers or test hooks. | Every export is a contract to maintain; wildcards hide origins and leak internals. | P1 leaked internal, else P2 | `ruff check` (`F403`); each `__all__` name has an importer outside the package; Review |
 
 ## Which file to read
 

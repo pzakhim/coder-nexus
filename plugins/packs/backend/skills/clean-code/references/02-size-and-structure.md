@@ -40,5 +40,18 @@ When a function or module exceeds thresholds or performs multiple distinct jobs,
 ## Export surface and package entry files (C17)
 
 - `__init__.py` is empty by default.
-- If other packages import through `__init__.py`, define an explicit `__all__` list naming each public symbol.
+- An `__init__.py` may declare an explicit `__all__`, listing only the symbols other packages actually import through it (tests included). A name nobody imports through the package is removed from `__all__` (and its import line), not kept "for later".
+- Never export private helpers (`_name`), implementation details or test hooks.
+
+```python
+# app/integrations/payments/__init__.py — good: callers import these two from the package
+from .client import PaymentClient
+from .errors import PaymentDeclined
+
+__all__ = ["PaymentClient", "PaymentDeclined"]
+
+# bad: every public symbol "just in case", plus an internal helper
+__all__ = ["PaymentClient", "PaymentDeclined", "RetryPolicy", "build_headers", "_sign"]
+```
+
 - Never use wildcard imports (`from .x import *`). Wildcards obscure symbol origin and leak private helpers into public API surface.

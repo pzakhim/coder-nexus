@@ -19,6 +19,8 @@ Reviewers evaluate Flutter code changes against this rubric. Grading follows [wo
 | Overriding `build()` in `BaseScreenState` | **P1** | Remove `build()`; override `buildMobilePortrait()`. |
 | Mutating state object directly in Cubit | **P1** | Emit new immutable state instance with `copyWith`. |
 | Undisposed Controller, FocusNode, or StreamSubscription | **P1** | Add disposal logic to `dispose()` or `close()`. |
+| Barrel exports `src/` internals or a test hook (C18) | **P1** | Remove the export; callers import the public symbol only. |
+| Barrel `export` without `show`, or showing a symbol nobody imports through it (C18) | **P2** | Add `show` with only the imported symbols, or drop the export. |
 | Unsafe bang operator (`!`) causing possible `NullCheckError` | **P1** | Replace with null-safe fallback or guard clause. |
 | Custom widget duplicating `app_ui_kit` (`AppButton`, `AppFormField`) | **P1** | Replace custom widget with Kit component per [core-package-usage](../../flutter-core-package-usage/SKILL.md). |
 | Helper `_buildX()` method returning `Widget` instead of widget class | **P2** | Extract to private `StatelessWidget` with `const` constructor. |

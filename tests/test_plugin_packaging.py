@@ -948,3 +948,45 @@ def test_built_dist_does_not_contain_pack_json():
     if dist.is_dir():
         found = list(dist.glob("**/pack.json"))
         assert not found, f"Unexpected pack.json in dist: {found}"
+
+
+def test_backend_export_surface_rule_is_one_rule():
+    """Backend clean-code C17 and clean-architecture A8 state one export rule: __all__ only for what others import."""
+    only = "only the symbols other packages actually import"
+    clean_code = PLUGIN_DIR / "packs/backend/skills/clean-code"
+    assert only in (clean_code / "SKILL.md").read_text(encoding="utf-8")
+    assert only in (clean_code / "references/02-size-and-structure.md").read_text(encoding="utf-8")
+    architecture = PLUGIN_DIR / "packs/backend/skills/clean-architecture"
+    a8 = next(line for line in (architecture / "SKILL.md").read_text(encoding="utf-8").splitlines() if line.startswith("| A8 |"))
+    assert "C17" in a8 and "files are empty" not in a8
+    startup = (architecture / "references/04_settings_and_startup.md").read_text(encoding="utf-8")
+    assert "`__init__.py` files are empty" not in startup and "C17" in startup
+
+
+def test_no_dead_core_clean_code_rule_ids():
+    """Core `clean-code` (CC1-CC15) was removed in 3.2.0; live references use the pack's C-rule IDs."""
+    history = {
+        "packs/backend/skills/clean-code/SKILL.md": "carrying over core CC1–CC15",
+        "packs/backend/skills/clean-code/references/sources.md": "Core rules CC1–CC15",
+    }
+    dead = []
+    for path in sorted(PLUGIN_DIR.glob("*/**/*.md")):
+        rel = path.relative_to(PLUGIN_DIR).as_posix()
+        if rel.startswith("dist/"):
+            continue
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if re.search(r"\bCC[0-9]+\b", line) and history.get(rel, "\0") not in line:
+                dead.append(f"{rel}:{number}")
+    assert not dead, dead
+
+
+def test_flutter_clean_code_has_export_surface_rule():
+    """Flutter clean-code carries the generator's export-surface rule (C17 there) as C18: barrels export only what others import."""
+    clean_code = PLUGIN_DIR / "packs/flutter/skills/clean-code"
+    skill = (clean_code / "SKILL.md").read_text(encoding="utf-8")
+    row = next(line for line in skill.splitlines() if line.startswith("| **C18** |"))
+    assert "Export surface" in row and "show" in row
+    structure = (clean_code / "references/02-size-and-structure.md").read_text(encoding="utf-8")
+    assert "## 3. Export Surface (C18)" in structure
+    assert "C18" in (clean_code / "references/05-self-check.md").read_text(encoding="utf-8")
+    assert "C18" in (clean_code / "references/06-review-severity.md").read_text(encoding="utf-8")

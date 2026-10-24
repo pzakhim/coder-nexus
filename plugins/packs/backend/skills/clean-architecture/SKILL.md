@@ -5,7 +5,7 @@ description: Folder layout, layer roles and dependency direction for the Python 
 
 # Backend Clean Architecture (FastAPI + SQLAlchemy 2 async)
 
-The layout below is the default for a new service and the vocabulary for an existing one. **The workspace's verified layout wins** (core `clean-code` CC13): if `codebase-notes.md` records a feature-first tree (`app/modules/<feature>/...`) or other names, map the same roles onto it and keep it. Moving an existing service to this layout is a `D-NN`, never a side effect of a task.
+The layout below is the default for a new service and the vocabulary for an existing one. **The workspace's verified layout wins** (`{{slot:clean-code}}` C11): if `codebase-notes.md` records a feature-first tree (`app/modules/<feature>/...`) or other names, map the same roles onto it and keep it. Moving an existing service to this layout is a `D-NN`, never a side effect of a task.
 
 FastAPI API usage (Annotated, return types, `yield` dependencies, lifespan) follows `backend-fastapi`. This skill decides where code lives and what may import what.
 
@@ -69,10 +69,10 @@ Checks, the import-linter contract and the grep fallback: [references/02_depende
 | A4 | One `AsyncSession` per request from the `yield` dependency `get_session`; never a module-level session, never shared across tasks | `AsyncSession` is not safe for concurrent use |
 | A5 | Dependencies are wired with `Annotated[..., Depends(...)]` aliases; services are built by a function dependency (`get_order_service`) | Explicit construction; tests replace one dependency with `app.dependency_overrides` |
 | A6 | Services raise errors from `app/core/errors.py`; `app/api/error_handlers.py` maps them to the contract's status codes and body | Services stay framework-free; every endpoint returns the same error shape |
-| A7 | Settings come from `get_settings()` (cached); engine and session factory are created in `lifespan` and disposed after it | No environment read, connection or file I/O at import (core `clean-code` CC12) |
-| A8 | `__init__.py` files are empty; the only exception is `app/models/__init__.py`, which imports each model module and nothing else | Entry files export only what others use (core `clean-code` CC5); Alembic and relationship strings need every table registered |
+| A7 | Settings come from `get_settings()` (cached); engine and session factory are created in `lifespan` and disposed after it | No environment read, connection or file I/O at import (`{{slot:clean-code}}` C12) |
+| A8 | `__init__.py` follows `{{slot:clean-code}}` C17: empty by default, an explicit `__all__` only for symbols other packages import through it. Extra exception: `app/models/__init__.py` imports each model module and nothing else | One export rule, owned by clean-code; Alembic and relationship strings need every table registered |
 | A9 | Relationships load explicitly (`selectinload`) and default to `lazy="raise"` | An implicit lazy load under async raises at runtime instead of failing in review |
-| A10 | Add a `Protocol` or base class only when a second implementation exists (a provider sandbox client and a test fake) | One-implementation interfaces are pass-through layers (core `clean-code` CC1) |
+| A10 | Add a `Protocol` or base class only when a second implementation exists (a provider sandbox client and a test fake) | One-implementation interfaces are pass-through layers (`{{slot:clean-code}}` C1) |
 
 Sessions, transactions and DI in detail: [references/03_di_sessions_transactions.md](references/03_di_sessions_transactions.md). Settings, lifespan and startup: [references/04_settings_and_startup.md](references/04_settings_and_startup.md).
 

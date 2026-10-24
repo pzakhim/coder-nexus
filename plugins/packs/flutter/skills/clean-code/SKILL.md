@@ -9,7 +9,7 @@ Code written or reviewed in this Flutter pack follows **Effective Dart**, `flutt
 
 Reviewers and coders evaluate every line and widget against this standard. Finding severities follow [work-item-contract handoff-and-status section 9](../work-item-contract/references/handoff-and-status.md).
 
-## Rule Map (C1–C17)
+## Rule Map (C1–C18)
 
 | Rule | Statement | Why | Severity | Reference |
 |---|---|---|---|---|
@@ -30,6 +30,7 @@ Reviewers and coders evaluate every line and widget against this standard. Findi
 | **C15** | **Const constructors.** Add `const` to widget constructors and instances wherever possible. | Eliminates unnecessary widget rebuilds during state tree invalidation. | P2 | [04-types-constants-comments](references/04-types-constants-comments.md) |
 | **C16** | **Never override BaseScreen.build().** Implement `buildMobilePortrait()` on `BaseScreenState`. Never override `build()`. | Overriding `build()` completely breaks screen analytics, tracking, and responsiveness. | P1 | [02-size-and-structure](references/02-size-and-structure.md) |
 | **C17** | **Dispose controllers and streams.** Always cancel `StreamSubscription` and dispose `TextEditingController`, `AnimationController`, `FocusNode`. | Leaked controllers and uncancelled streams cause memory leaks and runtime crashes. | P1 | [02-size-and-structure](references/02-size-and-structure.md) |
+| **C18** | **Export surface.** A barrel file in the Client (`export` lines in a library entry file) exports with `show` only the symbols other modules actually import; no bare `export 'x.dart';` of a whole file and no export of `src/` internals or test hooks. The barrels of `../app-core`, `../app-util`, `../app-ui-kit` are read-only. (Generator rule C17.) | Every export is a contract to keep; a bare export leaks everything public and hides unused code. | P1 internals exposed, else P2 | [02-size-and-structure](references/02-size-and-structure.md) |
 
 ## Severity Summary
 

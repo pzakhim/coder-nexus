@@ -52,7 +52,7 @@ app = create_app()
 
 - Before `yield`: engine, session factory, shared `httpx.AsyncClient` for providers. After `yield`: dispose and close them. Reason: one place opens and closes every long-lived resource; `engine.dispose()` prevents "event loop is closed" warnings and leaked connections.
 - No `@app.on_event("startup")`. When `lifespan=` is passed, startup/shutdown events are not called at all, so mixing them silently drops code.
-- `create_app()` reads nothing from the environment; `lifespan` does, when the server starts. Reason: importing `app.main` in a test, in Alembic or in the CLI does not connect anywhere (core `clean-code` CC12).
+- `create_app()` reads nothing from the environment; `lifespan` does, when the server starts. Reason: importing `app.main` in a test, in Alembic or in the CLI does not connect anywhere (`{{slot:clean-code}}` C12).
 - The engine URL uses the async driver: `make_url(settings.database_uri.get_secret_value()).set(drivername="postgresql+asyncpg")` inside `build_engine`, so one `DATABASE_URI` (`postgresql://...`) serves the app, Alembic and the MCP.
 
 ## 3. No I/O at import, minimal `__init__.py`
@@ -61,14 +61,14 @@ app = create_app()
 |---|---|
 | Constants used by two or more functions, `router = APIRouter(...)`, `app = create_app()`, type aliases (`SessionDep`) | `Settings()`, `create_async_engine(...)`, opening files, HTTP calls, reading `os.environ`, starting tasks |
 
-`__init__.py` files are empty. The one exception is `app/models/__init__.py`, which imports every model module so `Base.metadata` is complete for Alembic autogenerate and relationship strings resolve:
+`__init__.py` files follow `{{slot:clean-code}}` C17: empty by default, and an explicit `__all__` only for the symbols other packages import through them. They never do I/O or wiring. The one architecture-specific exception is `app/models/__init__.py`, which imports every model module so `Base.metadata` is complete for Alembic autogenerate and relationship strings resolve:
 
 ```python
 # app/models/__init__.py
 from app.models import customers, orders  # noqa: F401  (registers tables on Base.metadata)
 ```
 
-No re-exports such as `from app.services.orders import OrderService` in `app/services/__init__.py`: callers import from the defining module (core `clean-code` CC2, CC5).
+A rename or move never leaves a re-export behind for the old import path (`{{slot:clean-code}}` C1); callers are updated to the new module.
 
 ## 4. Checks
 

@@ -83,7 +83,7 @@ async def add(self, order: Order) -> Order:
 ```
 
 - `app/api/error_handlers.py` maps `ConflictError` → `409`, `NotFoundError` → `404`, `PermissionDeniedError` → `403`, each with the contract's error body ([api-contract-design](../../api-contract-design/SKILL.md)).
-- Translating is the only reason to catch in a repository. Catch-all `except Exception` is allowed only in the error handler edge, and it logs (`{{slot:clean-code}}` CC9).
+- Translating is the only reason to catch in a repository. Catch-all `except Exception` is allowed only in the error handler edge, and it logs (`{{slot:clean-code}}` C4).
 
 ## 5. Loading relationships under async
 

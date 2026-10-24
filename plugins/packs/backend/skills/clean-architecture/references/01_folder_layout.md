@@ -39,7 +39,7 @@ Add a folder only when the first file for it is needed. A service with no provid
 | ORM class / table | singular class, plural table | `Order` / `orders` |
 | Dependency alias | `<Thing>Dep` | `OrderServiceDep` |
 
-Names follow the domain glossary in `codebase-notes.md` (`## 2. Glossary`); a second word for the same concept is a finding (core `clean-code` CC6).
+Names follow the domain glossary in `codebase-notes.md` (`## 2. Glossary`); a second word for the same concept is a finding (`{{slot:clean-code}}` C5).
 
 ## 3. Tests mirror `app/`
 

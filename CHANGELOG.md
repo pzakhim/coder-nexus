@@ -16,6 +16,10 @@ All notable changes to Coder Nexus are documented here.
 - **Flutter UI Kit rule** follows `core-package-usage`: use a UI Kit widget when its GUIDE "Use when" fits.
 - **Backend `spec_writer`** no longer loads `backend-clean-architecture`.
 
+### Fixed
+- **One export rule for package entry files:** backend `clean-code` C17 now says `__all__` lists only the symbols other packages actually import (empty `__init__.py` by default, no wildcard, no internals), and backend `clean-architecture` A8 points to it instead of requiring every `__init__.py` to be empty. Flutter `clean-code` gains the same rule as C18 for Dart barrels (`export … show …`, no bare exports, company package barrels read-only).
+- **Dead rule references:** references to the removed core `clean-code` rules (CC1–CC15) in backend `clean-architecture`, backend `verification` and `work-item-contract` now use the stack's C-rule IDs.
+
 ## [3.2.0] - 2026-10-23
 
 See detailed release notes in [docs/releases/v3.2.0.md](docs/releases/v3.2.0.md).

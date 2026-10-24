@@ -41,6 +41,12 @@ Run these checks in sequence from the service root:
    ```
    *Note: Module-level `__all__ = [...]` and `logger = ...` are legitimate false positives.*
 
+   ```bash
+   # Export surface (C17): for each __init__.py the task touched, every __all__ name needs an importer outside the package
+   rg -n "__all__" <changed __init__.py files>
+   rg -n "from <package> import|import <package>" <repo source and tests>
+   ```
+
 5. **Unit tests for affected components**:
    ```bash
    uv run pytest <affected_test_files> -q

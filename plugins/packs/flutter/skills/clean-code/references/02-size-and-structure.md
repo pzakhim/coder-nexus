@@ -57,3 +57,22 @@ class _OrderListScreenState extends BaseScreenState<OrderListScreen> {
     super.dispose();
   }
   ```
+
+## 3. Export Surface (C18)
+
+Applies to barrel files the Client owns (a library entry file made of `export` lines). The company packages' barrels (`app_core.dart`, `app_util.dart`, `app_ui_kit.dart`) are read-only: import them, never edit them.
+
+- Prefer importing from the defining file; add a barrel only when several modules import the same set of symbols.
+- Each `export` line names its symbols with `show`, and only symbols some other module imports through the barrel (tests included). A symbol nobody imports through the barrel is removed from `show`.
+- No bare `export 'file.dart';`: it exports every public name of that file, now and in the future.
+- Never export `src/` internals, private helpers or test hooks.
+
+```dart
+// lib/modules/orders/orders.dart — good: callers import these two through the barrel
+export 'domain/entities/order.dart' show Order;
+export 'presentation/screens/order_list_screen.dart' show OrderListScreen;
+
+// bad: whole files, including internals nobody imports
+export 'data/order_repository_impl.dart';
+export 'src/order_mapper.dart';
+```

@@ -151,7 +151,7 @@ No role lowers a severity to end a round; the 3-round cap and escalation are in 
 
 ### Rows
 
-- Review report: the findings table of §5. A rule violation puts its rule ID first in Problem (for example `CC3: module-level mutable list`); a defect from bug-hunt keeps its failure scenario.
+- Review report: the findings table of §5. A rule violation puts its rule ID first in Problem (for example `<rule ID>: module-level mutable list`, the ID as the stack's clean-code skill numbers it); a defect from bug-hunt keeps its failure scenario.
 - Code Writer hand-off, after its self-check: `bug-hunt: <n> CONFIRMED, <m> PLAUSIBLE (effort <level>)` or `bug-hunt: no defect found (effort <level>)`, and `simplify: <smell> -> <technique> at <path:line>[; ...]; net <+/-n> lines; checks: <command> exit <code>` or `simplify: nothing worth changing (looked at: <files>)`.
 
 ### Bug-hunt effort
