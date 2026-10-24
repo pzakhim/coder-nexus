@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from coder_nexus.setup import flutter as sf
+from coder_nexus.setup import tools
 
 
 def _git(*args, cwd=None):
@@ -50,6 +51,19 @@ def _fake_pub(project_root: Path):
 
 def _no_flutter(args, cwd):
     raise AssertionError(f"flutter must not run: {args}")
+
+
+@pytest.fixture(autouse=True)
+def tool_commands(monkeypatch):
+    """`setup flutter` runs the Flutter tools step; record its commands instead of running them."""
+    seen: list[list[str]] = []
+
+    def fake(cmd, cwd=None):
+        seen.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(tools, "run", fake)
+    return seen
 
 
 @pytest.fixture
@@ -281,32 +295,6 @@ def test_full_setup_flow_with_kebab_case_folder(tmp_path, monkeypatch):
     assert any("app_core" in l and "pub PASS" in l for l in lines)
 
 
-def test_ensure_mockoon_installs_via_npm_when_missing(monkeypatch):
-    monkeypatch.setattr(sf.shutil, "which", lambda cmd: "/usr/bin/npm" if cmd == "npm" else None)
-    called_args = []
-
-    def fake_npm(args):
-        called_args.append(args)
-        return subprocess.CompletedProcess(args, 0, "", "")
-
-    monkeypatch.setattr(sf, "npm", fake_npm)
-    assert sf.ensure_mockoon() == "READY"
-    assert called_args == [["install", "-g", "@mockoon/cli"]]
-
-
-def test_ensure_ripgrep_installs_via_brew_when_missing(monkeypatch):
-    monkeypatch.setattr(sf.shutil, "which", lambda cmd: "/opt/homebrew/bin/brew" if cmd == "brew" else None)
-    called_args = []
-
-    def fake_brew(args):
-        called_args.append(args)
-        return subprocess.CompletedProcess(args, 0, "", "")
-
-    monkeypatch.setattr(sf, "brew", fake_brew)
-    assert sf.ensure_ripgrep() == "READY"
-    assert called_args == [["install", "ripgrep"]]
-
-
 @pytest.mark.parametrize(
     "base",
     ["ssh://git@git.example.com/group", "git@git.example.com:group", "https://git.example.com/group/"],
@@ -323,3 +311,47 @@ def test_clone_without_core_git_env_blocks(project, monkeypatch, capsys):
     monkeypatch.setitem(sf.REPOS, "app_core", ("app-core", "", ""))
     assert sf.clone("app_core", project, "ssh") is False
     assert sf.CORE_GIT_ENV in capsys.readouterr().out
+
+
+def _standard_ready(project, monkeypatch):
+    monkeypatch.setattr(sf, "flutter", lambda args, cwd: subprocess.CompletedProcess(args, 0, "", ""))
+    monkeypatch.setattr(tools.shutil, "which", lambda cmd: f"/usr/bin/{cmd}")
+
+
+def test_setup_flutter_runs_the_flutter_tools_step_and_keeps_its_state(project, monkeypatch, tool_commands, capsys):
+    _standard_ready(project, monkeypatch)
+    assert sf.run_setup(project, profile="external-standard", assume_yes=True) == 0
+    assert ["flutter", "pub", "add", "--dev", "flutter_lints", "mocktail", "bloc_test"] in tool_commands
+    assert (project / "analysis_options.yaml").is_file()
+    state = json.loads((project / sf.STATE_FILE).read_text())
+    assert state["profile"] == "external-standard"
+    assert "flutter" in state["tools"]
+    assert "Developer tools (flutter)" in capsys.readouterr().out
+
+
+def test_missing_tools_never_fail_the_flutter_gate(project, monkeypatch, tool_commands):
+    _standard_ready(project, monkeypatch)
+    assert sf.run_setup(project, profile="external-standard", ask=lambda _: "n") == 0
+    assert not [c for c in tool_commands if c[:3] == ["flutter", "pub", "add"]]
+
+
+def test_check_reports_tools_without_changing_the_gate(project, monkeypatch, capsys):
+    _standard_ready(project, monkeypatch)
+    assert sf.run_setup(project, profile="external-standard", assume_yes=True) == 0
+    (project / "analysis_options.yaml").unlink()
+    capsys.readouterr()
+    assert sf.run_setup(project, check_only=True) == 0
+    out = capsys.readouterr().out
+    assert "STATUS: READY" in out
+    assert "Developer tools (flutter)" in out and "analysis_options" in out and "MISSING" in out
+    assert "coder-nexus setup tools --pack flutter" in out
+
+
+
+def test_tools_state_alone_does_not_satisfy_the_flutter_gate(project, monkeypatch):
+    monkeypatch.setattr(tools.shutil, "which", lambda cmd: f"/usr/bin/{cmd}")
+    tools.run_tools(project, "flutter", only=["analysis_options"], assume_yes=True)
+    assert (project / sf.STATE_FILE).is_file()
+    status, lines = sf.check(project, profile="external-standard")
+    assert status == "BLOCKED"
+    assert any(str(sf.STATE_FILE) in line and "MISSING" in line for line in lines)

@@ -126,6 +126,30 @@ Profiles tell the agent where a Flutter project's shared building blocks come fr
 | `external-standard` | has no shared component library; use standard framework widgets |
 | `external-structured` | has its own design system or shared components; reuse them |
 
+`coder-nexus setup flutter` also runs step `[4/6] Developer tools`, the same as `setup tools --pack flutter` below. Missing tools never make the setup gate fail.
+
+### Developer tools
+The skills check code with real tools (linters, type checkers, test helpers) instead of relying on the agent's reading alone. Set them up per pack:
+
+| Command | What it does |
+|---|---|
+| `coder-nexus setup flutter` | Flutter project setup **and** the Flutter tools |
+| `coder-nexus setup tools --pack flutter` | Only the Flutter tools |
+| `coder-nexus setup tools --pack backend` | Only the backend tools |
+| `coder-nexus setup tools --pack <pack> --only <a,b>` | Only the named tools, optional ones included (e.g. `--only mocktail,dart_code_linter`) |
+| `coder-nexus setup tools --pack <pack> --check` | Read-only: what is installed and what is missing |
+
+It lists the planned changes and asks once before applying them (`--yes` skips the question). Dev dependencies go through the stack's own package manager, missing lint or type config is added without rewriting yours, and tools it cannot install get an install hint. Results are recorded in `.agents/coder-nexus.setup.json`. Syncing the plugin never runs it and never edits your project files.
+
+| Kind | Backend | Flutter |
+|---|---|---|
+| Dev dependencies (default) | `pytest`, `pytest-asyncio`, `ruff`, `mypy` (`uv add --dev`) | `flutter_lints`, `mocktail`, `bloc_test` (`flutter pub add --dev`) |
+| Dev dependencies (optional, with `--only`) | `pytest-cov`, `import-linter`, `pytest-alembic`, `pytest-randomly` | `very_good_analysis`, `dart_code_linter` |
+| Config (added only when missing) | `[tool.ruff.lint]`, `[tool.mypy]` in `pyproject.toml` (`ruff-config`, `mypy-config`) | lint include and rules in `analysis_options.yaml` (`analysis_options`) |
+| Installed for your user | `ripgrep`; `mockoon-cli` (optional) | `ripgrep`, `mockoon-cli` |
+| Run through `uvx` | `pip-audit` | — |
+| Checked only (install hint) | `git`, `uv`, `docker`; `psql` (optional) | `git`, `flutter`, `dart`; `adb`, `xcrun` (optional) |
+
 ### UI/UX design
 Any change the user can see gets a design you approve before coding. The designer agent drives these commands; you can run them yourself too:
 

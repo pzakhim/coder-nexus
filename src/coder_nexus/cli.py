@@ -30,8 +30,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
-    # setup flutter | setup huly
-    p_setup = subparsers.add_parser("setup", help="Workspace setup gates (flutter, huly)")
+    # setup flutter | setup huly | setup tools
+    p_setup = subparsers.add_parser("setup", help="Workspace setup (flutter, huly, tools)")
     setup_sub = p_setup.add_subparsers(dest="stack", required=True)
 
     p_flutter = setup_sub.add_parser("flutter", help="iMESPro/external Flutter project setup gate")
@@ -45,6 +45,13 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["imespro", "external-structured", "external-standard"],
         help="Architecture profile (imespro, external-structured, external-standard)",
     )
+
+    p_tools = setup_sub.add_parser("tools", help="Developer tools the stack skills check with (dev dependencies, lint config, CLIs)")
+    p_tools.add_argument("--pack", required=True, choices=["flutter", "backend"], help="Stack pack whose tools to set up")
+    p_tools.add_argument("--only", help="Comma-separated tool names, optional tools included (e.g. mocktail,dart_code_linter)")
+    p_tools.add_argument("--check", action="store_true", help="Read-only: report what is missing; exit 0 only when READY")
+    p_tools.add_argument("--yes", "-y", action="store_true", help="Apply the planned changes without asking")
+    p_tools.add_argument("--project", default=".", help="Project path (default: cwd)")
 
     p_huly = setup_sub.add_parser("huly", help="Guided Huly setup: check .env, ping URL, log in, save to the project .env (dev only)")
     p_huly.add_argument("--check", action="store_true", help="Read-only: exit 0 only when URL, email, password, session and workspace ID are all in .env")
@@ -145,8 +152,16 @@ def cmd_setup_flutter(args: argparse.Namespace) -> int:
     return code
 
 
+def cmd_setup_tools(args: argparse.Namespace) -> int:
+    """Handle `coder_nexus setup tools` command."""
+    from .setup import tools
+    only = [name.strip() for name in args.only.split(",") if name.strip()] if args.only else None
+    return tools.run_tools(Path(args.project).resolve(), args.pack, only=only, check_only=args.check, assume_yes=args.yes)
+
+
 def cmd_setup(args: argparse.Namespace) -> int:
-    return cmd_setup_huly(args) if args.stack == "huly" else cmd_setup_flutter(args)
+    handlers = {"huly": cmd_setup_huly, "flutter": cmd_setup_flutter, "tools": cmd_setup_tools}
+    return handlers[args.stack](args)
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:

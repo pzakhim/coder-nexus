@@ -18,11 +18,12 @@ import difflib
 import json
 import os
 import re
-import shutil
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
+
+from .tools import STATE_FILE, confirm, non_interactive_env, run_tools
 
 CORE_GIT_ENV = "CODER_NEXUS_CORE_GIT"
 
@@ -49,7 +50,6 @@ REQUIRED = "app_core"
 ORG = "com.imespro"
 PLATFORMS = "android,ios"
 LIB_DIRS = ("app", "config", "commons", "di", "router", "constants", "modules")
-STATE_FILE = Path(".agents") / "coder-nexus.setup.json"
 
 PROFILES: tuple[str, ...] = ("imespro", "external-structured", "external-standard")
 PROFILE_MAP: dict[str, str] = {
@@ -171,15 +171,9 @@ def classify_git_error(stderr: str) -> str:
     return "unknown"
 
 
-def _git_env() -> dict[str, str]:
-    env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
-    env["GIT_SSH_COMMAND"] = env.get("GIT_SSH_COMMAND", "ssh") + " -o BatchMode=yes -o ConnectTimeout=15"
-    return env
-
-
 def _git(args: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
     try:
-        return subprocess.run(["git", *args], cwd=cwd, env=_git_env(), capture_output=True, text=True, timeout=300)
+        return subprocess.run(["git", *args], cwd=cwd, env=non_interactive_env(), capture_output=True, text=True, timeout=300)
     except subprocess.TimeoutExpired:
         return subprocess.CompletedProcess(args, 1, "", "timed out")
 
@@ -235,13 +229,14 @@ def check(project: Path, profile: str | None = None) -> tuple[str, list[str]]:
 
     active_profile = profile
     state_file = project / STATE_FILE
-    if not active_profile and state_file.is_file():
+    state_data: dict = {}
+    if state_file.is_file():
         try:
             state_data = json.loads(state_file.read_text(encoding="utf-8"))
-            active_profile = state_data.get("profile")
         except (OSError, json.JSONDecodeError):
             pass
-    active_profile = active_profile or "imespro"
+    active_profile = active_profile or state_data.get("profile") or "imespro"
+    setup_recorded = state_data.get("stack") == "flutter"  # `setup tools` alone writes only the "tools" key
 
     lines.append(f"profile: {active_profile}")
     status = "READY"
@@ -270,7 +265,7 @@ def check(project: Path, profile: str | None = None) -> tuple[str, list[str]]:
     else:  # external-standard
         lines.append("standard flutter structure | PASS")
 
-    if status == "READY" and not state_file.is_file():
+    if status == "READY" and not setup_recorded:
         lines.append(f"{STATE_FILE} MISSING")
         status = "BLOCKED"
 
@@ -280,78 +275,8 @@ def check(project: Path, profile: str | None = None) -> tuple[str, list[str]]:
 def flutter(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
     print(f"      flutter {' '.join(args)}")
     return subprocess.run(
-        ["flutter", *args], cwd=cwd, env=_git_env(), stdin=subprocess.DEVNULL, capture_output=True, text=True
+        ["flutter", *args], cwd=cwd, env=non_interactive_env(), stdin=subprocess.DEVNULL, capture_output=True, text=True
     )
-
-
-def npm(args: list[str]) -> subprocess.CompletedProcess:
-    print(f"      npm {' '.join(args)}")
-    if "PYTEST_CURRENT_TEST" in os.environ:
-        return subprocess.CompletedProcess(args, 0, "", "")
-    try:
-        return subprocess.run(
-            ["npm", *args], env=_git_env(), stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=180
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        return subprocess.CompletedProcess(args, 1, "", str(exc))
-
-
-def brew(args: list[str]) -> subprocess.CompletedProcess:
-    print(f"      brew {' '.join(args)}")
-    if "PYTEST_CURRENT_TEST" in os.environ:
-        return subprocess.CompletedProcess(args, 0, "", "")
-    try:
-        return subprocess.run(
-            ["brew", *args], env=_git_env(), stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=180
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        return subprocess.CompletedProcess(args, 1, "", str(exc))
-
-
-def ensure_mockoon() -> str:
-    """Ensure Mockoon CLI (@mockoon/cli) is installed for API mocking."""
-    existing = shutil.which("mockoon-cli")
-    if existing:
-        print(f"      mockoon-cli PASS ({existing})")
-        return "READY"
-    if not shutil.which("npm"):
-        print("      mockoon-cli MISSING (npm not found; install Node.js/npm then run: npm install -g @mockoon/cli)")
-        return "MISSING"
-    print("      Installing @mockoon/cli globally via npm...")
-    result = npm(["install", "-g", "@mockoon/cli"])
-    if result.returncode == 0:
-        print("      mockoon-cli PASS (installed @mockoon/cli)")
-        return "READY"
-    print(result.stderr.strip()[-1000:] if result.stderr else "      npm install failed.")
-    print("      Hint: run 'npm install -g @mockoon/cli' manually when network is available.")
-    return "MISSING"
-
-
-def ensure_ripgrep() -> str:
-    """Ensure Ripgrep (rg) is installed for fast codebase searching."""
-    existing = shutil.which("rg")
-    if existing:
-        print(f"      ripgrep (rg) PASS ({existing})")
-        return "READY"
-    if shutil.which("brew"):
-        print("      Installing ripgrep (rg) via Homebrew...")
-        result = brew(["install", "ripgrep"])
-        if result.returncode == 0:
-            print("      ripgrep (rg) PASS (installed ripgrep)")
-            return "READY"
-        print(result.stderr.strip()[-1000:] if result.stderr else "      brew install ripgrep failed.")
-    print("      ripgrep (rg) MISSING (install via 'brew install ripgrep' or system package manager)")
-    return "MISSING"
-
-
-def _confirm(prompt: str, assume_yes: bool, ask: Callable[[str], str]) -> bool:
-    if assume_yes:
-        print(f"{prompt} [y/N] y")
-        return True
-    try:
-        return ask(f"{prompt} [y/N] ").strip().lower() in {"y", "yes"}
-    except EOFError:
-        return False
 
 
 def create_project(project: Path, project_name: str | None = None) -> bool:
@@ -382,6 +307,10 @@ def run_setup(
     if check_only:
         status, lines = check(project, profile=profile)
         print("\n".join(lines))
+        if (project / "pubspec.yaml").is_file():
+            print("Developer tools (informational; STATUS below is the setup gate only)")
+            if run_tools(project, "flutter", check_only=True) != 0:
+                print("      Install them with: coder-nexus setup tools --pack flutter")
         print(f"STATUS: {status}")
         return 0 if status == "READY" else 1
 
@@ -402,7 +331,7 @@ def run_setup(
     print(f"[2/6] Flutter project {project}")
     if not (project / "pubspec.yaml").is_file():
         pkg_name = dart_package_name(project_name or project.name)
-        if not _confirm(
+        if not confirm(
             f"      pubspec.yaml not found. Create Flutter app '{pkg_name}' ({ORG}, {PLATFORMS})?",
             assume_yes,
             ask,
@@ -428,7 +357,7 @@ def run_setup(
             print(f"      {name:<11} MISSING ({label})")
             if (project.parent / folder).exists():
                 print(f"      ../{folder} already exists but is not package {name}; skipping clone.")
-            elif _confirm(f"      Clone {name} into ../{folder} via {protocol.upper()}?", assume_yes, ask):
+            elif confirm(f"      Clone {name} into ../{folder} via {protocol.upper()}?", assume_yes, ask):
                 if clone(name, project, protocol):
                     siblings[name] = project.parent / folder
             if name == REQUIRED and name not in siblings:
@@ -475,10 +404,9 @@ def run_setup(
             return 1
         print("      PASS")
 
-    # [4/6] Developer CLI Tools (@mockoon/cli & ripgrep)
-    print("[4/6] Developer CLI tools (@mockoon/cli, ripgrep)")
-    mockoon_status = ensure_mockoon()
-    ripgrep_status = ensure_ripgrep()
+    # [4/6] Developer tools: reported and installed on confirmation, never part of the gate
+    print("[4/6] Developer tools")
+    run_tools(project, "flutter", assume_yes=assume_yes, ask=ask)
 
     # [5/6] Record Setup State
     print("[5/6] Record setup state")
@@ -486,16 +414,19 @@ def run_setup(
         "status": "READY",
         "stack": "flutter",
         "profile": selected_profile,
-        "mockoon_cli": mockoon_status,
-        "ripgrep": ripgrep_status,
         "checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "packages": {
             name: {"path": os.path.relpath(folder, project), "revision": revision(folder)}
             for name, folder in siblings.items()
         } if selected_profile == "imespro" else {},
     }
-    (project / STATE_FILE).parent.mkdir(parents=True, exist_ok=True)
-    (project / STATE_FILE).write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
+    state_path = project / STATE_FILE
+    if state_path.is_file():
+        previous = json.loads(state_path.read_text(encoding="utf-8"))
+        if "tools" in previous:  # written by step [4/6]
+            state["tools"] = previous["tools"]
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
     print(f"      {STATE_FILE}")
 
     # [6/6] Verification Check
