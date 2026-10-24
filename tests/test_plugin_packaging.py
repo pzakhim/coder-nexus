@@ -411,11 +411,11 @@ def test_flutter_verification_skill_structure():
 
 
 def test_plugin_agent_definitions_structure():
-    """Verify five delivery agents, a docs writer and a UI/UX designer are packaged."""
+    """Verify five delivery agents, a docs writer, a UI/UX designer and a bug fixer are packaged."""
     agents_dir = PLUGIN_DIR / "core" / "agents"
     assert agents_dir.is_dir(), f"Missing agents directory at {agents_dir}"
 
-    agent_names = ["spec_writer", "planning", "code_writer", "code_reviewer", "test_runner", "docs_writer", "designer"]
+    agent_names = ["spec_writer", "planning", "code_writer", "code_reviewer", "test_runner", "docs_writer", "designer", "bug_fixer"]
     for name in agent_names:
         agent_file = agents_dir / f"{name}.md"
         assert agent_file.exists(), f"Missing agent definition file: {agent_file}"
@@ -594,7 +594,7 @@ def test_built_projections_apply_identically_for_every_variant(tmp_path):
         installed = workspace / spec["managed"][0]
         assert installed.name == "coder-nexus"
         assert not (installed / "agents").exists()
-        assert len(list((workspace / ".agents/agents").glob("*.md"))) == 7
+        assert len(list((workspace / ".agents/agents").glob("*.md"))) == 8
         assert not any((workspace / rel).exists() for rel in spec["remove"]), "pre-2.8 plugins must be removed"
         manifest = json.loads((installed / "bundle_manifest.json").read_text(encoding="utf-8"))
         assert manifest["packs"] == [key]
@@ -729,6 +729,24 @@ def test_backend_projection_receives_no_flutter_instructions(tmp_path):
     assert not [p for p in problems if "mentions another stack" in p or "another stack's skill" in p]
 
 
+def test_pack_guideline_is_copied_to_the_plugin_root(tmp_path):
+    """A pack's GUIDELINE.md (a human guide) lands next to the plugin's json files; a pack without one gets none."""
+    from coder_nexus.plugin_build import build_variant
+
+    roots = {"workspace": ".agents/plugins/coder-nexus", "global": "coder-nexus"}
+    for layout, root in roots.items():
+        flutter = build_variant("flutter", layout, tmp_path) / "files" / root
+        assert (flutter / "GUIDELINE.md").is_file(), layout
+        assert (flutter / "bundle_manifest.json").is_file(), layout
+        guide = (flutter / "GUIDELINE.md").read_text(encoding="utf-8")
+        for heading in ("## 1. Which skill to call", "## 2. Before you start", "## 3. Build a feature: `dev-team`",
+                        "## 4. Fix a bug: `defect-resolution`", "## 5. Investigate without fixing: `debug-investigation`",
+                        "## 6. Test a scenario: `feature-testing`", "## 7. What lives in `.superpowers/`"):
+            assert heading in guide, (layout, heading)
+        backend = build_variant("backend", layout, tmp_path) / "files" / root
+        assert not (backend / "GUIDELINE.md").exists(), layout
+
+
 def test_designer_is_wired_into_the_delivery_flow():
     """UI-impact items: Designer between goal framing and Gate 1; Planning, Reviewer and visual checks use the approved design."""
     skills = flutter_workspace() / ".agents/plugins/coder-nexus/skills"
@@ -805,6 +823,65 @@ def test_bug_hunt_skill_is_wired_into_review_and_writing():
         assert ref in (review / "SKILL.md").read_text(encoding="utf-8")
     report = (PLUGIN_DIR / "packs/flutter/skills/code-review/templates/code_review_report.md.tpl").read_text(encoding="utf-8")
     assert "{{BUG_HUNT_ROWS}}" in report and "Failure scenario" in report
+
+
+def test_bug_fixer_flow_is_wired():
+    """bug_fixer + defect-resolution: one debug contract in core, a stack-neutral core agent, overlays per tier,
+    L1 straight to test_runner and L2 through code_reviewer first."""
+    contract = (PLUGIN_DIR / "core/skills/work-item-contract/references/debug-item-contract.md").read_text(encoding="utf-8")
+    for term in ("S1", "L3", "NOT_REPRODUCED", "TRIAGED", "READY_FOR_TEST", "READY_FOR_REVIEW", "VERIFIED_FIXED", "STILL_BROKEN", "ESCALATED",
+                 "No code review for L1", "`code_reviewer` → `test_runner`"):
+        assert term in contract, term
+    contract_skill = (PLUGIN_DIR / "core/skills/work-item-contract/SKILL.md").read_text(encoding="utf-8")
+    for template in ("bug-brief.md.tpl", "fixing-plan.md.tpl", "escalation-report.md.tpl"):
+        assert (PLUGIN_DIR / "core/skills/work-item-contract/templates" / template).is_file(), template
+        assert template in contract_skill, template
+    assert "debug-item-contract" in (PLUGIN_DIR / "core/skills/defect-resolution/SKILL.md").read_text(encoding="utf-8")
+    assert "escalation-report.md" in (PLUGIN_DIR / "core/skills/dev-team/SKILL.md").read_text(encoding="utf-8")
+    core_agent = (PLUGIN_DIR / "core/agents/bug_fixer.md").read_text(encoding="utf-8")
+    for term in ("lib/", "Client", "Mockoon", "app_ui_kit"):
+        assert term not in core_agent, term
+    bug_fixer = rendered_agent("bug_fixer.md")
+    for term in ("defect-resolution", "fix-planning", "NOT_REPRODUCED", "escalation-report.md",
+                 "flutter-root-cause-debugging", "review-resolution", "READY_FOR_REVIEW",
+                 "## Frontend rules", "## Flutter rules", "`lib/`"):
+        assert term in bug_fixer, term
+    assert "debug-item-contract.md" in rendered_agent("test_runner.md")
+    reviewer = rendered_agent("code_reviewer.md")
+    assert "## Debug items" in reviewer and "debug-item-contract.md" in reviewer
+    assert "## Review focus" in (PLUGIN_DIR / "core/skills/work-item-contract/templates/fixing-plan.md.tpl").read_text(encoding="utf-8")
+
+
+def test_debug_investigation_is_wired():
+    """debug-investigation: bug_fixer observes only, temporary instrumentation is removed, diagnosis feeds a fix."""
+    contract = (PLUGIN_DIR / "core/skills/work-item-contract/references/debug-item-contract.md").read_text(encoding="utf-8")
+    for term in ("## 8. Investigation items", "DIAGNOSED", "Never committed", "Removed before returning"):
+        assert term in contract, term
+    assert (PLUGIN_DIR / "core/skills/work-item-contract/templates/diagnosis.md.tpl").is_file()
+    skill = (PLUGIN_DIR / "core/skills/debug-investigation/SKILL.md").read_text(encoding="utf-8")
+    assert "debug-item-contract" in skill and "defect-resolution" in skill
+    assert "diagnosis.md" in (PLUGIN_DIR / "core/skills/defect-resolution/SKILL.md").read_text(encoding="utf-8")
+    bug_fixer = rendered_agent("bug_fixer.md")
+    for term in ("debug-investigation", "Investigation mode", "DIAGNOSED", "UI trace", "DBG-<slug>"):
+        assert term in bug_fixer, term
+
+
+def test_feature_testing_is_wired():
+    """feature-testing: test_runner runs the user's scenario read-only, default checks, suggestions after the run."""
+    contract = (PLUGIN_DIR / "core/skills/work-item-contract/references/test-run-contract.md").read_text(encoding="utf-8")
+    for term in ("expected inferred", "DC1", "DC4", "COMPLETED", "Suggested cases", "Read-only"):
+        assert term in contract, term
+    templates = PLUGIN_DIR / "core/skills/work-item-contract/templates"
+    for template in ("test-scenario.md.tpl", "test-plan.md.tpl", "test-run-report.md.tpl"):
+        assert (templates / template).is_file(), template
+    assert "Suggested cases (not run)" in (templates / "test-run-report.md.tpl").read_text(encoding="utf-8")
+    assert "test-run-contract" in (PLUGIN_DIR / "core/skills/feature-testing/SKILL.md").read_text(encoding="utf-8")
+    core_runner = (PLUGIN_DIR / "core/agents/test_runner.md").read_text(encoding="utf-8")
+    for term in ("lib/", "Client", "Mockoon", "app_ui_kit"):
+        assert term not in core_runner, term
+    runner = rendered_agent("test_runner.md")
+    for term in ("feature-testing", "## Test runs", "test-run-contract.md", "for a test run, the recorded current revision"):
+        assert term in runner, term
 
 
 def test_core_git_preflight_skill_is_wired():

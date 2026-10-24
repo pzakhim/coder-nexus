@@ -64,7 +64,7 @@ The sync writes:
 | Path | Content |
 |---|---|
 | `.agents/agents/` | The agent roles, combined with the rules of each selected pack |
-| `.agents/plugins/coder-nexus/` | Shared skills and stack skills |
+| `.agents/plugins/coder-nexus/` | Shared skills and stack skills; `GUIDELINE.md` there is a user guide for the stack (Flutter) |
 | `.agents/stack.json` | Which pack owns which folders (edit it if detection guessed wrong) |
 
 Re-run the sync after installing or updating the CLI so the MCP config points to it.
@@ -78,6 +78,15 @@ coder-nexus doctor
 ## Using it
 
 Once synced, talk to your agent as usual, for example *"Implement task ABC-12"* or *"Add a settings screen"*. The agent follows the roles and stops at each approval gate for you to review.
+
+### Fixing a bug
+Report it, for example *"Fix bug: the order list crashes when empty"*. The `defect-resolution` skill has the Bug Fixer reproduce it, find the root cause and propose a fix level for you to confirm in `.superpowers/debug/<bug-slug>/`: **L1** (quick patch) is fixed and checked by the Test Runner without a code review; **L2** (local fix) follows a short fixing plan and goes through the Code Reviewer before the Test Runner; **L3** (contract, data, shared code or business-rule changes) gets an escalation report and goes to the full team flow.
+
+### Debugging without fixing
+Ask, for example *"Debug: why does the order list show yesterday's data?"* or *"Trace what happens from page B to C"*. The `debug-investigation` skill has the Bug Fixer reproduce the bug or run the scenario, add temporary logs when needed, and write `diagnosis.md` in `.superpowers/debug/<slug>/`. Every temporary log is removed before it reports; no code change is kept. If you then want the bug fixed, it hands the diagnosis to `defect-resolution`.
+
+### Testing a scenario
+Give a scenario in your own words or as a file, for example *"Test function A going from page B to C to D"*. The `feature-testing` skill has the Test Runner turn it into cases, use default checks where you gave no expected result, run them on the app or API, and report PASS/FAIL per case with evidence in `.superpowers/test-runs/<slug>/`. It never writes tests or fixes code; extra cases it would suggest are listed after the run.
 
 ### Task intake (optional)
 Connect a task tracker so agents can read tickets. Credentials go into the project's local `.env`. **Make sure `.env` is in `.gitignore`.**

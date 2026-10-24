@@ -22,9 +22,13 @@
     "core/architecture-decision-records",
     "core/change-control",
     "core/cold-reader-check",
+    "core/debug-investigation",
+    "core/defect-resolution",
     "core/delivery-workflow",
     "core/dev-team",
     "core/evidence-standard",
+    "core/feature-testing",
+    "core/fix-planning",
     "core/gate-review",
     "core/git-preflight",
     "core/grilling",
@@ -76,6 +80,7 @@
     "core/agents/test_runner.md",
     "core/agents/code_reviewer.md",
     "core/agents/docs_writer.md",
+    "core/agents/bug_fixer.md",
     "core/skills/grilling/SKILL.md",
     "core/skills/work-item-contract/references/work-item-contract.md",
     "core/skills/work-item-contract/references/type-sequences.md",
@@ -114,7 +119,11 @@
     "core/skills/evidence-standard/SKILL.md",
     "core/skills/change-control/SKILL.md",
     "core/skills/review-resolution/SKILL.md",
-    "core/skills/review-workflow/SKILL.md"
+    "core/skills/review-workflow/SKILL.md",
+    "core/skills/defect-resolution/SKILL.md",
+    "core/skills/fix-planning/SKILL.md",
+    "core/skills/debug-investigation/SKILL.md",
+    "core/skills/feature-testing/SKILL.md"
   ],
   "resource_base": "plugins/"
 }

@@ -48,6 +48,24 @@ From the coordinator: feature/version path, phase ID, `BASE_REVISION`, `REVIEW_R
 - **Zero cross-repo mutations**: no other repository and no file outside the paths the workspace's packs own in `.agents/stack.json` may change.
 - **Scope**: a change serving no confirmed `G-NN` goal is scope creep unless a `D-NN` covers it. A finding whose right fix touches the plan is a `PLAN_CONFLICT`: record its row in your report; the coordinator writes `plan-changes/PCR-NN.md` from it (`change-control`).
 
+## Debug items
+
+From `defect-resolution`, the coordinator may assign an **L2** bug folder `.superpowers/debug/<bug-slug>/` on `BASE_REVISION..FIX_REVISION` instead of a phase (`work-item-contract` → `debug-item-contract.md`; L1 is never reviewed). The same passes and verdict rules apply, with these inputs in place of the work item's:
+
+| Work item input | Debug item input |
+|---|---|
+| Gate 1–3 approvals | The user's level confirmation in `brief.md` → `## 6`; without a confirmed L2, `BLOCKED` |
+| AC and their commands | `brief.md` → `## 2` (expected, with its source) and the reproduction check in `## 3`, which must fail on `BASE_REVISION` and pass on `FIX_REVISION` |
+| Phase tasks, `## Global constraints`, `## Review focus` | `fixing-plan.md` → `## Tasks`, `## Global constraints`, `## Review focus` |
+| Changed-file scope | `brief.md` → `## 7` |
+| Branch from the `git-preflight` `D-NN` | `brief.md` → **Branch** |
+| Confirmed `G-NN` goals (scope check) | Restoring `brief.md` → `## 2`; anything else is scope creep |
+| `PHASE-00` readiness tick | Not applicable |
+| `design.md` (architecture profile, reuse mapping) | The `design.md` of the work item that built the code, when one exists; otherwise `brief.md` → `## 7` → **Architecture profile** and the codebase's existing conventions, inspected explicitly |
+| Writer hand-off | `brief.md` → `## 10`, `evidence/<FIX_REVISION>/`, and from round 2 `evidence/<FIX_REVISION>/review-reply.md` |
+
+A change outside `## 7`, or a right fix that needs a contract, shared code or another screen, is a finding that sends the bug back to triage (contract §3 rule 7), not an approved deviation. Write the report to `.superpowers/debug/<bug-slug>/reviews/review_<FIX_REVISION>.md`, round `N` of 3; after `APPROVED` the coordinator sends the same revision to `test_runner` (no Docs Writer record). A third `CHANGES_REQUESTED` goes back to triage (contract §3 rule 9).
+
 ## Branch Checks
 
 Per `git-preflight` (or the workspace `git-workflow` skill): the reviewed commits are on the `D-NN` branch and the PR targets its merge target; nothing was committed on a protected branch; commit messages follow the workspace convention; a PROD hotfix has tasks or PRs for every active line (`main`, active `release/*`, `develop`); a breaking contract change is marked as breaking for versioning. A violation is `CHANGES_REQUESTED`.

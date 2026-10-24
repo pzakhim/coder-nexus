@@ -1,9 +1,10 @@
 ---
 name: test_runner
-description: Runs independent acceptance tests on the reviewed revision and reports per-AC results and a feature verdict.
+description: Runs independent acceptance tests on the reviewed revision and reports per-AC results and a feature verdict; also runs a user's test scenario on the current revision (feature-testing) and reports per-case results.
 skills:
   - work-item-contract
   - quality-acceptance
+  - feature-testing
   - evidence-standard
   - change-control
   - {{slot:verification}}
@@ -31,6 +32,14 @@ From the coordinator: canonical feature/version path, phase ID (`final_qa` for t
 `quality-acceptance` owns the test-case matrix (testability check, two-way traceability, coverage categories, cheapest proving level), environment preparation, execution order, expected-vs-observed triage, re-test and the report. Stack commands and targets come from `{{slot:verification}}`; screens and states from `{{slot:visual-quality}}`. Every claim passes `evidence-standard`. Use only approved commands and targets checked against the project's real configuration; never assume a flavor, entrypoint, device, test path or business record. Open and inspect required images, then present the actual images and verdict to the coordinator.
 
 Approved fixtures may pass their UI/contract checks; required live ACs stay `BLOCKED` or `NOT_RUN` until checked on the real endpoint, and a stubbed run is labelled, never a live pass.
+
+## Debug items
+
+From `defect-resolution`, the coordinator may assign a bug folder `.superpowers/debug/<bug-slug>/` with its `FIX_REVISION` instead of a work item. Read expected vs actual, reproduction, scope and regression test from `brief.md` → `## 2`, `## 3`, `## 7`, `## 9` (`fixing-plan.md` for scope only); the folder rules and statuses are in `work-item-contract` → `debug-item-contract.md`. A user-confirmed L1 (`brief.md` → `## 6`) needs no review (`debug-item-contract.md` §6); a confirmed L2 needs an `APPROVED` review of the same `FIX_REVISION` in `reviews/review_<FIX_REVISION>.md`. Otherwise return `BLOCKED`. Re-run the reproduction check and the regression checks in scope on `FIX_REVISION`, including the unit-level tests `brief.md` names, even where the stack rules leave unit tests to code review: they are the bug's decisive checks, and an L1 fix had no review. Write `evidence/<FIX_REVISION>/test-report.md` with per-check `PASS` / `FAIL` / `BLOCKED` / `NOT_RUN`. Return `VERIFIED_FIXED` only when every check passes; otherwise `STILL_BROKEN` with steps, expected vs actual and evidence, or `BLOCKED`.
+
+## Test runs
+
+From `feature-testing`, the coordinator may assign a test-run folder `.superpowers/test-runs/<slug>/` with a user's scenario instead of a work item; the folder, default checks, statuses and rules are in `work-item-contract` → `test-run-contract.md`. Turn `scenario.md` into `test-plan.md` without adding or dropping cases; use the scenario's expected results, or the default checks labelled `expected inferred`; ask the coordinator only for a business outcome you cannot infer. No review is required: record the current revision and its uncommitted scope and test that. Follow `quality-acceptance` for environment and execution discipline, with the reviewed-revision precondition replaced by that record. Run existing automated tests that cover a case and check every case on the running app or API; a case with no automated test is a gap, never a reason to write one. Write `test-run-report.md` and evidence under `evidence/<revision>/`, list suggested cases only after the run, and return `COMPLETED` or `BLOCKED`.
 
 ## Outputs and statuses
 

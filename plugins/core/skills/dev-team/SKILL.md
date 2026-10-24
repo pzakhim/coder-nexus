@@ -33,6 +33,7 @@ Coordinator duties in Phase 1:
 4. **Relay cross-agent questions** (Step 1C): a question about codebase internals or architecture goes to `planning` or `code_writer`, which answers with evidence in `codebase-notes.md` and stops; Spec Writer relays it. Never fabricate an answer.
 5. **Gate 1**: accept it only after Spec Writer reports 0 `OPEN` `Q-NN`, validators run (`NOT_RUN` is not a pass), `gate-review` and `cold-reader-check` done, and the user explicitly approves the exact revisions (with the approved `uiux.md` revision). Stop until then.
 6. **Verification item** (`READY_FOR_VERIFICATION`): skip Phases 2–3; call Test Runner on the named revision with the approved AC, and it writes findings to `verification.md`.
+7. **Escalated bug** (from `defect-resolution`, status `ESCALATED`): pass `.superpowers/debug/<bug-slug>/escalation-report.md` to Spec Writer as a supplied source. Its reproduction, root cause and impact are evidence to re-check, not approved requirements. Spec Writer settles the job type: `bugfix` when behavior must be restored, `feature` with `change-impact.md` when it must change. The debug folder stays read-only.
 
 ---
 

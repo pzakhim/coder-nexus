@@ -322,6 +322,9 @@ def project_bundle(plugins_dir: Path, packs: list[str], out: Path, agents_out: P
             if out / "rules" / rule.name in path_map.values():
                 problems.append(f"packs/{pack['stack']}/rules/{rule.name}: rule file name clashes with another pack")
             place(rule, out / "rules" / rule.name, [pack["stack"]])
+        guideline = pack_dir / "GUIDELINE.md"  # a guide for people, next to the plugin's json files
+        if guideline.is_file():
+            place(guideline, out / guideline.name, [pack["stack"]])
     (out / "skills").mkdir(exist_ok=True)
     (out / "rules").mkdir(exist_ok=True)
     for src, dest in path_map.items():

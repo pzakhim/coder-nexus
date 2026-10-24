@@ -15,6 +15,8 @@ Single homes of every hand-off format (other skills point here, never restate):
 |---|---|
 | [plan-and-task-contract](references/plan-and-task-contract.md) | Plan-level sections, task fields with **Expected**, `MATCH` / `CODE_WRONG` / `PLAN_WRONG` triage, frozen vs amendable after Gate 3, `## Plan change log` |
 | [handoff-and-status](references/handoff-and-status.md) | Hand-off per role pair, every status word, evidence row, review and test report shapes, where each record lives under `vN/` |
+| [debug-item-contract](references/debug-item-contract.md) | The `.superpowers/debug/<bug-slug>/` folder of `defect-resolution`, severity S1–S4, fix level L1–L3 and routing rules, bug status words and hand-offs, the L1 no-review exception, investigation items (`diagnosis.md`, temporary instrumentation) of `debug-investigation` |
+| [test-run-contract](references/test-run-contract.md) | The `.superpowers/test-runs/<slug>/` folder of `feature-testing`, scenario to cases, default checks (`expected inferred`), case and run status words, read-only rules |
 
 Changing an approved plan: [`change-control`](../change-control/SKILL.md).
 
@@ -64,6 +66,8 @@ Render only the files the Type needs; resolve every placeholder from real source
 | [change-impact](templates/change-impact.md.tpl) (`v2+`: ADDED / MODIFIED / REMOVED behavior) | 1 |
 | design template of `{{slot:architecture-design}}` | 2 |
 | [implementation-plan](templates/implementation-plan.md.tpl), [phase](templates/phase.md.tpl) | 3 |
+| [bug-brief](templates/bug-brief.md.tpl), [fixing-plan](templates/fixing-plan.md.tpl) (L2), [escalation-report](templates/escalation-report.md.tpl) (L3), [diagnosis](templates/diagnosis.md.tpl) (investigation) | none: debug items ([debug-item-contract](references/debug-item-contract.md)) |
+| [test-scenario](templates/test-scenario.md.tpl) (optional), [test-plan](templates/test-plan.md.tpl), [test-run-report](templates/test-run-report.md.tpl) | none: test runs ([test-run-contract](references/test-run-contract.md)) |
 
 ## Goal lock
 
