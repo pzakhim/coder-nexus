@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from coder_nexus.huly.auth import DEV_ENV_MARKER, load_client_credentials, parse_env_file
+from coder_nexus.huly.auth import DEV_ENV_MARKER, INIT_ENV_KEYS, init_env_file, load_client_credentials, parse_env_file
 from coder_nexus.huly.client import HulyClient
 from coder_nexus.huly.models import HulyTaskSummary
 from coder_nexus.setup import huly as setup_huly
@@ -14,6 +14,7 @@ from coder_nexus.setup.huly import (
     EXIT_NEEDS_INPUT,
     EXIT_OK,
     EXIT_URL_UNREACHABLE,
+    cmd_init,
     cmd_setup_huly,
     normalize_url,
     run_setup_huly,
@@ -152,3 +153,66 @@ def test_check_requires_all_five_values(tmp_path, fake_huly):
     assert cmd_setup_huly(args) == 1
     run_setup_huly(str(tmp_path), email="dev@cty.com", password=GOOD_PASSWORD, interactive=False)
     assert cmd_setup_huly(args) == 0
+
+
+def test_interactive_prompts_for_url_even_when_url_already_in_env(tmp_path, fake_huly):
+    """When .env already has HULY_WORKSPACE_URL (e.g. https://huly.app), interactive setup still prompts for URL."""
+    (tmp_path / ".env").write_text("HULY_WORKSPACE_URL=https://huly.app\n", encoding="utf-8")
+    prompts: list[str] = []
+    answers = iter(["https://huly.cty.com", "dev@cty.com"])
+
+    def capture_input(prompt: str = "") -> str:
+        prompts.append(prompt)
+        return next(answers)
+
+    code = run_setup_huly(
+        str(tmp_path),
+        interactive=True,
+        input_fn=capture_input,
+        getpass_fn=_scripted([GOOD_PASSWORD]),
+    )
+    assert code == EXIT_OK
+    assert any("Huly URL [https://huly.app]:" in p for p in prompts)
+    env = parse_env_file(tmp_path / ".env")
+    assert env["HULY_WORKSPACE_URL"] == "https://huly.cty.com"
+
+
+def test_init_creates_env_and_does_not_skip_url_step(tmp_path, capsys):
+    code = cmd_init(argparse.Namespace(workspace_path=str(tmp_path)))
+    assert code == 0
+    env_text = (tmp_path / ".env").read_text(encoding="utf-8")
+    assert DEV_ENV_MARKER in env_text
+    parsed = parse_env_file(tmp_path / ".env")
+    assert set(INIT_ENV_KEYS) == set(parsed.keys())
+    assert all(v == "" for v in parsed.values())
+
+    capsys.readouterr()
+    # Running setup huly after `init` must still ask for URL first because HULY_WORKSPACE_URL is empty
+    step_code = run_setup_huly(str(tmp_path), as_json=True, interactive=False)
+    assert step_code == EXIT_NEEDS_INPUT
+    out = json.loads(capsys.readouterr().out)
+    assert out["step"] == "url" and out["needs"] == ["url"]
+
+
+def test_init_appends_missing_keys_to_end_of_existing_env(tmp_path):
+    env_file = tmp_path / ".env"
+    original = "# App config\nAPI_BASE_URL=https://api.cty.com\nHULY_WORKSPACE_URL=https://huly.cty.com\n"
+    env_file.write_text(original, encoding="utf-8")
+
+    path, added, created_new = init_env_file(str(tmp_path))
+    assert path == env_file
+    assert not created_new
+    assert "HULY_WORKSPACE_URL" not in added
+    assert set(added) == set(INIT_ENV_KEYS) - {"HULY_WORKSPACE_URL"}
+
+    updated_text = env_file.read_text(encoding="utf-8")
+    assert updated_text.startswith(original)
+    parsed = parse_env_file(env_file)
+    assert parsed["API_BASE_URL"] == "https://api.cty.com"
+    assert parsed["HULY_WORKSPACE_URL"] == "https://huly.cty.com"
+    assert parsed["FIGMA_TOKEN"] == ""
+
+    # Second run is a no-op
+    _, added_again, created_again = init_env_file(str(tmp_path))
+    assert added_again == [] and not created_again
+    assert env_file.read_text(encoding="utf-8") == updated_text

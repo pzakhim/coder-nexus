@@ -24,8 +24,8 @@ Activate when the user asks to set up, connect, log in to, fix or check Huly (fo
 1. **Check what is already in `.env`:**
    `coder-nexus setup huly --json --project "${workspaceFolder}"`
    - `status: already_configured` → go to step 5.
-   - `status: needs_input`, `step: url` → step 2.
-   - `status: needs_input`, `step: account` → step 3 (URL is already saved).
+   - `status: needs_input`, `step: url` → step 2. (You can also run `coder-nexus init --project "${workspaceFolder}"` if the user only wants `.env` initialized with empty keys to edit manually.)
+   - `status: needs_input`, `step: account` → tell the user which `workspace_url` is currently saved in `.env` and ask them to confirm that URL (or give a different Huly URL, in which case run step 2 with `--url "<NEW_URL>"`) alongside step 3.
    - `status: verify_failed` → the saved session is likely expired; tell the user and run step 2 with `--reset`.
    - If `warning` is present (`.env` missing from `.gitignore`), show it and offer to add `.env` to `.gitignore`.
 

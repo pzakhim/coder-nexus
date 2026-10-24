@@ -8,7 +8,7 @@ from .plugin_install import (
     REPO_ROOT,
     cmd_install_plugin,
 )
-from .setup.huly import cmd_login, cmd_my_tasks, cmd_setup_huly, cmd_status, cmd_task_detail
+from .setup.huly import cmd_init, cmd_login, cmd_my_tasks, cmd_setup_huly, cmd_status, cmd_task_detail
 
 
 def _add_huly_login_args(parser: argparse.ArgumentParser, path_flag: str) -> None:
@@ -29,6 +29,10 @@ def build_parser() -> argparse.ArgumentParser:
         description="AIFactory Coder CLI - Hub client & Huly task manager",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
+
+    # init
+    p_init = subparsers.add_parser("init", help="Create .env template or append missing Coder Nexus keys to existing .env")
+    p_init.add_argument("--project", "--workspace-path", dest="workspace_path", default=".", help="Client project path (default: cwd)")
 
     # setup flutter | setup huly | setup tools
     p_setup = subparsers.add_parser("setup", help="Workspace setup (flutter, huly, tools)")
@@ -212,6 +216,7 @@ def main() -> int:
         return 0
 
     command_handlers = {
+        "init": cmd_init,
         "setup": cmd_setup,
         "doctor": cmd_doctor,
         "login": cmd_login,

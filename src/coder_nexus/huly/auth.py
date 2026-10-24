@@ -14,6 +14,15 @@ HULY_ENV_KEYS = {
     "HULY_WORKSPACE_ID": "workspace_id",
 }
 
+INIT_ENV_KEYS: tuple[str, ...] = (
+    "HULY_WORKSPACE_URL",
+    "HULY_EMAIL",
+    "HULY_PASSWORD",
+    "HULY_SESSION_TOKEN",
+    "HULY_WORKSPACE_ID",
+    "FIGMA_TOKEN",
+)
+
 # Marker written at the top of every .env that `coder-nexus setup huly` touches.
 DEV_ENV_MARKER = "# [coder-nexus] DEVELOPMENT ONLY"
 DEV_ENV_HEADER = (
@@ -123,3 +132,42 @@ def save_client_credentials(workspace_path: str, credentials: HulyCredentials) -
             "HULY_WORKSPACE_ID": credentials.workspace_id or "",
         },
     )
+
+
+def init_env_file(workspace_path: Optional[str] = None) -> tuple[Path, list[str], bool]:
+    """Create `.env` from template, or append missing Coder Nexus keys to the end of an existing `.env`.
+
+    Returns (env_path, added_keys, created_new). Never overwrites existing keys or lines.
+    """
+    env_path = _resolve_env_file(workspace_path)
+    env_path.parent.mkdir(parents=True, exist_ok=True)
+
+    existing_text = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
+    existing_lines = existing_text.splitlines()
+    created_new = not env_path.exists() or not existing_text.strip()
+
+    existing_keys = set(parse_env_file(env_path).keys())
+    missing_keys = [k for k in INIT_ENV_KEYS if k not in existing_keys]
+    if not missing_keys and not created_new:
+        return env_path, [], False
+
+    block_lines: list[str] = []
+    if not any(l.strip().startswith(DEV_ENV_MARKER) for l in existing_lines):
+        block_lines.extend(DEV_ENV_HEADER.rstrip("\n").split("\n"))
+    block_lines.append("# Fill Huly credentials with `coder-nexus setup huly` or edit below (e.g. https://huly.app)")
+    for key in missing_keys:
+        if key == "FIGMA_TOKEN" and any(k.startswith("HULY_") for k in missing_keys):
+            block_lines.append("")
+            block_lines.append("# Optional: Figma Personal Access Token for read-only frame extraction")
+        block_lines.append(f"{key}=")
+
+    if created_new:
+        out_lines = block_lines
+    else:
+        out_lines = list(existing_lines)
+        if out_lines and out_lines[-1].strip() != "":
+            out_lines.append("")
+        out_lines.extend(block_lines)
+
+    env_path.write_text("\n".join(out_lines).rstrip("\n") + "\n", encoding="utf-8")
+    return env_path, missing_keys, created_new
