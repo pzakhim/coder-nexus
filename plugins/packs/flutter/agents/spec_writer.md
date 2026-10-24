@@ -4,6 +4,7 @@ skills:
 ---
 ## Flutter rules
 
+- **Source and test folders**: `lib/` and `test/`.
 - **FE Data Pipeline owned by `planning`**: `RemoteDataSource` calling `ApiService`, `Model.fromJson`, `Repository`, `UseCase`, DI.
 - **Detection signature**: `pubspec.yaml` and `lib/*.dart` $\implies$ Target Platform: `mobile` (App), Framework: `flutter` (Planning resolves the exact `{{slot:core-package-usage}}` profile and UI Kit widget mapping at Gate 2).
 - **Verified baseline facts** include `pubspec.yaml`, route tables, and `{{slot:core-package-usage}}` package exports.

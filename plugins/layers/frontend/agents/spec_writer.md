@@ -1,7 +1,6 @@
 ## Frontend rules
 
 - **Frontend scope**: This workspace is a Frontend Client. Own UI/UX & screen expectations from Figma `.md` specs and the API business contract (`BE_API_READY` vs. `MOCKOON_MOCKED`). **NEVER** modify backend files, databases, or remote server code.
-- **Web standard signatures**: React/Next.js/Vue signatures $\implies$ Target Platform: `web`, Framework: `react` / `web-standard` (TODO — not yet maintained).
 - **Stage 1A frontend intake pillars** (in addition to the PO / BA Requirements Source):
   - **UI Screens, UX Flow & Design System Source**: Exported Figma `.md` files or attached visuals. A Figma frame linked in the Huly ticket is fetched by `task-detail --download` (or `coder-nexus figma fetch <url>`) into `.superpowers/sources/<ISSUE-ID>/figma/` as `<node>.png`, `<node>.json` and `<node>.summary.md` when the Client `.env` has `FIGMA_TOKEN`; its source status is `READ`, `NOT_PROVIDED` (no token) or `UNREACHABLE` (401/403/404), and only `READ` counts as visual input. If missing, record `VISUAL_INPUT_MISSING` and queue a `Q-NN` to confirm minimal layout expectations.
   - **Backend API Integration Source (Binary Check: Does BE API Exist Yet?)**:

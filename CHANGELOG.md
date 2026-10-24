@@ -2,6 +2,13 @@
 
 All notable changes to Coder Nexus are documented here.
 
+## [Unreleased]
+
+### Changed
+- **Agents split by tier:** each agent rule now lives in one tier. Core agents are stack-neutral: no "Client", `lib/`, `Mock<Feature>` or UI-kit table names, and PHASE-00, task-field and template details point to their skills. Frontend-only rules live in `plugins/layers/frontend/`. Flutter overlays point to `core-package-usage` instead of restating Mode 1/2/3. Unmaintained `web-standard` notes were removed. Rendered agents shrink by about 10% (Flutter) and 6% (Backend).
+- **Flutter UI Kit rule** follows `core-package-usage`: use a UI Kit widget when its GUIDE "Use when" fits.
+- **Backend `spec_writer`** no longer loads `backend-clean-architecture`.
+
 ## [3.2.0] - 2026-10-23
 
 See detailed release notes in [docs/releases/v3.2.0.md](docs/releases/v3.2.0.md).

@@ -145,7 +145,8 @@ def test_pre_release_visual_cases_keep_real_data_and_reviewed_goldens():
     phase = read("core/skills/work-item-contract/templates/phase.md.tpl")
     assert "Code Review report" in runner
     assert "test-case matrix" in runner
-    assert "Remain read-only toward `lib/` and `test/`" in runner
+    assert "Remain read-only toward the stack's source and test folders" in runner
+    assert "**Source and test folders**: `lib/` and `test/`" in runner
     assert "present the actual images" in runner
     assert "`--update-goldens`" in verification
     assert "human-reviewed baseline" in verification

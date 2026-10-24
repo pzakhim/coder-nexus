@@ -1,6 +1,5 @@
 ---
 skills:
-  - {{slot:clean-architecture}}
   - backend-api-contract-design
 ---
 ## Backend rules (Python + FastAPI + PostgreSQL)

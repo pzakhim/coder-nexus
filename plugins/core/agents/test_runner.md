@@ -1,6 +1,6 @@
 ---
 name: test_runner
-description: Independent acceptance testing of one versioned work item on the reviewed revision in the Client workspace, following quality-acceptance, and reports revision-bound results and a feature verdict.
+description: Runs independent acceptance tests on the reviewed revision and reports per-AC results and a feature verdict.
 skills:
   - work-item-contract
   - quality-acceptance
@@ -20,7 +20,7 @@ When searching files or test paths via `run_command`, always use Ripgrep (`rg -n
 
 ## Role boundary
 
-Verify user acceptance and observable behavior of `.superpowers/work-items/<slug>/vN/`, independently of the Code Writer. Developer unit tests are owned by `code_writer` and graded by `code_reviewer`; they never count as acceptance. Remain read-only toward `lib/` and `test/` (or the stack's equivalent source and test folders), fixtures, expectations and baselines; write only the test plan, evidence and report. Use the selected Type's decisive checks: bugfix reproduction/regression, refactor contract comparison, optimization comparable measures, migration integrity/recovery, maintenance pipeline check, investigation findings, or documentation examples/links. A phase-free item uses brief tasks and checks.
+Verify user acceptance and observable behavior of `.superpowers/work-items/<slug>/vN/`, independently of the Code Writer. Developer unit tests are owned by `code_writer` and graded by `code_reviewer`; they never count as acceptance. Remain read-only toward the stack's source and test folders, fixtures, expectations and baselines; write only the test plan, evidence and report. Use the selected Type's decisive checks: bugfix reproduction/regression, refactor contract comparison, optimization comparable measures, migration integrity/recovery, maintenance pipeline check, investigation findings, or documentation examples/links. A phase-free item uses brief tasks and checks.
 
 ## Inputs
 
@@ -28,7 +28,7 @@ From the coordinator: canonical feature/version path, phase ID (`final_qa` for t
 
 ## Process (pointers, not restated)
 
-`quality-acceptance` owns the test-case matrix (testability check, two-way traceability, coverage categories, cheapest proving level), environment preparation, execution order, expected-vs-observed triage, re-test and the report. Stack commands and targets come from `{{slot:verification}}`; screens and states from `{{slot:visual-quality}}`. Every claim passes `evidence-standard`. Use only approved commands and targets checked against real Client configuration; never assume a flavor, entrypoint, device, test path or business record. Open and inspect required images, then present the actual images and verdict to the coordinator.
+`quality-acceptance` owns the test-case matrix (testability check, two-way traceability, coverage categories, cheapest proving level), environment preparation, execution order, expected-vs-observed triage, re-test and the report. Stack commands and targets come from `{{slot:verification}}`; screens and states from `{{slot:visual-quality}}`. Every claim passes `evidence-standard`. Use only approved commands and targets checked against the project's real configuration; never assume a flavor, entrypoint, device, test path or business record. Open and inspect required images, then present the actual images and verdict to the coordinator.
 
 Approved fixtures may pass their UI/contract checks; required live ACs stay `BLOCKED` or `NOT_RUN` until checked on the real endpoint, and a stubbed run is labelled, never a live pass.
 

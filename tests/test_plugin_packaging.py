@@ -439,7 +439,8 @@ def test_plugin_agent_definitions_structure():
     spec_writer_content = rendered_agent("spec_writer.md")
     assert "ask_question" in spec_writer_content
     assert "Gate 1" in spec_writer_content and "Gate 2" in spec_writer_content
-    assert "Do not write `lib/`, `test/`, `implementation-plan.md`" in spec_writer_content
+    assert "Do not write the stack's source or test folders, `implementation-plan.md`" in spec_writer_content
+    assert "**Source and test folders**: `lib/` and `test/`" in spec_writer_content
     planning_content = rendered_agent("planning.md")
     assert "Gate 3" in planning_content and "SKIPPED" in planning_content
     assert "validate_plan_slices" in planning_content
