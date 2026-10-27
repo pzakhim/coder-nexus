@@ -1,35 +1,34 @@
 ---
 name: create-domain-knowledge-skill
-description: Write a workspace's own domain-knowledge skill from the skill-factory knowledge base - the business glossary (business words and their names in code), the entities and how their status changes, roles and the data scopes that limit who sees what, the business rules and where each one lives in the code, and how the skill is kept current - found in the repository and confirmed by the user, for any domain and any stack. Use whenever the user wants to set up, standardize or update the shared business knowledge that Spec Writer, Planning, QA and reviewers rely on, or says things like "tạo skill domain", "thuật ngữ nghiệp vụ", "glossary", "quy tắc nghiệp vụ nằm ở đâu", "phân quyền dữ liệu", even if they do not say "skill". Writes .agents/skills/domain-knowledge/, then trial-runs it on real requests.
+description: "Write a workspace's own domain-knowledge skill from the skill-factory knowledge base - the business glossary (ubiquitous language and code identifiers), entity status lifecycles, roles and data scopes, business rules with code locations, and upkeep discipline - found in the repository and confirmed by the user, for any domain and any stack. Use whenever the user wants to set up, standardize, or update shared business knowledge that Spec Writer, Planning, QA, and reviewers rely on, or says things like 'tạo skill domain', 'thuật ngữ nghiệp vụ', 'glossary', 'quy tắc nghiệp vụ nằm ở đâu', 'phân quyền dữ liệu', even if they do not say 'skill'. Writes .agents/skills/domain-knowledge/, then trial-runs it on real requests."
 argument-hint: "[module or area]"
 ---
 
 # Create Domain Knowledge Skill
 
-Goal: produce `<workspace>/.agents/skills/domain-knowledge/` — what the workspace's business words mean, which entities exist and how their status changes, who may do what on which data, and where each business rule lives. Other Spec & Planning skills read it, so it comes first.
+Goal: produce `<workspace>/.agents/skills/domain-knowledge/` — what the workspace's business words mean, which entities exist and how their statuses change, who may do what on which data, where each business rule is enforced, and how deterministic CLI gates (`PASS` / `FAIL`) and reviewers (`BLOCKER` / `MAJOR` / `MINOR`) verify compliance.
 
 User input: $ARGUMENTS
 
-Follow `~/.claude/skill-factory/core/workflow.md`, starting with **Step 0**. Ownership and the generic-vs-specific rule: `~/.claude/skill-factory/core/planning-skill-family.md` — this generator stays domain-neutral; every concrete entity, role and scope comes from the workspace.
+Follow [../../core/workflow.md](../../core/workflow.md), starting with **Step 0**. Ownership and the generic-vs-specific rule: [../../core/planning-skill-family.md](../../core/planning-skill-family.md) — this generator stays domain-neutral; every concrete entity, role, and data scope comes from the workspace.
 
 ## Step 1 — Context Card (+ domain sources)
 
-Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P1–P2 (`~/.claude/skill-factory/core/existing-project.md`). Then collect, read-only, the sources in `references/detection.md`: entities and fields, status values and transitions, roles and permission checks, data-scope conditions, user-facing labels, business documents, existing glossaries. Reading closed tracker tickets is optional: only when a tracker is configured and the user agrees.
+Run the core Context Card ([../../core/detect-stack.md](../../core/detect-stack.md)) and existing-project discovery ([../../core/existing-project.md](../../core/existing-project.md)). Then collect, read-only, the sources in [references/detection.md](references/detection.md): entities and fields, status values and transitions, roles and permission checks, data-scope conditions, user-facing labels, business documents, and existing glossaries. Reading closed tracker tickets is optional (only when a tracker is configured and the user agrees).
 
-If the repository is large, list its modules with a one-line purpose each and go to the gate with that list before reading deeply.
+If the repository is large, list its modules with a one-line purpose each and confirm the scope at the gate before reading deeply.
 
 ## Step 2 — Map the base rules
 
-Read `references/base-rules.md`. For each rule DK1–DK9: adopted, adapted, or "not adopted" with a reason. DK5 (labels, no invention), DK8 (no personal data or secrets) and DK9 (challenge new and fuzzy words) are never "not adopted".
+Read [references/base-rules.md](references/base-rules.md). All rules `DK1`–`DK9` are **mandatory compliance**. Map each rule to the workspace's real artifacts and enforcement points. If a workspace has no RBAC roles or data scopes, satisfy `DK3` with a one-line `N/A for this workspace` entry in `03-roles-scopes-and-upkeep.md`.
 
 ## Step 3 — Propose
 
-- Draft glossary rows from labels, entity names and documents; mark each `VERIFIED` (path) or `OPEN`. Fill "Avoid saying" from words that name the same thing in different places (labels vs code vs documents vs past tickets).
-- List overloaded words (one word, two meanings) as candidates for the fuzzy-word examples.
-- Draft entity cards with status values and the transitions found in code (who triggers each, where).
-- Draft the roles × scopes × actions matrix from permission checks; mark gaps `OPEN`.
-- Draft the business-rule catalog with `file:symbol` locations.
-- Show what is missing: categories the workspace does not have are stated in one line, not filled.
+- Draft glossary rows (`DK1`) from labels, entity names, and documents; mark each `VERIFIED` (path) or `OPEN`. Populate `"Avoid saying"` from synonymous words used across UI labels, code, documents, or tickets.
+- List overloaded or fuzzy words (`DK9`) as candidates for `Q-NN` → `D-NN` resolution examples.
+- Draft entity cards (`DK2`) with status values, allowed/forbidden transitions, triggers, and `file:symbol` enforcement points, plus the business-rule catalog (`DK4`, `BR-NN` / `DR-NN`).
+- Draft the `Role × Scope × Action` matrix (`DK3`) from permission checks; mark unknown cells `OPEN` (or state `N/A for this workspace` in one line).
+- Propose deterministic CLI gates (`PASS` / `FAIL`) and the `BLOCKER` / `MAJOR` / `MINOR` review rubric.
 
 ## Step 4 — Gate (user confirms)
 
@@ -37,67 +36,57 @@ AskUserQuestion, ≤ 4 questions per round, recommendation first:
 
 | # | Question | Default proposal |
 |---|---|---|
-| Q1 | Which modules/areas are in scope (large repositories) | The modules with the most recent work items |
-| Q2 | Glossary languages (team language ↔ code names) | Team language + English code names |
-| Q3 | Confirm the roles × scopes × actions matrix (show it) | As read from code; `OPEN` rows asked one by one |
-| Q4 | Who updates the skill and when | Spec Writer when a work item changes an entity or rule; reviewed at Gate 1 |
+| Q1 | Modules/areas in scope (large repositories) | Modules with the most recent work items |
+| Q2 | Glossary languages (team language ↔ code names) | Team language + English code identifiers |
+| Q3 | Confirm the `Role × Scope × Action` matrix | As read from code; `OPEN` cells asked one by one |
+| Q4 | Upkeep owner and trigger | Spec Writer in the same work item when an entity, role, scope, or rule changes; verified at Gate 1 |
 
 Unclear terms and rules found in Step 3 are asked one at a time after the matrix; anything still unknown stays `OPEN`.
 
 ## Step 5 — Author
 
-Read `~/.claude/skill-factory/core/authoring-guide.md`. Layout: **flat**; when the domain is large, split per module into `references/modules/<module>.md` following `~/.claude/skill-factory/core/splitting-protocol.md`, keeping `01`–`05` as the index.
+Read [../../core/authoring-guide.md](../../core/authoring-guide.md). Layout: **flat**; when the domain is large, split per module into `references/modules/<module>.md` following [../../core/splitting-protocol.md](../../core/splitting-protocol.md), keeping `01`–`03` as the cohesive index.
 
 | Output | Template | Kind | Why it exists |
 |---|---|---|---|
-| `SKILL.md` | `templates/SKILL.md.tmpl` | **Mandatory** | How to use the knowledge and the labels on one screen |
-| `references/01-glossary.md` | `templates/01-glossary.md.tmpl` | **Mandatory** | One word, one meaning, across spec and code |
-| `references/02-entities-and-lifecycles.md` | `templates/02-entities-and-lifecycles.md.tmpl` | **Mandatory** | Status transitions are where specs miss most |
-| `references/03-roles-and-scopes.md` | `templates/03-roles-and-scopes.md.tmpl` | **Mandatory** (one line when the workspace has no roles) | Wrong permissions are the costliest defects |
-| `references/04-business-rules.md` | `templates/04-business-rules.md.tmpl` | **Mandatory** | Planning finds the right place to change |
-| `references/05-sources-and-upkeep.md` | `templates/05-sources-and-upkeep.md.tmpl` | **Mandatory** | The skill stays true as the code changes |
+| `SKILL.md` | `templates/SKILL.md.tmpl` | **Mandatory** | Deterministic CLI gates (`PASS`/`FAIL`), mandatory `DK1`–`DK9` index, and reference table on one screen |
+| `references/01-glossary-and-ubiquitous-language.md` | `templates/references/01-glossary-and-ubiquitous-language.md.tmpl` | **Mandatory** | Ubiquitous language glossary (`DK1`), banned synonyms (`"Avoid saying"`), and challenging fuzzy words (`DK9`) |
+| `references/02-entities-lifecycles-and-rules.md` | `templates/references/02-entities-lifecycles-and-rules.md.tmpl` | **Mandatory** | Entity cards with status lifecycles (`DK2`) and the business-rule catalog with `file:symbol` (`DK4`) |
+| `references/03-roles-scopes-and-upkeep.md` | `templates/references/03-roles-scopes-and-upkeep.md.tmpl` | **Mandatory** | `Role × Scope × Action` matrix (`DK3`), fact labels (`DK5`), volatile links (`DK6`), upkeep (`DK7`), PII hygiene (`DK8`), and `BLOCKER`/`MAJOR`/`MINOR` rubric |
+| `profiles/<profile>/*.md` (optional, pack skills) | — | **Suggested** | Profile-specific contracts (`imespro`, `external-structured`, `external-standard`) synced into `references/` at `<!-- {{profile_references}} -->` |
 
-Writing rules: only facts with a label (`VERIFIED` + path, `CONFIRMED`, `OPEN`); no personal data, no real customer names unless they are product terms the user confirms; volatile facts are links, not copies; replace every `{{…}}`, delete every `<!-- GEN … -->`, English body (glossary terms in the team language too), < ~200 lines per file, custom block at the end.
+Writing rules: only labelled facts (`VERIFIED` + path, `CONFIRMED`, `OPEN`); zero personal data or secrets (`DK8`); link volatile facts (`DK6`); replace every `{{…}}`, delete every `<!-- GEN … -->`, English body (glossary terms include team language), < ~200 lines per file, custom block at the end.
 
 ## Step 6 — Wire
 
 1. Pointer in `CLAUDE.md` / `AGENTS.md` (unless an equivalent exists):
    ```markdown
    ## Domain knowledge
-   Business terms, entities, roles and rules: `.agents/skills/domain-knowledge/SKILL.md`.
+   Business terms, entities, roles, and rules: `.agents/skills/domain-knowledge/SKILL.md`.
    ```
-2. Offer to link it from existing requirements, planning and quality skills (P3).
+2. Offer to link it from existing requirements, planning, and quality skills without clobbering user content.
 
 ## Step 7 — Trial run
 
-`~/.claude/skill-factory/core/trial-run.md`. Pick tasks from this workspace, for example:
-
-- A request to add a status to an entity that has a lifecycle — are all transitions and who triggers them asked?
-- A request about who may see or change some data — is the roles × scopes matrix used?
-- A request that uses a synonym of a glossary term — is it mapped to the right entity?
-- A request with an overloaded word — does the agent name the candidate terms and ask which one, instead of picking?
-- A statement about behavior that the code contradicts — is the contradiction raised as a question?
+Follow [../../core/trial-run.md](../../core/trial-run.md) on real workspace prompts:
+- Adding a status to a lifecycle entity — are all transitions, triggers, and enforcement locations checked?
+- Asking who may view or mutate restricted data — is the `Role × Scope × Action` matrix applied?
+- Using a banned `"Avoid saying"` synonym or overloaded word — does the agent raise a `Q-NN` choice (`D-NN`) and check code claims?
 
 ## Step 8 — Description
 
-Per the authoring guide: workspace name; situations (writing or reviewing requirements, planning, test design, naming in code); the team's trigger words. Should not trigger for pure tooling questions.
+Per [../../core/authoring-guide.md](../../core/authoring-guide.md): workspace name, situations (writing/reviewing requirements, planning, test design, naming in code), and team trigger words.
 
 ## Step 9 — Verify, record & report
 
-`checklist.md` + `~/.claude/skill-factory/core/checklist-common.md`; record provenance (`~/.claude/skill-factory/core/provenance.md`); report `OPEN` items, rules adapted or not adopted, trial results.
+Run [checklist.md](checklist.md) + [../../core/checklist-common.md](../../core/checklist-common.md); record provenance ([../../core/provenance.md](../../core/provenance.md)); report `OPEN` items, rule mappings, and trial results (`PASS` / `FAIL`).
 
-## Update mode
+## Update mode & Versioning
 
-Existing `.agents/skills/domain-knowledge/` or a workspace glossary/domain doc: registered → sync (`~/.claude/skill-factory/core/sync-protocol.md`); not registered → adopt (P3, P5: keep the team's terms, IDs and confirmed rules verbatim).
-
-## Changing this generator
-
-Follow `~/.claude/skill-factory/core/versioning.md` (work under `## Unreleased`, bump once per batch).
+Existing `.agents/skills/domain-knowledge/` or workspace glossary: registered → sync ([../../core/sync-protocol.md](../../core/sync-protocol.md)); unregistered → adopt preserving existing terms, IDs, and confirmed rules verbatim. When changing this generator, follow [../../core/versioning.md](../../core/versioning.md).
 
 ## Resources
 
-- `references/base-rules.md` — DK1–DK9 with reasons
-- `references/detection.md` — where each kind of domain fact is usually found, per stack
-- `templates/` — `SKILL.md.tmpl`, `01–05` (suggested shapes)
-- `references/sources.md` — external sources and ideas not adopted
-- `checklist.md` — topic checks
+- [references/base-rules.md](references/base-rules.md) — Mandatory `DK1`–`DK9` rules, `PASS`/`FAIL` CLI gates, and `BLOCKER`/`MAJOR`/`MINOR` rubric
+- [references/detection.md](references/detection.md) — Stack-agnostic discovery guide (`<src>`)
+- [checklist.md](checklist.md) — Topic verification checks

@@ -1,0 +1,43 @@
+# 01 — Stack Lifecycle and Revision Alignment (`E1`–`E4`, `E8`–`E9`)
+
+<!-- GEN: Why: starting or killing the wrong processes destroys other people's work, and testing the wrong revision or stale schema invalidates acceptance results. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Populate rules E1–E4, E8, E9 with the workspace's real service categories, ports, commands (cwd), health checks, and migration steps; preserve existing probe rules verbatim (P5). -->
+
+## 1. Service Topology & Start Order (`E1`, `E4`)
+
+| Service Category | Service Name | Port / URL | Start Command (`cwd`) | Readiness Check (`PASS` / `FAIL`) |
+|---|---|---|---|---|
+| **Containerized Services** | `{{datastore_service}}` | `{{datastore_port}}` | `{{datastore_start_cmd}}` (`{{target_dir}}`) | `{{datastore_ready_check}}` |
+| **API / Backend Process** | `{{api_service}}` | `{{api_url}}` | `{{api_start_cmd}}` (`{{api_cwd}}`) | `{{api_ready_check}}` |
+| **Background Worker Process** | `{{worker_service}}` | `{{worker_target}}` | `{{worker_start_cmd}}` (`{{worker_cwd}}`) | `{{worker_ready_check}}` |
+| **Client / UI Dev Server** | `{{client_service}}` | `{{client_url}}` | `{{client_start_cmd}}` (`{{client_cwd}}`) | `{{client_ready_check}}` |
+
+**Mandatory Start Order:** `{{start_order}}`
+
+## 2. Probe Before Starting & Process Ownership (`E2`, `E3`)
+
+Always probe active ports and containers before starting any service:
+
+```bash
+{{probe_commands}}
+```
+
+- **Running and healthy on the reviewed revision** → **reuse** the service; do not restart or reset it.
+- **Running, unhealthy or on a conflicting revision, and not started by you** → stop testing and report **`BLOCKED`** (notify `{{stack_owner}}`).
+- **Not running** → start only the missing services in the background with stdout/stderr redirected to `{{log_dir}}/<service>.log`, and record the PIDs or container IDs you started.
+- **Ownership rule:** stop only the PIDs/containers you started (`{{stop_own_cmd}}`). Never run `{{stop_all_cmd}}` unless you started the entire stack yourself and no other agent or user shares it.
+
+## 3. Reviewed Revision Checkout & Local DB Migration (`E8`, `E9`)
+
+1. **Verify target revision (`E9`)**: confirm the commit SHA under test from `{{revision_source}}`.
+2. **Align owned services (`E9`)**: checkout the revision in your owned workspace/worktree, install dependencies, build, and restart only the services you own (`{{align_steps}}`).
+3. **Migrate local/disposable database (`E8`)**: apply the revision's schema migrations to the local/disposable database before seeding or testing:
+   ```bash
+   {{migrate_cmd}}
+   ```
+   Follow {{database_migrations_link}} — never run schema resets or migrations against shared staging/production targets.
+4. **Loopback & startup notes**: `{{stack_notes}}`
+
+<!-- custom:start -->
+<!-- custom:end -->

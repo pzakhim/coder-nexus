@@ -1,0 +1,61 @@
+# 03 — `PHASE-00` Readiness, Definition of Done & Plan Review Gates
+
+<!-- GEN: Why: Prevents mid-phase stalls by verifying all workspace prerequisites and external handoffs in PHASE-00, enforces a shared Definition of Done per phase, and grades plans with binary PASS/FAIL CLI gates and BLOCKER/MAJOR/MINOR review severities (IP5, IP6, IP8, IP17). -->
+
+## 1. `PHASE-00` Readiness Items (`[EXECUTE]` vs `[INFO_NOTE]`, `IP5`, `IP9`)
+
+Every plan begins with `PHASE-00` so `code_writer` never stalls mid-phase waiting for environments, fixtures, migrations, or credentials. Tag each item explicitly:
+- **`[EXECUTE]`**: A deterministic command or setup step executed and verified (`PASS` / `FAIL`) before `PHASE-01` begins.
+- **`[INFO_NOTE]`**: Verified reference context (existing test accounts, environment URLs, pinned flags) recorded for downstream phases.
+
+| Readiness Item | When Needed | Tag (`[EXECUTE]` / `[INFO_NOTE]`) | Verification Command / Check (`PASS` / `FAIL`) |
+|---|---|---|---|
+{{readiness_rows}}
+<!-- GEN: Include environments, test accounts per role, seed data, mock servers, migrations, feature flags, and early technical probes (IP9) used in this workspace. -->
+
+---
+
+## 2. Out-of-Workspace Handoffs & `BLOCKED` Dependencies (`IP8`)
+
+Work outside **{{project_name}}**'s repository boundary (another service repo, cloud infrastructure, third-party vendor, or another team's database) is **never** written as a `code_writer` task. Record it in `PHASE-00` as an explicit handoff or `BLOCKED` gate:
+
+| External Dependency / System | Owner / Target Team | Handoff Artifact / Contract Required | Unblock Verification (`PASS` / `FAIL` or `BLOCKED`) |
+|---|---|---|---|
+{{handoff_rows}}
+
+---
+
+## 3. Definition of Done (DoD) per Phase (`IP6`, `IP7`, `IP17`)
+
+A behavior phase (`PHASE-NN`) is complete and ready for phase commit checkpoint (`IP7`) only when every item below is satisfied:
+
+- [ ] Every task check command in `PHASE-NN` exited `0` (`PASS`) on the current revision.
+- [ ] Workspace analyzer / linter / type-checker (`{{analyzer_cmd}}`) exited `0` (`PASS`) with zero new warnings or errors.
+- [ ] Unit and integration tests covering agreed pass/fail cases and `## Review focus` edge cases owned by `PHASE-NN` are implemented in this phase and report `PASS` (`IP11`, `IP17`).
+- [ ] Documentation updates required by `PHASE-NN` behavior are completed inside this phase (`IP17`).
+{{extra_dod_items}}
+- [ ] Phase handoff evidence records exact commands run, working directories, git revision, and `PASS` results (`NOT_RUN`, `BLOCKED`, and `UNVERIFIED` never count as `PASS`).
+- [ ] Only after phase checks and review acceptance pass, create the verified phase/sub-ticket commit checkpoint per `IP7` (`G3`, `M10`).
+
+---
+
+## 4. Deterministic CLI Gates (`PASS` / `FAIL`) & Plan Review Rubric (`BLOCKER` / `MAJOR` / `MINOR`)
+
+### CLI Verification Gates (`PASS` / `FAIL`)
+
+| Gate | Command | Pass Criterion |
+|---|---|---|
+| **Slice & Contract Validation** | `coder-nexus validate_plan_slices` (or workspace validator) | Reports `PASS` with 100% `AC-NN` coverage and vertical phase ordering |
+| **`PHASE-00` Readiness Check** | Workspace readiness probe commands (`[EXECUTE]` rows) | Every probe exits `0` (`PASS`); unresolved external items marked `BLOCKED` |
+| **Phase Task Check** | Per-task check command in `phases/PHASE-NN-*.md` | Exits `0` (`PASS`) from the specified `cwd` |
+
+### Plan Review Severity Rubric (`BLOCKER` / `MAJOR` / `MINOR`)
+
+| Severity | Plan Defect Criteria | Required Action Before Gate 3 |
+|---|---|---|
+| **`BLOCKER`** | Any uncovered `AC-NN` or `BR-NN`; horizontal phase slicing or standalone final test/docs phase (`IP17`); task missing a runnable check command and `cwd` (`IP4`); unpinned spec value defaulted instead of raising `Q-NN` (`IP10`, `IP11`); out-of-workspace edit planned as a `code_writer` task (`IP8`); or arbitrary mid-phase WIP commit tasks / agent-executed production merge or tag tasks (`IP7`, `M6`, `M10`). | Reject plan; fix all `BLOCKER` items before requesting Gate 3 approval. |
+| **`MAJOR`** | Unsplit `XL` task or task touching 8+ files / crossing two subsystems without justification (`IP12`); missing `## Global constraints` or `## Review focus` section above `## AC coverage` (`IP10`, `IP11`); transcribed function bodies instead of signatures (`IP16`); or file paths violating `clean-architecture` (`IP3`). | Revise affected tasks/headers before Gate 3 approval. |
+| **`MINOR`** | Non-blocking wording ambiguity, minor table formatting, or redundant constraint restatement inside a task. | Clean up in-place during plan finalization. |
+
+<!-- custom:start -->
+<!-- custom:end -->

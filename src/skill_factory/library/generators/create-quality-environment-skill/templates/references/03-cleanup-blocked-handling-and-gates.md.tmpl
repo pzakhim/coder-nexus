@@ -1,0 +1,62 @@
+# 03 — Cleanup, `BLOCKED` Handling, and Readiness Gates (`E11`, `E12`, `E14`)
+
+<!-- GEN: Why: leftover data and orphan processes poison subsequent runs, silent environment workarounds invalidate code under test, and results without an environment record cannot be reproduced. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Populate rules E11, E12, E14, binary PASS/FAIL readiness gates, and the unified BLOCKER/MAJOR/MINOR review rubric (shared_contracts/flags_and_statuses.md). -->
+
+## 1. Post-Run Cleanup (`E11`)
+
+1. **Test data cleanup**: `{{cleanup_data_cmd}}` — remove run-scoped records/tenants created during the session while preserving pre-existing shared state.
+2. **Process cleanup**: stop only the PIDs or containers recorded in your ownership log (`{{stop_own_cmd}}`).
+3. **Log retention**: retain service and stub logs under `{{log_dir}}` for the test report evidence bundle.
+
+## 2. Environment Failures & `BLOCKED` Protocol (`E12`)
+
+Never modify application source code, feature flags, or migrations to bypass an environment failure:
+
+| Failure Condition | Mandatory Action & Status | Escalation / Owner |
+|---|---|---|
+| Required service down or unhealthy on an unowned stack | Stop and report **`BLOCKED`** with probe output | `{{stack_owner}}` |
+| Port conflict that cannot be resolved without killing unowned processes | Stop and report **`BLOCKED`** with `lsof` evidence | `{{stack_owner}}` |
+| Missing local `.env` / role credentials / sandbox keys | Stop and report **`BLOCKED`** — never invent credentials | Workspace owner / User |
+| External provider unavailable and no network-edge stub configured | Mark affected test cases **`BLOCKED`** | QA / Spec owner |
+| Reviewed revision fails to build or local DB migration fails | Stop and report **`BLOCKED`** (or `FAIL` if caused by the feature diff) | Code Writer |
+
+## 3. Mandatory Environment Evidence Record (`E14`)
+
+Include this secret-free block in every acceptance test report (`[01]({{ref_01}})`, `[02]({{ref_02}})`):
+
+```text
+Revision:    <checked-out commit SHA>
+Migrations:  <head revision / local DB status>
+Services:    <service@version -> url (started by me | reused)>
+Data Seed:   <seed command / run isolation ID>
+Stubs:       <stubbed: provider (tool & scenario) | none>
+Accounts:    <role names only — zero credential values>
+Logs:        <path to captured service logs>
+Timestamp:   <ISO-8601 start -> end>
+```
+
+## 4. Deterministic CLI Readiness Gates (`PASS` / `FAIL`)
+
+Tool and readiness checks are strictly binary (`PASS` / `FAIL`). `BLOCKED`, `NOT_RUN`, and `UNVERIFIED` never count as `PASS` (`shared_contracts/flags_and_statuses.md` §1):
+
+| Readiness Check | Command (`cwd: {{target_dir}}`) | `PASS` Condition | `FAIL` / `BLOCKED` Condition |
+|---|---|---|---|
+| **Stack Probe** | `{{probe_cmd}}` | Ports free or owned/reusable healthy stack | Unowned unhealthy process (`BLOCKED`) |
+| **Revision & Schema** | `{{revision_and_migrate_cmd}}` | `HEAD` matches reviewed SHA & migration exits `0` | Revision mismatch or migration error (`FAIL` / `BLOCKED`) |
+| **Health & Readiness** | `{{health_check_cmd}}` | All endpoints respond ready within timeout | Timeout or non-200 response (`FAIL` / `BLOCKED`) |
+| **Seed & Stubs** | `{{seed_and_stub_check_cmd}}` | Seed exits `0` & stubs respond | Seed failure or missing provider stub (`BLOCKED`) |
+
+## 5. Review Severity Rubric (`BLOCKER` / `MAJOR` / `MINOR`)
+
+When reviewing environment preparation or test execution evidence (`shared_contracts/flags_and_statuses.md` §2):
+
+| Severity | Environment & Evidence Violation Examples |
+|---|---|
+| **`BLOCKER`** | Killing/resetting an unowned stack (`E2`); running forbidden reset/sync commands against shared data (`E5`); testing the wrong revision or unmigrated schema (`E8`, `E9`); leaking credential values or PII in logs/reports (`E13`); reporting a stubbed test as a live integration `PASS` without `stubbed: <provider>` (`E7`); modifying application code to work around an environment failure (`E12`). |
+| **`MAJOR`** | Missing environment evidence record (`E14`); using shared mutable accounts instead of isolated per-role test accounts (`E6`); failing to clean up owned background processes or run-scoped data (`E11`); confusing in-app logical environment selectors with physical databases (`E10`). |
+| **`MINOR`** | Incomplete startup order notes (`E1`) or minor log path formatting drift when all services, seeds, and labels were verified properly. |
+
+<!-- custom:start -->
+<!-- custom:end -->

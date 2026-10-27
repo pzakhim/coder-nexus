@@ -6,11 +6,13 @@ Coder Nexus installs agent roles, skills and rules into your project. Your host 
 
 ## What you get
 
-- **Agent roles**: Spec Writer, Designer (UI/UX), Planning, Code Writer, Code Reviewer, Test Runner, Docs Writer.
-- **Approval gates**: you approve requirements, design and the plan before any code is written.
-- **Stack packs**: Flutter, Backend (preview). One pack per workspace.
+- **7 Agent roles across 2 Departments**:
+  - **`dev-team`**: Spec Writer (with Huly + Figma screen/workflow intake at Gate 1), Planning (with Figma token/tree → UI Kit & Clean Architecture audit at Gate 2), Code Writer, Code Reviewer, Test Runner, Docs Writer.
+  - **`bug-squad`**: Bug Fixer, Code Reviewer (L2), Test Runner (4-Gate bug reproduction, root-cause forensics, S1–S4 / L1–L3 triage, and verification), plus read-only `debug-investigation` and `feature-testing`.
+- **Approval gates**: you approve requirements, screens (`S-NN`) & workflows (`W-NN`) (`Gate 1`), technical design & UI Kit mapping (`Gate 2`), and the implementation plan (`Gate 3`) — or bug triage level (`L1/L2/L3`) — before production code is written.
+- **Always-On constitutional rules & stack packs**: Flutter (maintained) and Backend (preview), with profile-aware skill injection (`external-standard`, `external-structured`, `imespro`). One pack per workspace.
 - **Skill Factory** *(new in 3.0)*: 22 generators that write skills tailored to *your* project — domain knowledge, requirements, planning, API contracts, change impact, architecture, clean code, unit tests, debugging, migrations, Git workflow and versioning, code review, security, QA and visual checks. Your generated skills take priority over pack skills on the same topic.
-- **MCP tools** via the `coder-nexus` CLI: task intake, UI/UX design tooling, validators.
+- **MCP tools** via the `coder-nexus` CLI: Huly task intake, two-layer Figma extraction (`tokens.json` + `<node>.spec.json` + per-screen `.png`), architecture & spec validators.
 - **Architecture dashboard** to see how the pieces fit.
 
 ## Getting started
@@ -21,7 +23,14 @@ Coder Nexus installs agent roles, skills and rules into your project. Your host 
 
 **3. Check your setup.** Run **Coder Nexus: Doctor / Check Environment & CLI**.
 
-**4. Start working.** Ask your agent, e.g. *"Implement task ABC-12"* or *"Add a settings screen"*. It will stop at each gate for your approval.
+**4. Start working.** Talk to your agent using any of the built-in workflows:
+
+| Workflow | Example prompt | What happens |
+|---|---|---|
+| **`dev-team`** | *"Implement task ABC-12"* | Extracts Huly specs + Figma screens/workflows (`Gate 1`), maps Figma tokens/tree to the UI Kit & Clean Architecture (`Gate 2`), plans phases (`Gate 3`), codes & reviews phase by phase, runs `Test Runner` QA, and records a visual `as-built.md` |
+| **`bug-squad`** | *"Fix bug: order list crashes when empty"* | Reproduces first, proves root cause & impact, asks you to confirm `S1–S4` & `L1/L2/L3`, then fixes and verifies |
+| **`debug-investigation`** | *"Debug why screen B shows stale data"* | Reproduces/traces with temporary `[DBG-<slug>]` logs, cleans up 100% of temporary edits, and writes `diagnosis.md` |
+| **`feature-testing`** | *"Test flow from page A to B to C"* | `Test Runner` executes your scenario on the real app/API (read-only) and writes `test-run-report.md` |
 
 > After updating the extension, run **Install / Update CLI** and the sync again.
 
@@ -57,7 +66,7 @@ Open the Command Palette and type **Coder Nexus**, or click **Coder Nexus** in t
 | Sync Plugin to Antigravity Global Config | Install the Flutter pack globally |
 | Show Architecture Dashboard | Open the architecture overview |
 
-The sync writes to `.agents/` in your project: roles in `agents/`, skills in `plugins/coder-nexus/`, and `stack.json` mapping the pack to its folders (edit it if detection guessed wrong).
+The sync writes to `.agents/` in your project: roles in `agents/`, Always-On constitutional rules in `rules/`, skills in `plugins/coder-nexus/`, and `stack.json` mapping the pack to its folders (edit it if detection guessed wrong).
 
 ## Useful CLI commands
 
@@ -68,10 +77,9 @@ Run these in the project's terminal.
 | `coder-nexus doctor` | Check the environment |
 | `coder-nexus setup huly` | Connect the Huly task tracker (guided) |
 | `coder-nexus my-tasks` | List your open tasks |
-| `coder-nexus task-detail <ID> --download` | Show a task and save its attachments and designs |
+| `coder-nexus task-detail <ID> --download` | Show a task and save its attachments and Figma frames (`tokens.json`, `<node>.spec.json`, `<node>-SNN.png`) |
+| `coder-nexus figma fetch "<url>"` | Fetch a Figma frame into `tokens.json`, `<node>.spec.json`, and per-screen `.png`/`.jpg` |
 | `coder-nexus setup flutter --check` | Check Flutter project setup |
-| `coder-nexus ux extract --project .` | Prepare the UI/UX design kit from your project |
-| `coder-nexus ux validate --work-item <dir>` | Check a design before approval |
 | `skill-factory list` | List the Skill Factory generators |
 | `skill-factory get -p <package>` | Copy a package of generators into the project |
 

@@ -40,7 +40,7 @@ Any other text, or an unticked box, means `PHASE-01` may not start. The Code Wri
 | Field | Rule | Reason |
 |---|---|---|
 | Scope / Files | Every file the task creates or modifies; nothing outside it is edited | Edits outside the list are unreviewed scope |
-| Reused Components | Spelled as in `design.md`'s reuse mapping (`{{slot:core-package-usage}}` where the stack defines one) | The Code Writer must not choose a different foundation locally |
+| Reused Components | Spelled as in `design.md`'s reuse mapping (`{{slot:architecture-design}}` where the stack defines one) | The Code Writer must not choose a different foundation locally |
 | Consumes | Character-for-character equal to an earlier **Produces** line or to a symbol that exists in the code | The Code Writer sees one task at a time and must not guess a neighbour's names |
 | Produces | Only symbols a later task or phase consumes | Anything else is an internal detail, not a contract |
 | Acceptance Criteria | One runnable check (the stack's analyzer on the touched path, a named test, a request against a running target) plus its cwd. The heading word stays "Acceptance Criteria" | A check without a cwd cannot be re-run identically by the reviewer |

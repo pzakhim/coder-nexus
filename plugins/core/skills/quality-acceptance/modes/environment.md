@@ -1,4 +1,5 @@
 # Mode: environment
+> Topic: Preparing an isolated, repeatable test environment on the exact reviewed revision without disrupting running services.
 
 Prepare a safe, repeatable environment that runs exactly the reviewed revision. Readiness facts (services, ports, seed, accounts, providers) come from `phases/phase-00-prepare.md` and the stack's `{{slot:verification}}`; never guess a command, entry point, device or business record.
 

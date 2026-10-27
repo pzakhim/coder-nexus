@@ -20,8 +20,8 @@ async def test_mcp_server_tools_registered():
     assert "validate_proposal_spec" in tool_names
     assert "validate_plan_slices" in tool_names
     assert "validate_module_architecture" in tool_names
-    assert "validate_ux_design" in tool_names
-    assert len(tool_names) == 9
+    assert "validate_ux_design" not in tool_names
+    assert len(tool_names) == 8
     # Verify no write/mutation tools exist
     assert "huly_create_task" not in tool_names
     assert "huly_update_task" not in tool_names

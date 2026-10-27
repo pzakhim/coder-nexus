@@ -1,0 +1,51 @@
+# 02 — Task Shape, Repository Sizing & Targeted Checks
+
+<!-- GEN: Why: Gives the Planner and Code Writer a deterministic task contract — exact file scope from clean-architecture, signatures and pinned values without transcribed bodies, repository-derived XS–XL sizing with split triggers, and executable PASS/FAIL check commands with cwd (IP2–IP4, IP12, IP16). -->
+
+## 1. Single-Writer Ordered Task Shape (`IP2`, `IP3`, `IP16`)
+
+A single `code_writer` executes the tasks of a phase sequentially (`[PARALLEL]` tracks and `[P]` markers are forbidden). Every task in `phases/PHASE-NN-*.md` specifies:
+
+1. **Architecture-Aligned File Scope (`IP3`)**:
+   - Exact target files and directories adhering to {{clean_architecture_link}}. Never invent ad-hoc folders or cross-layer shortcuts.
+2. **Reused Components**:
+   - Existing domain services, shared utilities, or UI/API contracts reused without duplication.
+3. **Produced Signatures & Pinned Constants (`IP16`)**:
+   - Exact public signatures (class/function name, parameters, return types) and spec-pinned constants inherited from `## Global constraints` or cited `BR-NN` / `D-NN`.
+   - **Signatures, Not Bodies (`IP16`)**: Never transcribe full function bodies into the plan (except when the spec mandates an exact mathematical/business algorithm or fixed literal copy). A plan longer than the code it describes is a code transcript (`MAJOR` plan review finding).
+4. **Targeted Verification Check (`IP4`, `IP11`)**:
+   - Exact test names, assertions (including any edge case assigned by `## Review focus`), working directory (`cwd`), and CLI command that must exit `0` (`PASS`).
+
+---
+
+## 2. Repository-Derived Task Sizing (`XS`–`XL`) & Split Triggers (`IP12`)
+
+Task sizes are calibrated from **{{project_name}}**'s reviewed commit history (commits that landed without rework):
+
+| Size | Typical Scope in {{project_name}} | Historical Baseline Example | Allowed as a Single Task? |
+|---|---|---|---|
+{{size_rows}}
+<!-- GEN: Populate XS, S, M, L, XL rows from git log --shortstat of commits that landed without rework. XL is always "No — must split". -->
+
+### Mandatory Split Triggers (`IP12`)
+Split a planned task before Gate 3 whenever **any** of the following holds:
+- Estimated size is **`XL`**.
+- The task touches **8 or more files**.
+- The task title requires **`"and"`** to describe two distinct outcomes.
+- The task crosses **two independent subsystems** ({{subsystem_examples}}).
+
+**Reviewer-Boundary Split Rule**: Split only where `code_reviewer` could reject one task and approve its neighbor on its own check. Fold setup, configuration, and documentation updates into the behavior task that requires them rather than creating standalone setup/doc micro-tasks.
+
+---
+
+## 3. Targeted Check Commands by Task Kind (`IP4`)
+
+Every task check runs deterministically from its specified `cwd` and reports strictly **`PASS`** (exit `0`) or **`FAIL`** (non-zero exit):
+
+| Task Kind | Working Directory (`cwd`) | Exact Check Command | Pass Criterion (`PASS` / `FAIL`) |
+|---|---|---|---|
+{{check_rows}}
+<!-- GEN: e.g. Domain/use-case task → targeted unit test command; Data/adapter task → analyzer + repository test; Migration task → disposable DB up/down check; UI/handler task → analyzer + widget/endpoint test. -->
+
+<!-- custom:start -->
+<!-- custom:end -->

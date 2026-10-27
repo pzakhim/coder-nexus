@@ -1,47 +1,73 @@
-# Mode: design (before Gate 2)
+# Mode: Design — Gate 2 Pre-Gate Verification (`planning` in `dev-team`)
 
-Reviews `design.md` against the Gate 1 approved `requirements.md`, `codebase-notes.md` and, when present, `design-uiux/uiux.md`. Pass 1 is clean before this file starts. Findings use the prefix `GR-D-NN`.
+Reviews `design.md` against the Gate 1 approved `requirements.md`, `codebase-notes.md`, and (when present) extracted Figma outputs (`.superpowers/sources/<ISSUE-ID>/figma/` `tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png`). Pass 1 (`validate_proposal_spec` on `design.md` = `PASS`, including `DESIGN-007` and `DESIGN-008`) must be clean before starting Pass 2. Findings use `GR-D-NN`.
 
-`DESIGN-007` already checks that every goal appears in `## Goal alignment` and `DESIGN-008` that every `S-NN` / `C-NN` is mapped. This mode goes one level finer and checks substance.
+---
 
-## D1. Reconcile inputs
+## Pass 2 — Design Checklist (`D1`–`D5`)
 
-Build one row per input item and name the design element that serves it.
+### D1. Input Reconciliation (`BR-NN`, `AC-NN`, `W-NN`, `D-NN`)
+Build one traceability row per Gate 1 input item and name the `design.md` section and element that serves it:
 
-| Input | Served by (section and element) | Status |
+| Input ID | Served By (`design.md` Section & Element) | Status (`served` / `not served`) |
 |---|---|---|
-| `BR-03` | `## Behavior, data, and state`: validation rule on submit | served |
-| `AC-05` | - | not served |
+| `BR-03` | `## State Management & Data Flow`: submit validation guard | `served` |
+| `AC-05` | — | `not served` (`BLOCKER`) |
 
-- Inputs: every `BR-NN`, every `AC-NN`, every `W-NN`, and every `D-NN` that binds technical work.
-- An unserved `AC-NN` is `CRITICAL`; an unserved `BR-NN`, `W-NN` or `D-NN` is `HIGH`.
-- Reverse direction: a design element that serves no input is gold-plating (`MEDIUM`) unless `codebase-notes.md` records why it is needed.
-- Behavior the requirements do not contain (a new rule, state or permission) is scope creep (`HIGH`). It goes back to Spec Writer as a `Q-NN`; the design never changes requirements on its own.
+- Any unserved `AC-NN`, `BR-NN`, `W-NN`, or technical-binding `D-NN` is a **`BLOCKER`**.
+- **Reverse direction (Gold-plating)**: Any design element that serves no Gate 1 input is **`MAJOR`** unless `codebase-notes.md` records a verified architectural necessity.
+- **Scope creep**: Any behavior, business rule, or permission introduced in `design.md` that does not exist in `requirements.md` is **`BLOCKER`** — route back to `spec_writer` as a `Q-NN`.
 
-## D2. Deferred list
+### D2. Deferred Decisions Integrity
+- Any choice intentionally deferred (`### Deferred decisions`) must state what is deferred, why it is safe to wait, and when it will be revisited.
+- An unacknowledged open architectural choice is **`MAJOR`**.
+- A deferred item where two components, phases, or layers could choose incompatibly during build is **`BLOCKER`** — it cannot be deferred and must be settled as a `D-NN` now.
 
-- What the design deliberately leaves undecided (a cache policy, a page size, a later migration) is named in the existing sections, with why it is safe to wait and who decides it later. Do not add a heading the design template does not have.
-- Something clearly undecided but not listed is `MEDIUM`.
-- A deferred item that would let two units choose differently (two screens, front end and back end, two tasks) is `HIGH`: it is not deferrable, it needs a decision now.
+### D3. Risks & Mitigations
+Every risk listed in `design.md` must name a concrete mitigation, a check that detects it, or a `BLOCKED` owner. A risk without mitigation is **`MAJOR`** (**`BLOCKER`** when it touches data loss, security, permissions, or an `AC-NN`).
 
-## D3. Risks have mitigations
+### D4. Divergence Points Bound by `D-NN`
+Verify that every boundary where two tasks or layers could diverge — shared entity/field names, state shape, error mapping, API payload/status codes, route arguments, shared components, storage keys — has a clear rule in `design.md` citing a `D-NN` (**`BLOCKER`** if missing or vague like *"follow standard conventions"*).
 
-Every risk in `## Integration, errors, and risks` names a mitigation, a check that detects it, or a `BLOCKED` owner. A risk without one is `MEDIUM`; `HIGH` when it touches data loss, security, permissions or an AC.
+### D5. Verified Codebase & Profile Fit
+- Every existing file path, class, package, or API named in `design.md` must appear in `codebase-notes.md` → `## 3. Verified Baseline Facts` or be explicitly marked `NEW` (**`BLOCKER`** if an unverified existing symbol is assumed).
+- Deviations from the active architecture profile (`{{slot:architecture-design}}` / `{{slot:clean-architecture}}`) without a justifying `D-NN` are **`MAJOR`**.
 
-## D4. Decisions bind divergence points
+---
 
-List the places where two units could make independent choices: names of shared entities and fields, state shape, error mapping and messages, API fields and status codes, routes, shared components, persistence keys.
+## D6. Pass 3 — Cold-Reader Subagent Check (Reader Plays `code_writer`)
 
-- Each needs one rule in the design that cites a `D-NN` and that a reviewer can answer yes/no against. Missing is `HIGH`.
-- A rule that does not actually prevent the divergence it names ("follow conventions") counts as missing.
+After Pass 1 (`PASS`) and Pass 2 (`0 BLOCKER`, `0 MAJOR`), spawn one fresh read-only subagent with this exact prompt:
 
-## D5. Fit with the existing code
+```text
+You are the Code Writer of this team. You have been handed the technical
+architecture design (design.md) of a work item and must next implement it
+phase by phase. You cannot talk to the author, and you have no chat history.
 
-- Named paths, classes, packages and APIs appear in `codebase-notes.md` `## 3. Verified Baseline Facts` or are marked new. An unverified existing name is `HIGH`.
-- The design follows the conventions of the selected architecture profile and the existing code unless a `D-NN` records the deviation and its reason (`MEDIUM` otherwise).
+Read the document under review:
+- {{vN_path}}/design.md
 
-## Coverage report (design)
+Already approved Gate 1 context (do not question unless design.md contradicts it):
+- {{vN_path}}/requirements.md
+- {{vN_path}}/codebase-notes.md
 
-- D1 counts: `BR n/N, AC n/N, W n/N, D n/N served`, unserved IDs, gold-plating elements.
-- Divergence points listed and how many are bound by a rule.
-- Deferred items and risks: listed / with mitigation.
+You may open files these documents cite by path, read-only, only to verify that
+a cited path, class, or component exists. Do not use the codebase to fill gaps
+left by design.md. Do not write or modify any file.
+
+Report only the questions you would still need answered before you could build
+this without guessing: places where you would have to invent a contract, class
+signature, state transition, UI component mapping, error mapping, or test dataset,
+and a wrong guess would matter.
+For each question provide:
+1. The question
+2. Where it comes from (design.md section, D-NN, AC-NN, S-NN / C-NN)
+3. Why the answer changes what you build
+4. What you would guess if forced
+Rank by importance, at most 10.
+
+Skip local implementation details explicitly left to Code Writer and wording nits.
+If nothing important is left, reply: nothing important left
+```
+
+Sort every returned question per [`SKILL.md` §5](../SKILL.md#5-pass-3--fresh-cold-reader-subagent-check) (`Answered already`, `Minor — Agent's call`, or `User's call — OPEN Q-NN`).

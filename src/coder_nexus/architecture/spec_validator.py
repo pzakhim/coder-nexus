@@ -189,20 +189,64 @@ def ac_goal_map(requirements: str) -> dict[str, set[str]]:
     return {ac: {g.upper() for g in G_ID_RE.findall(" | ".join(cells[1:]))} for ac, cells in _table_rows(body, r"AC-\d+").items()}
 
 
-def uiux_summary(version_dir: Path) -> Optional[dict[str, Any]]:
-    """`design-uiux/uiux.md` of a work-item version: status, workflows, screens (id -> kind), components."""
-    path = version_dir / "design-uiux" / "uiux.md"
-    if not path.is_file():
-        return None
-    text = _strip_html_comments(path.read_text(encoding="utf-8"))
-    screens = _table_rows(_section_body(text, "Screens"), r"S\d+")
+def _normalize_sc_id(token: str) -> str:
+    """Normalize S01 / S-01 -> S-01 and C01 / C-01 -> C-01."""
+    m = re.match(r"^([SC])-?(\d+)$", token.strip(), re.IGNORECASE)
+    if not m:
+        return token.strip().upper()
+    return f"{m.group(1).upper()}-{int(m.group(2)):02d}"
+
+
+def requirements_ui_summary(requirements_text: str) -> dict[str, Any]:
+    """Extract UI screens (`S-NN`), workflows (`W-NN`), and components (`C-NN`) from `requirements.md`."""
+    cleaned = _strip_html_comments(requirements_text)
+    screens_body = _section_body(cleaned, "Screens & Visual Sources") or _section_body(cleaned, "Screens")
+    workflows_body = _section_body(cleaned, "Workflows")
+    screen_rows = _table_rows(screens_body, r"S-?\d+")
+    screens: dict[str, str] = {}
+    for sid, cells in screen_rows.items():
+        norm_sid = _normalize_sc_id(sid)
+        # | Screen ID | Screen Name | Status (NEW | CHANGED | EXISTING) | ...
+        status_val = cells[2].upper() if len(cells) > 2 else ""
+        if status_val not in {"NEW", "CHANGED", "EXISTING"} and len(cells) > 4:
+            status_val = cells[4].upper()
+        screens[norm_sid] = status_val or "NEW"
+    workflow_rows = _table_rows(workflows_body, r"W-\d+")
+    components = {_normalize_sc_id(c) for c in re.findall(r"\bC-?\d+\b", screens_body + "\n" + workflows_body, re.IGNORECASE)}
     return {
-        "status": _document_field(text, "Status").upper(),
-        "revision": _document_field(text, "Revision"),
-        "workflows": set(_table_rows(_section_body(text, "Workflows"), r"W-\d+")),
-        "screens": {sid: (cells[4].upper() if len(cells) > 4 else "") for sid, cells in screens.items()},
-        "components": set(_table_rows(_section_body(text, "New components"), r"C\d+")),
+        "has_screens_section": bool(screens_body),
+        "has_workflows_section": bool(workflows_body),
+        "screens": screens,
+        "workflows": workflow_rows,
+        "components": components,
     }
+
+
+def uiux_summary(version_dir: Path) -> Optional[dict[str, Any]]:
+    """Legacy `design-uiux/uiux.md` or `requirements.md` UI summary for a work-item version."""
+    path = version_dir / "design-uiux" / "uiux.md"
+    if path.is_file():
+        text = _strip_html_comments(path.read_text(encoding="utf-8"))
+        screens = _table_rows(_section_body(text, "Screens"), r"S-?\d+")
+        return {
+            "status": _document_field(text, "Status").upper(),
+            "revision": _document_field(text, "Revision"),
+            "workflows": set(_table_rows(_section_body(text, "Workflows"), r"W-\d+")),
+            "screens": {_normalize_sc_id(sid): (cells[4].upper() if len(cells) > 4 else "") for sid, cells in screens.items()},
+            "components": {_normalize_sc_id(cid) for cid in _table_rows(_section_body(text, "New components"), r"C-?\d+")},
+        }
+    req_path = version_dir / "requirements.md"
+    if req_path.is_file():
+        summary = requirements_ui_summary(req_path.read_text(encoding="utf-8"))
+        if summary["screens"] or summary["workflows"]:
+            return {
+                "status": "APPROVED",
+                "revision": _document_field(req_path.read_text(encoding="utf-8"), "Version"),
+                "workflows": set(summary["workflows"]),
+                "screens": summary["screens"],
+                "components": summary["components"],
+            }
+    return None
 
 
 def _strip_html_comments(text: str) -> str:
@@ -582,8 +626,7 @@ class SpecValidator:
                     )
 
             self._check_goals(cleaned, violations)
-            if proposal_path:
-                self._check_workflows(cleaned, Path(proposal_path).resolve().parent, violations)
+            self._check_workflows(cleaned, Path(proposal_path).resolve().parent if proposal_path else None, violations)
 
             cited_decisions = {m.upper() for m in D_ID_RE.findall(cleaned)}
             notes_ref = _document_field(cleaned, "Codebase Notes") or _document_field(cleaned, "Context")
@@ -660,31 +703,78 @@ class SpecValidator:
         }
 
     @staticmethod
-    def _check_workflows(cleaned: str, version_dir: Path, violations: list[SpecViolation]) -> None:
-        """REQ-006: an approved UI/UX design exists before Gate 1 and every W-NN is in `## Workflows`."""
-        uiux = uiux_summary(version_dir)
-        if uiux is None:
-            return
-        if uiux["status"] != "APPROVED":
+    def _check_workflows(cleaned: str, version_dir: Optional[Path], violations: list[SpecViolation]) -> None:
+        """REQ-006: when UI screens/workflows are in scope, validate `## Screens & Visual Sources` and `## Workflows`."""
+        req_ui = requirements_ui_summary(cleaned)
+        goals = set(goal_rows(cleaned))
+        active_screens = {sid for sid, status in req_ui["screens"].items() if status != "EXISTING"}
+
+        if active_screens and not req_ui["workflows"]:
             violations.append(SpecViolation(
-                "REQ-006-UIUX-NOT-APPROVED", "ERROR", None,
-                f"design-uiux/uiux.md is {uiux['status'] or 'missing a Status'}; the UI/UX revision must be APPROVED by the user before Gate 1.",
-                "Finish the designer loop and record the user's approval in uiux.md '## 7. Approval'.",
+                "REQ-006-NO-WORKFLOWS", "ERROR", None,
+                f"requirements.md defines non-EXISTING screens {sorted(active_screens)} in '## Screens & Visual Sources' but has no '## Workflows' rows.",
+                "Add one W-NN row per UI workflow in '## Workflows' mapping Goal, Steps -> screens (S-NN), and Scenarios / AC.",
             ))
-        body = _section_body(cleaned, "Workflows")
-        if not body:
-            violations.append(SpecViolation(
-                "REQ-006-NO-WORKFLOWS", "ERROR", None, "requirements.md has no '## Workflows' section although design-uiux/ exists.",
-                "Add one row per approved W-NN with its goal, steps -> screens and scenarios / AC.",
-            ))
-            return
-        listed = {w.upper() for w in re.findall(r"\bW-\d+\b", body, re.IGNORECASE)}
-        missing = sorted(uiux["workflows"] - listed)
-        if missing:
-            violations.append(SpecViolation(
-                "REQ-006-WORKFLOW-MISSING", "ERROR", None, f"Workflows of the UI/UX design missing from requirements.md: {missing}.",
-                "Map each approved W-NN to scenarios and AC in '## Workflows'.",
-            ))
+
+        referenced_screens: set[str] = set()
+        for wid, cells in req_ui["workflows"].items():
+            row_text = " | ".join(cells[1:])
+            row_goals = {g.upper() for g in G_ID_RE.findall(row_text)}
+            row_screens = {_normalize_sc_id(s) for s in re.findall(r"\bS-?\d+\b", row_text, re.IGNORECASE)}
+            row_acs = {a.upper() for a in re.findall(r"\bAC-\d+\b", row_text, re.IGNORECASE)}
+            referenced_screens |= row_screens
+
+            if not row_goals or (goals and not (row_goals <= goals)):
+                violations.append(SpecViolation(
+                    "REQ-006-WORKFLOW-GOAL", "ERROR", None,
+                    f"{wid} in '## Workflows' must cite a confirmed goal in '## 0. Goals'.",
+                    "Reference the confirmed G-NN served by this workflow.",
+                ))
+            if not row_screens:
+                violations.append(SpecViolation(
+                    "REQ-006-WORKFLOW-SCREEN", "ERROR", None,
+                    f"{wid} in '## Workflows' does not reference any S-NN screen ID in 'Steps -> screens'.",
+                    "Include at least one S-NN screen ID in the Steps -> screens column.",
+                ))
+            if not row_acs:
+                violations.append(SpecViolation(
+                    "REQ-006-WORKFLOW-AC", "ERROR", None,
+                    f"{wid} in '## Workflows' does not reference any AC-NN in 'Scenarios / AC'.",
+                    "Link each W-NN workflow to at least one AC-NN acceptance criterion.",
+                ))
+
+        if active_screens and req_ui["workflows"]:
+            unreferenced = sorted(active_screens - referenced_screens)
+            if unreferenced:
+                violations.append(SpecViolation(
+                    "REQ-006-SCREEN-UNREFERENCED", "ERROR", None,
+                    f"Non-EXISTING screens in '## Screens & Visual Sources' not referenced by any W-NN workflow: {unreferenced}.",
+                    "Include each new or changed S-NN screen in at least one W-NN workflow step.",
+                ))
+
+        if version_dir is not None and (version_dir / "design-uiux" / "uiux.md").is_file():
+            uiux = uiux_summary(version_dir)
+            if uiux is not None:
+                if uiux["status"] != "APPROVED":
+                    violations.append(SpecViolation(
+                        "REQ-006-UIUX-NOT-APPROVED", "ERROR", None,
+                        f"design-uiux/uiux.md is {uiux['status'] or 'missing a Status'}; the UI/UX revision must be APPROVED by the user before Gate 1.",
+                        "Record the user's approval in requirements.md.",
+                    ))
+                body = _section_body(cleaned, "Workflows")
+                if not body:
+                    violations.append(SpecViolation(
+                        "REQ-006-NO-WORKFLOWS", "ERROR", None, "requirements.md has no '## Workflows' section.",
+                        "Add one row per approved W-NN with its goal, steps -> screens and scenarios / AC.",
+                    ))
+                    return
+                listed = {w.upper() for w in re.findall(r"\bW-\d+\b", body, re.IGNORECASE)}
+                missing = sorted(uiux["workflows"] - listed)
+                if missing:
+                    violations.append(SpecViolation(
+                        "REQ-006-WORKFLOW-MISSING", "ERROR", None, f"Workflows missing from requirements.md: {missing}.",
+                        "Map each W-NN to scenarios and AC in '## Workflows'.",
+                    ))
 
     @staticmethod
     def _check_goals(cleaned: str, violations: list[SpecViolation]) -> None:
@@ -872,7 +962,7 @@ class SpecValidator:
 
     @staticmethod
     def _check_uiux_mapping(cleaned: str, version_dir: Path, violations: list[SpecViolation]) -> None:
-        """DESIGN-008: with design-uiux/, design.md maps every non-EXISTING S-NN and every C-NN."""
+        """DESIGN-008: when UI screens/components are in scope, design.md maps every non-EXISTING S-NN and every C-NN."""
         uiux = uiux_summary(version_dir)
         if uiux is None:
             return
@@ -880,18 +970,19 @@ class SpecValidator:
             violations.append(SpecViolation(
                 "DESIGN-008-UIUX-NOT-APPROVED", "ERROR", None,
                 f"design-uiux/uiux.md is {uiux['status'] or 'missing a Status'}; design.md maps only an approved UI/UX revision.",
-                "Get the UI/UX revision approved at Gate 1 first.",
+                "Get the Gate 1 specification approved first.",
             ))
+        needed = {sid for sid, kind in uiux["screens"].items() if kind != "EXISTING"} | uiux["components"]
+        if not needed and not (version_dir / "design-uiux" / "uiux.md").is_file():
+            return
         body = _section_body(cleaned, "UI/UX mapping")
         if not body:
             violations.append(SpecViolation(
-                "DESIGN-008-NO-MAPPING", "ERROR", None, "design.md has no '## UI/UX mapping' section although design-uiux/ exists.",
-                "Map each S-NN to its screen/route and each C-NN to a component.",
+                "DESIGN-008-NO-MAPPING", "ERROR", None, "design.md has no '## UI/UX mapping' section although UI screens/components are in scope.",
+                "Map each S-NN to its screen/route and each C-NN to a component in '## UI/UX mapping'.",
             ))
             return
-        mapped = {m.upper() for m in re.findall(r"\b[SC]-?\d+\b", body, re.IGNORECASE)}
-        mapped |= {re.sub(r"^([SC])-", r"\1", m) for m in mapped}
-        needed = {sid for sid, kind in uiux["screens"].items() if kind != "EXISTING"} | uiux["components"]
+        mapped = {_normalize_sc_id(m) for m in re.findall(r"\b[SC]-?\d+\b", body, re.IGNORECASE)}
         missing = sorted(needed - mapped)
         if missing:
             violations.append(SpecViolation(

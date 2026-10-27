@@ -1,0 +1,59 @@
+# 03 — Roles, Data Scopes & Upkeep
+
+<!-- GEN: Why: authorization and data-scope boundaries (DK3) prevent high-impact security defects, while strict fact labelling, volatile links, PII hygiene, and same-work-item upkeep (DK5-DK8) keep domain knowledge trustworthy over time. Kind: Mandatory — keep the purpose, adapt the structure. -->
+
+## 1. Roles, Data Scopes & Permission Matrix (`DK3`, `DK5`)
+
+<!-- GEN: If the workspace has no RBAC roles or data scopes, keep this section and write a single line: `N/A for this workspace — single-user/unscoped domain (CONFIRMED).` -->
+
+### Roles
+{{role_list}}
+
+### Data-Scope Condition
+{{scope_statement}}
+<!-- GEN: State the exact predicate that filters rows per request (e.g. organization/tenant/owner match), which roles bypass it, and the `file:symbol` where the filter is enforced. -->
+
+### `Role × Scope × Action` Matrix
+
+| Action / Resource | {{role_columns}} | Data Scope Applied | Enforced In (`file:symbol`) | Fact Label |
+|---|---|---|---|---|
+{{matrix_rows}}
+<!-- GEN: Cells use explicit tokens: `ALLOWED (all)` / `ALLOWED (own scope)` / `DENIED` / `OPEN`. -->
+
+## 2. Fact Labelling, Volatile Links & Upkeep Discipline (`DK5`–`DK8`)
+
+- **Fact Labelling (`DK5`)**: Every statement in this skill carries `VERIFIED` (`file:symbol` cited), `CONFIRMED` (user/approved doc cited), or `OPEN` (must be asked before Gate 1). Zero unverified inferences.
+- **Volatile Facts Linked, Never Copied (`DK6`)**: Dynamic counts, tenant lists, feature flags, and version numbers are referenced via links: {{volatile_links}}.
+- **Same-Work-Item Upkeep (`DK7`)**: Updated by {{updater}} in the same work item whenever an entity, status transition, role, data scope, or business rule changes. Remaining `OPEN` items touching a work item's scope must be resolved before Gate 1 approval.
+- **Zero PII or Secrets (`DK8`)**: Examples, glossary rows, and rules use synthetic placeholders only — never real customer names, emails, phone numbers, credentials, or tokens.
+
+### Authoritative Sources
+
+| Source | Kind | Domain Facts Provided |
+|---|---|---|
+{{source_rows}}
+
+## 3. Deterministic CLI Verification Gates (`PASS` / `FAIL`)
+
+| Gate | Command | Pass Criteria |
+|---|---|---|
+| Banned-synonym scan (`DK1`) | `rg -n -i "({{avoid_saying_pattern}})" {{spec_paths}}` | `PASS` when exit code != 0 (0 banned synonyms found); `FAIL` if any match exists |
+| Active `OPEN` fact audit (`DK5`) | `rg -n "\bOPEN\b" .agents/skills/domain-knowledge/` | `PASS` when 0 `OPEN` rows affect the current work item's scope; `FAIL` otherwise |
+| Secret & PII scan (`DK8`) | `rg -n "(api_key|secret|password|token|@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})" .agents/skills/domain-knowledge/` | `PASS` when 0 matches exist; `FAIL` on any match |
+
+## 4. Review Severity Rubric (`BLOCKER` / `MAJOR` / `MINOR`)
+
+| Severity | Domain Knowledge & Spec Alignment Criteria |
+|---|---|
+| `BLOCKER` | Unlabelled or invented domain fact presented as truth (`DK5`); real PII or secret committed (`DK8`); unchallenged contradiction between spec claim and `VERIFIED` code (`DK9`); missing or unconfirmed `Role × Scope × Action` row for an authorization-sensitive change (`DK3`). |
+| `MAJOR` | Banned `"Avoid saying"` synonym used in goals, BR, AC, or scenarios (`DK1`); missing status transition or `file:symbol` enforcement location on an affected entity (`DK2`); business rule modified in code or spec without updating the catalog (`DK4`, `DK7`). |
+| `MINOR` | Volatile count/configuration value copied inline instead of linked (`DK6`); minor table formatting drift; missing change-log entry when domain facts were otherwise updated (`DK7`). |
+
+## 5. Change Log (`DK7`)
+
+| Date | Work Item | Summary of Domain Knowledge Change |
+|---|---|---|
+| {{date}} | generated | Initial domain-knowledge skill generated and confirmed |
+
+<!-- custom:start -->
+<!-- custom:end -->

@@ -39,9 +39,17 @@
 |---|---|---|---|
 | **BR-01** | {{ConciseBusinessOrUxRule}} | G-01 | `D-01` |
 
+## Screens & Visual Sources
+
+> Only for items with UI impact (`figma-intake`); delete this section for non-UI items. Every non-`EXISTING` `S-NN` screen appears in `## Workflows` (`validate_proposal_spec` rule `REQ-006`) and is mapped to code in `design.md` (`DESIGN-008`).
+
+| Screen ID | Screen Name | Status (`NEW` \| `CHANGED` \| `EXISTING`) | Visual Source (`Figma node` + `.spec.json` + `.png` \| `Codebase path`) | Notes |
+|---|---|---|---|---|
+| S-01 | {{ScreenName}} | {{ScreenStatus}} | {{FigmaNodeAndSpecAndImageOrCodebasePath}} | {{ViewportOrAdjustmentNotes}} |
+
 ## Workflows
 
-> Only for items with an approved UI/UX design (`design-uiux/uiux.md`, revision {{UiuxRevision}}); delete this section otherwise. Every `W-NN` of the approved revision appears here (`validate_proposal_spec` rule `REQ-006`).
+> Only for items with UI impact (`figma-intake`); delete this section for non-UI items. Every `W-NN` workflow serves a confirmed `G-NN` and references `S-NN` screens (`validate_proposal_spec` rule `REQ-006`).
 
 | Workflow | Goal | Steps → screens | Scenarios / AC |
 |---|---|---|---|

@@ -1,0 +1,48 @@
+# Safe Schema Changes (`Expand → Backfill → Contract`) and Data Backfills
+
+<!-- GEN: Why: expand/backfill/contract sequencing, lock awareness, and batched tenant-scoped backfills prevent downtime and cross-tenant data corruption. Kind: Mandatory. -->
+
+> Topic: Zero-downtime `Expand → Backfill → Contract` rollout, database lock awareness, online index and constraint patterns, and batched/resumable/scoped data backfills (`M4`, `M6`, `M7`, `M8`, `M14`).
+
+Rules **M4**, **M6**, **M7**, **M8**, and **M14**.
+
+---
+
+## 1. Zero-Downtime `Expand → Backfill → Contract` Rollout (`M4`)
+
+Never combine additive (`expand`) and destructive (`contract`) steps in the same revision when running application or worker instances read the existing schema:
+
+```text
+1. EXPAND    (Revision 1): Add nullable column / new table / concurrent index (compatible with old & new code)
+2. CODE      (Deploy 1):   Deploy API & workers that write both / read new with fallback
+3. BACKFILL  (Revision 2 or CLI script): Backfill existing rows in key-ordered, tenant-scoped batches
+4. CODE      (Deploy 2):   Deploy API & workers that read/write only the new structure
+5. CONTRACT  (Revision 3): Validate NOT NULL / constraints and drop legacy column/table (after prior steps are VERIFIED_IN_TARGET)
+```
+
+---
+
+## 2. Lock-Aware DDL Patterns (`M6`, `M7`)
+
+Always set `{{lock_timeout_stmt}}` before `ALTER TABLE` statements on existing tables and estimate table row counts beforehand:
+
+| Change Type | Safe Pattern (`{{engine}}`) | Unsafe Pattern (`BLOCKER` / `MAJOR`) |
+|---|---|---|
+| **Add Index on Populated Table** | `{{concurrent_index_pattern}}` (outside transaction block; drop `INVALID` leftover first) | Standard `CREATE INDEX` inside a transaction (blocks writes across full build) |
+| **Add `NOT NULL` Column** | Constant `server_default` (when supported without table rewrite) **or** `Expand (nullable) → Backfill → Add CHECK NOT NULL NOT VALID → VALIDATE → SET NOT NULL` | `ADD COLUMN ... NOT NULL` without default on populated table, or volatile default causing full table rewrite |
+| **Add FK or `CHECK` Constraint** | Query & fix violations first → `ADD CONSTRAINT ... NOT VALID` → `VALIDATE CONSTRAINT` | Validated constraint added directly under long `ACCESS EXCLUSIVE` scan |
+| **Rename or Change Column Type** | `Expand` new column → dual-write & backfill → switch reads → `Contract` old column | In-place `RENAME` or `ALTER COLUMN TYPE` while code is running |
+
+---
+
+## 3. Data Migration & Backfill Rules (`B1`–`B8`, `M8`, `M14`)
+
+Whether a data migration runs inside a revision (small tables, e.g., `<= 10,000` rows) or via a standalone idempotent CLI command (large/hot tables), enforce all 8 backfill rules:
+1. **B1 (Scoped)**: Filter every `UPDATE`/`DELETE` by explicit business/tenant/environment scope (`{{scope_columns}}`).
+2. **B2 (Idempotent & Resumable)**: Filter for unmigrated rows only (e.g., `WHERE new_col IS NULL`) so re-running after an interruption is safe.
+3. **B3 (Batched by Primary Key Range)**: Process in small batches (`e.g., BATCH = 1000` ordered by `id > :last_id LIMIT :batch`), committing each batch separately so locks release and vacuum keeps up.
+4. **B4 (Parameterized SQL Only)**: Bind all runtime values (`:param`); never interpolate strings into SQL.
+5. **B5 (Self-Contained)**: Do not import mutable ORM models inside revision files.
+6. **B6 (Safe Progress Logging)**: Log batch number, row counts, and last processed ID — never log customer PII (`M14`).
+7. **B7 (Up-Front Invariant Query)**: Define the exact post-check query (`SELECT count(*) FROM <table> WHERE <unmigrated_condition>` must equal `0`) and include it in `migration-handoff.md`.
+8. **B8 (Concurrent Writers Handled)**: Ensure dual-write code is deployed before running large backfills, or re-run the idempotent backfill until the B7 invariant query returns `0`.

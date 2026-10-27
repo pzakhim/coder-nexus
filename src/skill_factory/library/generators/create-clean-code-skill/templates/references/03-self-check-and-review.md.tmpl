@@ -1,0 +1,37 @@
+# 03 — Self-Check Commands & Review Severity
+
+<!-- GEN: Why: turns rules into deterministic PASS/FAIL CLI checks and aligns authors and reviewers on the single BLOCKER/MAJOR/MINOR severity scale. Kind: Mandatory. -->
+
+## 1. Deterministic Pre-Handoff CLI Gates (`PASS` / `FAIL`)
+
+Run on changed files before reporting `READY_FOR_REVIEW`. Every check is binary (`exit 0` = `PASS`, `exit != 0` = `FAIL`):
+
+```bash
+# 1. Formatter
+{{format_cmd}}
+
+# 2. Linter / Static Analyzer & Complexity
+{{lint_cmd}}
+
+# 3. Static Type Checker
+{{typecheck_cmd}}
+
+# 4. Forbidden patterns & structure scan via ripgrep (rg)
+{{rg_checks}}
+
+# 5. Affected unit tests
+{{test_cmd}}
+```
+
+## 2. Unified Review Severity Scale (`BLOCKER` / `MAJOR` / `MINOR`)
+
+| Severity | Criteria | Review Verdict Impact |
+|---|---|---|
+| `BLOCKER` | Failed CLI tool gate (`FAIL`), correctness/security defect, or violation of a mandatory design/contract rule (C1, C2, C3, C4, C11, C12, C14, C15, C16, C17) | `CHANGES_REQUESTED` (blocks approval) |
+| `MAJOR` | Maintainability or structural issue not caught by CLI linters (C5, C6, C7, C10, C13) | Must be fixed in the same revision when inside task scope |
+| `MINOR` | Redundant "what" comment (C8) or optional readability polish | Optional (never blocks approval) |
+
+Reviewers evaluate only code modified in the current phase diff; legacy debt outside the diff is recorded in `Concerns`, never as a blocker.
+
+<!-- custom:start -->
+<!-- custom:end -->

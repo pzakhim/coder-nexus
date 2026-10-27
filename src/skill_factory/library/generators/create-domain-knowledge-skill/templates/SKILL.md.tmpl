@@ -1,40 +1,61 @@
 ---
 name: domain-knowledge
-description: What {{project_name}}'s business words mean and how its domain works - the glossary ({{sample_terms}}), entities and their status lifecycles, roles and data scopes, business rules and where each lives in the code. Use whenever writing or reviewing requirements, asking spec questions, planning, designing tests, naming things in code or checking permissions in {{project_name}}, even if the user only names a business term.
+description: "What {{project_name}}'s business words mean and how its domain works - the ubiquitous language glossary ({{sample_terms}}), entity status lifecycles, Role x Scope x Action permissions, and business rules with code locations. Use whenever writing or reviewing requirements, asking spec questions, planning, designing tests, naming symbols in code, or checking authorization in {{project_name}}, even if the user only names a business term."
 ---
 
 # Domain Knowledge — {{project_name}}
 
-<!-- GEN: Why: every Spec & Planning skill reads these facts, so their labels and where to find them must be clear on one screen. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
-<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+<!-- GEN: Why: every Spec, Planning, Code, and QA skill reads these domain facts, so deterministic gates, mandatory DK1-DK9 rules, fact labels, and reference routing must fit on one screen. Kind: Mandatory — keep the purpose, adapt the structure. -->
+<!-- GEN: Description: workspace name, concrete situations, the team's own trigger words (their language allowed), and an "even if" clause; verify against trial prompts (Step 8). -->
 
 Scope: {{modules_in_scope}}
 
-## Use it like this
+## 1. Deterministic CLI Gates (`PASS` / `FAIL`)
 
-- Use only glossary terms, verbatim, in requirements, BR and AC; a word under "Avoid saying" is a defect.
-- A new or fuzzy word (not in the glossary, or meaning two things): name the candidate terms and ask which one; check claims about behavior against the code ([01]({{ref_01}})).
-- Before a spec question about status, read the entity card: ask about every transition the change touches.
-- Before any rule about who sees or changes data, read the roles × scopes matrix.
-- When a work item changes an entity, role or rule, update this skill in the same item.
+<!-- GEN: Automated CLI checks return strictly PASS (exit 0) or FAIL (exit != 0). Adapt paths and synonym patterns to this workspace. -->
+| Gate | Command | Enforces |
+|---|---|---|
+| Banned-synonym scan | `rg -n -i "({{avoid_saying_pattern}})" {{spec_paths}}` | `DK1`, `DK9` (`PASS` on 0 matches) |
+| Unresolved `OPEN` fact check | `rg -n "\bOPEN\b" .agents/skills/domain-knowledge/` | `DK5`, `DK7` (`PASS` when 0 `OPEN` items touch active scope) |
+| Secret & PII hygiene scan | `rg -n "(api_key|secret|password|token|@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})" .agents/skills/domain-knowledge/` | `DK8` (`PASS` on 0 matches) |
 
-## Labels
+## 2. Mandatory Domain Knowledge Principles (`DK1`–`DK9`)
 
-`VERIFIED` = read from the code (path given) · `CONFIRMED` = stated by the user or an approved document · `OPEN` = not known yet — ask it, never assume it.
+All rules `DK1`–`DK9` are **mandatory compliance**:
 
-## Read next
+| Rule | Principle | Why | Reference |
+|---|---|---|---|
+| `DK1` | **One term, one meaning** (glossary verbatim; `"Avoid saying"` synonyms banned) | Specs and code must name the same concept identically | [01]({{ref_01}}) |
+| `DK2` | **Entity cards & lifecycles** (fields, statuses, transitions, triggers, `file:symbol`) | Lifecycle transitions are where specs miss edge cases most | [02]({{ref_02}}) |
+| `DK3` | **Roles × scopes × actions** (confirmed matrix, or 1-line `N/A for this workspace`) | Permission and data-scope gaps cause critical defects | [03]({{ref_03}}) |
+| `DK4` | **Business-rule catalog** (`BR-NN` / `DR-NN` with `file:symbol` and source) | Planning modifies each rule at its single enforcement point | [02]({{ref_02}}) |
+| `DK5` | **Labelled facts, zero invention** (`VERIFIED` + path, `CONFIRMED`, or `OPEN`) | Unverified inferences corrupt downstream specs and tests | [03]({{ref_03}}) |
+| `DK6` | **Link volatile facts** (counts, configs, versions linked, never copied) | Inline copies of volatile data go stale silently | [03]({{ref_03}}) |
+| `DK7` | **Same-work-item upkeep** (update this skill whenever an item changes domain rules) | Domain documentation must age lockstep with code | [03]({{ref_03}}) |
+| `DK8` | **Zero PII or secrets** (no real customer data, emails, or tokens in examples) | This skill is committed and shared across the repository | [03]({{ref_03}}) |
+| `DK9` | **Challenge overloaded/fuzzy words** (`Q-NN` → `D-NN`; verify claims against code) | Resolves ambiguity before requirements freeze at Gate 1 | [01]({{ref_01}}) |
 
-1. Glossary ([01]({{ref_01}})).
-2. Entities and lifecycles ([02]({{ref_02}})).
-3. Roles and data scopes ([03]({{ref_03}})).
-4. Business rules and where they live ([04]({{ref_04}})).
-5. Sources and upkeep ([05]({{ref_05}})).
+Reviewers and `gate-review` grade findings on the unified `BLOCKER` / `MAJOR` / `MINOR` scale (`shared_contracts/flags_and_statuses.md`).
 
-## Relationship with other skills
+## 3. Fact Labels
 
-<!-- GEN: Per ~/.claude/skill-factory/core/planning-skill-family.md; link existing siblings or write "not set up in this workspace". -->
-- Writing requirements: {{requirements_specification_link}}
-- Enforcing authorization in code: {{secure_coding_link}}
+- `VERIFIED`: Read directly from code (`file:symbol` path cited).
+- `CONFIRMED`: Stated by the user or an approved specification document.
+- `OPEN`: Unknown — ask via `Q-NN`, never assume or invent.
+
+## 4. Reference Guides
+
+| Topic | Reference |
+|---|---|
+| Ubiquitous language glossary (`DK1`), banned synonyms (`"Avoid saying"`), and challenging overloaded/fuzzy words (`DK9`) | [01 — Glossary & Ubiquitous Language]({{ref_01}}) |
+| Entity cards, status lifecycles, allowed/forbidden transitions (`DK2`), and the business-rule catalog (`DK4`) | [02 — Entities, Lifecycles & Rules]({{ref_02}}) |
+| `Role × Scope × Action` matrix (`DK3`), fact labelling & upkeep (`DK5`–`DK8`), `PASS`/`FAIL` CLI gates, and `BLOCKER`/`MAJOR`/`MINOR` review rubric | [03 — Roles, Scopes & Upkeep]({{ref_03}}) |
+<!-- {{profile_references}} -->
+
+## 5. Relationship with Other Skills
+
+- Writing requirements & acceptance criteria: {{requirements_specification_link}}
+- Enforcing authorization & data scopes in code: {{secure_coding_link}}
 
 <!-- custom:start -->
 <!-- custom:end -->

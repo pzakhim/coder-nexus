@@ -1,0 +1,23 @@
+# 02 — Errors, Lifecycle, and Logging
+
+<!-- GEN: Why: swallowed errors, import/render side effects, leaked resources, and unlogged failures are the costliest runtime defects. Kind: Mandatory. -->
+
+## 1. Error Handling & Boundary Translation (C4, C11)
+
+- **Error contract**: {{error_contract}}
+- **Catch specific errors**: Catch exact expected exceptions/errors at the boundary and translate or chain causes (`{{error_chaining}}`).
+- **Prohibited**: Silent `catch`, bare exception handlers, or returning `null`/`false`/`[]` to hide an operational failure.
+
+## 2. Side-Effect Purity & Resource Lifecycle (C12)
+
+- **Import / render purity**: {{side_effect_rules}}
+- **Resource disposal**: {{lifecycle_disposal_rules}}
+
+## 3. Structured Logging & No Debug Leftovers (C3)
+
+- **No debug calls**: Never commit `{{debug_calls}}`.
+- **Logger**: Use `{{workspace_logger}}` with structured key-value context and error tracebacks.
+- **No secrets or PII**: Never log tokens, passwords, credentials, or personal data.
+
+<!-- custom:start -->
+<!-- custom:end -->

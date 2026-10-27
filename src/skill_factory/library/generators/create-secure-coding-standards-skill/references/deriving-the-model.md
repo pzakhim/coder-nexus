@@ -1,41 +1,49 @@
-# Deriving the workspace's security model
+# Deriving the Workspace Security Model & Risk Taxonomy
 
-Write the model from what the workspace already decided; never invent a new authorization scheme.
+Stack-neutral guide for discovering a workspace's real security architecture and mapping `SC1`–`SC14` onto concrete safe-vs-unsafe patterns and deterministic `rg` checks.
 
-## 1. Trust boundaries
+---
 
-List every place untrusted data enters, with its path:
+## 1. Security Model Discovery (For `01-input-auth-and-data-scope.md`)
 
-| Boundary | Examples |
+Inspect the existing codebase, architecture documentation, and configuration before authoring the skill. Never invent a parallel authentication or authorization scheme.
+
+| Dimension | What to Discover & Document |
 |---|---|
-| HTTP API | Routers/route handlers/server actions; webhooks |
-| Browser | Forms, URL params, local storage, postMessage |
-| Background | Queue messages, scheduled jobs, workers |
-| Files | Uploads, imports, parsed documents (PDF, DOCX, CSV) |
-| External providers | ERP, LLM, payment, identity provider responses |
+| **Trust Boundaries (`SC1`, `SC5`)** | Every entry point where external data enters the process: network endpoints/handlers, UI forms, deep links/navigation URIs, webhooks, queue consumers, file imports, and external provider responses — along with the validator/schema boundary for each |
+| **Authentication & Session Lifecycle (`SC7`)** | How identity is established, verified, refreshed, and terminated (token/session validation helper, single-flight refresh hook, and credential wipe on logout/expiry) |
+| **Authorization Model (`SC2`)** | Roles, permissions/capabilities, where object-level guards execute (application/use-case layer), and the rule that UI visibility gates are UX only |
+| **Data Scopes (`SC3`)** | Active isolation dimensions (tenant, owner/user, environment, release state), how the scope identifier travels from the authenticated context into queries/caches/storage keys, and what an unscoped leak looks like |
+| **Fail-Closed Error Contract (`SC13`)** | How validation, auth, and upstream failures are denied without returning permissive defaults or fabricated fallback records |
 
-## 2. Authorization model
+---
 
-- Roles and their capabilities (copy the workspace's RBAC contract verbatim if it exists).
-- Where guards live (e.g. capability guards called in use cases) and the forbidden pattern (e.g. role-string checks in routers or UI).
-- Environment rules (e.g. production mutations admin-only).
+## 2. Secrets, Sensitive Data & Cryptography Discovery (For `02-secrets-data-and-crypto.md`)
 
-## 3. Data scopes
+| Dimension | What to Discover & Document |
+|---|---|
+| **Secrets & Configuration (`SC6`)** | Typed configuration loader or compile-time injection mechanism, hardware-backed/encrypted credential store, `.gitignore` rules for environment files, and secret rotation policy |
+| **Sensitive Data & PII Redaction (`SC8`)** | What constitutes sensitive data/PII in the domain, structured logger redaction rules, generic client-facing error envelopes, and UI masking/background screen protection |
+| **Cryptographic Primitives (`SC12`)** | Vetted libraries used for password/secret hashing, authenticated encryption, constant-time comparison, and cryptographic random token generation |
 
-For each scope (tenant, environment, owner, release/draft state):
+---
 
-| Scope | Carried by | Enforced in | Leak looks like |
-|---|---|---|---|
-| e.g. tenant | request context → use case → repository filter | repository queries, cache keys | query without `tenant_id` filter |
+## 3. Runtime Risk Taxonomy & `rg` Audit Patterns (For `03-runtime-risks-deps-and-review.md`)
 
-## 4. Secrets and sensitive data
+Map each runtime risk category onto the workspace's **Unsafe Pattern** vs. **Safe Pattern** using real project helpers:
 
-Settings object and secret store; what is encrypted at rest and with which helper; which env files are git-ignored; what counts as personal data here.
+| Risk Category | Universal Unsafe Pattern | Universal Safe Pattern |
+|---|---|---|
+| **Query / Command Injection (`SC4`)** | Interpolating or concatenating input strings into queries, shell commands, or dynamic evaluation | Parameterized queries/bound parameters; argument arrays without shell invocation; allow-listed sort/filter identifiers |
+| **Path Traversal & File Handling (`SC4`, `SC10`)** | Joining user-supplied filenames directly into filesystem paths; unbounded file reads into memory | Enforcing byte-size caps, content-type sniffing, generated filenames, and canonical path containment checks |
+| **Output & Navigation Injection (`SC5`)** | Rendering raw untrusted markup or navigating/redirecting to unvalidated external URIs | Context-aware auto-escaping or explicit sanitization; strict route/domain allow-listing for redirects and deep links |
+| **Transport & Outbound Calls (`SC9`)** | Disabling TLS certificate verification; calling user-supplied URLs without host/IP checks or timeouts | Enforcing verified HTTPS/TLS, outbound host + global-IP allow-lists (SSRF guard), explicit timeouts, and disabled redirects |
+| **Supply-Chain Dependencies (`SC11`)** | Unpinned dependency ranges, unreviewed native/runtime permissions, or un-audited advisory alerts | Locked dependency versions, automated advisory audits, and permission review on every added package |
 
-## 5. Existing protections
-
-Validation layer, guards, network allow-list/SSRF helper, sanitiser, crypto helpers, security linters and dependency audit — cite them so new code reuses them.
-
-## Sources
-
-`CLAUDE.md`, `AGENTS.md`, RBAC/architecture docs, the clean-architecture skill, auth/guard modules, past security fixes in git log. When the model is unclear, ask; do not guess.
+### Designing Deterministic `rg` Security Audits (`PASS` / `FAIL`)
+In the generated skill's Gate table (`SKILL.md`) and `03-runtime-risks-deps-and-review.md`, define concrete `rg -n` commands tailored to the workspace's language that scan source files for:
+1. Hardcoded credentials, API keys, or tokens (`SC6`).
+2. Disabled TLS/certificate verification or cleartext `http://` endpoints (`SC9`).
+3. String-interpolated queries, shell execution, or unsafe deserialization/eval (`SC4`).
+4. Logging of tokens, passwords, or authorization headers (`SC8`).
+5. Unencrypted storage of session tokens or sensitive credentials (`SC6`).

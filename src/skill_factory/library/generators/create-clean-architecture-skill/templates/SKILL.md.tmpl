@@ -1,0 +1,47 @@
+---
+name: clean-architecture
+description: Clean Architecture standard of {{project_name}} - deterministic boundary gates, folder layout, layer responsibilities, dependency direction, DI composition, adding features, and splitting oversized files. Use whenever creating or moving files/folders, wiring dependencies, splitting modules, or reviewing architecture in {{dirs}}.
+---
+
+# Clean Architecture — {{project_name}}
+
+<!-- GEN: Why: gives Code Writer, Planner, and Code Reviewer a single one-screen index of architectural gates, mandatory layer principles, and reference guides for this workspace. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+## 1. Deterministic Tool & Boundary Gates (`PASS` / `FAIL`)
+
+<!-- GEN: List the workspace's automated architecture validators, import-boundary linters, static analyzers, and rg boundary commands. Every check is binary (PASS / FAIL). -->
+| Tool / Boundary Gate | Command | Enforces Rules Automatically |
+|---|---|---|
+| {{gate_name}} | `{{gate_command}}` | {{enforced_rules}} |
+
+## 2. Core Architecture & Layer Principles (Mandatory Compliance)
+
+<!-- GEN: One row per rule from references/base-rules.md (A1–A10) as adopted/adapted for this workspace. No per-rule Severity column: tool gates are PASS/FAIL and architectural principles are mandatory. -->
+| Rule | Principle | Why | Reference |
+|---|---|---|---|
+| {{id}} | {{rule}} | {{why}} | {{reference_link}} |
+
+Reviewers grade architectural findings on the unified `BLOCKER` / `MAJOR` / `MINOR` scale (`shared_contracts/flags_and_statuses.md` §2) and evaluate only files created or modified in the phase.
+
+## 3. Reference Guides
+
+| Topic | Reference |
+|---|---|
+| Folder layout, layer responsibilities, naming patterns, and test tree mirror | [01 — Layout & Layer Roles]({{ref_01}}) |
+| Dependency matrix, boundary checks, DI wiring, unit-of-work/state ownership, and lifecycle purity | [02 — Dependencies, DI & Contracts]({{ref_02}}) |
+| Step-by-step feature addition, splitting oversized files, and review severity rubric | [03 — Adding, Splitting & Review]({{ref_03}}) |
+<!-- {{profile_references}} -->
+
+## 4. Relationship with Other Skills
+
+- Naming and file/function size thresholds: {{clean_code_link}}.
+- Post-green simplification within a single file: {{code_simplification_link}}.
+- Approved architecture decisions ({{decision_notation}}) and the phase plan override generic defaults for the scope they cover.
+
+## Not adopted
+
+<!-- GEN: Rules marked "not adopted" with the reason, or delete. -->
+- {{not_adopted}}
+
+<!-- custom:start -->
+<!-- custom:end -->

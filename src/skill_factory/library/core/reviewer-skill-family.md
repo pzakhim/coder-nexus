@@ -26,9 +26,11 @@ When a rubric skill is missing in the workspace, `code-review` falls back to its
 |---|---|
 | Review revision | The exact tree under review (base + review revision + uncommitted scope) |
 | Axis | One independent dimension of the review (plan, architecture, quality, tests, security, contract, UI, migrations) |
-| Finding | One problem with rule/axis, location, reason, severity and fix direction |
-| `APPROVED` | Every applicable check passed on the review revision |
-| `CHANGES_REQUESTED` | At least one blocking finding |
+| Finding | One problem with rule/axis, location, reason, severity (`BLOCKER` / `MAJOR` / `MINOR`) and fix direction |
+| `BLOCKER` / `MAJOR` / `MINOR` | Unified 3-tier finding severity scale (`shared_contracts/flags_and_statuses.md`; zero `P0`–`P3` remnants) |
+| `PASS` / `FAIL` | Deterministic CLI/tool gate status (`NOT_RUN`, `BLOCKED`, `UNVERIFIED` are never `PASS`) |
+| `APPROVED` | Every applicable check passed on the review revision (`0` `BLOCKER` and `0` `MAJOR` findings) |
+| `CHANGES_REQUESTED` | At least one `BLOCKER` or `MAJOR` finding |
 | `BLOCKED` | Required evidence is missing (cannot decide) |
 
 Keep the workspace's own verdict words and finding IDs when it has them (P5) and map them to this table.

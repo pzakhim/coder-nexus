@@ -1,0 +1,54 @@
+# 02 — Case Design, Security Hand-Off & Stack-Neutral Test Levels (`Q4`, `Q5`, `Q8`–`Q11`)
+
+<!-- GEN: Why: Most escaped defects and authorization bypasses live off the happy path, and choosing the wrong test level makes verification either blind to service rules or slow and brittle (`Q4`, `Q5`, `Q8`–`Q11`). Kind: Mandatory — keep the purpose, populate roles, scopes, and test runners for {{project_name}}. -->
+
+## 1. Mandatory Coverage Categories (`Q4`, `Q9`, `Q10`)
+
+Every feature test plan must cover all applicable categories below:
+
+- [ ] **Happy Path**: Every approved BDD scenario and primary user/API flow.
+- [ ] **Validation & Input Boundaries**: Equivalence classes, missing required fields, malformed payloads, and exact boundaries (`0`, `1`, `max`, `max + 1`, pagination edges).
+- [ ] **Permission & Data-Scope Matrix (`Role × Environment × Action × Object`)**: Every mutating or restricted read operation tested across `{{roles}}` × `{{environments}}` × `{{data_scopes}}`, including direct API/service calls that must return `401`, `403`, or scoped `404` even when the UI hides the control.
+- [ ] **`security-review` (`SR14`) Runtime Hand-Off Cases**: Every runtime-dependent `PLAUSIBLE` finding or authorization/rate-limit/concurrency check handed over from `security-review` converted into an explicit test case tagged `security-handoff:<SR-ID>`.
+- [ ] **UI / Client State Matrix (when client surface exists)**: `loading` (no layout jump), `empty` (zero records vs zero filter matches), `error + retry`, and `populated`.
+- [ ] **External Provider Failures & Timeouts**: Upstream timeout, `5xx`, and malformed responses for `{{external_providers}}` (stubbed at network boundary and labelled `stubbed`).
+- [ ] **Idempotency & Concurrency**: Repeated submission, double-click/retry handling, and concurrent edits on shared records.
+- [ ] **Out-of-Scope Guards (`Q9`)**: Explicit checks proving capabilities listed under brief "scope out" are not exposed or executable.
+- [ ] **Targeted Regression Set (`Q10`)**: Existing flows sharing `{{regression_areas}}` (tables, contracts, shared components, or permission guards).
+
+---
+
+## 2. Case Format & Concrete Expected Results (`Q8`, `Q11`)
+
+Every case uses the standard structure below and grades impact with **`BLOCKER` / `MAJOR` / `MINOR`** (`shared_contracts/flags_and_statuses.md`; never use legacy numbered priorities):
+
+```text
+<TC-ID>  [traces: <AC-ID> | security-handoff:<SR-ID> | out-of-scope-guard | regression]   risk: <BLOCKER | MAJOR | MINOR>   level: <api | ui | visual | integration | manual>
+Given:   <deterministic seed data, actor role, tenant/owner scope, and initial state>
+When:    <exact user interaction or API/service request>
+Then:    <concrete observable outcome: HTTP/RPC status, response fields, DB state, event, or UI state/message>
+Target:  <environment, route/endpoint/screen, Role × Scope>
+```
+
+### Risk Tier Ordering (`Q8`)
+1. **`BLOCKER` (Run First)**: Core happy-path AC, `Role × Environment × Action × Object` permission and cross-tenant isolation checks, `security-review` (`SR14`) runtime checks, and data/financial integrity cases.
+2. **`MAJOR` (Run Second)**: Input validation, boundary values, UI state matrix (`loading`, `empty`, `error`, `populated`), external failure handling, out-of-scope guards (`Q9`), and regressions (`Q10`).
+3. **`MINOR` (Run Last)**: Secondary cosmetic details and non-destructive edge formatting.
+
+---
+
+## 3. Selecting the Cheapest Proving Test Level (`Q5`)
+
+Assign each test case to the lowest, fastest stack-neutral boundary that proves the requirement:
+
+| Test Level | Proves in `{{project_name}}` | Workspace Runner / Tooling | Owner | Selection Rule |
+|---|---|---|---|---|
+| **Unit** | Pure domain/state logic in isolation | `{{unit_tool}}` | {{unit_owner}} | Enforced via prerequisite CLI gate; not planned case-by-case in QA test plan |
+| **Integration** | Repository queries, DB constraints, transactions, scope filtering | `{{integration_tool}}` | {{integration_owner}} | Use when persistence invariants or query scoping cannot be observed through the API |
+| **API / Service Acceptance** | Real service requests with per-role auth, status codes, payload contract, persisted records, side effects, `Role × Scope` matrix | `{{api_tool}}` | {{api_owner}} | Default level for business rules, permission denials (`401`/`403`/`404`), concurrency, and `SR14` hand-offs |
+| **UI / Client End-to-End** | Rendered user flows, navigation, forms, 4 UI states, role-driven visibility, runtime console/network health | `{{ui_tool}}` | {{ui_owner}} | Use for end-to-end user journeys and client state transitions; do not duplicate combinatorial API matrix here |
+| **Visual Fidelity** | Layout, responsive viewports, and visual states against approved design | `{{visual_tool}}` | {{visual_owner}} | Use when feature has an approved visual design or UI mockup |
+| **Manual** | Non-automatable physical/external flows | Step-by-step protocol + evidence capture | {{manual_owner}} | Permitted **only** with a written justification in the plan |
+
+<!-- custom:start -->
+<!-- custom:end -->

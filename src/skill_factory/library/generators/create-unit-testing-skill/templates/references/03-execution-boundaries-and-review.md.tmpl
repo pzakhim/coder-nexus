@@ -1,0 +1,58 @@
+# 03 — CLI Execution, Evidence, Boundaries & Review
+
+<!-- GEN: Why: real CLI commands, proof that the new test ran, explicit boundaries, and unified BLOCKER/MAJOR/MINOR review grading turn test runs into trustworthy evidence. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+Rules **U12**, **U13**, and **U14**.
+
+---
+
+## 1. CLI Commands & Proving the New Test Ran (`U12`)
+
+Every command is binary (`exit 0` = `PASS`, `exit != 0` = `FAIL`):
+
+| Step | Command | What to Verify in Output |
+|---|---|---|
+| **1. Focused Red Run** | `{{focused_test_cmd}}` | Exits non-zero on the expected assertion failure (not an import/setup error) |
+| **2. Focused Green Run** | `{{focused_test_cmd}}` | Exits `0`; verbose output lists the exact new test name as `PASSED` |
+| **3. Module Suite** | `{{module_test_cmd}}` | Total passed count increased by the number of added tests; `0 skipped` |
+| **4. Full Unit Suite** | `{{full_test_cmd}}` | Entire unit suite passes with deterministic ordering |
+| **5. Static Checks on Tests** | `{{test_lint_cmd}}` | Formatter, linter, and type checker pass on `test` files (`exit 0`) |
+
+---
+
+## 2. Red-to-Green Evidence Rows & Result Triaging (`U12`, `U14`)
+
+Record both Red and Green runs in the hand-off (`work-item-contract` `references/handoff-and-status.md` §4, `evidence-standard`):
+
+| Claim | Command (+cwd) | Revision | Exit Code | Key Output | Status |
+|---|---|---|---|---|---|
+| `Task X.Y red: <behavior> not yet enforced` | `{{focused_test_cmd}}` | `<sha>` | `1` | `<expected assertion failure>` | `FAIL` (expected red) |
+| `Task X.Y green: <behavior> verified` | `{{focused_test_cmd}}` | `<sha>` | `0` | `1 passed` | `PASS` |
+
+Compare actual output against the task's **Expected** outcome (`MATCH` / `CODE_WRONG` / `PLAN_WRONG`). Non-executed checks must be reported as `NOT_RUN`, `BLOCKED`, or `UNVERIFIED` — never `PASS`.
+
+---
+
+## 3. Unit Test Boundaries (`U13`)
+
+Always state what unit tests covered and what remains for downstream verification:
+
+| Verification Target | Proven By | Owner |
+|---|---|---|
+| Pure domain rules, use cases/services, schemas/mappers, state transitions, HTTP/adapter error mapping | **Developer Unit Tests** (this skill) | Code Writer |
+| Real database queries, constraints, migrations, transactions, live API contracts, E2E flows | **Integration / Acceptance Verification** (`{{verification_link}}`, `quality-acceptance`) | Test Runner (or Code Writer when assigned an integration task) |
+
+---
+
+## 4. Review Severity (`BLOCKER` / `MAJOR` / `MINOR`)
+
+Code Reviewers grade unit tests on the unified 3-tier scale (`shared_contracts/flags_and_statuses.md` §2):
+
+| Severity | Finding | Review Verdict Impact |
+|---|---|---|
+| `BLOCKER` | Any unit test or static check `FAIL`s; new test not collected or skipped (`U12`); bug/finding fix lacks red-to-green regression test (`U3`); subject under test mocked (`U5`); authorization/security guard mocked away (`U6`); existing test edited/weakened to pass | `CHANGES_REQUESTED` |
+| `MAJOR` | Missing required Pass/Default, handled Fail, or Empty/Edge case (`U2`); live network/DB/clock in unit test (`U4`, `U7`); tautological or weak assertion (`U8`); test path or setup violates workspace convention (`U10`, `U11`) | Must be fixed in the same phase scope |
+| `MINOR` | Minor test naming improvement, AAA formatting, or local builder extraction (`U9`) | Optional (never blocks approval) |
+
+<!-- custom:start -->
+<!-- custom:end -->

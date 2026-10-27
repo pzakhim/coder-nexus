@@ -1,37 +1,37 @@
 # Hand-off and status contract
 
-The single home of what roles hand each other, every status word they may return, the evidence row, the review and test report shapes, and where each record lives under `vN/`. Process skills (`incremental-implementation`, `review-workflow`, `quality-acceptance`, `change-control`) use these formats; they do not redefine them.
+The single home of what roles and departments hand each other, every status word they may return, the evidence row, the review and test report shapes, and where each record lives under `vN/`. Process and department skills (`dev-team`, `bug-squad`, `incremental-implementation`, `review-workflow`, `quality-acceptance`, `change-control`) use these formats; they do not redefine them.
 
-All hand-offs go through the host coordinator: an agent returns a status, the coordinator assigns the next role. No agent starts another, approves for the user or changes item status.
+All hand-offs go through the host coordinator: an agent returns a status, and the coordinator assigns the next role. No agent starts another, approves for the user, or changes item status.
 
 ## 1. Common header (every hand-off)
 
-Item / version / Type; approved document revisions and the user response references behind them; goal IDs and AC IDs in scope; task or phase; `BASE_REVISION` and `REVIEW_REVISION` where code exists; staged / unstaged / untracked scope; affected files; planned checks; UI target and states; for UI items the foundation profile recorded in design (`architecture_profile.mode` where the stack defines one, see `{{slot:core-package-usage}}`; destinations per `{{slot:clean-architecture}}`); open `PCR-NN` and unresolved blockers.
+Item / version / Type; approved document revisions and the user response references behind them; goal IDs (`G-NN`) and AC IDs (`AC-NN`) in scope; task or phase; `BASE_REVISION` and `REVIEW_REVISION` where code exists; staged / unstaged / untracked scope; affected files; planned checks; UI target and states; for UI items the foundation profile recorded in design (`architecture_profile.mode` where the stack defines one, see `{{slot:architecture-design}}`; destinations per `{{slot:clean-architecture}}`); open `PCR-NN` and unresolved blockers.
 
 A hand-off is a set of claims. The receiver re-checks what it relies on (`evidence-standard`).
 
-## 2. Hand-off per role pair
+## 2. Hand-off per role & department pair
 
 | From → To | Status that triggers it | Carries, beyond the header | Lives at |
 |---|---|---|---|
-| Spec Writer → Planning | `READY_FOR_PLANNING` | Gate 1 approval reference; `requirements.md`, `codebase-notes.md`, `change-impact.md` (`v2+`) and approved `uiux.md` revisions; 0 `OPEN` `Q-NN` | the documents themselves |
+| Spec Writer → Planning (`dev-team` — **Zero-Re-Ask Handoff**) | `READY_FOR_PLANNING` + `BRANCH_READY` | Gate 1 user approval reference; `requirements.md` (including `## Screens & Visual Sources` `S-NN` and `## Workflows` `W-NN` when UI is in scope), `codebase-notes.md` (`0 OPEN Q-NN`), `change-impact.md` (`v2+`), and extracted Figma outputs (`.superpowers/sources/<ISSUE-ID>/figma/` `tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png`) or verified existing UI source; active item branch. **`planning` inherits every confirmed `G-NN`, `AC-NN`, `D-NN`, `S-NN`, and `W-NN` without re-asking the user** | `requirements.md`, `codebase-notes.md` |
 | Planning → Code Writer | `READY_FOR_BUILD` naming the first phase (or `AMENDED` after a change request); the coordinator assigns one Code Writer | Gate 3 approval reference; plan and phase revisions; the one phase to build; last `## Plan change log` row | `implementation-plan.md`, `phases/` |
-| Code Writer → Code Reviewer | `READY_FOR_REVIEW` | `BASE_REVISION..REVIEW_REVISION` (committed, never `+dirty`); tasks ticked (for `PHASE-00`, its accepted tick, [plan-and-task-contract](plan-and-task-contract.md) §1); the pre-flight table; one evidence row per task check and per phase check; self `{{slot:bug-hunt}}` result; Concerns; `PCR-NN` raised and their answers; from round 2 `## Review reply (round N)` | `evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md` |
+| Code Writer → Code Reviewer | `READY_FOR_REVIEW` | `BASE_REVISION..REVIEW_REVISION` (committed per `git-preflight` phase commit format, never `+dirty`); tasks ticked (for `PHASE-00`, its accepted tick, [plan-and-task-contract](plan-and-task-contract.md) §1); the pre-flight table; one evidence row per task check and per phase check; self `{{slot:bug-hunt}}` and `{{slot:code-simplification}}` results; Concerns; `PCR-NN` raised and their answers; from round 2 `## Review reply (round N)` | `evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md` |
 | Code Writer → Planning | `BLOCKED` naming a `PCR-NN` | The request shape of `change-control` (the Code Writer writes it) | `plan-changes/PCR-NN.md` |
 | Code Reviewer or Test Runner → Planning | Its verdict, with a `PLAN_CONFLICT` row in its own report | Plan line, finding, evidence, options. The raiser stays read-only; the coordinator writes `PCR-NN.md` from that row | the report, then `plan-changes/PCR-NN.md` |
 | Code Reviewer → Code Writer | `CHANGES_REQUESTED` | Report path, finding IDs to address, round number | `reviews/review_<phase-id>_<REVIEW_REVISION>.md` |
-| Code Reviewer → Docs Writer | `APPROVED` | Report path; the exact approved `REVIEW_REVISION` | same report |
-| Docs Writer → coordinator | `RECORDED` (or `BLOCKED`) | The phase's as-built rows (§8) | `as-built.md` |
-| coordinator → Test Runner | Last phase `APPROVED` and `RECORDED` (`final_qa`), or a phase the plan marks for its own acceptance run | The approved `REVIEW_REVISION`; scope from `requirements.md` → `## 1.` **Scope in** / **Scope out** (`brief.md` → `## Scope and contracts` for a phase-free item) | — |
+| Code Reviewer → coordinator | `APPROVED` | Report path; the exact approved `REVIEW_REVISION`. Coordinator runs the **User Checkpoint** before assigning the next phase (or assigns `test_runner` `final_qa` after the last phase) | `reviews/review_<phase-id>_<REVIEW_REVISION>.md` |
+| coordinator → Test Runner | Last phase `APPROVED` (`final_qa`), or a phase the plan marks for its own acceptance run | The approved `REVIEW_REVISION`; scope from `requirements.md` → `## 1.` **Scope in** / **Scope out** (`brief.md` → `## Scope and contracts` for a phase-free item) | — |
 | Test Runner → Code Writer | `CHANGES_REQUESTED` (feature verdict) | Each `FAIL` case: steps, expected vs actual, evidence path, `AC-NN` and its owning phase; defect severity | `evidence/final_qa/<revision>/` (or `evidence/<phase-id>/<revision>/` for a phase run) |
-| Test Runner → Docs Writer | `ACCEPTED` | Report path; per-AC results; limitations | same folder |
-| Docs Writer → Code Reviewer | `READY_FOR_REVIEW` (reader docs) | The changed documents and the claims they make | the documents themselves |
+| Test Runner → Docs Writer (via coordinator) | `ACCEPTED` | Report path; per-AC results; limitations. Coordinator assigns `docs_writer` **once** for final closure | `evidence/final_qa/<revision>/` |
+| Docs Writer → coordinator | `RECORDED` (or `BLOCKED`) | Final concise visual `as-built.md` ([template](../templates/as-built.md.tpl)) with Mermaid Flow Diagram, Delivered Code Map, and Phase/Review/QA Evidence Ledger | `as-built.md` |
+| Docs Writer → Code Reviewer | `READY_FOR_REVIEW` (reader docs) | The changed reader-facing documents and the claims they make | the documents themselves |
 
 A fix on any arrow creates a new revision. Review and test evidence for the touched code no longer counts; the chain restarts from the Code Reviewer.
 
-**Order after `APPROVED`.** Per phase: Code Reviewer `APPROVED` → Docs Writer `RECORDED` → coordinator checkpoint → next phase. The Test Runner runs `final_qa` once, after the last phase is approved and recorded, plus any phase the plan marks for its own acceptance run; then the Docs Writer records the verdict.
+**Order after `APPROVED`.** Per phase: Code Reviewer `APPROVED` → coordinator User Checkpoint → next phase (no `Docs Writer` run between phases). The Test Runner runs `final_qa` once after the last phase is `APPROVED` (plus any phase the plan explicitly marks for its own acceptance run). Once Test Runner returns `ACCEPTED`, the coordinator assigns `Docs Writer` **once** to write the final visual `as-built.md` (`RECORDED`).
 
-**Writer hand-off revision.** `<REVIEW_REVISION>` in the hand-off path is the committed revision handed to review. The pre-flight table is drafted in working notes before Task 1 and copied into the hand-off at the end. A commit is required before `READY_FOR_REVIEW`; `+dirty` appears only on intermediate task ticks.
+**Writer hand-off revision & commit checkpoint.** `<REVIEW_REVISION>` in the hand-off path is the committed revision handed to review. The pre-flight table is drafted in working notes before Task 1 and copied into the hand-off at the end. A commit is required before `READY_FOR_REVIEW` following `git-preflight` (`<type>(<SUB-TICKET>): <summary> [parent: <PARENT-TICKET>, PHASE-NN]` when a sub-ticket exists, or `<type>(<PARENT-TICKET>): [PHASE-NN] <summary>`); `+dirty` appears only on intermediate task ticks.
 
 **Review round N.** The per-finding reply table (reply words in §3) goes into the new `writer-handoff.md` under `## Review reply (round N)`. The delta review covers previous `REVIEW_REVISION`..new `REVIEW_REVISION`; the header keeps the phase's `BASE_REVISION`.
 
@@ -41,12 +41,12 @@ A fix on any arrow creates a new revision. Review and test evidence for the touc
 
 | Word | Returned by | Means |
 |---|---|---|
-| `READY_FOR_SPEC` / `READY_FOR_PLANNING` / `READY_FOR_VERIFICATION` / `READY_FOR_BUILD` | Designer / Spec Writer / Spec Writer (findings-only) / Planning | The next role may start on the approved revisions named |
+| `READY_FOR_PLANNING` / `READY_FOR_VERIFICATION` / `READY_FOR_BUILD` | Spec Writer / Spec Writer (findings-only) / Planning | The next role may start on the approved revisions named. When `READY_FOR_PLANNING` is already approved, `dev-team` starts directly at `planning` |
 | `BRANCH_READY` | `git-preflight` (Spec Writer, step 1E) | The item branch is decided and recorded as a `D-NN`; work may continue on it |
 | `APPROVED_FOR_BUILD` | coordinator, recording the user's Gate 3 approval | Plan state, not a hand-off: specs and plan are frozen; Planning then returns `READY_FOR_BUILD` |
-| `SKIPPED` | Designer, Planning | The step does not apply to this item; the reason is recorded |
-| `READY_FOR_REVIEW` | Code Writer, Docs Writer | Every task ticked on `MATCH`, phase checks run on a committed revision, evidence rows written. Optional **Concerns**: doubts about correctness or scope the reviewer reads after its cold passes (`review-workflow`); plain observations are listed as notes |
-| `RECORDED` | Docs Writer | The phase's as-built rows (§8) are written, each citing a report or evidence path |
+| `SKIPPED` | Planning | The step does not apply to this item; the reason is recorded |
+| `READY_FOR_REVIEW` | Code Writer, Docs Writer (reader docs), Bug Fixer (L2) | Every task ticked on `MATCH`, phase checks run on a committed revision, evidence rows written. Optional **Concerns**: doubts about correctness or scope the reviewer reads after its cold passes (`review-workflow`); plain observations are listed as notes |
+| `RECORDED` | Docs Writer | Final `as-built.md` (§8, [template](../templates/as-built.md.tpl)) is written after `ACCEPTED` QA (or for a `documentation` item), with every row citing a real report or evidence path |
 | `NEEDS_CONTEXT` | Code Writer | Information missing from the hand-off. States what was tried (files read, commands run) and exactly what is needed |
 | `BLOCKED` | any role | Cannot continue without something outside its authority: an approval, an environment, an external dependency, an answer to a `PCR-NN`. Names the blocker |
 | `AMENDED` / `ESCALATED` | Planning, for a `PCR-NN` (never used as a reply to a finding) | `TASK_DETAIL` amended and logged / sent to Gate 2 (`DESIGN_CHANGE`) or Gate 1 (`SCOPE_CHANGE`) |
@@ -60,7 +60,7 @@ A fix on any arrow creates a new revision. Review and test evidence for the touc
 | `FIXED` / `DISPUTED` / `RAISED` | Code Writer, per finding (`review-resolution`) | Fixed on the new revision with evidence / disputed with technical evidence / sent on as a plan change request (`change-control`) or `NEEDS_CONTEXT` |
 | `UNVERIFIED` | validators, any role | A claim with no executed check behind it |
 
-- `NOT_RUN`, `BLOCKED` and `UNVERIFIED` never become `PASS`, `APPROVED` or `ACCEPTED`. Reason: a check that did not run proves nothing.
+- `NOT_RUN`, `BLOCKED`, and `UNVERIFIED` never become `PASS`, `APPROVED`, or `ACCEPTED`. Reason: a check that did not run proves nothing.
 - No softened statuses ("done with small issues", "mostly passing"). Doubts go in Concerns; the status stays one of the words above.
 - On `NEEDS_CONTEXT` or `BLOCKED` the coordinator changes something before re-assigning: adds the context, resolves the blocker, or routes the plan defect to Planning. Re-assigning unchanged repeats the failure.
 
@@ -97,61 +97,63 @@ The stack may name the report file through `{{slot:verification}}`; the content 
 
 | Path | Owner | Holds |
 |---|---|---|
-| `implementation-plan.md`, `phases/phase-NN-*.md` | Planning (Code Writer ticks tasks only) | Approved plan; `## Plan change log` |
+| `requirements.md`, `codebase-notes.md`, `change-impact.md` (`v2+`) | Spec Writer (`codebase-notes.md` also written by Planning) | Gate 1 specification, permanent `Q-NN` / `D-NN` log, and `v2+` delta contract |
+| `design.md`, `implementation-plan.md`, `phases/phase-NN-*.md` | Planning (Code Writer ticks tasks only) | Gate 2 architecture design, Gate 3 approved plan, `## Plan change log` |
 | `plan-changes/PCR-NN.md` | Code Writer writes its request, or the coordinator writes it from a Reviewer / Test Runner `PLAN_CONFLICT` row; Planning writes the answer | One file per plan change request |
 | `evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md` | Code Writer | Hand-off claims, evidence rows, review replies |
 | `reviews/review_<phase-id>_<REVIEW_REVISION>.md` | Code Reviewer | Review report |
 | `evidence/test-plan.md`, `evidence/final_qa/<revision>/`, `evidence/<phase-id>/<revision>/` | Test Runner | Test plan, test report, artifacts |
-| `as-built.md` / `verification.md` | Docs Writer | Phase record and next-phase hand-off / findings |
+| `as-built.md` / `verification.md` | Docs Writer (for `as-built.md`) / Test Runner (for `verification.md`) | Final concise visual as-built summary ([template](../templates/as-built.md.tpl)) written once after `ACCEPTED` QA / investigation findings |
 
 Never write run output into `.agents/` (synced configuration only).
 
-## 8. As-built row (`as-built.md`)
+## 8. Final As-Built Record (`as-built.md`)
 
-| Claim | Report or evidence path | Revision | Result |
-|---|---|---|---|
-| `PHASE-02` approved | `reviews/review_PHASE-02_abc1234.md` | `abc1234` | `APPROVED` |
+Written **once** by `Docs Writer` from [`templates/as-built.md.tpl`](../templates/as-built.md.tpl) after `Test Runner` returns `ACCEPTED` in `final_qa` (or directly for a `documentation` item). It must remain concise, scannable, and visual:
 
-One row per recorded fact, copied from a report or evidence row, never from a status message. The Docs Writer returns `RECORDED` when the phase's rows are written, or `BLOCKED` naming the missing report.
+1. **Executive Summary**: Goals delivered (`G-NN`) and user-facing/system outcome.
+2. **Visual Flow & Architecture Overview**: A single Mermaid diagram (`flowchart LR` or `sequenceDiagram`) depicting the actual built user/system flow across screens, state/domain controllers, and data/API boundaries.
+3. **Delivered Code & Component Map**: Layer/area, file path, and role/reused foundation or Kit components.
+4. **Phase, Review & QA Evidence Ledger**:
+
+| Stage / Phase | Scope & `AC-NN` Covered | Approved Revision | Report / Evidence Path | Verdict |
+|---|---|---|---|---|
+| `PHASE-01` | `AC-01`, `AC-02` | `abc1234` | `reviews/review_PHASE-01_abc1234.md` | `APPROVED` |
+| `final_qa` | `AC-01`..`AC-04` | `def5678` | `evidence/final_qa/def5678/test-report.md` | `ACCEPTED` |
+
+5. **Deviations, Plan Changes & Known Limitations**: Approved `PCR-NN` items, runtime/fixture limits, and reader docs updated.
+
+One ledger row per recorded stage, copied from a real report or evidence row, never from a status message. The Docs Writer returns `RECORDED` when `as-built.md` is complete, or `BLOCKED` naming the missing report.
 
 ## 9. Finding severity and verdict impact
 
-The one scale every code finding uses, whoever raises it (Code Writer self-check, Code Reviewer, Test Runner defect). The stack skills (`{{slot:bug-hunt}}`, `{{slot:clean-code}}`, `{{slot:code-simplification}}`, `{{slot:secure-coding-standards}}`, `{{slot:code-review}}`) decide **what** is a finding and give rule IDs; this section decides how it is graded and what it does to the verdict. Reason: the writer and the reviewer must read the same severity the same way, whichever stack produced it.
+The single unified scale every code finding uses, whoever raises it (Code Writer self-check, Code Reviewer, Test Runner defect), defined canonically in `shared_contracts/flags_and_statuses.md` §2. The stack skills (`{{slot:bug-hunt}}`, `{{slot:clean-code}}`, `{{slot:code-simplification}}`, `{{slot:secure-coding-standards}}`, `{{slot:code-review}}`) decide **what** is a finding and give rule IDs; this section decides how it is graded and what it does to the verdict.
 
-### Defects (wrong behavior)
+### Unified Severity Scale (`BLOCKER` / `MAJOR` / `MINOR`)
 
-| Severity | Means |
-|---|---|
-| `BLOCKER` | Data loss or corruption, security hole, crash or hang on a normal path, approved AC behavior broken |
-| `MAJOR` | Wrong result or crash on a realistic edge path (empty, failure, retry, last page, slow network), resource leak |
-| `MINOR` | Wrong result only in a rare or self-correcting case |
-
-Confidence: `CONFIRMED` (traced end to end or shown by a command) or `PLAUSIBLE` (names the evidence that would decide it). Every defect names a failure scenario (`given … → when … → then …`); "might be fragile" is not a finding.
-
-### Rule violations (code that behaves correctly but breaks a stack rule)
+Both behavioral defects and stack rule violations use the same three-level scale (never use `P1`/`P2`/`P3` for findings):
 
 | Severity | Means |
 |---|---|
-| `P1` | A rule the stack skill marks mandatory, or a maintainability trap that spreads (wrapper, kept alias, exposed internals, mutable global, swallowed error, dead or debug code, skipped self-check) |
-| `P2` | Maintainability risk |
-| `P3` | Style or suggestion |
+| `BLOCKER` | 1. **Behavioral / Security defect**: Data loss or corruption, security hole, crash or hang on a normal path, approved AC behavior broken.<br>2. **Failed tool gate**: Any required CLI check defined in `{{slot:verification}}` or `{{slot:clean-code}}` (linter, formatter, static analyzer/type checker, architecture import linter, or test runner) exiting non-zero (`FAIL`).<br>3. **Mandatory design / craft rule violation**: Violation of a core rule in `{{slot:clean-code}}`, `{{slot:clean-architecture}}`, or `{{slot:secure-coding-standards}}` (pass-through wrapper, kept alias, exposed internal helper, mutable module global, swallowed error, layer boundary breach). |
+| `MAJOR` | 1. **Edge-case defect**: Wrong result, crash, or resource leak on a realistic edge path (empty, failure, retry, last page, slow network).<br>2. **Maintainability risk**: Structural smell or localized complexity not already blocked by CLI linters that degrades readability or testability. |
+| `MINOR` | Wrong result only in a rare self-correcting case, or optional style/readability polish. |
 
-A rule violation that also produces a wrong result, crash or leak is graded as a defect instead. Only code changed in the phase is graded; debt outside the diff is a note, never a finding. Test-case priority `P1`–`P3` in `quality-acceptance` is a different field (run order), not a severity.
+Confidence: `CONFIRMED` (traced end to end or shown by a command) or `PLAUSIBLE` (names the evidence that would decide it). Every behavioral defect names a failure scenario (`given … → when … → then …`); every rule violation puts its rule ID first in Problem. Only code changed in the phase is graded; debt outside the diff is a note, never a finding.
 
 ### Verdict impact
 
 | Finding | Effect |
 |---|---|
-| `CONFIRMED` `BLOCKER` or `MAJOR`, or any `P1` | `CHANGES_REQUESTED` |
+| `CONFIRMED` `BLOCKER` or `MAJOR` | `CHANGES_REQUESTED` |
 | `PLAUSIBLE` `BLOCKER` | `BLOCKED` until the named evidence is supplied |
-| Other `PLAUSIBLE`, `MINOR`, `P2` | Listed; fixed in the same revision when inside the phase's Scope / Files and cheap; never block alone |
-| `P3`, `NOTE` | Optional |
+| Other `PLAUSIBLE`, `MINOR` (or localized `MAJOR` maintainability note outside touched scope) | Listed; fixed in the same revision when inside the phase's Scope / Files and cheap; never block alone |
 
 No role lowers a severity to end a round; the 3-round cap and escalation are in `review-workflow`.
 
 ### Rows
 
-- Review report: the findings table of §5. A rule violation puts its rule ID first in Problem (for example `CC3: module-level mutable list`); a defect from bug-hunt keeps its failure scenario.
+- Review report: the findings table of §5. A rule violation puts its rule ID first in Problem (for example `<rule ID>: module-level mutable list`, the ID as the stack's clean-code skill numbers it); a defect from bug-hunt keeps its failure scenario.
 - Code Writer hand-off, after its self-check: `bug-hunt: <n> CONFIRMED, <m> PLAUSIBLE (effort <level>)` or `bug-hunt: no defect found (effort <level>)`, and `simplify: <smell> -> <technique> at <path:line>[; ...]; net <+/-n> lines; checks: <command> exit <code>` or `simplify: nothing worth changing (looked at: <files>)`.
 
 ### Bug-hunt effort

@@ -1,0 +1,62 @@
+# 01 — Phase Order, Slicing Strategy & Commit Checkpoints
+
+<!-- GEN: Why: Defines how {{project_name}} orders layers inside a vertical behavior slice, pins item-wide constraints and edge cases in the plan header, sequences high-risk and wide-rename work, and binds phase boundaries to git-workflow commit checkpoints (IP1, IP7, IP9–IP11, IP13–IP15, IP17). -->
+
+## 1. Layer Order Inside One Vertical Behavior (`IP1`)
+
+Phases are always vertical behavior slices. Inside each vertical behavior phase, order tasks across layers so no task waits on an unbuilt dependency:
+
+{{order_steps}}
+<!-- GEN: e.g. 1. contract/schema in design.md → 2. migration → 3. domain model & use case + unit tests → 4. data repository/adapter + tests → 5. presentation/handler + tests → 6. DI & route wiring. -->
+
+- **Concrete Repository Example**: {{past_feature_example}}
+
+---
+
+## 2. Plan Header Sections Above `## AC coverage` (`IP10`, `IP11`)
+
+`implementation-plan.md` places two mandatory sections immediately above `## AC coverage` while preserving all standard template sections:
+
+1. **`## Global constraints` (`IP10`)**:
+   - Copy verbatim every item-wide value pinned by the approved `requirements.md` / `design.md`, citing its source ID (`BR-NN`, `D-NN`, design section).
+   - Every task inherits these constraints automatically without paraphrasing or restating them.
+   - Typical item-wide constraints in **{{project_name}}**: {{global_constraint_kinds}}
+   - Any value required by tasks but omitted by the spec becomes an open `Q-NN` before Gate 3, never an invented default.
+2. **`## Review focus` (`IP11`)**:
+   - List up to 5 input classes or failure modes implied by the spec that no standard happy-path check covers (e.g., empty/oversized payload, duplicate submit, concurrent edit, lost connection, permission denial), ordered most-likely first.
+   - Each row records: **Input / Failure Mode**, **Expected Behavior** (citing `BR-NN`, `AC-NN`, or `D-NN`), and **Owning Task ID** (`PHASE-NN` task that adds the automated test).
+   - Write `None found after checking every AC and BR` only after verifying every `AC-NN` and `BR-NN`.
+   - Common review-focus gaps in **{{project_name}}**: {{review_focus_examples}}
+
+---
+
+## 3. High-Risk-First, Prefactor & Wide Renames (`IP9`, `IP13`–`IP15`, `IP17`)
+
+- **Unknowns & High-Risk Behavior First (`IP9`, `IP13`)**:
+  - Resolve technical uncertainties in `PHASE-00` or `PHASE-01` via a bounded probe: {{unknowns_examples}}
+  - Immediately after `PHASE-00`, schedule the vertical behavior with the highest technical or business risk first among dependency-eligible phases.
+- **Prefactor First (`IP14`)**:
+  - When a behavior-preserving refactor simplifies a phase's implementation, make it the **first task** of that phase inside approved scope, verified by existing tests reporting `PASS`, with zero new behavior mixed in.
+- **Expand → Migrate → Contract for Wide Renames (`IP15`)**:
+  - When a mechanical symbol rename or schema/type change crosses many call sites, keep builds green (`PASS`) at every step:
+    1. **Expand task**: introduce the new symbol/contract alongside the old one.
+    2. **Migrate batch tasks**: migrate callers in bounded batches per `{{migrate_batch_unit}}`, each batch verified by its targeted check (`PASS`).
+    3. **Contract task**: remove the deprecated symbol/contract once all callers migrate.
+  - Database schema changes follow {{database_migrations_link}}.
+- **Tests and Docs Inside Each Phase (`IP17`)**:
+  - Every phase includes the unit/integration tests and documentation updates for its behavior slice. Never create a final testing, documentation, or polish phase.
+
+---
+
+## 4. Branch, Sub-Ticket / Accepted-Phase Commit Checkpoints & Hotfix Tasks (`IP7`, `G2`, `G3`, `M3`, `M10`)
+
+Align every implementation plan with `git-workflow` (`G2`, `G3`, `M3`, `M10`) and the `git-preflight` `D-NN` record:
+
+| Rule | Mandatory Planning Contract |
+|---|---|
+| **Parent-Ticket Work Branch (`G2`, `M3`)** | Cut one work branch per parent/umbrella ticket from the confirmed base ref: `<type>/<PARENT-TICKET>-<short-description>` (or `<type>/<short-description>` only when no tracker ticket exists). |
+| **Verified Commit Checkpoints (`G3`, `M10`)** | Each accepted phase or sub-ticket boundary in the plan maps to an explicit commit checkpoint after its verification gates report `PASS` — never arbitrary mid-phase WIP commits:<br>• **Parent Ticket + Sub-Ticket**: `<type>(<SUB-TICKET>): <summary> [parent: <PARENT-TICKET>, PHASE-NN]`<br>• **Parent Ticket + Multi-Phase (no sub-ticket ID)**: `<type>(<PARENT-TICKET>): [PHASE-NN] <summary>`<br>• **No Ticket ID (user-supplied requirement)**: `<type>(phase-NN): <summary>` |
+| **Hotfix Propagation & Human-Only Release Gates (`G5`, `M6`)** | Production hotfix plans include explicit propagation tasks for `{{hotfix_lines}}`. Merging into production (`main`), creating release tags, and triggering production deployments are listed strictly as commands for the user to run (`M6`), never agent tasks. |
+
+<!-- custom:start -->
+<!-- custom:end -->

@@ -1,0 +1,63 @@
+# Preconditions, Safety Boundary & Per-Case Execution Loop
+
+> Topic: Reviewed revision and environment preconditions (`A1`, `A7`), read-only and safe test-account boundaries (`A2`, `A13`), per-case execution loop with persistence read-back (`A3`, `A4`), revision-bound evidence (`A8`), and `PASS`/`FAIL`/`BLOCKED`/`NOT_RUN` grading (`A9`) for {{project_name}}.
+
+<!-- GEN: Why: Consolidate preconditions/safety (legacy 01) and the per-case execution loop/evidence standard (legacy 02) into one cohesive reference ({{ref_01}}) so every run starts on the verified revision with a single evidence contract. -->
+
+## 1. Entry Preconditions & Unreachable-Tool Rule (`A1`, `A7`)
+
+Verify every item below before executing the first test case:
+- [ ] **Code Review Sign-Off (`A1`)**: Code review verdict is `APPROVED` on target revision `{{revision_notation}}` (`{{review_report_location}}`).
+- [ ] **Security Review Hand-Off (`A1`, `A6`, `SR14`)**: When security triggers matched, `security-review` verdict and any `Role × Environment × Action × Object` matrix rows or runtime-dependent `PLAUSIBLE` checks are loaded from `{{security_report_location}}`.
+- [ ] **Approved Test Plan (`A1`)**: Test cases, expected results, and regression guards are approved in `{{plan_location}}` ({{quality_planning_link}}).
+- [ ] **Prepared Environment (`A1`)**: Target environment (`{{mutable_environments}}`) is running revision `{{revision_notation}}` with deterministic seed data per {{quality_environment_link}}.
+- [ ] **Verification Tools Reachable (`A7`)**: Primary UI tool (`{{ui_tool}}`, fallback `{{ui_fallback}}`) and API tool (`{{api_tool}}`, fallback `{{api_fallback}}`) respond to health checks. If both primary and fallback tools for a surface fail, mark all cases requiring that surface **`BLOCKED`** citing the exact tool error — never infer or fabricate observations.
+
+---
+
+## 2. Read-Only & Operational Safety Boundary (`A2`, `A13`)
+
+- **Strictly Read-Only Toward Code & Tests (`A2`)**: Never modify application source files, database migrations, or test suites during acceptance testing. All defects are handed back to the Code Writer via [03-failures-retest-and-gates.md]({{ref_03}}).
+- **Designated Test Accounts Only (`A13`)**: Authenticate exclusively with approved test principals (`{{accounts_ref}}`); never use real customer or employee credentials.
+- **Environment Mutation Boundary (`A13`)**: State-mutating cases may run only against `{{mutable_environments}}`. Never execute mutating or destructive operations against `{{forbidden_environments}}` (`production` or shared environments outside the approved plan).
+- **Redacted Evidence (`A13`)**: Strip `Authorization` headers, session cookies, API keys, and real PII before saving payloads, logs, or screenshots under `{{evidence_path}}`.
+
+---
+
+## 3. Execution Order & Per-Case Loop (`A3`, `A4`, `A8`, `A9`)
+
+### 3.1 Execution Order
+Execute cases in risk order:
+1. **Blocker / critical-path acceptance cases** and **`security-review` (`SR14`) runtime permission checks**.
+2. **Core functional, validation, and state-transition cases**.
+3. **Boundary, out-of-scope guard, and regression cases (`A11`)**.
+
+### 3.2 Mandatory Per-Case Execution Loop (`A3`, `A4`, `A8`)
+
+For every case in the approved plan, execute and record:
+
+```text
+Case ID:        <CASE-ID> (traces to <AC-ID / SR14-ID>)
+Context:        revision={{revision_notation}} | env=<environment> | role=<role> | scope=<tenant/org>
+Steps Executed: <exact steps run via {{ui_tool}} or {{api_tool}}; note any deviation (A3)>
+Observed:       <live UI state / HTTP status + response envelope / console & network check>
+Persistence:    <reload page or re-query API/DB to confirm state persisted (A4)>
+Evidence:       <files saved under {{evidence_path}}/{{evidence_naming}}> | stubbed=<provider | none>
+Result:         PASS | FAIL | BLOCKED (<reason>) | NOT_RUN (<reason>)
+```
+
+- **Never soften an expectation (`A3`)**: If the spec requires `403`/`404` or a specific validation message and the runtime returns `200` or `500`, record `FAIL`.
+- **Never trust optimistic UI without read-back (`A4`)**: Every create, update, state transition, or delete must be confirmed by a full page reload or a subsequent read query.
+
+---
+
+## 4. Case Result Vocabulary (`A9`)
+
+Follow `shared_contracts/flags_and_statuses.md` strictly:
+- **`PASS`**: Every step, persistence read-back, and console/network check succeeded on `{{revision_notation}}` with saved evidence.
+- **`FAIL`**: Any mismatch between expected and actual behavior, runtime console/5xx error, or flaky outcome across reruns.
+- **`BLOCKED`**: Execution prevented by an external blocker or unreachable tool (`A7`) — state the blocker explicitly.
+- **`NOT_RUN`**: Case intentionally skipped in this run scope — state the reason explicitly.
+- `BLOCKED`, `NOT_RUN`, and `UNVERIFIED` **never** satisfy an acceptance gate.
+
+See [`references/02-ui-and-api-execution-checks.md`]({{ref_02}}) for surface-specific UI and API checks and [`references/03-failures-retest-and-gates.md`]({{ref_03}}) for defect reporting and re-test rules.

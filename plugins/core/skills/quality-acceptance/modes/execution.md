@@ -1,4 +1,5 @@
 # Mode: execution
+> Topic: Executing planned test cases in severity order on the reviewed revision and recording fresh observable evidence.
 
 Run the plan's cases on the prepared environment, on the exact reviewed revision, and record what was observed.
 
@@ -12,7 +13,7 @@ Run the plan's cases on the prepared environment, on the exact reviewed revision
 
 1. Re-check the Reviewer's analyzer, test and visual evidence for the revision (read, do not trust blindly; rerun the cheapest command to confirm the tree).
 2. Run the stack's checks from {{slot:verification}} that the plan lists (targeted integration / acceptance tests, affected regressions, build).
-3. Run P1 cases, then P2, then P3; guards and regression cases are part of the run, not optional.
+3. Run BLOCKER cases first, then MAJOR, then MINOR; guards and regression cases are part of the run, not optional.
 4. Run visual cases with {{slot:visual-quality}}: same screen, state, viewport, data, role and theme as the approved `S-NN` reference. Open and inspect every captured image before judging it.
 
 ## Executing one case

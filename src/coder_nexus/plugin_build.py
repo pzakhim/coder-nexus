@@ -54,6 +54,13 @@ NAME_RE = re.compile(r"^name:[^\n]*$", re.MULTILINE)
 FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n?", re.DOTALL)
 SKILLS_BLOCK_RE = re.compile(r"^skills:\n((?:[ \t]+-[ \t]+.*\n?)+)", re.MULTILINE)
 PREFIXED_REF_RE = re.compile(r"`([a-z]+)-([a-z0-9-]+)`")
+PROFILE_MARKER_RE = re.compile(
+    r"<!-- \{\{profile_references\}\} -->|"
+    r"<!-- \{\{profile_references:start\}\} -->.*?<!-- \{\{profile_references:end\}\} -->",
+    re.DOTALL,
+)
+H1_RE = re.compile(r"^#\s+(.+)$", re.MULTILINE)
+TOPIC_RE = re.compile(r"^>\s*Topic:\s*(.+)$", re.MULTILINE)
 
 STACK_ROUTING = (
     "## Stack rules\n\n"
@@ -322,6 +329,9 @@ def project_bundle(plugins_dir: Path, packs: list[str], out: Path, agents_out: P
             if out / "rules" / rule.name in path_map.values():
                 problems.append(f"packs/{pack['stack']}/rules/{rule.name}: rule file name clashes with another pack")
             place(rule, out / "rules" / rule.name, [pack["stack"]])
+        guideline = pack_dir / "GUIDELINE.md"  # a guide for people, next to the plugin's json files
+        if guideline.is_file():
+            place(guideline, out / guideline.name, [pack["stack"]])
     (out / "skills").mkdir(exist_ok=True)
     (out / "rules").mkdir(exist_ok=True)
     for src, dest in path_map.items():
@@ -439,7 +449,106 @@ def check_projection(plugin_out: Path, agents_dir: Path | None, known: set[str] 
                     continue
                 if not (document.parent / target).exists():
                     problems.append(f"{label}: broken link {target}")
+    for skill_dir in _skill_dirs(plugin_out / "skills"):
+        profiles_dir = skill_dir / "profiles"
+        if not profiles_dir.is_dir():
+            continue
+        skill_label = str(skill_dir.relative_to(plugin_out))
+        skill_text = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
+        if not PROFILE_MARKER_RE.search(skill_text):
+            problems.append(f"{skill_label}/SKILL.md: missing <!-- {{{{profile_references}}}} --> marker for profiles/")
+        base_refs = {p.name for p in (skill_dir / "references").glob("*.md")} if (skill_dir / "references").is_dir() else set()
+        for profile_md in sorted(profiles_dir.glob("*/*.md")):
+            md_label = str(profile_md.relative_to(plugin_out))
+            if profile_md.name in base_refs:
+                problems.append(f"{md_label}: filename collides with base references/{profile_md.name}")
+            if not H1_RE.search(profile_md.read_text(encoding="utf-8")):
+                problems.append(f"{md_label}: missing top-level '# <Title>' heading")
     return sorted(set(problems))
+
+
+def read_workspace_profile(workspace: Path) -> str | None:
+    """Return the active architecture profile recorded in `<workspace>/.superpowers/setup.json`, if any."""
+    profile = _read_json(workspace / ".superpowers" / "setup.json").get("profile")
+    return profile.strip() if isinstance(profile, str) and profile.strip() else None
+
+
+def _extract_profile_doc_meta(md_path: Path) -> tuple[str, str]:
+    text = md_path.read_text(encoding="utf-8")
+    h1 = H1_RE.search(text)
+    title = h1.group(1).strip() if h1 else md_path.stem.replace("-", " ").title()
+    topic_match = TOPIC_RE.search(text)
+    topic = topic_match.group(1).strip() if topic_match else title
+    return title, topic
+
+
+def _source_profiles_dir(skill_name: str, plugins_dir: Path) -> Path | None:
+    core_profiles = plugins_dir / "core" / "skills" / skill_name / "profiles"
+    if core_profiles.is_dir():
+        return core_profiles
+    for stack in available_packs(plugins_dir):
+        prefix = f"{stack}-"
+        if not skill_name.startswith(prefix):
+            continue
+        slot_or_extra = skill_name.removeprefix(prefix)
+        pack = load_pack(plugins_dir, stack)
+        source_name = pack.get("slots", {}).get(slot_or_extra, slot_or_extra)
+        candidate = plugins_dir / "packs" / stack / "skills" / source_name / "profiles"
+        if candidate.is_dir():
+            return candidate
+    return None
+
+
+def apply_workspace_profile(
+    plugin_dir: Path,
+    profile: str | None,
+    plugins_dir: Path = PLUGINS_DIR,
+) -> list[str]:
+    """Activate `profiles/<profile>/*.md` across installed skills in `plugin_dir`.
+
+    For each skill with a `profiles/` directory (either in `skill_dir/profiles` or in source `plugins_dir`):
+    - Removes any previously copied profile `.md` files from `references/`.
+    - Copies all `*.md` files from `profiles/<profile>/` into `references/`.
+    - Injects one table row per `.md` file at `<!-- {{profile_references}} -->` in `SKILL.md`.
+    - Deletes `skill_dir/profiles` when `profile` is specified so only active references remain.
+    Returns the list of relative reference paths activated.
+    """
+    activated: list[str] = []
+    for skill_dir in _skill_dirs(plugin_dir / "skills"):
+        local_profiles = skill_dir / "profiles"
+        source_profiles = local_profiles if local_profiles.is_dir() else _source_profiles_dir(skill_dir.name, plugins_dir)
+        if source_profiles is None or not source_profiles.is_dir():
+            continue
+        refs_dir = skill_dir / "references"
+        all_profile_filenames = {p.name for p in source_profiles.glob("*/*.md")}
+        if refs_dir.is_dir():
+            for stale_name in all_profile_filenames:
+                _remove(refs_dir / stale_name)
+        rows: list[str] = []
+        if profile:
+            profile_dir = source_profiles / profile
+            if profile_dir.is_dir():
+                refs_dir.mkdir(parents=True, exist_ok=True)
+                for md_file in sorted(profile_dir.glob("*.md")):
+                    dest_ref = refs_dir / md_file.name
+                    shutil.copy2(md_file, dest_ref)
+                    title, topic = _extract_profile_doc_meta(md_file)
+                    rows.append(f"| **[Profile: `{profile}`]** {topic} | [{title}](references/{md_file.name}) |")
+                    activated.append(f"{skill_dir.name}/references/{md_file.name}")
+            skill_md = skill_dir / "SKILL.md"
+            text = skill_md.read_text(encoding="utf-8")
+            replacement = (
+                "<!-- {{profile_references:start}} -->\n"
+                + "\n".join(rows)
+                + "\n<!-- {{profile_references:end}} -->"
+                if rows
+                else "<!-- {{profile_references}} -->"
+            )
+            updated = PROFILE_MARKER_RE.sub(lambda _m: replacement, text, count=1)
+            if updated != text:
+                skill_md.write_text(updated, encoding="utf-8")
+            _remove(local_profiles)
+    return activated
 
 
 def _status(loaded: list[dict]) -> str:
@@ -509,6 +618,10 @@ def apply_projection(projection_dir: Path, dest_root: Path) -> dict:
         _remove(dest_root / rel)
     for rel in spec["managed"]:
         _copy_entry(files / rel, dest_root / rel)
+    if spec.get("layout") == "workspace":
+        profile = read_workspace_profile(dest_root)
+        if profile:
+            apply_workspace_profile(dest_root / spec["managed"][0], profile)
     return spec
 
 

@@ -1,53 +1,83 @@
 ---
 name: unit-testing
-description: Developer unit-test standard of {{project_name}} - what to test per layer, required happy/negative/edge cases, where tests live, fakes vs mocks, determinism, commands and evidence. Use whenever writing or changing code that needs tests, fixing a bug, or reviewing tests in {{dirs}}.
+description: Developer unit-test standard for {{project_name}} ({{stack_summary}}) - test-first discipline (red-to-green loop), per-layer test matrix (Pass/Default, Fail, Empty/Edge cases), test tree and naming, doubles policy (Real > Fake > Stub > Mock) at port boundaries, deterministic fixtures, specific assertions, focused and full test commands, and red/green evidence rows. Use whenever writing or changing code in {{dirs}} that needs unit tests, fixing a bug or review finding, or grading unit test coverage and quality.
 ---
 
-# Unit Tests — {{project_name}}
+# Unit Testing — {{project_name}}
 
-<!-- GEN: Why: the Code Writer needs the per-change loop and the non-negotiable rules on one screen; details live in references. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
-<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+<!-- GEN: Why: the agent must see CLI test gates, test-first order, and mandatory rules U1–U14 on one screen so every code change is proven with deterministic unit tests. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
 
-Confirmed: {{date}} · Framework: {{framework}} · Layout: {{layout}}
+A test proves behavior only if you have seen it fail for the reason it exists. Every unit test must be isolated, deterministic, fast, and verified via CLI.
 
-## For every change
+All CLI test gates (`PASS` / `FAIL`) and review severities (`BLOCKER` / `MAJOR` / `MINOR`) follow `shared_contracts/flags_and_statuses.md` and `work-item-contract` (`references/handoff-and-status.md` §9).
 
-1. Find the subject's layer → required cases in [01]({{ref_01}}).
-2. Put the test where [02]({{ref_02}}) says, named by behavior.
-3. Double only the boundary ([03]({{ref_03}})); reuse existing fixtures.
-4. Run the focused command and confirm the new test ran ([05]({{ref_05}})).
-5. Bug fix → add the regression test first when practical.
+---
 
-## Rules
+## 1. CLI Test & Quality Gates (`PASS` / `FAIL`)
 
-<!-- GEN: One row per rule from references/base-rules.md as adopted/adapted (keep existing workspace rule IDs, P5). Why = one clause in the workspace's terms. -->
-| # | Rule | Why | Severity | Enforced by |
-|---|---|---|---|---|
-| {{id}} | {{rule}} | {{why}} | {{severity}} | {{gate_or_review}} |
+Every command below is **binary (`exit 0` = `PASS`, `exit != 0` = `FAIL`)**. A skipped, deselected, or uncollected test is `NOT_RUN`, never `PASS`:
 
-## Which file to read
+| Gate | Command | Purpose |
+|---|---|---|
+| **Focused Red / Green Run** | `{{focused_test_cmd}}` | Run one test case to verify red failure reason and green fix (**U12**, **U14**) |
+| **Module Unit Suite** | `{{module_test_cmd}}` | Verify all unit tests for the touched module after completing a task |
+| **Full Unit Suite** | `{{full_test_cmd}}` | Verify the entire unit test suite at phase end before hand-off |
+| **Static Analysis on Tests** | `{{test_lint_cmd}}` | Enforce clean-code formatting, linting, and type checks on test files (**U11**) |
 
-<!-- GEN: Flat: references/01–06. Branched: add a "Working in" column (be_dir → be/, fe_dir → fe/), shared/06. Remove rows for files merged away. -->
-| Doing | Read |
+---
+
+## 2. When the Test Comes First (Red-to-Green Order)
+
+| Change Type | Order | Reason |
+|---|---|---|
+| **Domain rules, use cases / services, validation, calculations** | Failing test first | Business logic is where silent wrong results live |
+| **Schemas, models, and data mappers** | Failing test first | Missing keys, null rules, or type mismatches break contracts silently |
+| **State machines / controllers / routers** | Failing test first | State emission order and error mapping must be proven deterministically |
+| **Every bug fix and every review finding fix** | Reproduce with failing test first | A red run on unfixed code is the only proof the defect was real and is now gone |
+| **Legacy code lacking tests** | Characterization test first | Locks in existing behavior before modifying code |
+| **Pure DI wiring, route registration, or generated code** | May follow | Covered by phase smoke/integration checks (`{{verification_link}}`) |
+
+---
+
+## 3. Core Unit Testing Rules (Mandatory Compliance)
+
+| Rule | Principle | Why | Reference |
+|---|---|---|---|
+| **U1** | **Test behavior, not implementation.** Assert outputs, raised errors, emitted states, and calls at port boundaries; never private methods or internal fields. | Implementation-coupled tests break on safe refactors. | [02-doubles-fixtures-and-quality]({{ref_02}}) |
+| **U2** | **Pass/Default + every handled Fail + Empty/Edge.** Cover success, each handled error, and empty/null/boundary inputs per changed behavior. | Happy-path-only suites pass while production fails on edge inputs. | [01-test-matrix-and-structure]({{ref_01}}) |
+| **U3** | **Red-to-Green regression test for bug/finding fixes.** Reproduce the failure red first, then fix and run green. | Prevents silent regression of fixed defects. | [01-test-matrix-and-structure]({{ref_01}}) |
+| **U4** | **100% Isolated and fast.** Zero live network, database, file system, OS plugins, or wall clock in unit tests. | Live I/O makes unit tests slow, flaky, and environment-dependent. | [02-doubles-fixtures-and-quality]({{ref_02}}) |
+| **U5** | **Double the port boundary, never the subject.** Fake or mock the port interface the subject depends on; always test the real subject class/function. | Mocking the subject tests nothing about actual code execution. | [02-doubles-fixtures-and-quality]({{ref_02}}) |
+| **U6** | **Never mock authorization, data-scope guards, or the database.** Keep policy/permission checks real; test SQL queries in integration tests. | Mocking security guards away conceals authorization flaws. | [02-doubles-fixtures-and-quality]({{ref_02}}) |
+| **U7** | **Deterministic execution.** Inject clocks, IDs, and seeded random generators; await all async calls; isolate state per test. | Flaky tests train developers to ignore red builds. | [02-doubles-fixtures-and-quality]({{ref_02}}) |
+| **U8** | **Specific assertions with independent expectations.** Assert exact values, error types/codes, and state sequences from design literals; no tautologies (`isNotNull` alone, `assert True`). | Weak or recomputed assertions pass on wrong output. | [02-doubles-fixtures-and-quality]({{ref_02}}) |
+| **U9** | **One behavior per test, AAA structure, behavior-revealing name.** Separate Arrange, Act, Assert; name tests for behavior, condition, and outcome. | Clear failures point straight to the broken rule. | [01-test-matrix-and-structure]({{ref_01}}) |
+| **U10** | **Test path mirrors source path.** Place unit tests in the mirrored test directory tree (`├──`/`└──`). | Undiscoverable tests are neither run nor maintained. | [01-test-matrix-and-structure]({{ref_01}}) |
+| **U11** | **Reuse workspace setup.** Use the workspace's existing test runner, fixtures, builders, and port fakes (`EXTEND` vs `INIT`). | Competing test setups fragment the suite. | [02-doubles-fixtures-and-quality]({{ref_02}}) |
+| **U12** | **Every new test must execute.** Verify collection, non-skipped execution, right-reason red, and green pass. | An unrun or skipped test is `NOT_RUN`, never `PASS`. | [03-execution-boundaries-and-review]({{ref_03}}) |
+| **U13** | **State unit test boundaries.** Explicitly report what unit tests proved and what belongs to integration/visual verification. | Over-claiming unit results hides untested integration risk. | [03-execution-boundaries-and-review]({{ref_03}}) |
+| **U14** | **Failing test first per the order table.** Run the new test red before writing production code (or set code aside to verify red). | Seeing red proves the test can detect the break. | [03-execution-boundaries-and-review]({{ref_03}}) |
+
+---
+
+## 4. Reference Guides
+
+| Topic | Reference |
 |---|---|
-| Which cases to write | `{{ref_01}}` |
-| Where the test goes, what it is called | `{{ref_02}}` |
-| Fakes, mocks, fixtures | `{{ref_03}}` |
-| Making the test trustworthy | `{{ref_04}}` |
-| Running it and reporting | `{{ref_05}}` |
-| What unit tests cannot prove | `{{ref_06}}` |
+| `EXTEND` vs `INIT` rule, per-layer Pass/Fail/Empty matrix, mirrored directory tree (`├──`/`└──`), and naming conventions | [01 — Test Matrix & Structure]({{ref_01}}) |
+| `Real > Fake > Stub > Mock` policy, concrete code templates, AAA, independent expectations, right-reason red, determinism, and mutation check | [02 — Doubles, Fixtures & Quality]({{ref_02}}) |
+| Focused/full CLI commands, proving tests ran, Red-to-Green evidence rows, unit test boundaries, and `BLOCKER`/`MAJOR`/`MINOR` review grading | [03 — Execution, Boundaries & Review]({{ref_03}}) |
+<!-- {{profile_references}} -->
 
-## Relationship with other skills
+---
 
-<!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md; link existing siblings or write "not set up in this workspace". -->
-- Layers and boundaries: {{clean_architecture_link}}
-- Test code follows {{clean_code_link}} too.
-- Task/phase checks: {{incremental_link}}
+## 5. Relationship with Other Skills
 
-## Not adopted
-
-<!-- GEN: Rules marked "not adopted" with the reason, or delete. -->
-- {{not_adopted}}
+- **Layer boundaries & ports to double**: {{clean_architecture_link}}.
+- **Code craft & static checks on test code**: {{clean_code_link}} and {{code_simplification_link}}.
+- **Security guards never mocked away**: {{secure_coding_link}}.
+- **Task loop & Red-to-Green execution**: `incremental-implementation` and {{debugging_link}}.
+- **Integration, contract, and visual verification**: {{verification_link}}.
 
 <!-- custom:start -->
 <!-- custom:end -->

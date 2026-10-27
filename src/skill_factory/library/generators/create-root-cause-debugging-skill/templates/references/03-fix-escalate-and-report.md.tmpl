@@ -1,0 +1,73 @@
+# 03 — Root-Cause Fix, Escalation, Report & Review
+
+<!-- GEN: Why: a root-cause fix at the owning layer with a regression test stays fixed, while environment triage and the 3-attempt time-box prevent destructive workarounds. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+Rules **D6**, **D7**, **D8**, **D9**, **D10**, **D11**, **D12**, and **D14**.
+
+---
+
+## 1. Root-Cause Fix & Red-to-Green Regression Prevention (`D7`, `D8`, `D9`)
+
+1. **Regression Test First (`D8`, `{{unit_testing_link}}`):** Convert the minimal reproduction into a unit/integration test at the owning seam. Run it **red** and confirm it fails for the exact reported reason.
+2. **Smallest Fix at the Owning Layer (`D7`, `{{clean_architecture_link}}`):** Fix the defect at the layer that owns the rule inside the task's approved **Scope / Files**. Check for sibling occurrences in the diff (`D6`). Do not bundle unrelated refactoring.
+3. **Prove Red → Green → Undo-Red → Green:** Run the regression test (`PASS`), temporarily undo only the production fix to verify the test fails (`FAIL`), restore the fix, and re-run (`PASS`).
+4. **Full Verification & Cleanup (`D11`):** Run the original reproduction, the module test suite, static checks (`{{verify_suite_cmd}}`), and the debug-tag sweep (`{{debug_cleanup_cmd}}`).
+
+### Never Green-Wash (`D9` — Automatic `BLOCKER`)
+
+| Forbidden Shortcut | Why It Is Forbidden |
+|---|---|
+| Editing, deleting, skipping, or weakening a test/assertion to make it pass | Hides the defect and destroys the guard that caught it |
+| Broad catch blocks (`catch (_) {}`, `except Exception: pass`) or silent default returns (`null`, `[]`) | Turns a reproducible failure into silent state corruption |
+| Hardcoded fallback/mock data in production code | Fabricates success while the underlying path remains broken |
+| Loosening static types, adding cast/lint/type-checker suppressions | Disables compile-time safety across the module |
+| Adding arbitrary sleeps, delays, or blind retries to mask race conditions or timeouts | Leaves the race or bottleneck in production |
+
+---
+
+## 2. Environment (`BLOCKED`) vs. Code & Escalation (`D10`, `D12`)
+
+Never patch production code to work around a broken environment, and never stop, restart, or reconfigure a shared stack you did not start:
+
+| Environment Sign | Diagnostic Check | Required Action |
+|---|---|---|
+| {{env_sign}} | `{{env_check_cmd}}` | Return `BLOCKED` with the command output evidence |
+
+- **3-Attempt Time-Box (`D12`):** After **3 failed fix attempts** where the reproduction still fails, **stop immediately**. Return `BLOCKED` with the hypothesis log and ruled-out paths.
+- **Gate Escalation (`change-control`):** Stop and escalate if the fix requires:
+  - Editing files outside the task's **Scope / Files** (`TASK_DETAIL`)
+  - Changing an API contract, database schema, dependency manifest, or layer boundary (`DESIGN_CHANGE`)
+  - Changing user-visible behavior or approved Acceptance Criteria (`SCOPE_CHANGE`)
+
+---
+
+## 3. Hand-Off Debug Report Format (`D14`)
+
+Include this block in the hand-off (or `FIXED` finding response) with redacted outputs (`<REDACTED>`):
+
+```text
+Symptom:      <what failed and where; reported by task check / reviewer / bug-hunt / tester / user>
+Triage:       CODE_WRONG (task <id>, Expected: <...>)
+Reproduction: <reproduce_cmd> @ <revision> -> exit 1 (<key failure output>)
+Root cause:   <exact defect at path:line and why it occurred>
+Fix:          <what changed at which owning layer and why>
+Regression:   <test path::test_name> -> FAIL (exit 1) without fix, PASS (exit 0) with fix
+Evidence:     <rows per evidence-standard: regression, suite, linter, type checker>
+Ruled out:    H2 (<why>), H3 (<why>)
+Debug tags:   <debug_cleanup_cmd> -> 0 matches / clean (PASS)
+```
+
+---
+
+## 4. Review Severity (`BLOCKER` / `MAJOR` / `MINOR`)
+
+Code Reviewers grade debugging fixes on the unified 3-tier scale (`shared_contracts/flags_and_statuses.md` §2):
+
+| Severity | Finding | Review Verdict Impact |
+|---|---|---|
+| `BLOCKER` | Any green-washing (`D9`); missing Red-to-Green regression test (`D8`) where a seam exists; leftover `[DEBUG-xxxx]`, debug print, or breakpoint (`D11`); unapproved contract/schema/dependency change (`D12`); any check `FAIL`s | `CHANGES_REQUESTED` (blocks approval) |
+| `MAJOR` | Symptom patched in the caller/UI instead of the owning root-cause layer (`D6`, `D7`); sibling bug in the same diff left unfixed (`D6`); missing or incomplete Debug Report block (`D14`) | Must be fixed in the same phase scope |
+| `MINOR` | Minor regression test naming or report formatting improvement | Optional (never blocks approval) |
+
+<!-- custom:start -->
+<!-- custom:end -->

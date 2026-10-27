@@ -1,35 +1,35 @@
-# Stack recipes
+# Stack Recipes (Generic Service Categories)
 
-Orientation for `01-stack-and-lifecycle.md`; the workspace's own make targets and scripts win.
+Orientation for `references/01-stack-lifecycle-and-revision.md`; the workspace's own task runner targets and scripts always take precedence.
 
-## Probe
+## 1. Probe Before Starting (`E2`)
 
 ```bash
-lsof -nP -iTCP:<port> -sTCP:LISTEN          # who is listening (macOS/Linux)
-curl -fsS http://127.0.0.1:<port>/health    # health endpoint, if any
-docker compose ps                           # compose services and state
+lsof -nP -iTCP:<port> -sTCP:LISTEN          # check which process is listening (macOS/Linux)
+curl -fsS http://127.0.0.1:<port>/health    # probe HTTP health endpoint, if exposed
+docker compose ps                           # check containerized service status
 ```
 
-Listening and healthy → **reuse**; do not restart. Listening but unhealthy and not yours → `BLOCKED`, tell the owner.
+- **Listening and healthy** → **reuse** the running service; do not restart or reset it.
+- **Listening, unhealthy, and not started by you** → report **`BLOCKED`** and notify the stack owner.
 
-## Start (only when nothing is running)
+## 2. Start by Generic Service Category (Only When Missing, `E1`–`E4`)
 
-| Stack | Typical start | Readiness |
+Inspect any task runner target (`Makefile`, taskfile, scripts) before running it — some targets kill or reset existing processes.
+
+| Service Category | Typical Start Pattern | Readiness Check (`PASS` / `FAIL`) |
 |---|---|---|
-| Docker Compose | `docker compose up -d <services>` | `docker compose ps` healthy; service health endpoint |
-| Make-based | `make start` / `make dev` (read what it does first — some targets stop other processes) | Health URLs listed in the Makefile/README |
-| FastAPI | `uv run uvicorn app.main:app --port <p>` (background) | `curl /health` or `/docs` returns 200 |
-| Workers | Worker command from the workspace (background) | Worker log shows "ready"/subscribed |
-| Next.js | `npm run dev` (background) | First page responds; first compile can take ~60 s |
-| Vite | `npm run dev` | Dev server URL responds |
-| Flutter | `flutter run -d <device>` | App visible on the target device/simulator |
+| **Containerized Services** (DB, cache, queue, full compose stack) | `docker compose up -d <services>` | `docker compose ps` reports healthy; datastore accepts connections |
+| **API / Backend Process** | Workspace server command in background with log capture | Health or readiness endpoint returns HTTP `200` within timeout |
+| **Background Worker Process** | Workspace worker command in background with log capture | Worker log or status check confirms queue subscription / ready state |
+| **Client / UI Dev Server** | Workspace client dev/run command in background with log capture | Dev server URL responds or application renders ready state on target device |
 
-Run starts in the background with output to a log file; record PIDs/containers you started.
+Always start missing services in the background with output redirected to a log file, and record the PIDs or container names you started.
 
-## Stop (only what you started)
+## 3. Stop Only What You Started (`E2`, `E3`, `E11`)
 
-`kill <pid>` / `docker compose stop <service>` for your own processes. Never a target that stops "everything" unless you started everything and no one else uses it.
+Stop only the PIDs or containers recorded in your ownership log (`kill <pid>` or `docker compose stop <service>`). Never run a "stop all" or "reset all" target unless you started the entire stack yourself and no other user or agent shares it.
 
-## Hosts and ports
+## 4. Hosts and Loopback Binding
 
-Use the URL the workspace documents (e.g. `localhost` vs `127.0.0.1` matters when a dev server listens on IPv6 only).
+Use the exact host documented by the workspace (`localhost` vs. `127.0.0.1`), as some local servers bind exclusively to IPv4 or IPv6 loopback interfaces.

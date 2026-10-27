@@ -1,0 +1,63 @@
+# Parent-Ticket Branch Naming, Sub-Ticket / Phase Commits & Merge Strategy
+
+> Topic: Parent-ticket branch naming (`G2`, `M3`), sub-ticket and accepted-phase commit checkpoint discipline (`G3`, `M10`), explicit staging (`M4`, `M7`), squash vs. `--no-ff` merge strategy (`G4`), and hotfix propagation (`G5`, `G6`) for {{project_name}}.
+
+<!-- GEN: Why: Consolidate branch naming, sub-ticket/phase commit traceability, and merge/hotfix propagation rules into a single reference ({{ref_02}}) so every commit and PR is auditable. -->
+
+## 1. Parent-Ticket Branch Naming (`G2`, `M3`)
+
+A work branch represents **one Parent Feature / Work Item Ticket** (`M3`). Do not create separate branches for each sub-task inside a feature unless the user explicitly requests sub-branches:
+
+- **Format with Parent Ticket**: `{{branch_pattern}}` (lowercase, hyphen-separated words, no developer names, confirmed by the user after Gate 1).
+- **Format without Ticket ID** (only when the user confirms no ticket exists): `<type>/<short-description>` confirmed by the user.
+- **Release candidate branch**: `{{release_pattern}}`.
+- **Forbidden branch names**: Personal names (`john/fix`, `nam-dev`), vague placeholders (`fix-bug`, `update-ui`, `temp-test`, `final-v2`).
+
+| Job Type | Branch Pattern Example | Purpose |
+|---|---|---|
+{{branch_examples}}
+
+---
+
+## 2. Commit Checkpoint Discipline & Sub-Ticket / Phase Traceability (`G3`, `M10`)
+
+### 2.1 When to Commit (`M10` — No Arbitrary WIP Commits)
+
+Agents **never commit arbitrarily mid-phase** ("không thích thì commit, thích thì đặt tên"). A commit is permitted **only** at a verified delivery checkpoint:
+1. **Spec Checkpoint**: Right after Gate 1/2/3 approval when `.superpowers/work-items/` is tracked in Git (`docs(<PARENT-TICKET>): record approved spec and plan`).
+2. **Sub-Ticket / Phase Checkpoint**: When a **Huly Sub-Ticket** or an approved **Phase (`PHASE-NN`)** has finished implementation, **passed all deterministic CLI verification gates (`PASS`)**, and passed phase review/acceptance (or when the user explicitly requests committing that completed slice).
+3. **Stage only task-scoped files**: Always run `git status --short --branch`, stage explicit paths with `git add -- <paths>`, and inspect `git diff --cached` and `git diff --cached --check` before committing. Never run `git add .` or `git commit --no-verify`.
+
+### 2.2 Mandatory Commit Subject Formats (`G3`)
+
+Every commit must follow Conventional Commits and carry explicit **Sub-Ticket** and/or **Accepted Phase (`PHASE-NN`)** traceability:
+
+| Scenario | Mandatory Commit Format | Concrete Example |
+|---|---|---|
+| **1. Feature has Parent Ticket + Huly Sub-Tickets per Phase/Task** | `<type>(<SUB-TICKET>): <summary> [parent: <PARENT-TICKET>, PHASE-NN]` *(or `Refs: <PARENT-TICKET>, PHASE-NN` in footer)* | `feat({{ticket_prefix}}1201): implement order creation API [parent: {{ticket_prefix}}1200, PHASE-01]` |
+| **2. Feature has Parent Ticket + Multi-Phase Breakdown (no separate sub-ticket IDs)** | `<type>(<PARENT-TICKET>): [PHASE-NN] <summary>` | `feat({{ticket_prefix}}1200): [PHASE-02] wire order status SSE stream` |
+| **3. Single-Slice Bug Fix / Hotfix with Ticket ID** | `fix(<TICKET>): <root-cause summary>` | `fix({{ticket_prefix}}1245): guard against duplicate idempotency key replay` |
+| **4. No Ticket ID (user-supplied requirement)** | `<type>(phase-NN): <summary>` *(only after `PHASE-NN` acceptance)* | `feat(phase-01): implement order creation domain and repository` |
+| **5. Breaking Contract Change (`V1`)** | `<type>(<TICKET>)!: <summary>` + `BREAKING CHANGE: <contract impact & D-NN>` | `feat({{ticket_prefix}}1203)!: remove legacy v1 status string [parent: {{ticket_prefix}}1200, PHASE-03]` |
+
+---
+
+## 3. Merge Strategy & Hotfix Propagation (`G4`–`G6`, `M5`, `M6`)
+
+### 3.1 Merge Strategy by Source → Target (`G4`)
+
+| Source → Target | Merge Strategy | Who Executes | Rationale |
+|---|---|---|---|
+{{merge_rows}}
+
+### 3.2 Hotfix Propagation Across Active Lines (`G5`, `G6`)
+
+Every production hotfix (`hotfix/<TICKET>-<short-desc>` branched from `{{production_branch}}`) must reach **every active line** so the next release never re-introduces the bug:
+
+| Target Line | Propagation Rule |
+|---|---|
+{{propagation_rows}}
+
+- **No cherry-pick promotion (`G6`)**: Never promote feature work across `{{integration_branch}}` → `{{release_pattern}}` → `{{production_branch}}` using `git cherry-pick`. Cherry-pick is restricted to documented emergency backports where merging the hotfix branch would pull unrelated history.
+
+See [`references/01-branch-model-and-preflight.md`]({{ref_01}}) for preflight rules and [`references/03-versioning-release-and-gates.md`]({{ref_03}}) for SemVer, release integrity, and review gates.

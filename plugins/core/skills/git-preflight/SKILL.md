@@ -13,13 +13,14 @@ Answer one question before any code is written: **is this work item on its own b
 |---|---|---|
 | M1 | Before the item's branch exists, write only work-item documents under `.superpowers/work-items/` and commit nothing. Never edit code on another branch. | Code written on the wrong base has to be moved by hand. |
 | M2 | Never work directly on a long-lived or protected branch (`main`, `develop`, `release/*`, `support/*`). | Those lines are shared; direct commits bypass review. |
-| M3 | One branch per ticket or logical change. | Reviews, reverts and release scope stay clean. |
+| M3 | One branch per parent feature / work-item ticket (`<type>/<PARENT-TICKET>-<short-description>`). Do not create ad-hoc sub-branches per sub-task unless explicitly requested by the user. | Reviews, reverts and release scope stay cohesive for the feature. |
 | M4 | Never discard or overwrite the user's uncommitted changes. Stash or commit only after the user chooses. | Lost local work cannot be recovered. |
 | M5 | Never force-push a shared branch. Rebase only a personal branch nobody else has pulled. | Rewritten shared history breaks everyone else's clone. |
 | M6 | **Never put code on production:** no merge into `main`, no tag, no production deploy, even when asked. Prepare the exact commands and checklist; the user runs them. Merging into `develop` or `release/*` and deleting remote branches need the user's explicit approval. | Production releases stay a human decision. |
 | M7 | Never commit a secret. | Git history is copied everywhere and is hard to clean. |
 | M8 | Record the branch decision as a `D-NN` in `codebase-notes.md` (template in §4). | Planning, Code Writer and Reviewer need the same base and merge targets. |
 | M9 | After switching, re-check the "Verified Baseline Facts" when the base differs from the ref the spec was scanned on. | A bug on STG lives in `release/x.y.z`, which may differ from `develop`. |
+| M10 | **Verified Phase / Sub-Ticket Commit Checkpoints Only (no arbitrary WIP commits):** Never commit mid-phase (`wip`, `update`, `temp`). Create a commit only after a Huly sub-ticket or an approved `PHASE-NN` slice passes its verification gates (`PASS`) and phase acceptance/review, with explicit sub-ticket/phase traceability in the commit subject. | Every commit on the feature branch is a verified, auditable unit of delivery. |
 
 ## 2. Step A — quick check when the task starts (read-only)
 
@@ -96,6 +97,6 @@ D-NN Branch: fix/ABC-142-<short-description>
 ## 5. Later roles
 
 - **Planning:** scan code on the item branch; copy branch, base and merge targets into `implementation-plan.md`; a PROD hotfix gets explicit tasks to bring the fix into the active `release/*` and `develop`.
-- **Code Writer:** before each phase, `git branch --show-current` must match the `D-NN` branch; commit messages follow the workspace convention (default `type(TICKET): summary`).
+- **Code Writer:** before each phase, `git branch --show-current` must match the `D-NN` branch; commit only at verified sub-ticket / `PHASE-NN` checkpoints (M10) using explicit traceability (`<type>(<SUB-TICKET>): <summary> [parent: <PARENT-TICKET>, PHASE-NN]`, `<type>(<PARENT-TICKET>): [PHASE-NN] <summary>`, or `<type>(phase-NN): <summary>` when no ticket exists).
 - **Code Reviewer:** the PR targets the `D-NN` merge target; no commit on a protected branch; a hotfix reaches every line listed; a breaking contract change is marked as such for versioning.
 - **Release and production:** prepare commands and a checklist (merge, tag, propagate, promote the tested artifact) for the user to run (M6).

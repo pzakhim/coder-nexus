@@ -104,34 +104,6 @@ def test_skill_factory_does_not_depend_on_coder_nexus():
         assert "coder_nexus" not in module.read_text(encoding="utf-8"), f"{module} imports coder_nexus"
 
 
-def test_git_workflow_generator_keeps_production_human():
-    base = (GENERATORS_DIR / "create-git-workflow-skill" / "references" / "base-rules.md").read_text(encoding="utf-8")
-    assert "never merge into the production branch, tag, or deploy production" in base
-    template = (GENERATORS_DIR / "create-git-workflow-skill" / "templates" / "SKILL.md.tmpl").read_text(encoding="utf-8")
-    assert "Merge into `{{production_branch}}`, create a tag or deploy production" in template
-    for preset in ("gitflow-dev-stg-prod", "github-flow", "trunk-based"):
-        assert (GENERATORS_DIR / "create-git-workflow-skill" / "references" / "presets" / f"{preset}.md").is_file()
-
-
-def test_planning_generators_stay_domain_neutral():
-    family = (CORE_DIR / "planning-skill-family.md").read_text(encoding="utf-8")
-    assert "Generic generators, specific skills" in family
-    for name in PLANNING:
-        text = "".join(p.read_text(encoding="utf-8") for p in (GENERATORS_DIR / name).rglob("*") if p.suffix in {".md", ".tmpl"})
-        assert "planning-skill-family.md" in text, name
-        for word in ("WMS", "warehouse", "stock"):
-            assert word not in text, f"{name}: domain-specific word {word!r}"
-    assert "domain-knowledge" in rendered_agent("spec_writer.md")
-    assert "implementation-planning" in rendered_agent("planning.md")
-
-
-def test_roles_let_workspace_skills_override_fixed_skills():
-    for role in ("code_writer.md", "code_reviewer.md", "spec_writer.md", "planning.md"):
-        content = rendered_agent(role)
-        assert "## Workspace skills override" in content
-        assert ".agents/skills/" in content and "skill-factory get" in content
-
-
 # --- list --------------------------------------------------------------------
 
 

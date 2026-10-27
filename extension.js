@@ -104,6 +104,55 @@ function isRecognizedWorkspace(workspacePath) {
     return Object.keys(detectPacks(workspacePath)).length > 0;
 }
 
+function readWorkspaceProfile(workspacePath) {
+    try {
+        const p = JSON.parse(fs.readFileSync(path.join(workspacePath, '.superpowers', 'setup.json'), 'utf8')).profile;
+        return typeof p === 'string' && p.trim() ? p.trim() : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+function applyWorkspaceProfile(pluginDir, profile) {
+    if (!profile) return;
+    const skillsDir = path.join(pluginDir, 'skills');
+    if (!fs.existsSync(skillsDir)) return;
+    for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const skillDir = path.join(skillsDir, entry.name);
+        const profilesDir = path.join(skillDir, 'profiles');
+        const skillMd = path.join(skillDir, 'SKILL.md');
+        if (!fs.existsSync(profilesDir) || !fs.existsSync(skillMd)) continue;
+        const profileDir = path.join(profilesDir, profile);
+        const rows = [];
+        if (fs.existsSync(profileDir)) {
+            const refsDir = path.join(skillDir, 'references');
+            fs.mkdirSync(refsDir, { recursive: true });
+            const mdFiles = fs.readdirSync(profileDir).filter(f => f.endsWith('.md')).sort();
+            for (const file of mdFiles) {
+                const srcFile = path.join(profileDir, file);
+                fs.copyFileSync(srcFile, path.join(refsDir, file));
+                const text = fs.readFileSync(srcFile, 'utf8');
+                const h1 = text.match(/^#\s+(.+)$/m);
+                const topicMatch = text.match(/^>\s*Topic:\s*(.+)$/m);
+                const title = h1 ? h1[1].trim() : file.replace(/\.md$/, '');
+                const topic = topicMatch ? topicMatch[1].trim() : title;
+                rows.push(`| **[Profile: \`${profile}\`]** ${topic} | [${title}](references/${file}) |`);
+            }
+        }
+        const content = fs.readFileSync(skillMd, 'utf8');
+        const replacement = rows.length
+            ? `<!-- {{profile_references:start}} -->\n${rows.join('\n')}\n<!-- {{profile_references:end}} -->`
+            : '<!-- {{profile_references}} -->';
+        const updated = content.replace(
+            /<!-- \{\{profile_references\}\} -->|<!-- \{\{profile_references:start\}\} -->[\s\S]*?<!-- \{\{profile_references:end\}\} -->/,
+            replacement
+        );
+        fs.writeFileSync(skillMd, updated, 'utf8');
+        fs.rmSync(profilesDir, { recursive: true, force: true });
+    }
+}
+
 /**
  * Copy a projection built by `python -m coder_nexus.plugin_build` (plugins/dist/<layout>-<packs>).
  * All composition and filtering happens at build time; this only replaces the managed paths.
@@ -124,6 +173,12 @@ function applyProjection(projectionDir, destRoot) {
         } else {
             fs.mkdirSync(path.dirname(dest), { recursive: true });
             fs.copyFileSync(src, dest);
+        }
+    }
+    if (spec.layout === 'workspace') {
+        const profile = readWorkspaceProfile(destRoot);
+        if (profile) {
+            applyWorkspaceProfile(path.join(destRoot, spec.managed[0]), profile);
         }
     }
     return spec;

@@ -1,0 +1,32 @@
+# 03 — Adding Features, Splitting Files, and Review Rubric
+
+<!-- GEN: Why: provides the step-by-step order for adding new vertical slices, coordinates file splitting with clean-code thresholds, and aligns reviewers on BLOCKER/MAJOR/MINOR grading. Kind: Mandatory. -->
+
+## 1. Step-by-Step Feature Addition Order
+
+Order tasks inside an approved phase from inner contracts to outer delivery (`incremental-implementation`). Skip any step the behavior does not require (**A10**):
+
+| # | Step | Target Files | Verification Check (`PASS` / `FAIL`) |
+|---|---|---|---|
+| {{step_num}} | {{step_name}} | `{{target_files}}` | `{{step_check_cmd}}` |
+
+## 2. Splitting Oversized Files ({{clean_code_link}} C6 Coordination)
+
+Size thresholds are defined in {{clean_code_link}} (`01-structure-naming-and-types.md`). When a file exceeds its threshold or accumulates multiple responsibilities:
+
+| Oversized Unit | Split Into | Placement & Call-Site Rule |
+|---|---|---|
+| `{{unit_type}}` | `{{split_target}}` | {{placement_rule}} |
+
+- Move code without changing behavior in its own step, update all callers in the same task, and delete the old location without leaving pass-through wrappers or re-export shims (`clean-code` C1, C16, C17).
+
+## 3. Unified Architecture Review Severity (`BLOCKER` / `MAJOR` / `MINOR`)
+
+| Severity | Architectural Criteria | Review Verdict Impact |
+|---|---|---|
+| `BLOCKER` | Failed boundary validator/linter gate (`FAIL`), upward/forbidden layer import, leaked storage/DTO model across boundaries, unclosed stateful resource, or violation of A1–A8, A10 | `CHANGES_REQUESTED` (blocks approval) |
+| `MAJOR` | Misplaced responsibility across layers, implicit lazy-load hazard (A9), or unsplit God module modified in task scope | Must be fixed in the same revision when inside task scope |
+| `MINOR` | Minor file/folder naming polish within the correct layer | Optional (never blocks approval) |
+
+<!-- custom:start -->
+<!-- custom:end -->

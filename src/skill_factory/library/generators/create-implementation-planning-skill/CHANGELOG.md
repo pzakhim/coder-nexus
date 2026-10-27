@@ -1,30 +1,24 @@
 # Changelog — create-implementation-planning-skill
 
-Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see `~/.claude/skill-factory/core/sync-protocol.md`). Bump rules: `~/.claude/skill-factory/core/versioning.md`.
+Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see [../../core/sync-protocol.md](../../core/sync-protocol.md)). Bump rules: [../../core/versioning.md](../../core/versioning.md).
 
-## Unreleased
+## 1.1.0 — 2026-10-25
 
-- Added: IP10 Global constraints — exact spec values copied once to a new `## Global constraints` section of `implementation-plan.md`, inherited by every task → `references/01-phase-order.md` (`shared/01-…`) "Plan header". (minor)
-- Added: IP11 Review focus — up to five uncovered inputs or failure modes, each owned by a task check; missing expected results become `Q-NN` → `01` "Plan header", `02` "Shape". (minor)
-- Added: IP12 task sizing XS–XL from repository history with split triggers (XL, 8+ files, "and" in the title, two subsystems) and the reviewer-reject split rule → `02` "Size". (minor)
-- Added: IP13 high risk first after PHASE-00 (extends IP9), IP14 prefactor first, IP15 expand → migrate → contract for wide renames → `01` "Unknowns and risk first", "Prefactor and wide renames". (minor)
-- Added: IP16 signatures and pinned values, no transcribed function bodies → `02` "Shape". (minor)
-- Added: IP17 tests and docs inside each phase, never a final testing phase; IP17 is never "not adopted" → `01` "Tests and docs", `04` checklist items. (minor)
-- Changed: generated `SKILL.md` "Always" list gains the plan header, risk/prefactor/expand order, sizing and no-final-testing-phase bullets. (minor)
-- Changed: `## Global constraints` and `## Review focus` sit above `## AC coverage` and the empty marker is `None found after checking every AC and BR`, matching the fixed `planning-and-task-breakdown` skill and plan template. (patch)
-- Added: generator `references/sources.md` (external sources and ideas not adopted), detection rows for rework history, spec values and review gaps, checklist items, trial-run comparison of review-focus lines. (patch)
+- Standardized all rules `IP1`–`IP17` as mandatory compliance across every generated `implementation-planning` skill. (minor)
+- Updated `IP7` to align with `git-workflow` (`G2`, `G3`, `M3`, `M10`): work branches are named after the parent/umbrella ticket (`<type>/<PARENT-TICKET>-<short-description>`, or `<type>/<short-description>` only when no tracker ticket exists), and each phase or sub-ticket boundary maps to an explicit verified commit checkpoint carrying the sub-ticket ID (`<type>(<SUB-TICKET>): <summary> [parent: <PARENT-TICKET>, PHASE-NN]`) or accepted phase ID (`<type>(<PARENT-TICKET>): [PHASE-NN] <summary>` / `<type>(phase-NN): <summary>`) rather than arbitrary WIP commits. (minor)
+- Consolidated generated reference templates into 3 cohesive topic files under `templates/references/`: `01-phase-order-and-slicing-strategy.md.tmpl`, `02-task-shape-sizing-and-checks.md.tmpl`, and `03-phase-00-readiness-and-dod.md.tmpl`, and added `<!-- {{profile_references}} -->` to `templates/SKILL.md.tmpl`. (minor)
+- Aligned CLI verification gates (`validate_plan_slices`, task checks, `PHASE-00` readiness probes) to binary `PASS` / `FAIL` and plan review findings to `BLOCKER` / `MAJOR` / `MINOR` per `shared_contracts/flags_and_statuses.md`. (minor)
+- Removed legacy multi-directory branching assumptions and replaced global core paths with repository-relative `../../core/` links. (patch)
 
-**Affects:** `SKILL.md`, `references/01-phase-order.md` (`shared/01-…`), `references/02-task-shape-and-checks.md` (`be/02-…`, `fe/02-…`), `references/04-definition-of-done.md` (`be/04-…`, `fe/04-…`).
-**Migration:** look up past approved specs (item-wide values), reviewed commits that landed without rework (size scale) and review/QA defects no check covered. Add "Plan header", "Unknowns and risk first", "Prefactor and wide renames" and "Tests and docs" to 01; add the signature rule and the "Size" table to 02; add the three new Definition of Done items to 04; add the new "Always" bullets to `SKILL.md`. Existing sections keep their names; non-breaking.
+**Affects:** `SKILL.md`, `references/01-phase-order-and-slicing-strategy.md`, `references/02-task-shape-sizing-and-checks.md`, `references/03-phase-00-readiness-and-dod.md`.
+**Migration:** re-run `create-implementation-planning-skill` in update/sync mode to consolidate `01`–`04` into `01`–`03`, add `IP7` parent-ticket branch and sub-ticket/phase commit checkpoint rules, and apply `PASS`/`FAIL` gates and `BLOCKER`/`MAJOR`/`MINOR` review severities.
 
 ## 1.0.0 — 2026-10-22
 
 First version.
 
-- Base rules IP1–IP9 with reasons: order inside a behavior, task shape, paths from clean-architecture, a real check per task, PHASE-00 items, Definition of Done, branch and hotfix tasks, handoffs, unknowns early.
-- Detection of layout, past plans, checks, readiness tools and change size.
-- Mandatory: `SKILL.md`, phase order, task shape and checks, PHASE-00 readiness, Definition of Done.
-- Layout: flat or branched (`shared/` + `be/` + `fe/`).
+- Base rules `IP1`–`IP17` with reasons: order inside a behavior, task shape, paths from `clean-architecture`, a real check per task, `PHASE-00` items, Definition of Done, branch and hotfix tasks, handoffs, unknowns early, global constraints, review focus, task sizing, high risk first, prefactor first, expand-migrate-contract, signatures-not-bodies, and tests/docs inside each phase.
+- Detection of layout, past plans, checks, readiness tools, and change size.
 - Output path: `<workspace>/.agents/skills/implementation-planning/`.
 
 **Affects:** all generated files.

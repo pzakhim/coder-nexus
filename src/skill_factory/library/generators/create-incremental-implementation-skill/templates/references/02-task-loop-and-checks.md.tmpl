@@ -1,0 +1,58 @@
+# 02 — Task Loop & Checks
+
+<!-- GEN: Why: task-by-task grounding, an immediate check and an honest triage are what prevent bulk coding, scope creep and silent deviation. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules I4, I5, I6, I14, I16, I17 with the workspace's task format, tick line and real commands (references/discovery-and-checks.md §2). -->
+
+**Never code several tasks in one pass.** Take the phase's tasks top to bottom.
+
+## 1. The loop
+
+| Step | Do | Why |
+|---|---|---|
+| A. Read | Re-open `{{phase_pattern}}`; take the first unticked task; confirm every earlier task is ticked; note files, reused components, consumes/produces, check and expected result | What you remember is a summary; the file has the exact values |
+| B. Code | Edit only the task's files. Placement per {{clean_architecture_link}}, style per {{clean_code_link}}, tests per {{unit_test_link}} (failing test first where it requires) | Files outside scope are unreviewed design changes |
+| C. Check | Run the task's check in its working directory; read the whole output | Only a run you read is evidence |
+| D. Triage | Compare with the expected result (§2) | Silent deviation is a decision made without the approvers |
+| E. Tick | `{{tick_line}}`; then re-read the plan before the next task | The tick is the ledger that survives lost context |
+
+## 2. Triage
+
+| Outcome | Meaning | Action |
+|---|---|---|
+| Match | Output equals the expected result | Tick, continue |
+| Code wrong | The plan is right, the code is not | Fix the root cause inside scope ({{root_cause_debugging_link}}); rerun C. Never patch the output |
+| Plan wrong | Expected result, signature, file list or command is wrong or impossible | Leave unticked; raise {{plan_change_process}}; return `{{blocked_status}}` until answered |
+
+## 3. Commands
+
+Run from: `{{run_dir}}`
+
+| Level | When | Command |
+|---|---|---|
+| Task check | Step C of every task | `{{task_check}}` |
+| Phase suite | Phase end ([03]({{ref_03}})) | `{{phase_suite}}` |
+| Architecture gate | Phase end | `{{architecture_gate}}` |
+| Visual check | UI-impacting phases only | {{visual_check}} |
+
+<!-- GEN: Delete the Visual row when the workspace has no UI; delete Architecture gate if none exists. One table per deliverable when the repository has several. -->
+
+## 4. Hard rules
+
+- One task, one check, one tick, then re-read.
+- A mapped component or contract that does not fit is "plan wrong", never a local substitute.
+- Never weaken a test (deleted assertion, loosened expectation, added skip, edited expected value) to turn a check green.
+- No invented data, stub fallbacks or placeholder results; fail explicitly.
+- After each tick the project builds and earlier checks still pass.
+- An unrelated problem goes on the "noticed but not touching" list, not into the diff.
+
+## 5. Order of work
+
+The plan's task order wins. When it leaves order open: {{order_of_work}} <!-- GEN: inner contracts → outer delivery using the workspace's real layers (references/base-rules.md "Order of work"); tests per layer as you go. -->
+
+## 6. Resuming
+
+After a new session or lost context, the ticks and `git log` are the record: resume at the first unticked task; rerun its predecessor's check once if the tree changed since its tick.
+
+<!-- custom:start -->
+<!-- custom:end -->

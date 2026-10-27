@@ -1,0 +1,47 @@
+# 03 — Phase End & Hand-off
+
+<!-- GEN: Why: the full suite, a self bug-hunt, a simplicity pass and evidence on one exact revision are what stop a red or out-of-scope phase from being handed off. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules I7–I14 with the workspace's real commands, vocabulary, roles and result files. -->
+
+## 1. When every task is ticked
+
+1. **Phase suite** — run the full verification for every deliverable touched ([02]({{ref_02}}) §3).
+2. **Visual check** — UI-impacting phases only, on the approved targets and states ({{visual_rule}}).
+3. **Self bug-hunt** — {{bug_hunt_rule}} <!-- GEN: e.g. "bug-hunt at quick effort on the phase diff"; or "manual diff review" if not set up -->. Fix confirmed findings with a reproducing test first; carry plausible ones as Concerns; rerun affected checks.
+4. **Simplicity pass** — only when the changed code has a named smell, call {{code_simplification_link}}; never refactor outside the diff, change tests to fit or remove validation/error paths; rerun affected checks.
+5. **Evidence** — every claim has an evidence line:
+   ```
+   <command> (cwd <dir>) @ <revision> → PASS | FAIL | NOT_RUN | BLOCKED | UNVERIFIED
+   ```
+   `NOT_RUN`, `BLOCKED` and `UNVERIFIED` are never `PASS`.
+
+## 2. When a check fails
+
+- Debug it per {{root_cause_debugging_link}} and fix it **within the approved scope**.
+- A fix that changes behavior, API, architecture, dependencies or a component contract → stop and return to {{gate_for_changes}}.
+- Never weaken a test, add a fake fallback or hide an error to turn a check green.
+
+## 3. Hand-off to {{next_role}}
+
+Commit the phase, rerun the phase checks on that commit, then write `{{handoff_location}}` and return exactly one status:
+
+| Status | When |
+|---|---|
+| {{ready_status}} | All tasks matched; phase checks ran on the committed review revision; optional Concerns |
+| {{blocked_status}} | A precondition, environment, approval or open plan change stops the work |
+| {{needs_context_status}} | A fact is missing; state what was tried and what is needed |
+
+```
+{{handoff_template}}
+```
+<!-- GEN: Fields at minimum: phase ID, branch, base..review revision, pre-flight table (or "no shared interfaces"), tasks ticked/unticked, evidence lines, the workspace's bug-hunt and simplify lines, plan changes raised, Concerns, noticed-but-not-touching list. Use the workspace's notation. -->
+
+## 4. Revisions
+
+- Review inspects the handed-off revision; verification uses the **reviewed** revision.
+- Any fix creates a new revision and restarts the affected review, tests and visual checks.
+- The approved plan stays unchanged; actual results go to `{{results_file}}` (written by {{results_owner}}).
+
+<!-- custom:start -->
+<!-- custom:end -->

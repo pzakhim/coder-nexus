@@ -1,32 +1,44 @@
-# Base rules (generic, every workspace)
+# Base Unit Testing Rules (Universal)
 
-Generalised from Coder Nexus `plugins/packs/backend/skills/unit-test`, `plugins/packs/flutter/skills/unit-test` and the unit-test practice of a real fullstack workspace. Each rule goes into the generated skill with the workspace's facts **and its reason**, adapted to its tools, or marked "not adopted" with a reason. If a gate already enforces a rule, cite the gate.
+Universal rules for developer unit tests across any technology stack. Every rule goes into the generated skill with the workspace's verified facts **and its rationale**, adapted to its tools, or cited where an automated CLI gate enforces it. All rules are **Mandatory Compliance** (there is no per-rule `P1`/`P2`/`P3` severity column).
 
-| # | Rule | Why | Default severity | Goes into |
-|---|---|---|---|---|
-| U1 | **Test behavior, not implementation.** Assert outputs, raised errors, emitted states and calls **at port boundaries**; not private helpers, call order inside the subject, or internal data shapes. | Implementation-coupled tests break on every refactor and stop being trusted. | P2 | 04 |
-| U2 | **Happy + negative + edge for every changed behavior.** At least: the success path, each failure the code handles (validation, not found, forbidden, conflict, dependency failure), and boundaries (empty, null/missing, zero, max, malformed). | Happy-path-only suites pass while the code fails in production. | P1 | 01 |
-| U3 | **Regression test for bug fixes.** A test that fails on the faulty behavior and passes after the fix, when practical. | Without it the same bug returns silently. | P2 | 01, 04 |
-| U4 | **Isolated and fast.** No live network, database, file system, device plugins or real clock in unit tests; external dependencies are replaced at their boundary. | Slow or environment-dependent tests are skipped, flaky, or prove the environment instead of the code. | P1 | 03 |
-| U5 | **Double the boundary, never the subject.** Fake or mock the port/adapter the subject depends on, keeping its real contract (return types, raised errors); never mock the function under test. | A mocked subject or an unrealistic double makes the test pass whatever the code does. | P1 | 03 |
-| U6 | **Never mock authorization or the database to make a test pass.** Behavior that depends on them is covered by integration tests; unit tests use fakes that keep the rules. | Mocking the guard away tests nothing about the guard and hides security regressions. | P1 | 03, 06 |
-| U7 | **Deterministic.** Control time, randomness, ordering and concurrency (injected clock, seeded random, awaited async). | Flaky tests train everyone to ignore red. | P1 | 04 |
-| U8 | **Specific assertions.** Assert exact values, error types/messages and emitted states; no tautologies (`isNotNull` alone, `expect(true)`), no assertion-free tests. | A weak assertion passes on wrong output. | P2 | 04 |
-| U9 | **One behavior per test, AAA structure, behavior-revealing name** (`test_<behavior>_<condition>` or the workspace's pattern). | Clear failures point to the broken behavior without debugging the test. | P2 | 02, 04 |
-| U10 | **Location mirrors source;** follow the workspace's test tree and file naming. | Tests that cannot be found next to their code are not maintained. | P2 | 02 |
-| U11 | **Reuse the existing setup.** Existing fixtures, factories, fakes and the one test framework already in use; no second framework, no global overrides (e.g. event loop). | Parallel setups diverge and double maintenance. | P2 | 03 |
-| U12 | **The new test must run.** Confirm it appears in the runner output and passes; a skip, a missing dependency or "not collected" is not a pass. | A test that never runs is not evidence. | P1 | 05 |
-| U13 | **Know the limits.** Unit results do not prove authorization at the API, SQL/migrations, server/client rendering or real integrations; say what is left to integration/E2E. | Over-claiming unit results hides untested risk from reviewers and testers. | P2 | 06 |
-| U14 | **TDD when the plan asks.** Write the failing test first, see it fail for the right reason, then implement. | Seeing the test fail proves it can detect the bug. | P3 | 05 |
+| # | Rule | Why | Goes into |
+|---|---|---|---|
+| **U1** | **Test behavior, not implementation.** Assert outputs, raised errors, emitted states, and calls **at port boundaries**; never private helpers, internal call order, or private data fields. | Implementation-coupled tests break on every safe refactor and erode trust in the suite. | `SKILL`, `02` |
+| **U2** | **Pass/Default + every handled Fail + Empty/Edge for each changed behavior.** Cover the success path, each failure the code handles (validation, not found, forbidden, conflict, dependency failure), and boundaries (empty, null/missing, zero, max, malformed). | Happy-path-only suites pass while production fails on real inputs. | `SKILL`, `01` |
+| **U3** | **Red-to-Green regression test for every bug fix and review finding fix.** Write a test that fails on the faulty behavior first, record the red run, then fix the code and run green. | Without a red run on the unfixed code, nothing proves the test can detect the defect. | `SKILL`, `01`, `03` |
+| **U4** | **Isolated and fast.** Zero live network, database, file system, OS/device plugins, or real wall clock in unit tests; replace external dependencies at their port boundary. | Environment-dependent tests are slow, flaky, or test infrastructure instead of logic. | `SKILL`, `02` |
+| **U5** | **Double the port boundary, never the subject.** Use fakes or mocks for the port/adapter the subject depends on, preserving its real contract (return types, raised errors, full data shapes); never mock the class or function under test. | Mocking the subject or using a loose double makes tests pass regardless of production bugs. | `SKILL`, `02` |
+| **U6** | **Never mock authorization, data-scope guards, or the database to make a test pass.** Keep policy/permission checks real in unit tests; cover SQL queries and schema constraints in integration tests. | Mocking a security guard away tests nothing about the guard and hides regressions. | `SKILL`, `02`, `03` |
+| **U7** | **Deterministic execution.** Control time, IDs, randomness, ordering, and async completion (injected clock/ID factory, seeded random, awaited async, isolated per-test state). | Flaky tests train developers to ignore red builds. | `SKILL`, `02` |
+| **U8** | **Specific assertions with independent expectations.** Assert exact values, error types/codes, and emitted state sequences from literal design expectations; never recompute expected values using production logic, and never write tautologies (`isNotNull` alone, `assert True`) or assertion-free tests. | Weak or recomputed assertions pass on corrupted output. | `SKILL`, `02` |
+| **U9** | **One behavior per test, Arrange-Act-Assert (AAA), behavior-revealing name.** Separate Arrange, Act, and Assert; name each test for the behavior, condition, and expected outcome. | Clear failures point straight to the broken rule without debugging the test. | `SKILL`, `01`, `02` |
+| **U10** | **Test path mirrors source path.** Place each unit test in the test tree mirroring its source module path and naming convention. | Tests nobody can locate next to their source module are neither run nor maintained. | `SKILL`, `01` |
+| **U11** | **Reuse the workspace's existing test setup.** Use the workspace's installed test runner, async plugin, fixtures, builders, and port fakes; never introduce a competing test framework or global state override. | Parallel test setups diverge and double maintenance overhead (`EXTEND` vs `INIT`). | `SKILL`, `01`, `02` |
+| **U12** | **Every new test must execute.** Confirm the test is collected, not skipped/deselected, fails for the expected reason on red, and passes on green. | An uncollected, skipped, or unrun test is `NOT_RUN`, never `PASS`. | `SKILL`, `03` |
+| **U13** | **State unit test boundaries explicitly.** Report what unit tests proved and what remains for integration, contract, E2E, or visual verification. | Over-claiming unit test coverage hides untested SQL, wiring, or rendering risks. | `SKILL`, `03` |
+| **U14** | **Failing test first when required.** Write the failing test before production code for domain rules, use cases/services, schemas/mappers, state machines, and all bug/finding fixes. | A test written after code passes immediately without proving it can catch a break. | `SKILL`, `01`, `03` |
 
-**Never "not adopted":** U2, U4, U5, U6, U12.
+**Mandatory rules (never "not adopted"):** `U2`, `U4`, `U5`, `U6`, `U12`.
 
-## Who does what (default)
+---
 
-| Role | Unit tests |
+## Unified Tool Gate (`PASS` / `FAIL`) & Review Severity (`BLOCKER` / `MAJOR` / `MINOR`)
+
+CLI test and linter commands are strictly binary (`exit 0` = `PASS`, `exit != 0` = `FAIL`; non-executed checks use `NOT_RUN`, `BLOCKED`, or `UNVERIFIED` per `shared_contracts/flags_and_statuses.md` §1). Reviewers grade unit test findings on the unified 3-tier scale (`shared_contracts/flags_and_statuses.md` §2):
+
+| Severity | Finding | Review Verdict Impact |
+|---|---|---|
+| `BLOCKER` | Unit test suite `FAIL`s; new test not collected/skipped (`U12`); bug/finding fix lacks red-to-green regression test (`U3`); mocked subject under test (`U5`) or mocked authorization/security guard (`U6`); edited/weakened existing test to mask a defect | `CHANGES_REQUESTED` (blocks approval) |
+| `MAJOR` | Missing required Pass/Default, handled Fail, or Empty/Edge case (`U2`); live network/DB/clock in unit test (`U4`, `U7`); tautological or non-specific assertion (`U8`); test placed outside mirrored path or violating workspace convention (`U10`, `U11`) | Must be fixed before handoff |
+| `MINOR` | Minor test naming polish, AAA spacing, or local fixture extraction opportunity (`U9`) | Optional improvement (never blocks approval) |
+
+---
+
+## Default Role Ownership
+
+| Role | Responsibility |
 |---|---|
-| Code Writer | Writes and runs them with each task; reports evidence |
-| Code Reviewer | Grades assertions and coverage of cases; reruns the suite on the reviewed revision |
-| Test Runner | Owns integration, contract, E2E and visual checks — not unit tests |
-
-Keep the workspace's own roles and evidence locations when they exist (P5).
+| **Code Writer** | Writes and runs unit tests with each task (red → green); records exact CLI commands and exit codes in the hand-off |
+| **Code Reviewer** | Grades case coverage (`U2`), doubles boundaries (`U5`, `U6`), and assertion strength (`U8`); reruns the suite on `REVIEW_REVISION` |
+| **Test Runner** | Owns integration, contract, E2E, and visual acceptance checks — cites developer unit tests as input but never counts them as acceptance |

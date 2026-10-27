@@ -8,7 +8,7 @@ from .plugin_install import (
     REPO_ROOT,
     cmd_install_plugin,
 )
-from .setup.huly import cmd_login, cmd_my_tasks, cmd_setup_huly, cmd_status, cmd_task_detail
+from .setup.huly import cmd_init, cmd_login, cmd_my_tasks, cmd_setup_huly, cmd_status, cmd_task_detail
 
 
 def _add_huly_login_args(parser: argparse.ArgumentParser, path_flag: str) -> None:
@@ -30,8 +30,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
-    # setup flutter | setup huly
-    p_setup = subparsers.add_parser("setup", help="Workspace setup gates (flutter, huly)")
+    # init
+    p_init = subparsers.add_parser("init", help="Create .env template or append missing Coder Nexus keys to existing .env")
+    p_init.add_argument("--project", "--workspace-path", dest="workspace_path", default=".", help="Client project path (default: cwd)")
+
+    # setup flutter | setup huly | setup tools
+    p_setup = subparsers.add_parser("setup", help="Workspace setup (flutter, huly, tools)")
     setup_sub = p_setup.add_subparsers(dest="stack", required=True)
 
     p_flutter = setup_sub.add_parser("flutter", help="iMESPro/external Flutter project setup gate")
@@ -45,6 +49,13 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["imespro", "external-structured", "external-standard"],
         help="Architecture profile (imespro, external-structured, external-standard)",
     )
+
+    p_tools = setup_sub.add_parser("tools", help="Developer tools the stack skills check with (dev dependencies, lint config, CLIs)")
+    p_tools.add_argument("--pack", required=True, choices=["flutter", "backend"], help="Stack pack whose tools to set up")
+    p_tools.add_argument("--only", help="Comma-separated tool names, optional tools included (e.g. mocktail,dart_code_linter)")
+    p_tools.add_argument("--check", action="store_true", help="Read-only: report what is missing; exit 0 only when READY")
+    p_tools.add_argument("--yes", "-y", action="store_true", help="Apply the planned changes without asking")
+    p_tools.add_argument("--project", default=".", help="Project path (default: cwd)")
 
     p_huly = setup_sub.add_parser("huly", help="Guided Huly setup: check .env, ping URL, log in, save to the project .env (dev only)")
     p_huly.add_argument("--check", action="store_true", help="Read-only: exit 0 only when URL, email, password, session and workspace ID are all in .env")
@@ -78,10 +89,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_dbg.add_argument("task_id", help="Issue ID or Huly issue link")
     p_dbg.add_argument("--workspace-path", help="Path to client project workspace containing .env")
     p_dbg.add_argument("--out", help="Output file (default: ./huly-debug-<ID>.json)")
-
-    # ux (design source, HTML kit, viewports)
-    from .ux.commands import add_ux_parser
-    add_ux_parser(subparsers)
 
     # figma (read-only frame extraction)
     from .figma.commands import add_figma_parser
@@ -145,8 +152,16 @@ def cmd_setup_flutter(args: argparse.Namespace) -> int:
     return code
 
 
+def cmd_setup_tools(args: argparse.Namespace) -> int:
+    """Handle `coder_nexus setup tools` command."""
+    from .setup import tools
+    only = [name.strip() for name in args.only.split(",") if name.strip()] if args.only else None
+    return tools.run_tools(Path(args.project).resolve(), args.pack, only=only, check_only=args.check, assume_yes=args.yes)
+
+
 def cmd_setup(args: argparse.Namespace) -> int:
-    return cmd_setup_huly(args) if args.stack == "huly" else cmd_setup_flutter(args)
+    handlers = {"huly": cmd_setup_huly, "flutter": cmd_setup_flutter, "tools": cmd_setup_tools}
+    return handlers[args.stack](args)
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:
@@ -165,11 +180,6 @@ def cmd_huly_debug(args: argparse.Namespace) -> int:
         return 1
     print(f"✅ Wrote {path} (no tokens or passwords inside). Share this file to align the client with your server.")
     return 0
-
-
-def _cmd_ux(args: argparse.Namespace) -> int:
-    from .ux.commands import cmd_ux
-    return cmd_ux(args)
 
 
 def _cmd_figma(args: argparse.Namespace) -> int:
@@ -197,6 +207,7 @@ def main() -> int:
         return 0
 
     command_handlers = {
+        "init": cmd_init,
         "setup": cmd_setup,
         "doctor": cmd_doctor,
         "login": cmd_login,
@@ -205,7 +216,6 @@ def main() -> int:
         "task-detail": cmd_task_detail,
         "serve": cmd_serve,
         "huly-debug": cmd_huly_debug,
-        "ux": _cmd_ux,
         "figma": _cmd_figma,
         "install-plugin": cmd_install_plugin,
     }

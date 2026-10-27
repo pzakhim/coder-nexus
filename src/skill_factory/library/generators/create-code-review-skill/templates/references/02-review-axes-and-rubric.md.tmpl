@@ -1,0 +1,29 @@
+# 02 — Review Axes and Rubric Mapping
+
+> Topic: Grading the 5 review axes against workspace rubric skills, AC traceability, and adversarial test requirements (`R4`, `R5`)
+
+<!-- GEN: Why: each axis needs its rubric skill and objective proof so reviewers grade by shared engineering standards rather than personal taste. Kind: Mandatory. -->
+
+## 1. The Five Review Axes (`R4`)
+
+| Axis | What to Audit | Rubric Skill | Blocking Condition (`BLOCKER` / `MAJOR`) |
+|---|---|---|---|
+| **1. Plan, Scope & AC Traceability** | Tasks ticked `- [x]` with real evidence; locked decisions (`D-NN`) honored; every AC mapped to code + test; no scope creep or fake production data sources | `incremental-implementation` | Untraced AC; contradicted `D-NN`; fake/mock provider in production code |
+| **2. Clean Architecture & Boundaries** | Dependency direction points inward; Domain pure; transaction/state/DI lifetimes respected | `{{clean_architecture_link}}` | Layer import violation; transaction/lifecycle leak; broken module boundary |
+| **3. Code Quality & Simplicity** | Naming, function focus, explicit error propagation, type safety, no debug leftovers or redundant wrappers | `{{clean_code_link}}`, `{{code_simplification_link}}` | Swallowed error returning fake success; leftover debug code; unsafe cast |
+| **4. Adversarial Tests (`TEST-TAMPER-001`)** | Happy + negative + edge/boundary tests per changed behavior; doubles only at architectural seams | `{{unit_testing_link}}` | Happy-path-only tests; weakened/deleted assertions (`TEST-TAMPER-001`); failing tests |
+| **5. Security, Contracts, Migrations & UI** | Auth/scope guards, safe parsing, secret hygiene, contract/migration/visual fidelity | `{{secure_coding_link}}` | Missing auth/scope check; injection/secret leak; contract drift; material visual mismatch |
+
+---
+
+## 2. Acceptance Criteria Traceability & Anti-Tamper Audit (`R5`)
+
+| AC ID | Implementation (`path:line`) | Executable Test / Check | Evidence (`exit 0` / Artifact) | Status |
+|---|---|---|---|---|
+| `{{ac_id}}` | `{{impl_path}}` | `{{test_path}}` | `{{evidence_summary}}` | `PASS` / `FAIL` |
+
+- **Anti-Happy-Path Rule:** If unit/integration tests only verify the happy path while ignoring validation, auth, empty, or failure/rollback paths, reject with `CHANGES_REQUESTED` (`BLOCKER`).
+- **`TEST-TAMPER-001`:** Deleting, skipping, or weakening existing test assertions to make a failing check pass is an immediate `BLOCKER`.
+
+<!-- custom:start -->
+<!-- custom:end -->

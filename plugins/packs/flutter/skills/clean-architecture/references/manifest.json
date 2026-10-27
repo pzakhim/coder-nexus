@@ -1,12 +1,12 @@
 {
-  "version": "1.2.0",
-  "updated_at": "2026-10-11",
+  "version": "1.3.0",
+  "updated_at": "2026-10-24",
   "commit_hash": "2.0.2",
   "source_directory": "skills/flutter/clean-architecture",
   "references": [
     {
-      "id": "root_level",
-      "target_file": "01_project_root.md",
+      "id": "layout_and_layer_roles",
+      "target_file": "01-layout-and-layer-roles.md",
       "sources": [
         {
           "file": "standards/architecture.md",
@@ -15,48 +15,46 @@
         {
           "file": "standards/build-flavors.md",
           "sections": ["Flutter Version Management", "Three Flavors", "AppConfig", "Boot Sequence"]
+        },
+        {
+          "file": "standards/clean-architecture-guide.md",
+          "sections": ["Three Layers", "Contracts", "Best Practices"]
+        },
+        {
+          "file": "standards/di-architecture.md",
+          "sections": ["DI Container Access", "Boot Sequence", "Module DI Registration Order", "Registration Types"]
         }
       ]
     },
     {
-      "id": "core_subsystems",
-      "target_file": "02_core_subsystem.md",
+      "id": "dependencies_di_and_contracts",
+      "target_file": "02-dependencies-di-and-contracts.md",
       "sources": [
         {
           "file": "standards/api-data-layer.md",
           "sections": ["Network Stack", "DataSource Pattern", "API Endpoints", "Error Handling"]
         },
         {
-          "file": "standards/di-architecture.md",
-          "sections": ["DI Container Access", "Boot Sequence"]
-        },
-        {
           "file": "standards/clean-architecture-guide.md",
           "sections": ["Core Auth & Network Contracts"]
-        }
-      ]
-    },
-    {
-      "id": "feature_module",
-      "target_file": "03_feature_module.md",
-      "sources": [
-        {
-          "file": "standards/clean-architecture-guide.md",
-          "sections": ["Three Layers", "Contracts", "Best Practices"]
         },
         {
           "file": "standards/state-management.md",
           "sections": ["Pattern A/B", "Cubit Rules", "Widget Consumption"]
         },
         {
-          "file": "standards/di-architecture.md",
-          "sections": ["Module DI Registration Order", "Registration Types"]
+          "file": "standards/architecture.md",
+          "sections": ["Cross-Module Boundaries", "Composition Root"]
+        },
+        {
+          "file": "standards/routing.md",
+          "sections": ["Adding a New Route", "Auth Guard", "Navigation Rules"]
         }
       ]
     },
     {
-      "id": "screen_contract",
-      "target_file": "05_screen_contract.md",
+      "id": "screens_adding_and_splitting",
+      "target_file": "03-screens-adding-and-splitting.md",
       "sources": [
         {
           "file": "standards/screen-contract.md",
@@ -65,20 +63,6 @@
         {
           "file": "standards/base-screen.md",
           "sections": ["BaseScreen contract; verify resolved Client source"]
-        }
-      ]
-    },
-    {
-      "id": "cross_boundaries",
-      "target_file": "04_cross_boundaries.md",
-      "sources": [
-        {
-          "file": "standards/architecture.md",
-          "sections": ["Cross-Module Boundaries", "Composition Root"]
-        },
-        {
-          "file": "standards/routing.md",
-          "sections": ["Adding a New Route", "Auth Guard", "Navigation Rules"]
         }
       ]
     }

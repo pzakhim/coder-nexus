@@ -1,11 +1,11 @@
 ---
 name: change-control
-description: The one path for "the approved plan and reality disagree" after Gate 3 - when to stop and raise a request, its shape (task, expected vs reality, evidence, options with a recommendation), how Planning classifies it as TASK_DETAIL / DESIGN_CHANGE / SCOPE_CHANGE, what Planning may amend alone, logging, who tells the user, waiting and the round cap. Use whenever a Code Writer triages a check as PLAN_WRONG, a mapped component or consumed symbol does not fit, code contradicts a D-NN, a reviewer or Test Runner finding conflicts with the plan (PLAN_CONFLICT), or Planning answers such a request.
+description: "Raise, classify, and resolve a Plan Change Request (PCR-NN) when an approved phase cannot be implemented or verified as written, routing TASK_DETAIL, DESIGN_CHANGE, or SCOPE_CHANGE through Planning and the affected approval gate."
 ---
 
 # Plan change request
 
-An approved plan can be wrong in a detail or in a decision. This skill keeps both cases honest: the person who finds the gap stops and asks, Planning fixes only what it may fix alone, and everything else goes back to the user through the gate that approved it. Formats live in `work-item-contract`: frozen vs amendable and the `## Plan change log` in [plan-and-task-contract](../work-item-contract/references/plan-and-task-contract.md) §4–5, status words and paths in [handoff-and-status](../work-item-contract/references/handoff-and-status.md).
+An approved plan can be wrong in a detail or in a decision. This skill keeps both cases honest: the person who finds the gap stops and asks, Planning fixes only what it may fix alone, and everything else goes back to the user through the gate that approved it. Formats live in `work-item-contract`: frozen vs amendable and the `## Plan change log` in `work-item-contract` (`references/plan-and-task-contract.md` §5), status words and paths in `work-item-contract` (`references/handoff-and-status.md`).
 
 ## 1. When to raise
 
@@ -25,8 +25,8 @@ Not a plan change: a code defect (`CODE_WRONG` → `{{slot:root-cause-debugging}
 
 - **Stop at the task.** Leave it unticked; keep earlier ticked tasks as they are. Reason: a half-built workaround becomes the design nobody approved.
 - **No workaround**: no local alternative component, no extra file, no edited check, test or **Expected**, no fallback or fake data to get past the gap.
-- **Code Writer**: write `plan-changes/PCR-NN.md` from the [template](templates/change-control.md.tpl) and return `BLOCKED` naming `PCR-NN`.
-- **Code Reviewer or Test Runner**: stay read-only. Record the conflict as a `PLAN_CONFLICT` row in your own report (plan line, finding, evidence, options) and return your verdict; the coordinator writes `plan-changes/PCR-NN.md` from that row and gives it the next number. Reason: the roles that judge the work never write the documents they judge ([handoff-and-status](../work-item-contract/references/handoff-and-status.md) §2).
+- **Code Writer**: write `plan-changes/PCR-NN.md` from [templates/change-control.md.tpl](templates/change-control.md.tpl) and return `BLOCKED` naming `PCR-NN`.
+- **Code Reviewer or Test Runner**: stay read-only. Record the conflict as a `PLAN_CONFLICT` row in your own report (plan line, finding, evidence, options) and return your verdict; the coordinator writes `plan-changes/PCR-NN.md` from that row and gives it the next number. Reason: the roles that judge the work never write the documents they judge (`work-item-contract` (`references/handoff-and-status.md` §2)).
 - Give options, at most three, with one recommendation and its cost. Reason: Planning and the user decide faster on a concrete choice, but the raiser never applies it.
 
 ## 3. Classification (Planning)
@@ -70,5 +70,3 @@ Only the coordinator speaks to the user.
 
 - A task that needs a third request, or an amendment contested twice by the same role, goes to the user via the coordinator whatever its class. Reason: repeated amendments mean the design premise is wrong, not the detail.
 - A review that reaches its 3-round cap for a plan reason raises one request; it is never closed by lowering a finding.
-
-Sources and ideas not adopted: [references/sources.md](references/sources.md).

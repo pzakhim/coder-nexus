@@ -1,11 +1,11 @@
-# Checklist — quality-reporting
+# Checklist — `create-quality-reporting-skill`
 
-Run this and `~/.claude/skill-factory/core/checklist-common.md`.
+Run this checklist alongside [../../core/checklist-common.md](../../core/checklist-common.md):
 
-- [ ] Every rule RP1–RP12 is adopted, adapted, or "not adopted" with a reason; RP1, RP3, RP4, RP7, RP8 are adopted
-- [ ] Report location, naming, results record and owner are the workspace's own
-- [ ] AC coverage rule and verdict criteria use the workspace's words; NOT_RUN/BLOCKED never count as passed
-- [ ] Defect IDs, severity scale and status lifecycle defined; "won't fix" requires the user's decision
-- [ ] Limitations section required at the top (stubs, not-run cases, uncovered roles/environments, flaky cases)
-- [ ] Evidence path and redaction rules stated; external posting needs authorisation
-- [ ] Fullstack reports keep separate BE and FE result tables
+- [ ] All rules `RP1`–`RP12` are enforced as **mandatory compliance** across the generated skill.
+- [ ] Defect and report-audit severities use strictly the unified 3-tier scale **`BLOCKER` / `MAJOR` / `MINOR`** (`shared_contracts/flags_and_statuses.md`).
+- [ ] Deterministic CLI report verification gates use strictly **`PASS` / `FAIL`**, and per-case/AC roll-ups never count `NOT_RUN`, `BLOCKED`, or `UNVERIFIED` as `PASS`.
+- [ ] Feature verdict rules (`ACCEPTED` / `CHANGES_REQUESTED` / `BLOCKED`) require every AC `PASS` and `0` open `BLOCKER` or `MAJOR` defects for `ACCEPTED`.
+- [ ] Generator and templates are 100% stack-agnostic (use `API / Service Surface` and `UI / Client Surface` or a single unified table).
+- [ ] Generated skill uses the flat 3-reference layout (`references/01-report-structure-and-verdict.md`, `references/02-defects-and-retest-history.md`, `references/03-evidence-hygiene-and-gates.md`) and `SKILL.md` is < 115 lines.
+- [ ] Evidence paths, secret/PII redaction rules, and external distribution authorization requirements are explicitly stated.

@@ -686,7 +686,7 @@ def test_design_must_map_ui_screens_and_new_components(tmp_path):
     mapping = "\n## UI/UX mapping\n\n| Screen / component | Kind | Destination | Kit | Phase |\n|---|---|---|---|---|\n| S02 | NEW | DocsScreen /docs | app-list → List | PHASE-01 |\n"
     result = spec_validator.validate_proposal(proposal_content=head + mapping, proposal_path=str(design_path))
     unmapped = [v["message"] for v in result["violations"] if v["rule_id"] == "DESIGN-008-UNMAPPED"]
-    assert unmapped and "C01" in unmapped[0] and "S01" not in unmapped[0], "EXISTING screens need no mapping"
+    assert unmapped and ("C01" in unmapped[0] or "C-01" in unmapped[0]) and "S01" not in unmapped[0] and "S-01" not in unmapped[0], "EXISTING screens need no mapping"
 
     full = mapping + "| C01 | NEW COMPONENT | widgets/folder_tree | app-list-item | PHASE-02 task 3 |\n"
     assert not any(r.startswith("DESIGN-008") for r in _violation_ids(
@@ -695,3 +695,39 @@ def test_design_must_map_ui_screens_and_new_components(tmp_path):
     _write_uiux(tmp_path, status="DRAFT")
     assert "DESIGN-008-UIUX-NOT-APPROVED" in _violation_ids(
         spec_validator.validate_proposal(proposal_content=head + full, proposal_path=str(design_path)))
+
+
+def test_figma_intake_screens_and_workflows_validation_without_design_uiux(tmp_path):
+    req_path = tmp_path / "requirements.md"
+    (tmp_path / "codebase-notes.md").write_text(SPEC_WRITER_CODEBASE_NOTES, encoding="utf-8")
+
+    # 1. Non-EXISTING S-NN in ## Screens & Visual Sources without ## Workflows triggers REQ-006-NO-WORKFLOWS
+    req_with_screens_only = SPEC_WRITER_REQUIREMENTS.replace(
+        "## 1. Scope",
+        "## Screens & Visual Sources\n\n| Screen ID | Screen Name | Status | Visual Source | Notes |\n|---|---|---|---|---|\n| S-01 | Login | EXISTING | lib/modules/auth/login_screen.dart | — |\n| S-02 | Work Order List | NEW | Figma 1150:10051 (work-orders.spec.json, work-orders-S02.png) | 1440x900 |\n\n## 1. Scope",
+        1,
+    )
+    req_path.write_text(req_with_screens_only, encoding="utf-8")
+    res_no_wf = spec_validator.validate_proposal(proposal_path=str(req_path))
+    assert "REQ-006-NO-WORKFLOWS" in _violation_ids(res_no_wf)
+
+    # 2. ## Workflows referencing S-02 and G-01 and AC-01 passes REQ-006
+    req_complete = req_with_screens_only.replace(
+        "## 1. Scope",
+        "## Workflows\n\n| Workflow | Goal | Steps → screens | Scenarios / AC |\n|---|---|---|---|\n| W-01 | G-01 | 1. Login (`S-01`) -> 2. View list (`S-02`) | `AC-01` |\n\n## 1. Scope",
+        1,
+    )
+    req_path.write_text(req_complete, encoding="utf-8")
+    res_ok = spec_validator.validate_proposal(proposal_path=str(req_path))
+    assert not any(r.startswith("REQ-006") for r in _violation_ids(res_ok))
+
+    # 3. design.md must map S-02 (NEW) in ## UI/UX mapping even without design-uiux/
+    design_path = tmp_path / "design.md"
+    head = "> **Document type**: DESIGN\n> **Feature**: a/b\n> **Version**: v1\n> **Status**: PENDING_REVIEW\n"
+    design_path.write_text(head, encoding="utf-8")
+    res_design_missing = spec_validator.validate_proposal(proposal_content=head, proposal_path=str(design_path))
+    assert "DESIGN-008-NO-MAPPING" in _violation_ids(res_design_missing)
+
+    mapping = "\n## UI/UX mapping\n\n| Screen / component | Kind | Destination | Kit | Phase |\n|---|---|---|---|---|\n| S-02 | NEW | WorkOrderListScreen /work-orders | AppScaffold, AppDataTable | PHASE-01 |\n"
+    res_design_ok = spec_validator.validate_proposal(proposal_content=head + mapping, proposal_path=str(design_path))
+    assert not any(r.startswith("DESIGN-008") for r in _violation_ids(res_design_ok))

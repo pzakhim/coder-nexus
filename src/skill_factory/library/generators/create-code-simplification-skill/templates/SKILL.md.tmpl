@@ -1,6 +1,6 @@
 ---
 name: code-simplification
-description: Simplification standard of {{project_name}} - reduce a working diff to its simplest clear form without changing behavior - delete before writing, stdlib/native first, YAGNI, rule of three, flat code, with real examples and stop rules. Use after checks pass or when review flags unnecessary complexity in {{dirs}}.
+description: Simplification standard of {{project_name}} - reduce a working diff to its simplest clear form without changing behavior - four lenses (reuse, simplification, efficiency, altitude), delete before writing, YAGNI, rule of three, small checked steps, stop rules and the one-line simplify report. Use after checks pass or when review flags unnecessary complexity in {{dirs}}.
 ---
 
 # Code Simplification — {{project_name}}
@@ -8,35 +8,41 @@ description: Simplification standard of {{project_name}} - reduce a working diff
 <!-- GEN: Why: the agent must see when to run, the loop and the hard limits at once, because a simplification done at the wrong time or too far is a bug. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
 <!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
 
-Goal: code a newcomer understands on first read — not the fewest lines.
+Goal: code a newcomer understands on first read — not the fewest lines. A change is a simplification only when a reader holds **fewer concepts** afterwards.
 
-## The loop
+## 1. The loop
 
 1. Checks are green; take only the phase's diff ([01]({{ref_01}})).
-2. Understand callers, side effects, error paths and tests ([02]({{ref_02}})).
-3. Name the smell from the catalog; skip code that is already clear ([03]({{ref_03}})).
-4. One small simplification → rerun formatter/analyzer and affected tests.
-5. Stop at the stop criteria ([04]({{ref_04}})).
-6. Report one line ([05]({{ref_05}})).
+2. Understand callers, side effects, error paths and tests ([01]({{ref_01}})).
+3. Pass the diff through the four lenses — **Reuse, Simplification, Efficiency, Altitude** — and name each smell from the catalog; skip code that is already clear ([02]({{ref_02}})).
+4. One small simplification → rerun `{{check_commands}}` (`PASS` / `FAIL`).
+5. Stop at the stop criteria; findings that would change behavior or reach outside the diff go to Concerns ([01]({{ref_01}})).
+6. Report one `simplify:` line ([03]({{ref_03}})).
 
-## Rules
+## 2. Rules (Mandatory Compliance)
 
-<!-- GEN: One row per rule from references/base-rules.md as adopted/adapted (keep existing workspace principles and IDs, P5). Why = one clause in the workspace's terms. -->
-| # | Rule | Why | Severity | Enforced by |
-|---|---|---|---|---|
-| {{id}} | {{rule}} | {{why}} | {{severity}} | {{gate_or_review}} |
+<!-- GEN: One row per rule from references/base-rules.md as adopted/adapted (keep existing workspace rule IDs, P5). Why = one clause in the workspace's terms. No per-rule Severity column: checks are PASS/FAIL and review grades BLOCKER/MAJOR/MINOR (03). -->
+| Rule | Principle | Why | Reference |
+|---|---|---|---|
+| {{id}} | {{rule}} | {{why}} | {{reference_link}} |
 
-## Relationship with other skills
+Reviewers grade findings on the unified `BLOCKER` / `MAJOR` / `MINOR` scale (`shared_contracts/flags_and_statuses.md` §2) and evaluate only code changed in the phase.
+
+## 3. Reference Guides
+
+| Topic | Reference |
+|---|---|
+| When and scope, behavior safety, per-step checks, never-rules and stop criteria | [01 — Scope & Safety]({{ref_01}}) |
+| Smell → technique catalog by lens (Reuse, Simplification, Efficiency, Altitude), rule of three, what to leave alone | [02 — Smell Catalog]({{ref_02}}) |
+| `simplify:` report line, skipped findings, shortcuts and review grading | [03 — Report & Review]({{ref_03}}) |
+<!-- {{profile_references}} -->
+
+## 4. Relationship with Other Skills
 
 <!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md; link existing siblings or write "not set up in this workspace". -->
-- Thresholds and naming: {{clean_code_link}} (not repeated here).
+- Thresholds, naming, dead code and wrappers: {{clean_code_link}} (not repeated here).
 - Placement and boundaries: {{clean_architecture_link}}; workspace decisions ({{decision_notation}}) keep the abstractions they require.
-- Called from the simplicity pass of {{incremental_link}}.
-
-## Not adopted
-
-<!-- GEN: Rules marked "not adopted" with the reason, or delete. -->
-- {{not_adopted}}
+- Called from the simplicity pass of {{incremental_link}}; red checks go to {{debugging_link}} first.
 
 <!-- custom:start -->
 <!-- custom:end -->

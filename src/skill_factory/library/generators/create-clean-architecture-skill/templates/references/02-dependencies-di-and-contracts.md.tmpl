@@ -1,0 +1,34 @@
+# 02 — Dependency Direction, DI Wiring, and Runtime Contracts
+
+<!-- GEN: Why: codifies inward dependency direction, deterministic boundary checks, explicit DI order, unit-of-work/state ownership, and startup purity. Kind: Mandatory. -->
+
+## 1. Dependency Direction Matrix (A1, A2, A6, A8)
+
+```text
+{{dependency_diagram}}
+```
+
+| Layer | May Import | Never Imports | Why |
+|---|---|---|---|
+| `{{layer}}` | {{may_import}} | {{never_imports}} | {{why}} |
+
+## 2. Deterministic Boundary Checks (`PASS` / `FAIL`)
+
+```bash
+# Automated boundary linter / validator
+{{boundary_linter_cmd}}
+
+# Ripgrep (rg) forbidden-import checks (must return zero matches)
+{{rg_boundary_cmds}}
+```
+
+## 3. Dependency Injection, State/Unit-of-Work & Lifecycle Purity (A3, A4, A5, A7, A9)
+
+- **Composition root & DI order (A5)**: {{di_wiring_rules}}
+- **Unit-of-work & state ownership (A3, A4)**: {{uow_and_state_rules}}
+- **Domain error translation (A6)**: {{error_boundary_rules}}
+- **Import & bootstrap purity (A7)**: {{startup_purity_rules}}
+- **Explicit data loading (A9)**: {{data_loading_rules}}
+
+<!-- custom:start -->
+<!-- custom:end -->

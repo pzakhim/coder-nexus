@@ -1,41 +1,55 @@
 ---
 name: visual-quality
-description: How the Quality Engineer of {{project_name}} checks UI fidelity against the approved design - named reference or labelled baseline, a screen x state x viewport matrix captured like for like with {{browser_tool}}, a comparison by layout, spacing, typography, design tokens, shared components, icons, UI states, responsiveness, copy and basic accessibility, and deviations classified as blocking or minor. Use whenever comparing a screen with its design or mockup, checking visual regressions or reviewing UI before release in {{fe_dir}}.
+description: "Verify UI visual fidelity for {{project_name}} against the approved design across all 4 visual states (`Loading`, `Content`, `Empty`, `Error`), target viewports, and orientations — using runtime target screenshots and headless golden comparisons, graded by the 10-dimension checklist (`BLOCKER` / `MAJOR` / `MINOR`) with revision-bound `PASS` / `FAIL` / `BLOCKED` / `NOT_RUN` / `N/A` evidence."
 ---
 
-# Visual Quality — {{project_name}}
+# Visual Quality & Runtime UI Inspection — {{project_name}}
 
-<!-- GEN: Why: the reference, the matrix and the verdict rule must be fixed before the first screenshot, or comparisons turn into opinions. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
-<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+<!-- GEN: Why: the agent must see the 3-step visual verification workflow, mandatory rules V1–V12, and canonical visual gate results on one screen before inspecting or grading UI screenshots. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
 
-References: {{reference_sources}} · Tool: {{browser_tool}} · Evidence: `{{evidence_path}}`
+Open and visually inspect the rendered UI on the target platform and headless golden harness. Static analysis (`G2`) and unit/state tests (`G5`) never replace visual verification when `UI Impact: Yes`.
 
-## Steps
+## 1. Visual Verification Workflow
 
-1. Pick the **reference** (approved design at its revision, or the labelled pre-change baseline) ([01]({{ref_01}})).
-2. Build the **matrix**: screens × states × viewports × role/theme ([01]({{ref_01}})).
-3. **Capture** like for like ([02]({{ref_02}})).
-4. **Compare** by dimension ([03]({{ref_03}})).
-5. **Classify** deviations and give the verdict ([04]({{ref_04}})).
+1. **Resolve Reference & Preconditions** ([01-references-matrix-and-capture.md]({{ref_01}})):
+   - Lock `REVIEW_REVISION`, target platform, flavor, entrypoint, viewports (`.superpowers/ux/viewports.json`), and data provenance (`FE_MOCKOON` vs `BE_LIVE`).
+2. **Capture Runtime & Headless Golden States** ([01]({{ref_01}}), [02-headless-and-runtime-targets.md]({{ref_02}})):
+   - Exercise and capture all 4 mandatory states (`Loading`, `Content`, `Empty`, `Error`) plus required orientations/themes.
+   - Open and inspect every `.png` artifact directly; a saved file path alone is `UNVERIFIED`.
+3. **Compare Across 10 Dimensions & Grade** ([03-comparison-checklist-and-verdict.md]({{ref_03}})):
+   - Grade deviations as `BLOCKER`, `MAJOR`, `MINOR`, or `ACCEPTED (D-NN)` and record per-screen `PASS` / `FAIL` / `BLOCKED` / `NOT_RUN` / `N/A` results.
 
-## Verdict
+## 2. Mandatory Rules (`V1`–`V12`)
 
-- Any blocking deviation → `{{fail_word}}`.
-- Missing reference → `BLOCKED`; state that could not be produced → `NOT_RUN`.
-- Only minor deviations, or deviations covered by a recorded decision ({{decision_notation}}) → `{{pass_word}}` with the list.
+| ID | Rule | Reference |
+|---|---|---|
+| **V1** | **Compare against an approved reference** (extracted Figma per-screen `.png` renders + `design.md` `## UI/UX mapping`, or plan-approved baseline). | [01]({{ref_01}}) |
+| **V2** | **Like-for-like matrix** (`Screen × State [Loading, Content, Empty, Error] × Viewport × Orientation`). | [01]({{ref_01}}) |
+| **V3** | **Real runtime or headless golden capture** saved under the revision-bound evidence path. | [01]({{ref_01}}), [02]({{ref_02}}) |
+| **V4** | **Open and inspect every image** — a file path without visual inspection is `UNVERIFIED`. | [01]({{ref_01}}), [02]({{ref_02}}) |
+| **V5** | **Preserve data provenance** (`FE_MOCKOON` fixture checks vs. `BE_LIVE` integration). | [01]({{ref_01}}) |
+| **V6** | **Judge by the 10 named dimensions**, never personal taste. | [03]({{ref_03}}) |
+| **V7** | **Grade deviations with `BLOCKER` / `MAJOR` / `MINOR`** (`ACCEPTED (D-NN)` when covered by `D-NN`). | [03]({{ref_03}}) |
+| **V8** | **Strict golden baseline governance** — never run baseline-overwrite flags during verification. | [02]({{ref_02}}) |
+| **V9** | **Per-screen & per-state evidence table** with exact revision and artifact paths. | [03]({{ref_03}}) |
+| **V10** | **Missing reference, target, or state is never `PASS`** (`BLOCKED` or `NOT_RUN`). | [01]({{ref_01}}), [03]({{ref_03}}) |
+| **V11** | **Zero secrets or PII in screenshots** — use safe test data and redact credentials. | [01]({{ref_01}}) |
+| **V12** | **Read-only inspection in Review & Verification** — return `FAIL` → `CHANGES_REQUESTED` on defects. | [03]({{ref_03}}) |
 
-## Never
+## 3. Canonical Visual Gate Results
 
-- Change styles or code to make a screen match.
-- Judge by taste; suggestions go to a separate list.
-- Update the approved baseline without {{baseline_approver}}'s approval.
-- Show secrets or personal data in screenshots.
+- **`PASS`**: All required screens, 4 states, and viewports were captured, opened, and inspected on `REVIEW_REVISION` with zero `BLOCKER` or unaddressed `MAJOR` deviations.
+- **`FAIL`**: Any `BLOCKER` or `MAJOR` visual deviation, layout overflow, missing state, or golden diff failure (`-> CHANGES_REQUESTED`).
+- **`BLOCKED`**: Missing design reference, unavailable simulator/emulator/device, or unreachable data source.
+- **`NOT_RUN`**: Required visual state or viewport was not captured.
+- **`UNVERIFIED`**: Screenshot path recorded without opening and inspecting the image.
+- **`N/A`**: Phase has `UI Impact: No` (with recorded reason; do not boot an emulator for non-UI work).
 
-## Relationship with other skills
+## 4. Reference Guides
 
-<!-- GEN: Per ~/.claude/skill-factory/core/quality-skill-family.md; link existing siblings or write "not set up in this workspace". -->
-- Behavior is proven by {{quality_acceptance_link}}; results go into {{quality_reporting_link}}.
-- UI standards: {{ui_standards_links}}
-
-<!-- custom:start -->
-<!-- custom:end -->
+| Topic | Reference File |
+|---|---|
+| Design reference priority, Screen × State × Viewport matrix, data provenance, and runtime capture | [01-references-matrix-and-capture.md]({{ref_01}}) |
+| Headless golden screenshot recipe, 4-state test template, and role boundaries | [02-headless-and-runtime-targets.md]({{ref_02}}) |
+| 10-dimension comparison checklist, `BLOCKER` / `MAJOR` / `MINOR` grading, and report template | [03-comparison-checklist-and-verdict.md]({{ref_03}}) |
+<!-- {{profile_references}} -->

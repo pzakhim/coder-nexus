@@ -1,60 +1,54 @@
 ---
 name: api-contract-design
-description: How a Python + FastAPI service keeps its HTTP API contract - openapi.json generated from the app (app.openapi()) is the contract, saved as a revision-bound snapshot under the work item's contracts/ folder (and the repository path when the workspace commits one), diffed against the base revision on every change with breaking-vs-additive rules and the One-Version Rule; separate input and output Pydantic schemas, one error envelope, status codes, pagination, auth declared per endpoint, stable operationIds and tags for generated clients, deprecation and versioning; how the snapshot feeds the frontend handshake (api_contract.json review, READY_FOR_MOCK, LIVE_DEPLOYED) and mock servers; and contract tests. Use when Spec Writer reviews a frontend API request, when Planning writes the API section of design.md, when the Code Writer adds or changes an endpoint, schema, status code or error, when the Code Reviewer grades API conformity, and whenever someone asks whether a change is breaking.
+description: "Design, version, and verify FastAPI/Pydantic v2 HTTP & OpenAPI 3.1 contracts: route conventions, strict input/output DTOs, single error envelope, per-endpoint auth/RBAC/anti-IDOR scopes, bounded pagination, idempotency keys, additive-first compatibility, and committed OpenAPI snapshot diffing."
 ---
 
-# Backend API Contracts (FastAPI + OpenAPI)
+<!-- Generated from create-api-contract-design-skill@1.1.0 -->
 
-An extra skill of the backend pack. The process (gates, task format, evidence, review) stays in the core skills; the lifecycle between workspaces stays in the installed plugin's `shared_contracts/api_handshake_protocol.md`. This skill adds how a FastAPI service produces, changes and proves its contract.
+# API Contract Design (FastAPI + Pydantic v2 + OpenAPI 3.1)
 
-Detail: [conventions](references/conventions.md) · [snapshot and diff](references/openapi-snapshot-and-diff.md) · [compatibility](references/compatibility.md). Realtime channels (SSE, WebSocket) are documented through [realtime](../realtime/SKILL.md).
+This skill governs every HTTP route, request/response DTO, authentication/authorization scope declaration, pagination contract, idempotency key flow, and OpenAPI 3.1 snapshot check in the Backend pack. It works alongside `backend-fastapi` (FastAPI runtime & DI), `backend-clean-architecture` (Presentation → Application → Domain boundaries), `backend-secure-coding-standards` (OWASP defense-in-depth), and `backend-realtime` (SSE / WebSocket event contracts).
 
-## 1. What the contract is
+---
 
-| Artifact | Role | Owner |
+## 1. Core Contract Invariants (`CT1`–`CT10`, Mandatory Compliance)
+
+Every invariant below is **mandatory compliance** — never invent per-rule severity columns or mark any invariant as `"not adopted"`:
+
+| ID | Invariant | FastAPI + Pydantic v2 Enforcement | Reference |
+|---|---|---|---|
+| `CT1` | **Contract Snapshot Is Reviewable Evidence** | Export `app.openapi()` deterministically to `contracts/openapi.json` and commit alongside route/schema changes. | [03-openapi-snapshot-diff-and-review.md](references/03-openapi-snapshot-diff-and-review.md) |
+| `CT2` | **Separate Input and Output Schemas** | Distinct `<Resource>CreateRequest`, `<Resource>UpdateRequest` (`ConfigDict(extra="forbid")`), and `<Resource>Response` (`ConfigDict(from_attributes=True)`). Never expose SQLAlchemy models or `dict[str, Any]` on the wire. | [01-conventions-schemas-and-idempotency.md](references/01-conventions-schemas-and-idempotency.md) |
+| `CT3` | **Single Structured Error Envelope** | Every `4xx`/`5xx` (including `RequestValidationError` `422` and `HTTPException`) returns `ErrorResponse` (`error.code`, `error.message`, `error.details`, `error.trace_id`). | [01-conventions-schemas-and-idempotency.md](references/01-conventions-schemas-and-idempotency.md) |
+| `CT4` | **Explicit Status Codes & Response Contracts** | Every `@router.<method>` declares explicit `response_model=`, `status_code=`, and `responses={401: ..., 403: ..., 404: ..., 409: ..., 422: ...}`. | [01-conventions-schemas-and-idempotency.md](references/01-conventions-schemas-and-idempotency.md) |
+| `CT5` | **Explicit Auth, RBAC Scopes & Anti-IDOR** | Declare `Security(require_scopes(...))` / `Depends(get_current_principal)` in route signatures so OpenAPI `security` is populated; scope every query by `principal.tenant_id` and return `404` on cross-tenant IDs. | [02-compatibility-and-versioning.md](references/02-compatibility-and-versioning.md) |
+| `CT6` | **Bounded Pagination, Deterministic Sort & Allow-Listed Filters** | `Query(default=20, ge=1, le=100)`, `PaginatedResponse[T]`, `Literal`/`Enum` sort & filter fields, and unique tie-breaker sort (`ORDER BY created_at DESC, id DESC`). | [01-conventions-schemas-and-idempotency.md](references/01-conventions-schemas-and-idempotency.md) |
+| `CT7` | **Additive Changes by Default; Breaking Changes Require `D-NN`** | Never remove/rename fields, tighten input bounds, or change types/status codes without an approved `D-NN` Decision Record in `design.md` and Expand-and-Contract plan. | [02-compatibility-and-versioning.md](references/02-compatibility-and-versioning.md) |
+| `CT8` | **One-Version Rule & Explicit Deprecation** | Evolve `/api/v1/...` additively; mark retiring routes `deprecated=True` with `Deprecation` and `Sunset` headers before removal. | [02-compatibility-and-versioning.md](references/02-compatibility-and-versioning.md) |
+| `CT9` | **Deterministic `operationId`s, Tags & Handshake** | Explicit `operation_id="<resource>_<action>"`, `tags=["<resource>"]`, and synchronized `api_contract.json` (`shared_contracts/api_handshake_protocol.md`). | [03-openapi-snapshot-diff-and-review.md](references/03-openapi-snapshot-diff-and-review.md) |
+| `CT10` | **Idempotency & Safe Retries (`Idempotency-Key`)** | Non-idempotent `POST` mutations accept `Idempotency-Key: str = Header(...)`, persist `(key, request_hash, status_code, response_body)` atomically, replay matching retries, and return `409` on payload mismatch. | [01-conventions-schemas-and-idempotency.md](references/01-conventions-schemas-and-idempotency.md) |
+
+---
+
+## 2. Reference Routing Table
+
+| Reference Guide | Topic & Coverage | Load When |
 |---|---|---|
-| `design.md` → API section | The **approved intent** at Gate 2: endpoints, schemas, status codes, auth, examples. Written before code | Planning |
-| `openapi.json` generated from the app at a stated revision | The **delivered contract**: what the code really accepts and returns | Code Writer generates; Code Reviewer regenerates and compares |
-| `contracts/openapi.base.json` + `contracts/contract-change.md` | The change set: base snapshot and the classified diff | Code Writer |
-| Frontend `api_contract.json` / `api_gap_report.md` | A **request** from the frontend client (`DRAFT_BY_FE`), never a source of truth for the backend | Frontend; reviewed by Spec Writer |
+| [`references/01-conventions-schemas-and-idempotency.md`](references/01-conventions-schemas-and-idempotency.md) | Route naming, HTTP method & status code matrix (`CT4`), input/output Pydantic v2 DTO separation (`CT2`), single `ErrorResponse` envelope (`CT3`), bounded pagination (`CT6`), and atomic `Idempotency-Key` handling (`CT10`). | Designing or implementing FastAPI routes, Pydantic request/response schemas, pagination, error handlers, or idempotent mutations. |
+| [`references/02-compatibility-and-versioning.md`](references/02-compatibility-and-versioning.md) | OpenAPI security declarations (`HTTPBearer` / `OAuth2PasswordBearer` / `Security` scopes), RBAC (`403`) vs. Anti-IDOR (`404` on cross-tenant access) (`CT5`), Additive vs. Breaking change table (`CT7`), the 4-step `D-NN` protocol, and One-Version deprecation (`CT8`). | Wiring route authentication/authorization, modifying existing endpoints or DTOs, or planning a deprecation/breaking change. |
+| [`references/03-openapi-snapshot-diff-and-review.md`](references/03-openapi-snapshot-diff-and-review.md) | Exporting `contracts/openapi.json` (`CT1`), extracting `contracts/openapi.base.json`, diffing with `oasdiff` / `jq` / `diff -u`, authoring `contracts/contract-change.md`, updating `api_contract.json` (`CT9`), CLI `PASS`/`FAIL` gates, and `BLOCKER`/`MAJOR`/`MINOR` review rubric. | Exporting or diffing OpenAPI snapshots, syncing FE–BE contracts, running verification gates, or reviewing an API change. |
+<!-- {{profile_references}} -->
 
-`openapi.json` is generated, never hand-edited. Reason: a hand-written spec drifts from the code the first time someone forgets to update it; generation makes drift impossible and turns every contract change into a visible diff.
+---
 
-## 2. Rules
+## 3. Deterministic CLI Verification Gates (`PASS` / `FAIL`)
 
-| # | Rule | Reason |
+All automated contract gates report strictly **`PASS`** or **`FAIL`** (`shared_contracts/flags_and_statuses.md`; `NOT_RUN`, `BLOCKED`, and `UNVERIFIED` never count as `PASS`):
+
+| Gate | Command | Pass Criterion |
 |---|---|---|
-| CT1 | Contract first: the endpoint, its schemas, status codes and auth are in the approved `design.md` before the task that builds it | Frontend and backend never guess each other; an endpoint the plan does not name is a `change-control` request |
-| CT2 | Every path operation has an explicit return type or `response_model` that is a named Pydantic model (or a list of one); never `dict`, `Any` or an ORM object as the documented type | Only named models produce a typed schema in `openapi.json`, filter output fields and give generated clients real types |
-| CT3 | Input and output are separate models (`OrderCreate`, `OrderUpdate`, `OrderRead`); inputs use `extra="forbid"` | Mass assignment and accidental exposure are prevented by construction (`{{slot:secure-coding-standards}}`) |
-| CT4 | One error envelope, defined once and declared on routers through `responses=`; every documented status in `design.md` appears in `openapi.json` | Clients handle errors in one place; an undeclared status is invisible to generated clients |
-| CT5 | Auth is declared through security dependencies so each operation in `openapi.json` carries `security`; public endpoints are listed as public in `design.md` | The contract shows who may call what; a missing `security` is either a public endpoint on purpose or a bug |
-| CT6 | `operationId`s and tags are stable: set by the workspace's `generate_unique_id_function` (or FastAPI's default) and never changed casually | Generated clients name methods after them; a rename breaks every client build |
-| CT7 | Every change regenerates `openapi.json` and records a classified diff against the base revision ([compatibility](references/compatibility.md)) | A breaking change must be seen and approved, not discovered by the frontend at runtime |
-| CT8 | Prefer addition over modification; a breaking change needs an approved `D-NN`, a compatible path, deprecation and a handshake notice; keep one live version (One-Version Rule) | Installed clients keep working; parallel versions multiply maintenance |
-| CT9 | Contract evidence states its source: generated from revision `<sha>`, served by `<environment>`, or mock | Fixture or mock success is never live success (handshake evidence policy) |
-
-## 3. By role
-
-- **Spec Writer**: review a frontend draft against the current `openapi.json` (generate it first). Every field, type, status or auth difference becomes a `Q-NN`; feasibility, data scopes and RBAC go into `requirements.md` / `codebase-notes.md`.
-- **Planning**: fill the API section of `design.md`; classify each planned change (additive / breaking) up front. When the item changes existing endpoints, add a `PHASE-00` `[EXECUTE]` task that captures `contracts/openapi.base.json` at `BASE_REVISION`. Task checks name real commands with cwd, e.g. `uv run pytest tests/contract -q` (cwd: service root), with **Expected** stating the status codes and schema names.
-- **Code Writer**: build the models and routes to the design, then regenerate the snapshot and the diff ([snapshot and diff](references/openapi-snapshot-and-diff.md)); an unplanned diff line is a defect or a `change-control` request, never a silent snapshot update.
-- **Code Reviewer**: regenerate `openapi.json` from `REVIEW_REVISION` independently and compare it with the hand-off snapshot and with `design.md`; check CT1–CT9.
-- **Test Runner**: compare live responses with the snapshot of the deployed revision, with real auth per role (`quality-acceptance`).
-
-## 4. Commands (detect the runner first)
-
-Detect the runner from the workspace: `uv.lock` → `uv run`, `poetry.lock` → `poetry run`, otherwise the active virtualenv. Find the app import path in the run command (`uvicorn app.main:app`, `fastapi run`, Dockerfile, Procfile, README).
-
-```bash
-# generate (cwd: service root)
-uv run python -c "import json,sys; from app.main import app; json.dump(app.openapi(), sys.stdout, indent=2, sort_keys=True); print()" > <contracts>/openapi.json
-# operations without security (must match the public list in design.md)
-jq -r '.paths | to_entries[] | .key as $p | .value | to_entries[] | select(.value.security == null) | "\(.key | ascii_upcase) \($p)"' <contracts>/openapi.json
-```
-
-If the app cannot be imported (missing settings, import error), the snapshot is `BLOCKED` with the error; never write the spec by hand instead.
-
-## Related core skills
-
-[work-item-contract](../work-item-contract/SKILL.md) · [implementation-planning](../implementation-planning/SKILL.md) · [evidence-standard](../evidence-standard/SKILL.md) · [review-workflow](../review-workflow/SKILL.md) · [change-control](../change-control/SKILL.md) · [quality-acceptance](../quality-acceptance/SKILL.md).
+| **G1 — OpenAPI Snapshot Drift** | `uv run python scripts/export_openapi.py && git diff --exit-code contracts/openapi.json` | Exit `0` (`PASS`) — `contracts/openapi.json` matches live FastAPI app |
+| **G2 — Raw Dict / Untyped Response Scan** | `rg -n "response_model\s*=\s*(dict|Any|None)" app/ src/ -g "*.py"` | `0` unapproved matches (`PASS`) — `204` uses `status_code=204, response_class=Response` |
+| **G3 — Unbounded Limit Parameter Scan** | `rg -n "limit:\s*int\s*=\s*(Query\(\s*\)|[0-9]+)" app/ src/ -g "*router*.py" -g "*routes*.py"` | `0` matches without `le=` bound (`PASS`) |
+| **G4 — Breaking Change Diff Gate** | `oasdiff breaking contracts/openapi.base.json contracts/openapi.json` (or `jq -S` diff in [Reference 03](references/03-openapi-snapshot-diff-and-review.md)) | Exit `0` (`PASS`), or every breaking item cites an approved `D-NN` in `design.md` |
+| **G5 — Contract & Schema Pytest Suite** | `uv run pytest -q -k "contract or openapi"` | Exit `0` (`PASS`) |

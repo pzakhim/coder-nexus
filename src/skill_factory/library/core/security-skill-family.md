@@ -19,10 +19,13 @@ Findings that keep recurring become rules in `secure-coding-standards` (contribu
 |---|---|
 | Trigger | A change type that requires security review (auth, guards, scopes, sensitive data, crypto, files/URLs, dependencies…) |
 | Threat model (per change) | Assets, actors, entry points, trust boundaries and what could go wrong for this change |
+| Coverage ledger | Deterministic inventory of every changed entrypoint, query, job, and trust boundary unit audited (`COVERED` / `UNCOVERED`) so zero high-risk units are skipped |
+| Adversarial disproof (`Source → Guard → Sink`) | Mandatory refutation step where every candidate vulnerability is traced against upstream guards, validators, and middleware to try to disprove it before reporting |
 | Exploit scenario | `given <attacker/role/state> → when <action> → then <impact>` with concrete values |
-| `CRITICAL` / `HIGH` / `MEDIUM` / `LOW` | Security severity (impact × likelihood), mapped to the workspace's finding levels |
-| `CONFIRMED` / `PLAUSIBLE` | Same meaning as in bug-hunt |
-| Security sign-off | The Security verdict on a revision: `APPROVED`, `CHANGES_REQUESTED`, `BLOCKED` |
+| `BLOCKER` / `MAJOR` / `MINOR` | Unified 3-tier security finding severity (`shared_contracts/flags_and_statuses.md`): `BLOCKER` (cross-tenant access, auth bypass, RCE/injection, secret leak), `MAJOR` (privilege/scope escalation under conditions, missing rate/size/replay bounds, unsafe outbound/file handling), `MINOR` (defense-in-depth hardening gap without direct exploit path) |
+| `CONFIRMED` / `PLAUSIBLE` / `REJECTED` | `CONFIRMED` = complete source-to-sink trace + exploit scenario; `PLAUSIBLE` = concrete missing runtime/config evidence named (and handed to QA/QC when runtime verification is needed); `REJECTED` = disproved by an identified upstream guard |
+| `PASS` / `FAIL` | Deterministic read-only security CLI/scanner check result |
+| Security sign-off | The Security verdict on a revision: `APPROVED` (`0` `BLOCKER` and `0` `MAJOR`), `CHANGES_REQUESTED` (`CONFIRMED BLOCKER` or `CONFIRMED MAJOR`), `BLOCKED` (`PLAUSIBLE BLOCKER` or `PLAUSIBLE MAJOR` awaiting evidence) |
 
 ## Boundaries
 

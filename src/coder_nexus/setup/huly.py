@@ -25,7 +25,7 @@ from typing import Any, Callable, Optional
 
 import httpx
 
-from ..huly.auth import load_client_credentials, update_env_values
+from ..huly.auth import init_env_file, load_client_credentials, update_env_values
 from ..huly.client import HulyClient
 from ..huly.models import HulyCredentials
 
@@ -38,6 +38,23 @@ EXIT_URL_UNREACHABLE = 2
 EXIT_NEEDS_INPUT = 3
 EXIT_VERIFY_FAILED = 4
 EXIT_ABORTED = 130
+
+
+def cmd_init(args: argparse.Namespace) -> int:
+    """`coder-nexus init`: create `.env` template or append missing Coder Nexus keys to existing `.env`."""
+    workspace_path = str(Path(args.workspace_path).resolve()) if getattr(args, "workspace_path", None) else os.getcwd()
+    env_path, added_keys, created_new = init_env_file(workspace_path)
+    if created_new:
+        print(f"✅ Created {env_path} with keys: {', '.join(added_keys)}")
+    elif added_keys:
+        print(f"✅ Appended missing keys to {env_path}: {', '.join(added_keys)}")
+    else:
+        print(f"ℹ️  {env_path} already contains all Coder Nexus keys.")
+    warn = _gitignore_warning(workspace_path)
+    if warn:
+        print(warn)
+    print("   Next: fill the values in .env or run `coder-nexus setup huly`.")
+    return 0
 
 
 def cmd_login(args: argparse.Namespace) -> int:
@@ -290,15 +307,16 @@ def run_setup_huly(
 
     # ---- 1. URL
     out.say("\n— Step 1/2: Huly URL —")
-    if url is None and url_set and not reset:
+    if url is None and not interactive and url_set and not reset:
         url = creds.workspace_url
         out.say(f"   Using URL from .env: {url}")
     if url is None:
         if not interactive:
             out.say("❌ Huly URL is required. Pass --url <https://your-huly-host>.")
             return out.result(EXIT_NEEDS_INPUT, "needs_input", step="url", needs=["url"], **common)
+        default_url = creds.workspace_url if (url_set and not reset) else DEFAULT_HULY_URL
         try:
-            url = input_fn(f"   Huly URL [{DEFAULT_HULY_URL}]: ").strip() or DEFAULT_HULY_URL
+            url = input_fn(f"   Huly URL [{default_url}]: ").strip() or default_url
         except (KeyboardInterrupt, EOFError):
             out.say("\n   Aborted.")
             return out.result(EXIT_ABORTED, "aborted", step="url", **common)
@@ -310,8 +328,9 @@ def run_setup_huly(
         out.say("   Setup stopped. Check the URL / VPN / network and try again.")
         return out.result(EXIT_URL_UNREACHABLE, "url_unreachable", step="url", workspace_url=url, message=detail, **common)
     out.say(f"   ✅ {detail}")
+    url_changed = url_set and normalize_url(creds.workspace_url) != url
     url_values = {"HULY_WORKSPACE_URL": url}
-    if normalize_url(creds.workspace_url) != url or reset:
+    if url_changed or reset:
         # Session/workspace belong to the previous server: drop them.
         url_values.update({"HULY_SESSION_TOKEN": "", "HULY_WORKSPACE_ID": ""})
     update_env_values(workspace_path, url_values)
@@ -319,9 +338,9 @@ def run_setup_huly(
 
     # ---- 2. Account
     out.say("\n— Step 2/2: Huly account —")
-    if email is None and not reset:
+    if email is None and not reset and not url_changed:
         email = creds.email
-    if password is None and not reset and email == creds.email:
+    if password is None and not reset and not url_changed and email == creds.email:
         password = creds.password
     attempts = 0
     while True:

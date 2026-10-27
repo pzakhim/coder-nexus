@@ -1,0 +1,54 @@
+# 03 — Evidence Hygiene, Distribution, and Report Gates (`RP8`, `RP9`)
+
+<!-- GEN: Why: Ensure evidence proves every test result without leaking secrets or personal data, control where reports are distributed, and verify report completeness with deterministic PASS/FAIL gates. Kind: Mandatory — keep the purpose, adapt the structure (../../core/authoring-guide.md). -->
+<!-- GEN: Rules RP8, RP9 with the workspace's evidence paths, redaction rules, distribution owners, CLI gates, and BLOCKER/MAJOR/MINOR report quality rubric. -->
+
+All evidence linked from [01-report-structure-and-verdict.md]({{ref_01}}) and [02-defects-and-retest-history.md]({{ref_02}}) must comply with the storage, redaction, and distribution rules below.
+
+---
+
+## 1. Evidence Storage & Secret/PII Redaction (`RP8`)
+
+- **Authorized Artifact Path**: Store all screenshots, HTTP transcripts, console/network logs, and reproduction captures inside the workspace at `{{evidence_path}}` using naming pattern `{{evidence_naming}}`.
+- **Mandatory Redaction Before Saving**:
+  - Strip or mask `Authorization` headers, session cookies, API keys, bearer/JWT tokens, database URIs, and `.env` values from all request/response captures and logs.
+  - Redact real personal data (PII: emails, phone numbers, national IDs, payment details) from screenshots and payloads; use synthetic seeded test accounts (`{{quality_environment_link}}`).
+- **Link, Do Not Dump**: Link each evidence file from its case row (`[evidence]({{evidence_path}}/...)`) rather than pasting multi-screen logs directly into the report body.
+
+---
+
+## 2. Authorized Destination & External Distribution Gate (`RP9`)
+
+- **Workspace Destination**:
+  - Full round report: `{{report_location}}`
+  - Summary ledger update: `{{results_record}}` (maintained by **{{results_owner}}**)
+  - Internal handoff recipient: **{{next_role}}**
+- **External Posting Gate**:
+  - Never post test reports, defect tables, or evidence artifacts outside the workspace ({{external_channels}}: issue trackers, PR comments, chat webhooks, email) without **explicit user authorization** for that specific post.
+
+---
+
+## 3. Deterministic CLI Report Verification Gates (`PASS` / `FAIL`)
+
+Run these deterministic checks before handing off any report. Tool gates report strictly **`PASS`** or **`FAIL`** (`NOT_RUN`, `BLOCKED`, and `UNVERIFIED` never count as `PASS`):
+
+| Gate | Command | Pass Criterion |
+|---|---|---|
+| **G1 — Secret / Token Leak Scan (`RP8`)** | `{{secret_scan_cmd}}` | `0` unredacted credentials or tokens in `{{report_location}}` and `{{evidence_path}}` (`PASS`) |
+| **G2 — Unresolved Placeholder Scan (`RP1`, `RP2`)** | `rg -n "TODO|TBD|\{\{" {{report_location}}` | `0` matches (`PASS`) |
+| **G3 — Mandatory Section & Header Check (`RP11`)** | `rg -n "^(\*\*Verdict:\*\*|\*\*Counts:\*\*|\*\*AC Coverage:\*\*|\*\*Open Defects:\*\*|\*\*Limitations:\*\*)" {{report_location}}` | All 5 executive header lines present (`PASS`) |
+
+---
+
+## 4. Report Self-Audit Rubric (`BLOCKER` / `MAJOR` / `MINOR`)
+
+Before publishing a report to `{{report_location}}`, audit the report itself against the unified 3-tier severity scale (`shared_contracts/flags_and_statuses.md`):
+
+| Severity | Report Defect Condition | Required Action Before Handoff |
+|---|---|---|
+| **`BLOCKER`** | Report claims `ACCEPTED` while an AC is not `PASS`, while an open `BLOCKER`/`MAJOR` defect exists, or by counting `NOT_RUN`/`BLOCKED`/`UNVERIFIED` as `PASS` (`RP4`, `RP7`); tested revision SHA or environment record is missing (`RP1`); unredacted secret/token/PII is present in report or evidence (`RP8`); expected result was edited to hide a failure (`RP12`) | Reject report immediately; fix count/verdict, redact leaks, and bind exact revision |
+| **`MAJOR`** | Per-case row lacks an evidence link (`RP2`); AC roll-up table omits an AC from the spec (`RP3`); stubbed provider or unrun case is omitted from top-level `Limitations` (`RP6`); earlier test round was erased from Re-Test History (`RP10`) | Complete missing evidence links, AC rows, limitations, or history before handoff |
+| **`MINOR`** | Minor table formatting or relative-path naming inconsistency that does not alter counts, traceability, or the feature verdict | Clean up formatting in place |
+
+<!-- custom:start -->
+<!-- custom:end -->

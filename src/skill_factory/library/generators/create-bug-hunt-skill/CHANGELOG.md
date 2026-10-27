@@ -2,24 +2,15 @@
 
 Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see `~/.claude/skill-factory/core/sync-protocol.md`). Bump rules: `~/.claude/skill-factory/core/versioning.md`.
 
-## 1.1.0 — 2026-10-23
+## 1.1.0 — 2026-10-24
 
-- Decoupled base inputs from core `plugins/core/skills/bug-hunt`, relying directly on self-contained `references/base-rules.md`.
+- Decoupled base inputs from core `plugins/core/skills/bug-hunt`, relying directly on self-contained `references/base-rules.md` and stack-agnostic `references/deriving-the-model.md`.
+- Consolidated output template structure from 5 branched files (`01`–`05`) into 3 cohesive reference files (`01-scope-dimensions-and-patterns.md`, `02-verify-and-disprove.md`, `03-severity-verdict-and-report.md`).
+- Standardized on mandatory `H1`–`H14` compliance, binary `PASS`/`FAIL` read-only CLI checks, and unified `BLOCKER`/`MAJOR`/`MINOR` severities.
 
-**Affects:** generator base input resolution.
-**Migration:** none required for existing workspace skills.
+**Affects:** generator templates and reference guides.
+**Migration:** existing workspace skills can consolidate `01`+`05` → `01-scope-dimensions-and-patterns.md`, `02` → `02-verify-and-disprove.md`, and `03`+`04` → `03-severity-verdict-and-report.md`.
 
 ## 1.0.0 — 2026-10-22
 
 First version.
-
-- Base rules H1–H14 with reasons (from Coder Nexus `plugins/core/skills/bug-hunt` and the erp-knowledge-platform bug-hunt practice, generalised).
-- Seven defect dimensions with prompts; stack bug patterns and a method to derive project patterns from risk areas.
-- Mandatory: `SKILL.md`, scope & candidates, verify, effort/severity/report, bug patterns. Suggested: verdict & roles.
-- Layouts: flat `references/01–05`; branched `shared/01–04`, `be/05`, `fe/05`.
-- Step 0 (never write into Coder Nexus-managed files; workspace skills override fixed ones), trial run and description steps.
-- Output path: `<workspace>/.agents/skills/bug-hunt/`.
-- Fixed: unquoted colon in the generator description broke strict YAML frontmatter parsing.
-
-**Affects:** all generated files.
-**Migration:** existing, unregistered bug-hunt skills → run the generator to **adopt** (keeps vocabulary, report location and project pattern files; records provenance).

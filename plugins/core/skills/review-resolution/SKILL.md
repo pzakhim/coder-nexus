@@ -1,6 +1,6 @@
 ---
 name: review-resolution
-description: How the Code Writer (and the Docs Writer for document reviews) handles a CHANGES_REQUESTED review - read every finding, restate and verify each against the code, clarify all unclear items before fixing any, fix one finding at a time with a test where it is a defect, push back with evidence, escalate findings that collide with a D-NN or the plan, and reply per finding with FIXED / DISPUTED / RAISED. Use whenever a review verdict comes back CHANGES_REQUESTED, or a Test Runner defect comes back for the owning phase, before editing anything.
+description: "How the Code Writer, Bug Fixer (and the Docs Writer for document reviews) handles a CHANGES_REQUESTED review - read every finding, restate and verify each against the code, clarify all unclear items before fixing any, fix one finding at a time with a test where it is a defect, push back with evidence, escalate findings that collide with a D-NN or the plan, and reply per finding with FIXED / DISPUTED / RAISED. Use whenever a review verdict comes back CHANGES_REQUESTED, or a Test Runner defect comes back for the owning phase, before editing anything."
 ---
 
 # Receiving Review
@@ -9,7 +9,7 @@ Answer one question per finding: **is it true for this code and this approved pl
 
 ## 1. Read everything first
 
-Read the whole review before touching code: verdict, every finding (`RV-NN`, severity and confidence per [handoff-and-status.md](../work-item-contract/references/handoff-and-status.md) §9, file:line, failure scenario, fix direction) and the round number. Findings are often related; fixing the first one before reading the rest invites a wrong fix.
+Read the whole review before touching code: verdict, every finding (`RV-NN`, severity and confidence per `work-item-contract` (`references/handoff-and-status.md` §9), file:line, failure scenario, fix direction) and the round number. Findings are often related; fixing the first one before reading the rest invites a wrong fix.
 
 ## 2. Restate and verify each finding
 
@@ -37,20 +37,20 @@ If any finding is unclear (you cannot restate it, or cannot tell which code or A
 | Fix needs to change a frozen item (goal, AC mapping, phase outcomes, Global constraints, Review focus, any `D-NN`), the file list, or a dependency | `RAISED` | `change-control`; do **not** fix silently |
 | Cannot verify without missing access or information | `RAISED` | `NEEDS_CONTEXT` naming exactly what is needed |
 
-Reply words are defined in [handoff-and-status](../work-item-contract/references/handoff-and-status.md) §3. `ESCALATED` is Planning's answer to a `PCR-NN`, never a reply to a finding.
+Reply words are defined in `work-item-contract` (`references/handoff-and-status.md` §9). `ESCALATED` is Planning's answer to a `PCR-NN`, never a reply to a finding.
 
 Never agree in words and leave the code unchanged; never change the code while disputing in words. If you disputed and then find the reviewer was right, say so in one factual line and fix it.
 
-## 5. Fix one finding at a time
+## 5. Fix one finding at a time and re-verify from scratch
 
-Order: `BLOCKER`, then `MAJOR` and `P1`, then cheap `MINOR`s and `P2`s. For each:
+Order: `CONFIRMED` `BLOCKER` first, then `CONFIRMED` `MAJOR`, then cheap in-scope `MINOR` and `PLAUSIBLE` findings. For each:
 
 1. A defect gets a test that fails before the fix and passes after (`{{slot:root-cause-debugging}}`, `{{slot:unit-testing}}`). For documents, the equivalent is the validator or check that would catch it.
 2. Apply the smallest fix inside the task's Scope / Files; no drive-by refactors.
 3. Rerun the covering checks and record evidence rows (`evidence-standard`).
 4. Then the next finding. Batching several fixes makes a failed check ambiguous.
 
-After all fixes, rerun the task checks of every task the change touched and your `{{slot:bug-hunt}}` self-check at `quick`.
+After fixing findings, the author re-runs every affected task check, runs phase verification via `{{slot:verification}}`, runs `{{slot:bug-hunt}}` (`quick` depth) and `{{slot:code-simplification}}` self-check on the modified files, and creates a new commit checkpoint (`REVIEW_REVISION`) per `git-preflight` so every `PASS` row in `writer-handoff.md` carries the new revision SHA.
 
 ## 6. Reply per finding
 
@@ -60,11 +60,11 @@ After all fixes, rerun the task checks of every task the change touched and your
 | `RV-04` | Asks to cache the lookup | `DISPUTED` | - | `D-07` forbids caching this data; trace shows one call per request |
 | `RV-05` | Rename public field | `RAISED` | - | Changes the contract in `D-04`; change-control PCR-02 |
 
-No thanks, no praise, no apology: the reply states facts. Put the table in the new revision's `writer-handoff.md` under `## Review reply (round N)` and return `READY_FOR_REVIEW` with the new committed revision and an optional Concerns list. The reviewer re-judges each `DISPUTED` row on its evidence and keeps the finding with the same ID or withdraws it with the reason. Formats: [handoff-and-status](../work-item-contract/references/handoff-and-status.md).
+No thanks, no praise, no apology: the reply states facts. Put the table in the new revision's `writer-handoff.md` under `## Review reply (round N)` and return `READY_FOR_REVIEW` with the new committed revision and an optional Concerns list. The reviewer re-judges each `DISPUTED` row on its evidence and keeps the finding with the same ID or withdraws it with the reason. Formats: `work-item-contract` (`references/handoff-and-status.md` §9).
 
 ## 7. Revisions and the round cap
 
 - The fix is a **new revision**. Evidence recorded on the old revision for touched code (review, task checks, test results) is invalid; list which evidence must be rerun.
 - The reviewer re-reviews the whole phase scope affected by the fix, not only your reply.
-- **Test Runner defects** (`DEF-NN`) use the same table and steps. The fix is made under the phase that owns the failing AC, inside its Scope / Files, through `{{slot:root-cause-debugging}}`, and counts toward that phase's cap ([handoff-and-status](../work-item-contract/references/handoff-and-status.md) §2, Test Runner defect).
+- **Test Runner defects** (`DEF-NN`) use the same table and steps. The fix is made under the phase that owns the failing AC, inside its Scope / Files, through `{{slot:root-cause-debugging}}`, and counts toward that phase's cap (`work-item-contract` (`references/handoff-and-status.md` §9), Test Runner defect).
 - **3 review rounds on the same phase** is the cap. If round 3 still returns `CHANGES_REQUESTED`, do not start a fourth fix: report both positions per open finding to the coordinator, who escalates to Planning (`change-control`) or the user. Neither you nor the reviewer may waive a finding.

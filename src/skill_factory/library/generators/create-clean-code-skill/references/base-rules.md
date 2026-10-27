@@ -1,41 +1,39 @@
-# Base rules (generic, every workspace)
+# Base Clean Code Rules (Universal)
 
-Generalised from Coder Nexus clean-code base rules and the clean-code standard of a real fullstack workspace. Each rule goes into the generated skill with the workspace's facts **and its reason**, adapted to the workspace's contracts, or marked "not adopted" with a reason. If a gate already enforces a rule, cite the gate.
+Universal clean-code rules for any codebase. Every rule goes into the generated skill with the workspace's verified conventions **and its rationale**, adapted to the workspace's contracts, or marked "not adopted" with a stated reason. If an automated CLI gate already enforces a rule, cite that gate.
 
-| # | Rule | Why | Default severity | Goes into |
-|---|---|---|---|---|
-| C1 | **One concept, one place.** No copy-pasted types, helpers, schemas or SQL; no aliases, wrappers or re-exports kept for old names. | Copies drift apart; the next fix lands in only one of them. | P1 | SKILL, 02 |
-| C2 | **No dead code.** Remove unused functions, imports, files, variables; no commented-out code, no orphan `TODO`. | Dead code is read, maintained and trusted as if it ran. | P1 | 02 |
-| C3 | **No debug code.** No `print`, `console.log`, `debugger`, `breakpoint()`, temporary flags. | Noise in logs, sometimes leaked data, and a sign the change was not cleaned up. | P1 | 03, 05 |
-| C4 | **No swallowed errors.** Catch specific errors; handle or rethrow. Broad catches only at edges (global handler, worker loop) and always logged or recorded. | A swallowed error turns a loud failure into silent wrong data. | P1 | 03 |
-| C5 | **Intention-revealing names.** Functions are verbs, booleans `is/has/can/should`, collections plural; no `data`, `info`, `tmp`, `Manager`, `Helper`, `Utils`, `process()`, `handle()`; one name per concept, matching the domain glossary. | Names are the main documentation; vague or double names cause misreads and duplicate concepts. | P2 | 01 |
-| C6 | **Small, focused units.** Function ≤ ~30 lines, file ≤ ~300 lines, UI component ≤ ~150 lines, ≤ 3 parameters (else a named object), nesting ≤ 2 (use guard clauses) — for new or modified code. | Short units are easier to read, test and review; long ones hide several jobs. | P2 | 02 |
-| C7 | **No magic values.** Named constants; enums / literal unions for states, roles, environments. | Scattered literals drift and break silently when one copy changes. | P2 | 04 |
-| C8 | **Comments say why.** Explain non-obvious reasons and external constraints; never restate the code; keep unrelated existing comments. | "What" comments rot; "why" comments save the next reader an investigation. | P3 | 04 |
-| C9 | **Full types.** No `any`, `# type: ignore`, unchecked casts or non-null assertions without a stated reason. | The type checker is free review; escapes hide real bugs. | P2 | 04 |
-| C10 | **Change only the task's scope.** No drive-by renames, reformatting or modernising of untouched code. | Unrelated changes bury the real change in review and cause merge pain. | P2 | SKILL |
-| C11 | **Workspace contracts win.** Follow the workspace's error/result types, nullability, state, DI, routing and formatting conventions over generic advice ("always throw", "never return null"). | Generic advice that contradicts a verified contract creates two styles in one codebase. | P1 | SKILL, 03 |
-| C12 | **Visible side effects.** No DB, network, env reads or heavy work at import/module load (except the one settings object); side effects in clearly named functions. | Hidden side effects break tests and startup order. | P2 | 02 |
-| C13 | **Explicit state changes.** Prefer immutable values; mutate only where the owner is clear. | Shared mutable state is the usual source of order-dependent bugs. | P3 | 04 |
-| C14 | **Self-check before "done".** Run formatter, linter/analyzer, type checker and the task's tests; report what ran. | A rule without a check is a wish; an unrun check is not evidence. | P1 | 05 |
-| C15 | **No meaningless module-level or global variables.** Module level holds only true shared constants (read by two or more functions, never reassigned) and the workspace's configuration object; no mutable global state (runtime caches, counters, registries, singletons written after load); a constant used by one function lives inside that function. | Every module-level name widens what a reader must track; mutable globals cause order-dependent bugs and leak between tests. | P1 when mutable global state is added, else P2 | SKILL, 02 |
-| C16 | **Helper locality.** A helper used by one file stays private in that file; it moves to a shared place only when a second file needs it, into the module that owns the concept (placement per clean-architecture), named for what it does — never `utils`, `helpers`, `common` or `misc`. | A shared helper with one user is a public API nobody asked for; generic buckets become junk drawers. | P1 when internals get exposed, else P2 | SKILL, 02 |
-| C17 | **Export surface.** Package entry files (barrel, index, init files) export only symbols other modules actually import; no wildcard export; never expose internals (private helpers, implementation classes, test hooks). | Every export is a contract to keep; wildcards leak internals and hide unused code. | P1 when internals are exposed, else P2 | SKILL, 02 |
+| # | Rule | Why | Goes into |
+|---|---|---|---|
+| C1 | **One concept, one place.** No copy-pasted types, helpers, schemas, or queries; no compatibility aliases, pass-through wrappers, or re-export shims kept for old names. | Copies drift apart; the next bug fix lands in only one copy. | `SKILL`, `01` |
+| C2 | **No dead code.** Remove unused functions, imports, files, variables, commented-out code blocks, and orphan `TODO`s. | Dead code is read, maintained, and trusted as if it executed. | `SKILL`, `01` |
+| C3 | **No debug leftovers.** Remove ad-hoc console/stdout debug prints, interactive breakpoints, and temporary inspection flags before handoff. | Pollutes production logs, risks leaking sensitive data, and signals unfinished cleanup. | `SKILL`, `02`, `03` |
+| C4 | **No swallowed errors.** Catch specific error types; translate, handle, or rethrow with cause context. Broad catches are allowed only at top-level runtime boundaries and must be logged or recorded. | A swallowed error turns a visible failure into silent corrupted state. | `SKILL`, `02` |
+| C5 | **Intention-revealing names.** Functions/methods use verbs or verb phrases, booleans use predicate prefixes (`is`/`has`/`can`/`should`), collections use plural nouns; ban vague identifiers (`data`, `info`, `tmp`, `val`, `Manager`, `Helper`, `Utils`, `process()`, `handle()`); use one name per domain concept. | Names are the primary documentation; vague or duplicate names cause misreads and duplicate concepts. | `SKILL`, `01` |
+| C6 | **Small, focused units.** Function/method ≤ ~30 lines, file/module ≤ ~300 lines, ≤ 3 parameters (group cohesive inputs into a typed structure), nesting depth ≤ 2 (use guard clauses and early returns). | Short, single-responsibility units are easier to read, test, and review. | `SKILL`, `01` |
+| C7 | **No magic values.** Replace scattered raw literals with named constants, design tokens, or typed enumerations for states, roles, and limits. | Scattered literals drift and break silently when one occurrence changes. | `SKILL`, `01` |
+| C8 | **Comments explain WHY.** Explain non-obvious rationale, invariants, and external constraints; never restate what the syntax already says; preserve unrelated existing comments. | "What" comments rot quickly; "why" comments save future readers an investigation. | `SKILL`, `01` |
+| C9 | **Full static types.** Annotate public signatures and data contracts explicitly; avoid untyped escape hatches, unchecked casts, or suppression directives without a documented reason. | Static type checking catches contract mismatches before runtime. | `SKILL`, `01` |
+| C10 | **Scope discipline.** Modify only files and symbols required by the current task; no drive-by renames, reformatting, or refactoring of untouched code. | Unrelated edits obscure the real change in review and cause merge conflicts. | `SKILL`, `03` |
+| C11 | **Workspace contracts win.** Follow the workspace's established foundation classes, error/result types, state management, dependency injection, and routing conventions over generic habits. | Generic patterns that contradict an established workspace contract split the codebase into competing styles. | `SKILL`, `01`, `02` |
+| C12 | **Visible side effects & lifecycle purity.** Keep module import/load and declarative render/build paths pure; perform I/O, network, persistence, and navigation inside explicit lifecycle or action handlers, and release acquired resources on teardown. | Hidden side effects break test isolation, startup order, and runtime performance. | `SKILL`, `02` |
+| C13 | **Explicit state changes.** Prefer immutable value objects and state snapshots; mutate state only through its designated owner. | Shared mutable state causes order-dependent defects and missed updates. | `SKILL`, `01` |
+| C14 | **Self-check before handoff.** Run the workspace's formatter, static analyzer/linter, type checker, pattern checks (`rg`), and unit tests before marking work ready for review. | An unrun check is `NOT_RUN`, never `PASS`. | `SKILL`, `03` |
+| C15 | **Module-level purity.** Module/top-level scope holds only true immutable constants (read by 2+ units) and static configuration/logger bindings; never store mutable runtime state (caches, counters, registries) at module top level. | Mutable globals leak state across requests and tests. | `SKILL`, `01` |
+| C16 | **Helper locality.** Keep a single-caller helper private to its file; promote it to a shared module only when imported by 2+ files, placed in the module that owns the concept and named for its behavior—never `utils`, `helpers`, `common`, or `misc`. | Single-caller public helpers bloat the API surface; generic utility buckets become junk drawers. | `SKILL`, `01` |
+| C17 | **Explicit export surface.** Package entry/barrel files export only the symbols external modules actually import; forbid wildcard re-exports and never expose private helpers, internal implementations, or test hooks. | Every exported symbol is a maintenance contract; wildcard exports leak internals and hide dead code. | `SKILL`, `01` |
 
-**Never "not adopted":** C1, C3, C4, C10, C11, C14, C15, C16, C17.
+**Mandatory rules (never "not adopted"):** C1, C3, C4, C10, C11, C14, C15, C16, C17.
 
-## Severity scale (default)
+---
 
-| Level | Meaning | Review outcome |
+## Unified Tool Gate (`PASS` / `FAIL`) & Review Severity (`BLOCKER` / `MAJOR` / `MINOR`)
+
+Automated CLI checks (formatter, linter/analyzer, complexity checker, type checker, test runner) are strictly binary (`exit 0` = `PASS`, `exit != 0` = `FAIL`). Design and craft principles written in the skill are mandatory compliance; reviewers grade violations on the unified 3-tier scale (`shared_contracts/flags_and_statuses.md` §2):
+
+| Severity | Meaning | Review Verdict Impact |
 |---|---|---|
-| P1 | Correctness, safety or contract risk | Blocking (request changes) |
-| P2 | Maintainability risk | Finding; not blocking on its own |
-| P3 | Style / suggestion | Optional |
+| `BLOCKER` | Any failed CLI tool gate (`FAIL`), correctness/security defect, or violation of a mandatory design/contract rule (C1, C2, C3, C4, C11, C12, C14, C15, C16, C17) | `CHANGES_REQUESTED` (blocks approval) |
+| `MAJOR` | Maintainability or structural issue not caught by CLI linters (C5, C6, C7, C10, C13) | Must be fixed in the same revision when inside task scope |
+| `MINOR` | Redundant "what" comment (C8) or optional readability polish | Optional (never blocks approval) |
 
-Reviewers grade only code changed in the phase; legacy debt outside the diff is not a blocker.
-
-## Branch notes
-
-- **Frontend:** components ≤ ~150 lines (split into subcomponents by UI responsibility); props ≤ ~6 (group or split); hooks return the minimum needed; no `useEffect` to sync derivable state; no premature `useMemo`/`useCallback`; no prop drilling beyond 2 levels.
-- **Backend:** parameterised SQL only; repositories never commit; log with context (tenant, environment, request id); no work at import time outside settings.
-- **Mobile:** widgets small and composable; no logic in `build()`; state holders own side effects.
+Reviewers grade only code modified in the current phase diff; pre-existing debt outside the diff is noted in `Concerns`, never as a blocker.

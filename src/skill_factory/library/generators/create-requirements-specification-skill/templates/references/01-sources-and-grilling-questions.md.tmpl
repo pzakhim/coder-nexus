@@ -1,0 +1,38 @@
+# 01 — Sources & Grilling Questions
+
+<!-- GEN: Why: an incomplete Source Inventory or unfocused questions make every downstream requirement wrong; this guide anchors intake sources, grilling questions, language, and fixed process rules. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Rules RS1, RS2, RS8, RS9 (Mandatory Compliance). Populate with real tracker, document, and design sources and real workspace question examples. -->
+
+## 1. Requirement Sources & Conflict Priority (`RS1`)
+
+| Kind of Requirement | Source | How to Read It | Often Unreachable? |
+|---|---|---|---|
+| {{requirement_kind}} | {{source_origin}} | {{read_method}} | {{unreachable_note}} |
+{{source_rows}}
+
+- **Priority when sources conflict:** {{conflict_priority}}
+- **Unreachable sources:** Never infer the content of an unreachable source from its title or link text; mark it in the Source Inventory and ask the user to attach or paste it (`Q-NN`).
+
+## 2. Question Bank per `grilling` Dimension (`RS2`)
+
+<!-- GEN: Group by the 5 grilling dimensions: (1) Scope & data source, (2) Happy path & observable states, (3) Inferences & defaults, (4) Negative & edge cases, (5) Lifecycle & status transitions. Every question uses workspace domain terms and includes a real example from a past ticket. -->
+
+| `grilling` Dimension | Ask When | Question Template (Workspace Terms) | Real Workspace Example |
+|---|---|---|---|
+| Scope & data source | {{scope_trigger}} | {{scope_question}} | {{scope_example}} |
+| Happy path & observable states | {{happy_trigger}} | {{happy_question}} | {{happy_example}} |
+| Inferences & defaults | {{inference_trigger}} | {{inference_question}} | {{inference_example}} |
+| Negative & edge cases | {{negative_trigger}} | {{negative_question}} | {{negative_example}} |
+| Lifecycle & status transitions | {{lifecycle_trigger}} | {{lifecycle_question}} | {{lifecycle_example}} |
+{{question_rows}}
+
+- Every asked question must cite the confirmed goal (`G-NN`) it serves; do not ask questions that do not serve a goal.
+- Ask one question at a time with the recommended option first (`grilling` law).
+
+## 3. Language & Fixed Process Contract (`RS8`, `RS9`)
+
+- **Document vs code language (`RS8`):** Write user-facing documents (`requirements.md`, questions, summaries) in **{{team_language}}**. Keep code identifiers, API routes, database fields, and symbol names in **English** exactly as written in the codebase.
+- **Fixed process unchanged (`RS9`):** All `grilling` laws (draft first, confirm every inference, 0 open `Q-NN` before Gate 1, one question at a time), `gate-review` spec-mode steps, and `requirements.md` / `codebase-notes.md` / `change-impact.md` validated sections remain unchanged. Never add an `Assumptions` section; any unconfirmed fact is recorded as an `OPEN` `Q-NN` in `codebase-notes.md`.
+
+<!-- custom:start -->
+<!-- custom:end -->

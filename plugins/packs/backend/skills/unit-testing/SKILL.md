@@ -1,90 +1,79 @@
 ---
 name: unit-testing
-description: Developer unit-test standard for a Backend (Python 3.12+, FastAPI, Pydantic v2, SQLAlchemy 2.x async) service - when a failing test must come first and how to see it fail for the right reason, what to test per layer with the required Pass/Default, Fail and Empty cases, pytest layout and naming, hand-written fakes at port boundaries, httpx MockTransport and dependency_overrides, deterministic time and ids, specific assertions, focused and full pytest commands and red/green evidence rows. Use whenever the Code Writer writes or changes backend code that needs a test, fixes a bug or a review finding, when Planning names test paths, Acceptance Criteria and Expected red/green runs in a task, and when the Code Reviewer grades backend tests, even if the request only says "add tests", "pytest", "TDD" or "regression test". Not for integration against a real database, contract compliance or live API checks (those are verification and acceptance).
+description: Developer unit-test standard for a Backend (Python 3.12+ / FastAPI / Pydantic v2 / SQLAlchemy 2.x async) service - test-first discipline (red-to-green loop), per-layer test matrix (Pass/Default, Fail, Empty/Edge cases), mirrored pytest layout and naming, hand-written fakes at Protocol port boundaries, httpx.MockTransport and FastAPI dependency_overrides, deterministic clocks and IDs, specific assertions, focused and full pytest commands, and red/green evidence rows. Use whenever writing or changing backend code that needs unit tests, fixing a bug or review finding, planning test tasks, or reviewing backend unit tests.
 ---
 
 # Unit Testing — Backend (Python / FastAPI)
 
-A test proves something only if you have seen it fail for the reason it exists. Reason: a test written after the code passes at once, so nobody knows whether it can detect the defect it claims to guard.
+A test proves behavior only if you have seen it fail for the reason it exists. Every unit test in `tests/unit/` must be 100% isolated from live networks, databases, filesystems, and system clocks, deterministic across randomized test order (`pytest-randomly`), and verified via CLI.
 
-Baseline: pytest + pytest-asyncio, httpx `AsyncClient`, `unittest.mock` only at external edges, ruff, mypy, `uv`. Layout: flat. Paths such as `app/` and `tests/unit/` are conventions; the workspace's `pyproject.toml`, `conftest.py` files and existing test tree win.
+All CLI test gates (`PASS` / `FAIL`) and review severities (`BLOCKER` / `MAJOR` / `MINOR`) follow `shared_contracts/flags_and_statuses.md` and `work-item-contract` (`references/handoff-and-status.md` §9).
 
-## For every behavior change
+---
 
-1. Decide whether the test comes first (table below); the plan wins where a task says so explicitly.
-2. Find the subject's layer and its required cases in [01 what to test](references/01-what-to-test.md); case data comes from the Pass/Default, Fail and Empty rows of `design.md`.
-3. Put the test where [02 location and naming](references/02-location-and-naming.md) says, named by behavior.
-4. **Name the break**, write one test, double only the port boundary ([03 doubles and fixtures](references/03-doubles-and-fixtures.md)).
-5. Run it **red** with the focused command and check the failure reason ([04 test quality](references/04-test-quality.md#right-reason-failure)).
-6. Write the least code that makes it pass; run it **green**, then the task's Acceptance Criteria ([05 running and evidence](references/05-running-and-evidence.md)).
-7. Next behavior. One behavior per cycle; never all tests first and all code after. Reason: bulk tests describe imagined behavior and harden before the design has taught you anything. Clean-up belongs to `{{slot:code-simplification}}` at phase end, not to this loop.
+## 1. CLI Test & Quality Gates (`PASS` / `FAIL`)
 
-## When the test comes first
+Installed and verified via `coder-nexus setup tools --pack backend` (`pytest`, `pytest-asyncio`, `pytest-cov`, `pytest-randomly`, `httpx`, `ruff`, `mypy`). Every command below is **binary (`exit 0` = `PASS`, `exit != 0` = `FAIL`)**:
 
-| Change | Order | Reason |
+| Gate | Command | Purpose |
 |---|---|---|
-| Domain rules, use cases / services, validation, calculations | Failing test first | Logic is where silent wrong results live |
-| Pydantic schemas and mappers of a contract (ORM row ↔ entity ↔ DTO) | Failing test first | A wrong key, alias or null rule breaks the other side unseen |
-| State transitions (status fields, workflows) | Failing test first | Missed transitions show up only on rare paths |
-| **Every bug fix and every review finding fix** | Reproduce with a failing test first | The red run is the only proof the defect was real and is now gone |
-| Changing existing code that has no test | Characterization test of current behavior first, then the change | Shows what the change really altered |
-| Pure wiring (dependency providers, `include_router`, settings objects, module exports) | May follow; covered by phase checks of `{{slot:verification}}` | No logic of its own to drive |
-| Alembic migrations, SQL queries, generated code | May follow; proven by integration checks (`{{slot:verification}}`) or the first consumer | A unit test cannot see the real database or generator |
-| Config, docs, constants with no behavior | No test | Nothing observable to break |
+| **Focused Red / Green Run** | `uv run pytest tests/unit/<path>/test_<module>.py::test_<name> -v` | Run one test case to verify red failure reason and green fix (**U12**, **U14**) |
+| **Module Unit Suite** | `uv run pytest tests/unit/<path>/test_<module>.py -q` | Verify all unit tests for the touched module after a task |
+| **Full Unit Suite** | `uv run pytest tests/unit -q` | Verify the full unit suite (with `pytest-randomly` active) at phase end |
+| **Coverage Report** | `uv run pytest tests/unit --cov=app --cov-report=term-missing -q` | Inspect uncovered branches in touched modules |
+| **Static Analysis on Tests** | `uv run ruff check tests app && uv run mypy app tests` | Enforce clean-code linting and static types on test files (**U11**) |
 
-"May follow" never means "may skip" when the task's Acceptance Criteria name a test. Production code written before a required failing test: set that change aside (`git stash` or revert the hunk), run the test red against the old code, then restore the change. Reason: without the red run the test is unproven.
+---
 
-## Rules
+## 2. When the Test Comes First (Red-to-Green Order)
 
-Severity for a broken rule is `P1`/`P2`/`P3`; defects found by a test use `BLOCKER`/`MAJOR`/`MINOR` + `CONFIRMED`/`PLAUSIBLE` ([handoff-and-status §9](../work-item-contract/references/handoff-and-status.md)).
+| Change Type | Order | Reason |
+|---|---|---|
+| **Domain rules, application services / use cases, validation, calculations** | Failing test first | Business logic is where silent wrong results live |
+| **Pydantic schemas and mappers (`ORM row ↔ Entity ↔ DTO`)** | Failing test first | Missing keys, alias drift, or null rules break contracts silently |
+| **State transitions & FastAPI router error mapping** | Failing test first | Missed transitions and HTTP status mappings fail on rare paths |
+| **Every bug fix and every review finding fix** | Reproduce with failing test first | A red run on unfixed code is the only proof the defect was real and is now gone |
+| **Changing existing code that has no test** | Characterization test first | Locks in current behavior before altering the implementation |
+| **Pure DI wiring (`Depends` providers, `include_router`, settings)** | May follow | Covered by phase checks of `{{slot:verification}}` |
+| **Alembic migrations & SQL repository queries** | Integration test (`{{slot:verification}}`) | Unit tests never mock `AsyncSession` or run against SQLite |
 
-| # | Rule | Why | Severity | Enforced by |
-|---|---|---|---|---|
-| U1 | Test behavior, not implementation: assert returns, raised errors, state and calls at port boundaries | Implementation-coupled tests break on every refactor and stop being trusted | P2 | Review |
-| U2 | Pass/Default + every handled Fail + Empty/edges for each changed behavior | Happy-path-only suites pass while the code fails in production | P1 | Review |
-| U3 | Every bug fix and finding fix starts with a red regression test | Without it the same bug returns silently | P1 | Review, red evidence row |
-| U4 | No live network, database, file system or real clock in `tests/unit/` | Environment-dependent tests are slow, flaky or prove the environment | P1 | Review; `httpx.MockTransport` refuses unknown URLs |
-| U5 | Double the port, never the subject; a double keeps the real contract | A mocked subject or loose fake passes whatever the code does | P1 | Review |
-| U6 | Never mock authorization, data-scope rules or the database to make a test pass | Mocking the guard tests nothing about the guard and hides security regressions | P1 | Review |
-| U7 | Deterministic: injected clock and ids, seeded randomness, awaited async, isolated state | Flaky tests train everyone to ignore red | P1 | Review |
-| U8 | Specific assertions with independent literal expectations; no tautologies, no assertion-free tests | A weak or recomputed assertion passes on wrong output | P2 | Review; ruff `PT011`, `B017` where enabled |
-| U9 | One behavior per test, Arrange-Act-Assert, `test_<behavior>_<condition>` name | A failing name reads as the broken rule | P2 | Review |
-| U10 | Test path mirrors the source path | Tests nobody can find are not maintained | P2 | Review |
-| U11 | Reuse the existing pytest setup, fixtures and fakes; no second framework or async plugin | Parallel setups diverge and double maintenance | P2 | Review |
-| U12 | The new test must run: collected, not skipped, red then green | A test that never ran is not evidence | P1 | Evidence rows (`evidence-standard`) |
-| U13 | State what unit tests did not prove | Over-claiming hides untested risk | P2 | [06 boundaries](references/06-test-boundaries.md) |
-| U14 | Failing test first per the table above | Seeing it fail proves it can detect the defect | P2 | Red evidence row |
+---
 
-## Never
+## 3. Core Unit Testing Rules (Mandatory Compliance)
 
-| Never | Reason |
+| Rule | Principle | Why | Reference |
+|---|---|---|---|
+| **U1** | **Test behavior, not implementation.** Assert return values, raised domain errors, state changes, and calls at `Protocol` port boundaries; never private `_helpers` or internal call order. | Implementation-coupled tests break on safe refactors. | [02-doubles-fixtures-and-quality](references/02-doubles-fixtures-and-quality.md) |
+| **U2** | **Pass/Default + every handled Fail + Empty/Edge.** Cover success, each handled domain error (validation, not found, forbidden, conflict, upstream error), and empty/null/boundary inputs. | Happy-path-only suites pass while production fails on real inputs. | [01-test-matrix-and-structure](references/01-test-matrix-and-structure.md) |
+| **U3** | **Red-to-Green regression test for bug/finding fixes.** Reproduce the defect with a failing test first, record the red row, then fix and run green. | Prevents silent regression of fixed defects. | [01-test-matrix-and-structure](references/01-test-matrix-and-structure.md) |
+| **U4** | **100% Isolated and fast.** Zero live network, PostgreSQL/SQLite database, filesystem, or real `datetime.now()` in `tests/unit/`. | Live I/O makes unit tests slow, flaky, and environment-dependent. | [02-doubles-fixtures-and-quality](references/02-doubles-fixtures-and-quality.md) |
+| **U5** | **Double the port boundary, never the subject.** Use hand-written fakes implementing the `Protocol` port; never mock the service/function under test. | Mocking the subject or using loose `MagicMock()` passes regardless of bugs. | [02-doubles-fixtures-and-quality](references/02-doubles-fixtures-and-quality.md) |
+| **U6** | **Never mock authorization, tenant/owner guards, or `AsyncSession`.** Keep policy/permission checks real; test SQL queries in `tests/integration/` on real PostgreSQL. | Mocking security guards or SQL sessions hides auth and query defects. | [02-doubles-fixtures-and-quality](references/02-doubles-fixtures-and-quality.md) |
+| **U7** | **Deterministic execution.** Inject `clock` (`Callable[[], datetime]` UTC), ID factories, and seeded `random.Random`; await all coroutines; clear `dependency_overrides` per test. | Flaky or order-dependent tests erode trust in the suite. | [02-doubles-fixtures-and-quality](references/02-doubles-fixtures-and-quality.md) |
+| **U8** | **Specific assertions with independent expectations.** Assert exact fields, `pytest.raises(SpecificError)`, and Pydantic `loc`/`type` against design literals; never only `is not None` or `assert True`. | Weak or recomputed assertions pass on wrong output (`ruff` `PT011`, `B017`). | [02-doubles-fixtures-and-quality](references/02-doubles-fixtures-and-quality.md) |
+| **U9** | **One behavior per test, AAA structure, `test_<behavior>_<condition>` name.** Separate Arrange, Act, Assert; use readable `ids=` on `@pytest.mark.parametrize`. | Failing test names read directly as the broken business rule. | [01-test-matrix-and-structure](references/01-test-matrix-and-structure.md) |
+| **U10** | **Test path mirrors `app/` source path.** Place unit tests under `tests/unit/<layer>/<test_module>.py` mirroring `app/`. | Undiscoverable tests are neither run nor maintained. | [01-test-matrix-and-structure](references/01-test-matrix-and-structure.md) |
+| **U11** | **Reuse workspace pytest setup.** Follow existing `pyproject.toml`, `conftest.py`, fakes, and builders (`EXTEND` vs `INIT`); never mix `pytest-asyncio` with `anyio` or `unittest.TestCase`. | Competing test setups break collection and double maintenance. | [02-doubles-fixtures-and-quality](references/02-doubles-fixtures-and-quality.md) |
+| **U12** | **Every new test must execute.** Verify `-v` collection, non-skipped execution (exit code 5 = no tests ran), right-reason red, and green pass. | An uncollected or skipped test is `NOT_RUN`, never `PASS`. | [03-execution-boundaries-and-review](references/03-execution-boundaries-and-review.md) |
+| **U13** | **State unit test boundaries.** Explicitly report what unit tests proved and what belongs to PostgreSQL integration (`{{slot:verification}}`). | Over-claiming unit results hides untested SQL and migration risk. | [03-execution-boundaries-and-review](references/03-execution-boundaries-and-review.md) |
+| **U14** | **Failing test first per the order table.** Run the new test red before writing production code (or `git stash` production code to verify red). | Seeing red proves the test can detect the defect. | [03-execution-boundaries-and-review](references/03-execution-boundaries-and-review.md) |
+
+---
+
+## 4. Reference Guides
+
+| Topic | Reference |
 |---|---|
-| Edit an expectation, delete an assertion, add `skip`/`xfail` to match the code | Turns a found defect into a hidden one; if the design is wrong it is `PLAN_WRONG` ([plan-and-task-contract §3](../work-item-contract/references/plan-and-task-contract.md)) |
-| Tautological asserts (expected recomputed like the code, only `is not None`) | Passes by construction, cannot disagree with the code |
-| Change detectors (a constant's value, exact wording, private structure) | Fail on every decision, sleep through every defect |
-| Assertions on the mock itself (`mock.assert_called()` with no arguments as the only check) | Proves the mock exists, says nothing about the code |
-| Production methods or flags only tests use | Test needs leak into the shipped surface |
-| Count a skipped, uncollected or not-run test as passing | A test that never ran is not evidence |
+| `EXTEND` vs `INIT` rule, per-layer Pass/Fail/Empty matrix, `tests/unit/` directory tree (`├──`/`└──`), and naming conventions | [01 — Test Matrix & Structure](references/01-test-matrix-and-structure.md) |
+| `Real > Fake > Stub > Mock` policy, `FakeRepository`/`ASGITransport`/`MockTransport` code templates, AAA, independent expectations, right-reason red, and determinism | [02 — Doubles, Fixtures & Quality](references/02-doubles-fixtures-and-quality.md) |
+| Focused/full `pytest` commands, proving tests ran, Red-to-Green evidence rows, unit test boundaries, and `BLOCKER`/`MAJOR`/`MINOR` review grading | [03 — Execution, Boundaries & Review](references/03-execution-boundaries-and-review.md) |
 
-A green run that later fails in review or acceptance is `CODE_WRONG`: reproduce it with a failing test first, then `{{slot:root-cause-debugging}}`.
+---
 
-## Which file to read
+## 5. Relationship with Other Skills
 
-| Doing | Read |
-|---|---|
-| Which cases to write per layer | [01-what-to-test.md](references/01-what-to-test.md) |
-| Where the test goes, what it is called | [02-location-and-naming.md](references/02-location-and-naming.md) |
-| Fakes, mocks, fixtures, async setup | [03-doubles-and-fixtures.md](references/03-doubles-and-fixtures.md) |
-| Right-reason red, naming the break, assertions, determinism | [04-test-quality.md](references/04-test-quality.md) |
-| Commands, "did it run?", evidence rows | [05-running-and-evidence.md](references/05-running-and-evidence.md) |
-| What unit tests cannot prove, who covers it | [06-test-boundaries.md](references/06-test-boundaries.md) |
-| Starter files | [templates/](templates/) |
-| Where the ideas come from | [sources.md](references/sources.md) |
-
-## Relationship with other skills
-
-- Layers, ports and which boundary is doubled: `{{slot:clean-architecture}}`. Test code follows `clean-code` / `{{slot:clean-code}}` too.
-- Task loop, focused task check and phase checks: `incremental-implementation`. Task fields and the red/green **Expected**: `work-item-contract`.
-- Error codes and response shapes a router test asserts: `api-contract-design` (pack skill).
-- Integration against PostgreSQL, contract compliance, live API: `{{slot:verification}}` and `quality-acceptance` (Test Runner).
-- A seam the design does not have: `NEEDS_CONTEXT` or `change-control`, never a test-only hook.
+- **Layer boundaries & `Protocol` ports to double**: `{{slot:clean-architecture}}`.
+- **Code craft & static checks on test code**: `{{slot:clean-code}}` and `{{slot:code-simplification}}`.
+- **Security & tenant-scope guards never mocked away**: `{{slot:secure-coding-standards}}` and `api-contract-design`.
+- **Task loop & Red-to-Green execution**: `incremental-implementation` and `{{slot:root-cause-debugging}}`.
+- **PostgreSQL integration, migrations, and live API verification**: `{{slot:verification}}` and `quality-acceptance`.

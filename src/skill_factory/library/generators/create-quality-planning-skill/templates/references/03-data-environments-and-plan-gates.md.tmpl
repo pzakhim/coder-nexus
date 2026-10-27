@@ -1,0 +1,69 @@
+# 03 — Safe Test Data, Named Environments & Plan Verification Gates (`Q6`, `Q7`, `Q13`)
+
+<!-- GEN: Why: Shared mutable data, unlabelled stubs, or an unreviewed test plan make execution verdicts untrustworthy (`Q6`, `Q7`, `Q13`). Kind: Mandatory — keep the purpose, bind real seed commands, environments, and plan gates for {{project_name}}. -->
+
+## 1. Safe, Repeatable Test Data (`Q6`)
+
+| Data Category | Authoritative Seed / Fixture Source | Isolation & Cleanup Strategy |
+|---|---|---|
+| **Roles & Tenants (`Role × Scope`)** | `{{auth_seed_source}}` | Created per test run / reset via `{{reset_cmd}}` |
+| **Domain Records & State Preconditions** | `{{domain_seed_source}}` | Per-case transaction rollback or deterministic fixture cleanup |
+| **Boundary & Malformed Payloads** | `{{boundary_fixture_source}}` | Read-only static fixtures |
+
+### Non-Negotiable Data Rules
+- **Zero production data**: Never copy production PII, live credentials, or customer snapshots into test fixtures.
+- **Zero fabricated fallback data**: If a required seed source or dependency is unavailable, mark the affected test cases **`BLOCKED`** (`shared_contracts/flags_and_statuses.md`) — never hardcode fake "successful" fallback records.
+- **Deterministic repeatability**: Every test case must be re-runnable back-to-back without manual database edits.
+
+---
+
+## 2. Named Environments & External Provider Stubs (`Q7`)
+
+| Case Group | Target Environment | External Provider Policy (`{{external_providers}}`) | Result Labelling |
+|---|---|---|---|
+| **API / Service Acceptance** | `{{api_env}}` | Real local/staging storage; external providers use sandbox or network-edge stub | `live` or `stubbed:<provider>` |
+| **UI / Client End-to-End** | `{{ui_env}}` | Connected to `{{api_env}}` (or explicit contract-verified edge stub) | `live` or `stubbed:<provider>` |
+| **Visual Fidelity** | `{{visual_env}}` | Deterministic fixture state for all 4 UI states | `baseline-compared` |
+
+**Stub Rule (`Q7`)**: Stub external third-party providers only where authorized in the table above, always at the network/adapter boundary, and explicitly label every stubbed execution in the test report (`PASS (stubbed: <provider>)` never claims live third-party verification).
+
+---
+
+## 3. Test Plan Template & Approval Gate (`Q13`)
+
+Write the test plan to `{{plan_location}}` and obtain sign-off from **{{plan_approver}}** before execution. Whenever requirements or acceptance criteria change, update the test plan and re-run the CLI gates below before executing tests.
+
+```markdown
+# Test Plan — <feature-slug> (Specs @ <revision>)
+
+- **Spec Sources (`Q1`)**: Brief `<path>`, Requirements `<path>`, Design `<path>`, Decisions `<path>`
+- **In Scope / Out of Scope (`Q9`)**: <summary from brief>
+- **Testability Review Status (`Q2`)**: <0 open questions | list of resolved AC clarifications>
+- **Security Hand-Off Items (`Q4`, `SR14`)**: <none | list of SR-IDs mapped to TC-IDs>
+
+## 1. Traceability Matrix (`Q3`, `Q12`)
+| AC / Guard ID | Test Case IDs | Test Level (`Q5`) | Risk Tier (`Q8`) |
+|---|---|---|---|
+
+## 2. Test Cases (`Q4`, `Q8`–`Q11` — Ordered `BLOCKER` → `MAJOR` → `MINOR`)
+<TC-ID blocks using the standard Given / When / Then / Target format from reference 02>
+
+## 3. Data, Environments & Stubs (`Q6`, `Q7`)
+- Seed / Reset Command: `<cmd>`
+- Target Environments & Authorised Stubs: <details>
+```
+
+---
+
+## 4. Plan Review Rubric (`BLOCKER` / `MAJOR` / `MINOR`) & CLI Gates (`PASS` / `FAIL`)
+
+Grade test plan review findings strictly with **`BLOCKER` / `MAJOR` / `MINOR`** and automated checks strictly with **`PASS` / `FAIL`** (`shared_contracts/flags_and_statuses.md`):
+
+- **`BLOCKER`**: Any untestable AC left unescalated (`Q2`), any `{{ac_id_format}}` without a test case (`Q3`), missing `Role × Environment × Action × Object` permission or `SR14` hand-off coverage (`Q4`), expectations derived from implementation code (`Q14`), vague expected results (`Q11`), or production/fabricated fallback data (`Q6`).
+- **`MAJOR`**: Missing validation, UI state, boundary, out-of-scope guard (`Q9`), or regression (`Q10`) coverage; UI End-to-End level chosen where API Acceptance suffices (`Q5`); unlabelled external stubs (`Q7`).
+- **`MINOR`**: Case ordering, table formatting, or wording clarity that does not affect verification coverage.
+
+Cross-check the deterministic CLI gates in `SKILL.md` (**G1–G3**) — all gates must report **`PASS`** and zero `BLOCKER` / `MAJOR` findings may remain open before handing the plan to `quality-acceptance`.
+
+<!-- custom:start -->
+<!-- custom:end -->

@@ -1,6 +1,6 @@
 ---
 name: architecture-decision-records
-description: Promotes the few confirmed D-NN decisions that are hard to reverse, surprising and a real trade-off into Architecture Decision Records in the workspace's ADR folder, with status, links back to the work item and supersede-never-delete history. Optional. Planning owns it after Gate 2; Docs Writer may use it when documenting delivered work. Never writes an ADR without the user's confirmation.
+description: "Promotes the few confirmed D-NN decisions that are hard to reverse, surprising and a real trade-off into Architecture Decision Records in the workspace's ADR folder, with status, links back to the work item and supersede-never-delete history. Optional. Planning owns it after Gate 2; Docs Writer may use it when documenting delivered work. Never writes an ADR without the user's confirmation."
 ---
 
 # Decision Records
@@ -76,5 +76,3 @@ A small ADR may be the header plus one paragraph covering context, decision and 
 - Write an ADR for every `D-NN`, or copy the Decision Log into ADRs.
 - Write an ADR before the user confirms it, or with content that differs from the confirmed `D-NN`.
 - Use an ADR to reopen a decision; a change goes through `Q-NN` -> `D-NN` first.
-
-Sources and ideas not adopted: [references/sources.md](references/sources.md).

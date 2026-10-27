@@ -1,96 +1,60 @@
 ---
 name: create-quality-acceptance-skill
-description: Write a workspace's own quality-acceptance skill from the skill-factory knowledge base - how the Quality Engineer executes the approved test plan on the reviewed revision - frontend cases in a real browser (states produced for real, permissions per role, environment switch, persistence after reload, console and network health) and backend cases through the real API (real auth per role, status codes, persisted data, side effects, direct forbidden calls returning 403), with evidence per case, PASS/FAIL/BLOCKED/NOT_RUN, failure reports and re-tests - using whichever browser and API tools the workspace actually has (detected and confirmed at the gate - chrome-devtools MCP, Playwright, Claude in Chrome, HTTP clients, Postman collections). Use whenever the user wants to set up, standardize or update how acceptance or end-to-end tests are run in a workspace, or says things like "tạo skill E2E", "test thực tế trên web", "QC chạy test", "test API nghiệm thu", even if they do not say "skill". Writes .agents/skills/quality-acceptance/, then trial-runs it.
-argument-hint: "[stack] [browser tool | auto]"
+description: "Generate a workspace's `quality-acceptance` skill from the skill-factory knowledge base — governing how the Quality Engineer executes the approved test plan on the reviewed revision across UI/Client Surface (`A5`: real runtime states, role visibility, persistence reload, console/network health) and API/Service Surface (`A6`: real auth per role, status codes, persistence read-back, side effects, live `Role × Environment × Action × Object` `401`/`403`/`404` anti-IDOR verification, and `security-review` `SR14` runtime hand-offs), with `PASS`/`FAIL`/`BLOCKED`/`NOT_RUN` case grading, `BLOCKER`/`MAJOR`/`MINOR` defect reports, and binary `PASS`/`FAIL` CLI gates."
+argument-hint: "[target_dir] [ui_tool | auto] [api_tool | auto]"
 ---
 
 # Create Quality Acceptance Skill
 
-Goal: produce `<workspace>/.agents/skills/quality-acceptance/` — how the Quality Engineer runs the approved test plan against the reviewed revision in this workspace: frontend in a real browser, backend through the real API, with the tools the workspace has, evidence per case and clear results.
+Goal: produce `<workspace>/.agents/skills/quality-acceptance/` — governing how acceptance and end-to-end verification are executed on the reviewed revision in this workspace (`{{target_dir}}`), aligned with `shared_contracts/flags_and_statuses.md`.
 
-User input: $ARGUMENTS
+User input: `$ARGUMENTS`
 
-Follow `~/.claude/skill-factory/core/workflow.md`, starting with **Step 0** (never write into `.agents/plugins/coder-nexus/` or extension-regenerated role files; a workspace skill overrides the fixed skill of the same name). Ownership: `~/.claude/skill-factory/core/quality-skill-family.md` — quality-planning provides the cases, quality-environment the stack and data, this skill executes, quality-reporting writes the final report.
+Follow [../../core/workflow.md](../../core/workflow.md), starting with **Step 0** (never write into `.agents/plugins/coder-nexus/` or extension-regenerated role files; a workspace skill overrides the fixed skill of the same name). Ownership: [../../core/quality-skill-family.md](../../core/quality-skill-family.md) — `quality-planning` defines the approved cases, `quality-environment` prepares the target stack and seed data, `quality-acceptance` executes the cases against the live runtime, and `quality-reporting` writes the final sign-off report.
 
-## Step 1 — Context Card (+ tools)
+## Step 1 — Context Card (+ Runtime Tools & Surfaces)
 
-Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P1–P2 (`~/.claude/skill-factory/core/existing-project.md`). Then **detect the tools** with `references/tool-detection.md` and record each as available / configured but unreachable / absent:
+Run the core Context Card ([../../core/detect-stack.md](../../core/detect-stack.md)) and existing-project adoption rules ([../../core/existing-project.md](../../core/existing-project.md)). Detect available verification tools using [references/tool-detection.md](references/tool-detection.md) and record each as available, configured-but-unreachable, or absent:
 
-| Branch | Candidates |
+| Verification Surface | Candidate Tools & Facts to Collect |
 |---|---|
-| Frontend (browser) | chrome-devtools MCP, Playwright, Claude in Chrome, the host's built-in browser tool |
-| Backend (API) | HTTP client scripts/tests (httpx, requests, supertest), Postman/Newman collections, `.http` files, curl |
+| **UI / Client Surface (`A5`)** | Chrome DevTools MCP (`chrome-devtools`), scripted E2E runners (Playwright, Cypress, Maestro, integration test runners), host browser tools; viewports, console/network baseline noise |
+| **API / Service Surface (`A6`)** | In-repo HTTP/RPC test clients, Postman/Newman/Bruno collections, `.http` files, `curl`/`grpcurl`; auth token acquisition per role |
+| **Security Hand-Off (`A6`, `SR14`)** | `.agents/skills/security-review/` authorization matrix (`Role × Environment × Action × Object`), tenant/owner scope columns, and runtime-dependent `PLAUSIBLE` checks |
+| **Evidence & Safety Rules (`A8`, `A13`)** | Revision-bound evidence directory (inside workspace), screenshot/payload naming conventions, test accounts, mutable vs. forbidden environments |
 
-Also collect: existing E2E/acceptance skills or checks numbering, evidence location rules (e.g. screenshots must be inside the workspace), known console/network baseline noise, roles and environments to switch.
+## Step 2 — Enforce Base Rules (`A1`–`A14`)
 
-## Step 2 — Map the base rules
+Read [references/base-rules.md](references/base-rules.md) and [references/tool-detection.md](references/tool-detection.md). All rules **`A1`–`A14`** are **mandatory compliance** (never dropped or skipped). Case outcomes use strictly **`PASS` / `FAIL` / `BLOCKED` / `NOT_RUN`**, defect severities use strictly **`BLOCKER` / `MAJOR` / `MINOR`**, and automated CLI gates use strictly **`PASS` / `FAIL`** (`shared_contracts/flags_and_statuses.md`).
 
-Read `references/base-rules.md` and `references/tool-detection.md`. For each rule A1–A14: adopted, adapted, or "not adopted" with a reason. A1, A2, A4, A7, A9, A13 are never "not adopted".
+## Step 3 — Propose & Step 4 — Gate (User Confirms)
 
-## Step 3 — Propose
+Confirm in one round (recommendation first):
+1. **Runtime Tools & Fallbacks**: Confirmed primary and fallback tools for **UI/Client Surface (`A5`)** and **API/Service Surface (`A6`)**, plus the concrete operations map.
+2. **Permission Matrix & Security Hand-Off (`A6`, `SR14`)**: Roles, scopes, and direct forbidden calls (`401`/`403`/`404` anti-IDOR) plus runtime verification of `PLAUSIBLE` findings handed over by `security-review`.
+3. **Evidence Path, Defect Channel & Re-Test Scope (`A8`–`A12`)**: Workspace evidence directory, `BLOCKER` / `MAJOR` / `MINOR` defect reporting channel, and re-test rules on fixed revisions.
+4. **Safety Boundaries (`A13`)**: Allowed test accounts, mutable local/disposable environments, and redaction rules.
 
-- **Tool per branch** from what was detected (never one that is absent); fallback order if the first is unreachable at run time.
-- **Tool operations map:** how navigate / read the page / fill / click / wait / screenshot / console / network / resize are done with the chosen tool.
-- **Per-case loop and evidence** (paths, naming), results vocabulary, failure report format, re-test scope.
-- **Safety:** which environments may be mutated, accounts used, what is never done.
+Nothing is written before the user confirms.
 
-## Step 4 — Gate (user confirms)
+## Step 5 — Author (`templates/SKILL.md.tmpl` + `templates/references/01..03.md.tmpl`)
 
-One AskUserQuestion round where possible: (1) **browser tool** for the frontend (options = detected tools, recommended first) and **API tool** for the backend, (2) evidence location and naming, (3) failure report and re-test rules, (4) safety boundaries.
+Read [../../core/authoring-guide.md](../../core/authoring-guide.md). Generate the flat, cohesive 3-reference skill structure:
 
-## Step 5 — Author
+| Output File | Template | Purpose |
+|---|---|---|
+| `SKILL.md` | [templates/SKILL.md.tmpl](templates/SKILL.md.tmpl) | Concise routing table (< 115 lines), confirmed tools, `A1`–`A14` rule index, `PASS`/`FAIL`/`BLOCKED`/`NOT_RUN` case status rules, and binary `PASS`/`FAIL` CLI gates |
+| `references/01-preconditions-safety-and-case-loop.md` | [templates/references/01-preconditions-safety-and-case-loop.md.tmpl](templates/references/01-preconditions-safety-and-case-loop.md.tmpl) | `A1`–`A4`, `A7`–`A9`, `A13` — reviewed revision & environment preconditions, read-only boundary, safe test-account boundary, per-case execution loop, persistence read-back, and `PASS`/`FAIL`/`BLOCKED`/`NOT_RUN` rules |
+| `references/02-ui-and-api-execution-checks.md` | [templates/references/02-ui-and-api-execution-checks.md.tmpl](templates/references/02-ui-and-api-execution-checks.md.tmpl) | `A5`, `A6`, `A11` — real UI/client state & console/network checks, real API/service status/persistence/side-effect checks, `Role × Environment × Action × Object` forbidden call verification (`401`/`403`/`404` anti-IDOR) + `security-review` (`SR14`) runtime checks, and guard/regression execution |
+| `references/03-failures-retest-and-gates.md` | [templates/references/03-failures-retest-and-gates.md.tmpl](templates/references/03-failures-retest-and-gates.md.tmpl) | `A10`, `A12`, `A14` — actionable defect reproduction with unified `BLOCKER`/`MAJOR`/`MINOR` severities, flakiness classification, re-test protocol on fixed revision, and deterministic CLI `PASS`/`FAIL` execution gates |
 
-Read `~/.claude/skill-factory/core/authoring-guide.md`. Templates are suggested shapes; **Mandatory** content is fixed. Layout per `~/.claude/skill-factory/core/layouts.md` (flat: `references/01–04`; branched: `shared/01, 02, 04`, `be/03`, `fe/03`).
+## Step 6 — Wire, Step 7 — Trial Run & Step 8–9 — Verify
 
-| Output (flat) | Output (branched) | Template | Kind | Why it exists |
-|---|---|---|---|---|
-| `SKILL.md` | `SKILL.md` | `templates/SKILL.md.tmpl` | **Mandatory** | Preconditions, the case loop and the never-list on one screen |
-| `references/01-preconditions-and-safety.md` | `shared/01-…` | `templates/shared/01-preconditions-and-safety.md.tmpl` | **Mandatory** | Testing the wrong revision, or mutating the wrong environment, makes everything after it worthless |
-| `references/02-executing-cases.md` | `shared/02-…` | `templates/shared/02-executing-cases.md.tmpl` | **Mandatory** | One loop and one evidence standard for every case |
-| `references/03-execution.md` | `be/03-…` (API), `fe/03-…` (browser) | `templates/branch/03-execution.md.tmpl` | **Mandatory** | The real tool, its operations and the branch-specific checks |
-| `references/04-failures-and-retest.md` | `shared/04-…` | `templates/shared/04-failures-and-retest.md.tmpl` | **Mandatory** | Reproducible defects and the right re-test scope |
+1. Add a pointer in `AGENTS.md` / `CLAUDE.md` to `.agents/skills/quality-acceptance/SKILL.md`.
+2. Run a read-only trial ([../../core/trial-run.md](../../core/trial-run.md)) planning the exact tool operations, `401`/`403`/`404` permission matrix checks, persistence read-back, and evidence capture for a real feature spec.
+3. Verify against [checklist.md](checklist.md) and [../../core/checklist-common.md](../../core/checklist-common.md), and record provenance ([../../core/provenance.md](../../core/provenance.md)).
 
-Writing rules: keep each template's purpose, give every rule its reason, only tools that exist in the workspace, real URLs/endpoints/roles, never credential values, replace every `{{…}}`, delete every `<!-- GEN … -->`, English, < ~200 lines per file, custom block at the end.
+## Update Mode & Changing This Generator
 
-## Step 6 — Wire
-
-1. Pointer in `CLAUDE.md` / `AGENTS.md` (unless an equivalent exists):
-   ```markdown
-   ## Acceptance testing
-   Acceptance and end-to-end tests are executed per `.agents/skills/quality-acceptance/SKILL.md`.
-   ```
-2. Offer to link it from the tester / Quality Engineer role file (P3).
-
-## Step 7 — Trial run
-
-`~/.claude/skill-factory/core/trial-run.md` (plans only — no browser or API calls during the trial). Task ideas:
-
-- Execute a real plan's P1 cases for one feature: list the tool operations per step and the evidence to save.
-- The browser tool is unreachable at run time — are the FE cases `BLOCKED`, not asserted?
-- A mutating endpoint — is a direct forbidden call for a lower role planned, expecting `403`?
-- A case passes visually but the console shows an error — reported?
-
-Compare: preconditions checked, real tool operations, persistence verified by reload/read-back, evidence per case, correct result words, safety respected.
-
-## Step 8 — Description
-
-Per the authoring guide: workspace name; situations (run E2E/acceptance tests, test on the real web app, verify API behavior, re-test after a fix); team trigger words. Should not trigger for writing unit tests or test plans.
-
-## Step 9 — Verify, record & report
-
-`checklist.md` + `~/.claude/skill-factory/core/checklist-common.md`; record provenance (`~/.claude/skill-factory/core/provenance.md`); report deviations, rules adapted/not adopted, tools chosen, trial results.
-
-## Update mode
-
-Existing E2E/acceptance guidance (e.g. "Check 3" in a verification skill): registered → sync (`~/.claude/skill-factory/core/sync-protocol.md`); not registered → adopt (P3, P5: keep checks numbering, tool flows, baseline noise and evidence paths verbatim).
-
-## Changing this generator
-
-Follow `~/.claude/skill-factory/core/versioning.md` (work under `## Unreleased`, bump once per batch).
-
-## Resources
-
-- `references/base-rules.md` — A1–A14 with reasons
-- `references/tool-detection.md` — detecting browser/API tools and mapping their operations
-- `templates/` — `SKILL.md.tmpl`, `shared/01, 02, 04`, `branch/03` (suggested shapes)
-- `checklist.md` — topic checks
+- Existing `.agents/skills/quality-acceptance/`: registered → sync ([../../core/sync-protocol.md](../../core/sync-protocol.md)); unregistered → adopt existing tool flows, baseline noise, and evidence paths into the 3-reference layout.
+- Generator updates follow [../../core/versioning.md](../../core/versioning.md).

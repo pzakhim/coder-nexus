@@ -1,24 +1,22 @@
-# Where API facts are found
+# Where API Facts Are Discovered (Read-Only)
 
-Read-only. Skip what the workspace does not have.
+Use these read-only checks to inspect the workspace's existing API conventions in `{{target_dir}}`:
 
-| Fact | Typical places |
+| Fact | Typical Locations |
 |---|---|
-| Contract files | `openapi.y*ml`, `swagger.json`, `*.proto`, `schema.graphql`, JSON Schemas, the API section of approved `design.md` files |
-| Routes | FastAPI/Flask routers, Django `urls.py` + views/serializers, NestJS controllers, Express routers, Spring controllers, Go handlers, Frappe whitelisted methods |
-| Request/response models | Pydantic models, DRF serializers, DTO classes, Zod schemas |
-| Errors | Exception handlers, error middleware, error-code enums, translation keys for messages |
-| Pagination | Shared pagination helpers, base list views, `page`/`limit`/`cursor` parameters |
-| Auth and scopes | Auth middleware, dependency injectors, guards, permission decorators, query scope filters |
-| Versioning | `/v1/` prefixes, version headers, changelogs, deprecation headers; how many versions are live at once |
-| Idempotency | `Idempotency-Key` headers, request-ID columns with unique constraints, dedup tables, client retry interceptors |
-| Clients | Generated SDKs, `axios`/`fetch` wrappers, `dio`/`retrofit` services, API service classes in mobile apps |
-| Mocks | Mockoon environments, MSW handlers, WireMock stubs, fixture folders |
-| Consumers | Other apps in the repo, documented partners, mobile versions still supported (ask the user) |
+| **Contract files** | `openapi.y*ml`, `openapi.json`, `*.proto`, `schema.graphql`, JSON Schemas, and approved `design.md` / `api_contract.json` files |
+| **Routes & Controllers** | FastAPI/Flask routers, Django `urls.py` + views, NestJS/Spring controllers, Go handlers |
+| **Request/Response Schemas** | Pydantic v2 models, DRF serializers, DTO classes, Zod schemas |
+| **Error Envelope & Handlers** | Centralized exception handlers (`app/api/error_handlers.py`), error middleware, error-code enums |
+| **Pagination & Filtering** | Shared pagination models (`Page[T]`), `limit`/`offset` or `cursor` query parameters |
+| **Auth, RBAC & Scopes** | Security dependencies (`HTTPBearer`, `OAuth2PasswordBearer`), auth guards, tenant/owner scope filters |
+| **Versioning & Deprecation** | `/api/v1` prefixes, `deprecated=True` flags, `generate_unique_id_function` |
+| **Idempotency** | `Idempotency-Key` headers, atomic request-deduplication tables/unique constraints, retry interceptors |
+| **Clients & Mocks** | Generated SDKs, HTTP client wrappers (`httpx`, `dio`, `fetch`), Mockoon environments (`mocks/*.json`) |
 
 ```sh
-rg --files -g "*openapi*" -g "*swagger*" -g "*.proto" -g "schema.graphql"
-rg -n "@(app|router)\.(get|post|put|patch|delete)|@(Get|Post|Put|Patch|Delete)\(|path\(" <be_dir>
-rg -n "exception_handler|ErrorHandler|@Catch|errorCode" <be_dir>
-rg -n -i "idempotency|request_id|dedup" <be_dir> <fe_dir>
+rg --files -g "*openapi*" -g "*swagger*" -g "*.proto" -g "schema.graphql" {{target_dir}}
+rg -n "@(app|router)\.(get|post|put|patch|delete)|@(Get|Post|Put|Patch|Delete)\(|path\(" {{target_dir}}
+rg -n "exception_handler|ErrorHandler|@Catch|errorCode" {{target_dir}}
+rg -n -i "idempotency|request_id|dedup" {{target_dir}}
 ```

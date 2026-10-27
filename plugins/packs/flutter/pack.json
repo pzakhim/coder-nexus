@@ -2,7 +2,6 @@
   "stack": "flutter",
   "status": "maintained",
   "slots": {
-    "core-package-usage": "core-package-usage",
     "architecture-design": "architecture-design",
     "clean-architecture": "clean-architecture",
     "unit-testing": "unit-testing",
@@ -41,11 +40,14 @@
   ],
   "not_applicable": [],
   "generated_from": {
-    "clean-code": "create-clean-code-skill@1.1.0",
-    "code-simplification": "create-code-simplification-skill@1.1.0",
-    "secure-coding-standards": "create-secure-coding-standards-skill@1.1.0",
+    "clean-architecture": "create-clean-architecture-skill@1.1.0",
+    "clean-code": "create-clean-code-skill@1.2.0",
+    "code-simplification": "create-code-simplification-skill@1.2.0",
+    "secure-coding-standards": "create-secure-coding-standards-skill@1.2.0",
     "unit-testing": "create-unit-testing-skill@1.1.0",
     "root-cause-debugging": "create-root-cause-debugging-skill@1.1.0",
-    "bug-hunt": "create-bug-hunt-skill@1.1.0"
+    "bug-hunt": "create-bug-hunt-skill@1.1.0",
+    "code-review": "create-code-review-skill@1.1.0",
+    "visual-quality": "create-visual-quality-skill@1.1.0"
   }
 }

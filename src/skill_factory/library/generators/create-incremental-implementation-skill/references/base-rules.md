@@ -1,35 +1,33 @@
-# Base rules (generic, every workspace)
+# Base Incremental-Implementation Rules (Universal)
 
-Extracted from Coder Nexus `plugins/core/skills/incremental-implementation` without its workspace specifics (Huly, Mockoon, Flutter, slot names). Each rule must appear in the generated skill with the workspace's real facts **and its reason** (the Why column, reworded for the workspace), or be marked "not adopted" with a reason.
+Universal rules for how a Code Writer executes one approved plan phase, task by task. Each rule goes into the generated skill with the workspace's real facts **and its reason** (the Why column, reworded for the workspace), or is marked "not adopted" with a stated reason. Rule IDs I1–I14 are stable; I15–I17 were added in 1.1.0.
 
 | # | Rule | Why | Goes into |
 |---|---|---|---|
-| I1 | **Approved scope only.** Implement only what an approved plan/brief covers; never brainstorm, widen scope or start before the required gates are approved. | Unapproved work is work the user may reject; it also hides scope creep from review. | 01 |
-| I2 | **One phase at a time.** A Code Writer takes one phase; all phases it depends on are `PASSED`; a preparation phase (if the workspace has one) is completed first. | Parallel or out-of-order phases build on code nobody has verified yet. | 01 |
-| I3 | **Concrete before coding.** The phase states file scope, reused components/contracts and verification commands; if not, it is a planning gap, not something to guess. | Guessing scope or checks turns the Code Writer into the planner without the planner's context. | 01 |
-| I4 | **Task loop.** For each task top to bottom: A read & ground (target files, reused components, signatures to produce, acceptance criteria; earlier tasks ticked) → B implement → C immediate local check → D tick the task and **re-read the plan** before the next task. No bulk coding across tasks. | Bulk coding drifts from the plan; re-reading reloads the exact scope and contracts before each change. | 02 |
-| I5 | **Edit only the task's files.** Use the components and conventions the design mapped; a mapped component/contract that does not fit is a planning blocker, never a local workaround. | Local workarounds silently break the design other phases rely on. | 02 |
-| I6 | **Immediate local check.** After each task run its own check (analyzer on changed files, the task's unit test) and fix errors before ticking. | An error found right after the change is cheap; found at phase end it is tangled with other tasks. | 02, 06 |
-| I7 | **Phase verification.** When all tasks are ticked, run the phase's full suite (analyzer, tests, build as applicable). | Task checks are narrow; only the full suite shows interactions between tasks. | 03, 06 |
-| I8 | **Visual verification** for UI-impacting phases on the approved targets/states. | Tests rarely catch layout and state regressions a user would see. | 03, fe/06 |
-| I9 | **Self bug-hunt.** Run the workspace's bug-hunt (quick effort) on the phase diff; fix confirmed findings together with the missing tests; rerun affected checks. | The author is the cheapest reviewer; confirmed defects with tests do not come back. | 03 |
-| I10 | **Evidence.** Report exact command, revision, target and result. `NOT_RUN`, `BLOCKED`, `UNVERIFIED` are never `PASS`. | A check that did not run is not evidence; reporting it as PASS misleads every later gate. | 03, 05 |
-| I11 | **Back to the gate.** A fix that changes behavior, API, architecture, dependencies or a component contract goes back to the relevant planning/design gate instead of being done in place. | Changing contracts in place bypasses the people who approved them. | 03 |
-| I12 | **Simplicity pass.** After behavior passes, inspect only the changed code; call code-simplification only for concrete complexity. No drive-by refactors, no changing tests to fit, no removing validation/error paths; rerun affected checks. | Simplifying outside the diff or bending tests mixes refactoring with behavior change and hides regressions. | 04 |
-| I13 | **Handoff.** Phase ID, approved revisions, changed files and the actual code revision. Review uses that revision; verification uses the reviewed revision; any fix creates a new revision and restarts affected review/tests. The approved plan stays stable; results are recorded separately. | Review and tests must refer to one exact revision, or their results prove nothing. | 05 |
-| I14 | **No fabrication.** Never invent business data, services, mock fallbacks or "successful" placeholders to make a missing source look available; fail explicitly. | Fake data makes a missing dependency look solved and ships broken behavior. | 01, 03 |
+| I1 | **Approved scope only.** Implement only what an approved plan/brief covers; never brainstorm, widen scope or start before the required gates are approved. | Unapproved work is work the user may reject; it also hides scope creep from review. | `SKILL`, `01` |
+| I2 | **One phase at a time.** A Code Writer takes one phase; all phases it depends on have passed; a preparation phase (if the workspace has one) is completed first. | Parallel or out-of-order phases build on code nobody has verified yet. | `01` |
+| I3 | **Concrete before coding.** Each task states its file scope, reused components/contracts, a check command and its expected result; if not, it is a planning gap, not something to guess. | Guessing scope or checks turns the Code Writer into the planner without the planner's context. | `01` |
+| I4 | **Task loop.** For each task top to bottom: A read & ground (files, reused components, signatures to produce, check and expected result; earlier tasks ticked) → B implement → C run its check → D triage (I16) → E tick and **re-read the plan** before the next task. No bulk coding across tasks. | Bulk coding drifts from the plan; re-reading reloads the exact scope and contracts before each change. | `SKILL`, `02` |
+| I5 | **Edit only the task's files.** Use the components and conventions the design mapped; a mapped component/contract that does not fit is a planning blocker, never a local workaround. | Local workarounds silently break the design other phases rely on. | `SKILL`, `02` |
+| I6 | **Immediate local check.** After each task run its own check (analyzer on changed files, the task's focused test) and read the whole output before ticking. | An error found right after the change is cheap; found at phase end it is tangled with other tasks. | `02` |
+| I7 | **Phase verification.** When all tasks are ticked, run the phase's full suite (formatter, analyzer, type checker, tests, build, architecture gates as applicable). | Task checks are narrow; only the full suite shows interactions between tasks. | `03` |
+| I8 | **Visual verification** for UI-impacting phases on the approved targets and states. | Tests rarely catch layout and state regressions a user would see. | `03` |
+| I9 | **Self bug-hunt.** Run the workspace's bug-hunt (quick effort) on the phase diff; fix confirmed findings together with the missing tests; carry plausible ones as Concerns; rerun affected checks. | The author is the cheapest reviewer; confirmed defects with tests do not come back. | `03` |
+| I10 | **Evidence.** Report exact command, working directory, revision, exit code and result. `NOT_RUN`, `BLOCKED` and `UNVERIFIED` are never `PASS`. | A check that did not run is not evidence; reporting it as `PASS` misleads every later gate. | `SKILL`, `03` |
+| I11 | **Back to the gate.** A fix that changes behavior, API, architecture, dependencies or a component contract goes back to the relevant planning/design gate instead of being done in place. | Changing contracts in place bypasses the people who approved them. | `SKILL`, `03` |
+| I12 | **Simplicity pass.** After behavior passes, inspect only the changed code; call code-simplification only for a named smell. No drive-by refactors, no changing tests to fit, no removing validation/error paths; rerun affected checks. | Simplifying outside the diff or bending tests mixes refactoring with behavior change and hides regressions. | `03` |
+| I13 | **Handoff.** Phase ID, approved revisions, changed files, the committed review revision, evidence, the bug-hunt and simplify lines, Concerns and the "noticed but not touching" list. Review uses that revision; verification uses the reviewed revision; any fix creates a new revision. The approved plan stays stable; results are recorded separately. | Review and tests must refer to one exact revision, or their results prove nothing. | `03` |
+| I14 | **No fabrication.** Never invent business data, services, mock fallbacks or "successful" placeholders to make a missing source look available; never weaken a test to turn a check green; fail explicitly. | Fake data and bent tests make a missing dependency or a defect look solved. | `SKILL`, `02`, `03` |
+| I15 | **Pre-flight before task 1.** Read the plan's global constraints and review focus; build a Consumes / Produces table (one row per edge between tasks, or between a task and existing code, with the **real** signature read from the code). A mismatch, missing producer or impossible check is raised as a plan change before coding. A clean table is still written down. | The plan was written from a scan that may be older than the branch; "no conflicts" without rows is a scan nobody ran. | `01` |
+| I16 | **Triage against the expected result.** Compare each check with its expected result: **match** → tick; **code wrong** → fix the root cause inside scope and rerun; **plan wrong** (expected result, signature, file list or command impossible) → leave the task unticked and raise a plan change. Never patch output to look like the expected result. | Silent deviation is a decision made without the people who approved the plan. | `SKILL`, `02` |
+| I17 | **Resume from the record.** After a new session or lost context, the plan's ticks and git history are the record, not memory: resume at the first unticked task and rerun its predecessor's check once if the tree changed since its tick. | Memory is a summary; the ledger survives lost context. | `02` |
 
-## Order of work (file 07, per branch)
+**Mandatory rules (never "not adopted"):** I1, I4, I5, I10, I11, I14, I16.
 
-Default inside a phase, unless the plan orders tasks differently (the plan wins):
+## Order of work
 
-| Branch | Default order |
-|---|---|
-| Backend | contract/schema → domain → application (use case + ports) → infrastructure → presentation → wiring → tests per layer as you go |
-| Frontend | contract types → pure utils (+ tests) → hooks/state → components/views → route composition → styles → visual check |
-| Mobile | domain → data → state holder → widgets/screens → routing → widget tests |
-| Fullstack | BE API finished and tested before the FE client (see the workspace's integration rules) |
+The plan's task order always wins. When it leaves order open, work from inner contracts to outer delivery (contracts and types → domain logic → data access → state/application → entry points and UI → wiring), using the workspace's real layers from its clean-architecture skill, and write tests for each layer as you go. In a repository with several deliverables (e.g. a service and its client), finish and test the provider before its consumer.
 
 ## Not adopted is allowed
 
-A small workspace may mark I8 (no UI), I9 (no bug-hunt skill yet → "manual diff review"), or the preparation phase as not adopted. Never mark I1, I4, I5, I10, I11 or I14 as not adopted.
+A small workspace may mark I8 (no UI), I9 (no bug-hunt skill yet → "manual diff review"), I15 (a light plan format without task interfaces) or the preparation phase as not adopted, with a reason.

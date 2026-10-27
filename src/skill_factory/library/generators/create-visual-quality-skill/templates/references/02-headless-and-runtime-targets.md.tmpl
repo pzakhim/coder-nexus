@@ -1,0 +1,36 @@
+# Headless Golden & Visual Diff Workflow
+
+<!-- GEN: Why: captures the workspace's headless 4-state golden screenshot recipe and strict role boundaries so Code Writer, Code Reviewer, and Test Runner never corrupt baselines. Kind: Mandatory. -->
+
+> Topic: Headless 4-state golden screenshot rendering, asset/font loading, device frames, and strict role boundaries (`code_writer` vs `code_reviewer` vs `test_runner`).
+
+Rules **V3**, **V4**, and **V8**. Headless golden tests supplement runtime target inspection (`01`); they never prove live backend integration (`BE_LIVE`).
+
+---
+
+## 1. When to Use Headless Golden Screenshots
+
+Use the workspace's headless golden harness (`{{golden_tool}}`) when present in dev dependencies or approved in `implementation-plan.md`:
+1. **Fast 4-State Rendering**: Renders `Loading`, `Content`, `Empty`, and `Error` states in seconds without booting a full OS simulator/emulator.
+2. **Authentic Device Frames & Fonts**: Loads local fonts, icons, and device safe-area bezels so typography and shadows match runtime output.
+3. **Deterministic Regression Tolerance**: Uses a configured pixel diff tolerance (~1%) to catch layout shifts while avoiding sub-pixel anti-aliasing noise.
+
+---
+
+## 2. Authoring 4-State Screen Golden Tests (`code_writer`)
+
+For any phase creating or modifying a Screen with golden coverage, author the golden test covering all 4 states:
+
+```{{code_lang}}
+{{golden_4_state_template}}
+```
+
+---
+
+## 3. Strict Role Governance (`V8`)
+
+| Role | Responsibility & Command | Allowed to Update Baselines? |
+|---|---|---|
+| **Code Writer (`code_writer`)** | Authors the 4-state golden test and generates initial `.png` baselines via `{{golden_update_command}}`. Opens and self-checks every `.png` image before `READY_FOR_REVIEW`. | **Yes** (only when creating or updating a design-approved screen in the phase diff). |
+| **Code Reviewer (`code_reviewer`)** | Opens and inspects every generated `.png` golden image against `design.md` (`## UI/UX mapping`) and extracted Figma per-screen `.png` renders using the 10-dimension checklist ([03]({{ref_03}})). Any `BLOCKER` or `MAJOR` visual defect triggers `CHANGES_REQUESTED`. | **No** (read-only inspection). |
+| **Test Runner (`test_runner`)** | Runs standard regression comparison via `{{golden_verify_command}}` (**without** baseline-update flags). Any mismatch exceeding tolerance is `FAIL` (`CHANGES_REQUESTED`). | **Never** — running baseline-update flags during verification is a `BLOCKER` violation. |

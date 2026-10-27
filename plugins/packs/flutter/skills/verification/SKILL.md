@@ -1,50 +1,71 @@
 ---
 name: verification
-description: Verifies a reviewed Flutter revision with the approved analyzer, tests, build, and affected runtime visual checks, then records revision-bound evidence. Use after code review approval; return failures to implementation instead of fixing code in the verification pass.
+description: "Execute and verify deterministic Flutter quality gates (`G0`–`G8`: developer tools check, code generation, `flutter analyze`, `dart_code_linter` metrics, MCP architecture validators, `flutter test` unit/widget/golden suites, `{{slot:visual-quality}}` runtime visual inspection, and flavor builds) on a reviewed revision. Use when Planning defines task/phase checks, Code Writer verifies phase completion (`READY_FOR_REVIEW`), Code Reviewer re-runs checks on `REVIEW_REVISION` (`APPROVED` / `CHANGES_REQUESTED`), or Test Runner executes UI and acceptance verification (`ACCEPTED` / `CHANGES_REQUESTED` / `BLOCKED`)."
 ---
 
-# Flutter Verification
+# Flutter Verification (Dart & Flutter)
 
-Read plugin-root `shared_contracts/api_handshake_protocol.md`. Read Huly and source context from `codebase-notes.md` (`## 0A. Source Inventory`, Huly table, `## 4`) and the API contract from `design.md`; `phases/phase-00-prepare.md` (`PHASE-00`) only records readiness and links to them, plus `requirements.md` — never re-query Huly or fabricate business records, services, or production fallbacks.
+This skill is `{{slot:verification}}` for the Flutter pack. Claim proof rules belong to `evidence-standard`; unified flags, severities, and handoff statuses belong to [handoff-and-status](../work-item-contract/references/handoff-and-status.md), `shared_contracts/flags_and_statuses.md`, and `shared_contracts/api_handshake_protocol.md`.
 
+## 1. Detect Workspace Tooling First (Never Assume)
 
-For new Client work, use `.superpowers/work-items/<slug>/vN/brief.md` and optional design/plan/phase, then choose decisive checks from `work-item-contract` by Type. A small item can have no phase. Run only checks relevant to affected Flutter boundaries, and record exact revision and provenance. The `docs/features/` contract below applies to historical features.
+Before running any gate, inspect from the Client workspace root (`cwd`): `.fvmrc`, `pubspec.yaml`, `pubspec.lock`, `analysis_options.yaml`, `.vscode/launch.json` (or flavor scripts), and `.superpowers/setup.json`. Never guess `dev`, `lib/main_dev.dart`, Android, or FVM when the workspace specifies otherwise.
 
-## Historical feature workflow
+| Workspace Signal | Command Prefix | Example |
+|---|---|---|
+| `.fvmrc` / `.fvm/` present | `fvm flutter` / `fvm dart` | `fvm flutter analyze` |
+| Standard Flutter SDK | `flutter` / `dart` | `flutter test test/modules/<feature>/` |
 
-Verify the reviewed revision; do not modify production code during this pass. Read the same version's `requirements.md`, `design.md`, `phases/phase-00-prepare.md`, approved `implementation-plan.md`, linked `phases/phase-XX-<behavior>.md`, review report and [Client check contract](references/01_client_check_contract.md) before running commands.
+## 2. Deterministic Flutter Gate Matrix (`G0`–`G8`)
 
-For screen changes, verify the selected profile’s screen/base, routing and applicable tracking/responsive contract using actual Client source and target results. BaseScreen is mandatory only for iMESPro.
+Run in order from the Client root holding `pubspec.yaml`. A later gate never replaces an earlier one (`evidence-standard` §2).
 
-## Preconditions
+| Gate | Purpose | Command / Tool (standard prefix shown) | Runs When |
+|---|---|---|---|
+| **G0** | Developer Tools Check | `coder-nexus setup tools --pack flutter --check` | `PHASE-00` & before first phase gate (`PASS` when `TOOLS: READY`) |
+| **G1** | Code Generation | `dart run build_runner build --delete-conflicting-outputs` | Phase adds or modifies generated models, routes, or DI annotations |
+| **G2** | Static Analysis | `flutter analyze` | Always on every task and phase end (`0 errors, 0 warnings`) |
+| **G3** | Code Metrics & Linter | `dart run dart_code_linter:metrics analyze lib` | Every phase end on touched modules (`0 violations`) |
+| **G4** | Architecture Validators | MCP `validate_architecture_code` & `validate_module_architecture` | Every phase end on touched `lib/modules/<feature>/` files (`PASS`) |
+| **G5** | Unit & Widget Tests | `flutter test test/modules/<feature>/` | Always when module unit/cubit/widget tests exist (`{{slot:unit-testing}}`) |
+| **G6** | Golden Screenshot Tests | `flutter test <golden_test_path>` (never `--update-goldens` in verification) | Screen phases where `golden_screenshot` baseline exists and is approved |
+| **G7** | Runtime Visual Check | `{{slot:visual-quality}}` on approved target & 4 states (`Loading`, `Content`, `Empty`, `Error`) | Every phase with `UI Impact: Yes` (`FE_MOCKOON` or `BE_LIVE` per `D-NN`) |
+| **G8** | Target Flavor Build | `flutter build <target> --flavor <flavor> -t <entrypoint>` | Closing phase or when native/plugin/flavor config changes |
 
-- `BASE_REVISION` and `REVIEW_REVISION` are explicit, and the review report covers that range.
-- Feature/version path, phase ID, AC IDs, approved document revisions and actual Gate 1–3 approval references are explicit; approvals cover their current revisions.
-- `phases/phase-00-prepare.md` is ticked **`[x] PREPARED / COMPLETED`** (or **`[x] PREPARED (INFO_READY)`**).
-- The review verdict allows verification. `CHANGES_REQUESTED` returns to `incremental-implementation`; `BLOCKED` remains blocked.
-- Commands, working directory, flavor, entrypoint, target, and required UI states come from the approved plan and real workspace configuration.
-- Staged, unstaged and untracked changes are absent or explicitly included in the review report. Never silently verify a different tree.
+## 3. Canonical Gate Results & Role Verdicts
 
-## Verification flow
+| Gate Flag | Meaning | Rule |
+|---|---|---|
+| **`PASS`** | Command/check ran on `REVIEW_REVISION`, exited `0`, and observable output confirms non-empty scope | Record command, `cwd`, revision, exit code, and key output/artifact path. |
+| **`FAIL`** | Command/check ran and found an actionable defect (`exit != 0`, analyzer warning, test failure, visual regression) | Blocks `READY_FOR_REVIEW`, `APPROVED`, and `ACCEPTED`. Return to implementation (`{{slot:root-cause-debugging}}`). |
+| **`BLOCKED`** | External/environment blocker (missing tool, device/emulator unavailable, unreachable live endpoint, Mockoon failure) | Never counts as `PASS`. Name the exact blocker and owner. |
+| **`NOT_RUN`** | Required check was not executed, or `0` tests ran / tests were skipped | Never counts as `PASS`. |
+| **`UNVERIFIED`** | Claim made without an executed command or verifiable evidence row (e.g., lexical check alone for a runtime screen contract) | Treated as a failure to verify; never counts as `PASS`. |
+| **`N/A`** | **Visual check (`G7`) only**: approved task/phase has `UI Impact: No` and records why | Never used to skip required analyzer or test gates. |
 
-1. Record Client workspace path, Hub source revision, installed plugin version, Flutter/FVM version, `BASE_REVISION`, `REVIEW_REVISION`, approved document revisions, approval references, planned checks and `git status --short`.
-2. Build an independent **UI & Acceptance test-case matrix** from `requirements.md` (BDD Scenarios, 4 Visual States, AC table), `design.md` (UI State Matrix & Component Mapping), and `brief.md` (Scope In & Out-of-Scope boundaries). Isolated developer Unit Tests have already been reviewed and approved by Code Reviewer; `test_runner` does **not** use Mockoon payloads to run unit-level logic tests. Focus strictly on **UI / Widget / Golden Screenshot & Runtime Visual Verification** (layout, `app_ui_kit` widgets, screen interactions, and the 4 visual states: `Loading`, `Content`, `Empty`, `Error`). Never fabricate business data to fill a case.
-3. Inspect the Reviewer's analyzer and visual evidence for the same tree. Run the approved checks in dependency order: required generation first, rerun analyzer when stale evidence requires it, then targeted widget/UI tests, affected regression tests and the required flavor build. Skip only checks the approved plan marks out of scope and record why. Run an approved `golden_screenshot` comparison with ordinary `flutter test` only when its dev dependency, test file and human-reviewed baseline are already present. `--update-goldens` is baseline creation, never a pre-release PASS command.
-4. For UI impact, invoke `{{slot:visual-quality}}` (ensuring `mockoon-cli` from `PHASE-00` is running in the background when `MOCKOON_MOCKED` is used). Reuse visual evidence only when revision, platform, target, flavor, route, data source, and required states all match. Open and inspect screenshots, then make the images and findings available to the coordinator for pre-release review. A saved path alone is not evidence.
-5. Map each acceptance criterion and UI test case to an observable check and evidence. Use `PASS`, `FAILED`, `BLOCKED`, or `NOT_RUN`; only non-UI visual checks may use `N/A`, with a reason.
-6. Create `.superpowers/work-items/<slug>/vN/evidence/<phase-id>/<review-revision>/verification_report.md` from [the report template](templates/verification_report.md.tpl). Send actual results to the coordinator for `as-built.md`.
+- **Role Verdicts (`shared_contracts/flags_and_statuses.md` §4–§5)**:
+  - **Code Writer**: `READY_FOR_REVIEW` (all applicable `G0`–`G8` `PASS` on committed revision) or `BLOCKED`.
+  - **Code Reviewer**: Re-runs `G1`–`G6` and inspects `G7` visual/golden artifacts on `REVIEW_REVISION` → `APPROVED`, `CHANGES_REQUESTED`, or `BLOCKED`.
+  - **Test Runner**: Executes independent UI & Acceptance matrix (`G2`, `G5`–`G8`) on `REVIEW_REVISION` → `ACCEPTED`, `CHANGES_REQUESTED`, or `BLOCKED`.
 
-## Verdict and handoff
+## 4. Mandatory Rules (`V1`–`V8`)
 
-- `PASS`: every required AC/check has current-revision evidence.
-- `FAILED`: an executed check found a defect. Hand the failure to `incremental-implementation`.
-- `BLOCKED`: environment, source, service, credential, permission, or target prevented a required check.
-- `NOT_RUN`: a required check has not been attempted and the slice is not complete.
+| ID | Mandatory Rule |
+|---|---|
+| **V1** | **Detect, never assume** — Confirm `.fvmrc`, flavor, entrypoint, device target, and `architecture_profile` before running commands. |
+| **V2** | **Verify the exact `REVIEW_REVISION`** — `git status --short` must be clean (or explicitly scoped). Any code, test, asset, or pubspec edit invalidates prior evidence. |
+| **V3** | **Never bend a gate or update goldens in verification** — `--update-goldens` is baseline authoring for Code Writer + Reviewer visual sign-off, never a verification `PASS` command. |
+| **V4** | **Preserve API & data provenance** — Label `FE_MOCKOON` fixture checks separately from `BE_LIVE` integration; Mockoon success never closes live endpoint ACs (`api_handshake_protocol.md`). |
+| **V5** | **Inspect real images** — A saved file path alone is `UNVERIFIED`; open and inspect screenshots across all 4 states (`Loading`, `Content`, `Empty`, `Error`). |
+| **V6** | **Never fabricate data or touch Huly** — Never invent business records, mock classes in `lib/`, or write to Huly. |
+| **V7** | **Read-only verification pass** — Never edit production code, tests, or dependencies during review or `test_runner` verification; return `FAIL` → `CHANGES_REQUESTED`. |
+| **V8** | **Strict status vocabulary** — Use only `PASS` / `FAIL` / `BLOCKED` / `NOT_RUN` / `UNVERIFIED` (`N/A` for non-UI visual only) and `APPROVED` / `ACCEPTED` / `CHANGES_REQUESTED` / `BLOCKED`. |
 
-Any code fix creates a new revision and invalidates affected review, test, build, and visual evidence. Review the affected scope again before rerunning verification. Do not change tests merely to make an implementation pass, fabricate logs or business data, install dependencies, change flavors, or write to Huly.
+## 5. Reference Guides
 
-## Flutter references for core skills
-
-Core planning, implementation and work-item skills are stack-neutral and point here for Flutter specifics:
-- [Planning codebase scan](references/02_planning_codebase_scan.md) — Flutter readiness checklist and screen checks for `implementation-plan.md`.
-- [Flutter plan, phase and DoD conventions](references/03_flutter_plan_and_dod.md) — phase slicing examples, task file paths, analyzer/test commands, AC matrix examples and the golden review DoD.
+| Topic | Reference File |
+|---|---|
+| Execution order, exit/output rules for `G0`–`G8`, data provenance (`FE_MOCKOON` vs `BE_LIVE`), and revision invalidation | [01-gates-and-check-contract.md](references/01-gates-and-check-contract.md) |
+| Planning `PHASE-00` readiness scan, vertical phase slicing, task/phase check conventions, and Review Definition of Done | [02-planning-readiness-and-phase-dod.md](references/02-planning-readiness-and-phase-dod.md) |
+| Test Runner UI/Acceptance matrix, 4-state runtime & golden verification rules, and copy-ready `verification_report.md` template | [03-visual-acceptance-and-report-template.md](references/03-visual-acceptance-and-report-template.md) |
+<!-- {{profile_references}} -->

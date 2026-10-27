@@ -1,0 +1,37 @@
+# 03 — Report & Review Severity
+
+<!-- GEN: Why: one line of what was cut lets reviewers see intent, skipped findings stay visible, and authors and reviewers grade on the single BLOCKER/MAJOR/MINOR scale. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rule S14 + review severity from references/base-rules.md, in the workspace's hand-off notation. -->
+
+## 1. Report line (in the hand-off)
+
+Use the workspace's `simplify:` line exactly ({{handoff_link}}); it is not redefined here. Illustrative filled example:
+
+```
+{{report_example}}
+```
+<!-- GEN: e.g. "simplify: pass-through layer -> inline at <path:line>; derivable state -> computed at <path:line>; net -31 lines; checks: <test command> exit 0" -->
+
+When nothing qualified, use the "nothing worth changing" form and list the files looked at.
+
+## 2. Skipped findings
+
+A finding whose fix would change behavior or needs code outside the diff is **not applied**. List it in the hand-off's Concerns as `<lens>/<tag> at <path:line>: <why skipped>`.
+
+## 3. Deliberate shortcuts
+
+{{marker_rule}} <!-- GEN: e.g. name the limit and upgrade path in the hand-off, or a code-comment marker if the workspace uses one; delete if none -->
+
+## 4. Review severity (`BLOCKER` / `MAJOR` / `MINOR`)
+
+| Severity | Finding | Review Verdict Impact |
+|---|---|---|
+| `BLOCKER` | A check `FAIL`s after simplification; wrapper/alias/re-export left after a move; S12 violated; a decision ({{decision_notation}}) ignored | `CHANGES_REQUESTED` |
+| `MAJOR` | Unnecessary complexity in the diff with a named catalog row | Fixed in the same revision when inside scope |
+| `MINOR` | Small, local simplification opportunity | Optional |
+
+A "simplification" that changed a result, status, transaction or error path is a **defect** with a failure scenario, not a simplification finding. Only code changed in the phase is graded.
+
+<!-- custom:start -->
+<!-- custom:end -->

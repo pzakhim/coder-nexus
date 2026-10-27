@@ -1,0 +1,52 @@
+# 02 — Defect Tracking and Multi-Round Re-Test History (`RP5`, `RP10`)
+
+<!-- GEN: Why: Ensure every discovered defect is graded with the unified BLOCKER / MAJOR / MINOR severity scale and tracked across rounds until verified on a fixed revision, never silently dropped. Kind: Mandatory — keep the purpose, adapt the structure (../../core/authoring-guide.md). -->
+<!-- GEN: Rules RP5, RP10 with the workspace's defect IDs, unified BLOCKER / MAJOR / MINOR severities, status lifecycle, and re-test ledger. -->
+
+Every `FAIL` case in [01-report-structure-and-verdict.md]({{ref_01}}) must reference a defect row in the report's **Defects** table.
+
+---
+
+## 1. Defect Table & Unified Severity Rubric (`RP5`)
+
+| Defect ID | Severity (`BLOCKER` / `MAJOR` / `MINOR`) | Case ID | Status | Summary | Reproduction Link |
+|---|---|---|---|---|---|
+| `{{defect_id_example}}` | `BLOCKER` / `MAJOR` / `MINOR` | `{{case_id}}` | `open` | One-sentence observable failure vs expected behavior | `[repro]({{evidence_path}}/...)` |
+
+### Unified 3-Tier Defect Severity Scale (`shared_contracts/flags_and_statuses.md`)
+
+Grade every defect strictly using the unified 3-tier severity scale:
+
+| Severity | Definition | Impact on Feature Verdict (`RP4`) |
+|---|---|---|
+| **`BLOCKER`** | Core acceptance flow broken, data corruption/loss, security or permission bypass (`403`/`401` not enforced), crash/unhandled exception, or broken contract preventing verification | Blocks `ACCEPTED` → forces **`CHANGES_REQUESTED`** |
+| **`MAJOR`** | An Acceptance Criterion (`AC`) fails its expected behavior, state persistence fails on reload/read-back, or required validation/error handling is missing | Blocks `ACCEPTED` → forces **`CHANGES_REQUESTED`** |
+| **`MINOR`** | Non-blocking cosmetic, copy, or minor ergonomic issue where the Acceptance Criterion still satisfies its functional and security contract | Does not block `ACCEPTED` when all ACs pass; must still be recorded in the defect table |
+
+---
+
+## 2. Defect Status Lifecycle (`RP5`)
+
+Each defect progresses through four explicit states:
+
+1. **`open`**: Reproduced on the tested revision; linked from the failing test case row.
+2. **`fixed-awaiting-retest`**: Code Writer / Bug Fixer delivered a fix on a newer revision SHA, awaiting Quality Engineer re-execution.
+3. **`verified`**: Re-tested by the Quality Engineer on revision `<new_sha>` with fresh evidence; status updated to `verified (<new_sha>)`.
+4. **`wont-fix`**: Allowed **only** when the user explicitly approves deferring or waiving the defect; record the user's decision reference in the row. An agent may never mark a defect `wont-fix` on its own.
+
+---
+
+## 3. Multi-Round Re-Test History Ledger (`RP10`)
+
+When a feature undergoes multiple test rounds, preserve every earlier round in the **Re-Test History** table at the bottom of the report (or cross-link the round files in `{{results_record}}`):
+
+| Round | Tested Revision SHA | Cases Rerun | Open `BLOCKER` / `MAJOR` | Round Verdict |
+|---|---|---|---|---|
+| `1` | `<sha_round_1>` | `All (<total> cases)` | `<count>` | `CHANGES_REQUESTED` / `BLOCKED` |
+| `2` | `<sha_round_2>` | `<failed/blocked case IDs + regression case IDs>` | `0` | `ACCEPTED` |
+
+- **No History Erasure**: A `PASS` in Round 2 updates the defect status to `verified (<sha_round_2>)` and the current round's case table, but Round 1's failure and revision SHA remain visible in the Re-Test History table.
+- **Revision Binding**: If code changed between rounds, the new commit SHA must be recorded before re-running any case; re-testing must cover the failed cases plus any impacted regression cases.
+
+<!-- custom:start -->
+<!-- custom:end -->

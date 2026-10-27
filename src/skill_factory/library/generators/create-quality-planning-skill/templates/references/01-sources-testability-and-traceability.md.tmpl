@@ -1,0 +1,59 @@
+# 01 — Spec Sources, Early Testability Review & Two-Way Traceability (`Q1`–`Q3`, `Q12`, `Q14`)
+
+<!-- GEN: Why: Untestable acceptance criteria caught right after requirements cost a single question, while unmapped AC or implementation-derived tests hide escaped defects until release (`Q1`–`Q3`, `Q12`, `Q14`). Kind: Mandatory — keep the purpose, adapt paths and IDs to {{project_name}}. -->
+
+## 1. Authoritative Spec Sources & Implementation Independence (`Q1`, `Q14`)
+
+Design test cases strictly from approved specification artifacts in this priority order:
+
+| Source Artifact | Workspace Path | What It Defines for Test Planning |
+|---|---|---|
+| **Brief / Scope Contract** | `{{brief_path}}` | In-scope capabilities and explicit **out-of-scope** boundaries (`Q9`) |
+| **Requirements Specification** | `{{requirements_path}}` | Acceptance criteria (`{{ac_id_format}}`), BDD scenarios (`Given / When / Then`), actors/roles, and business rules |
+| **Architecture & UX Design** | `{{design_path}}` | UI/client state matrix (`loading`, `empty`, `error`, `populated`), API/service contracts, status codes, and data scopes |
+| **Decisions & Domain Glossary** | `{{decisions_path}}` | Architectural decisions (`D-NN`), canonical domain terms, and invariants |
+| **Security Review Report (when triggered)** | `{{security_review_path}}` | `Role × Environment × Action × Object` constraints (`SR3`, `SR4`) and runtime-dependent `PLAUSIBLE` scenarios (`SR14`) |
+
+### Strict Independence Rule (`Q14`)
+- **Forbidden as sources of expected behavior**: the implementation plan (`plan.md`), application source code, or the Code Writer's unit tests.
+- **Permitted code inspection**: read source files **only** to resolve concrete execution targets (route paths, endpoint URLs, UI test selectors/keys, seed script names).
+- **Never weaken expectations**: if the implementation diverges from the approved spec, record a defect or escalate a spec question — never edit a test case expectation to match buggy code.
+
+---
+
+## 2. Early Testability Review Checklist (`Q2`)
+
+Run this review immediately after the **Requirements Gate** (before implementation or test execution begins). For every acceptance criterion (`{{ac_id_format}}`), verify:
+
+- [ ] **Observable Outcome (`Q11`)**: Does the AC specify a concrete status code, response payload, persisted state change, emitted event, or visible UI state?
+- [ ] **Complete Inputs & Preconditions**: Are input classes, boundaries, and required seed states explicitly defined?
+- [ ] **Explicit `Role × Scope` Rules (`Q4`)**: Where permissions or multi-tenant data isolation apply, are allowed and denied roles, environments, and ownership scopes stated?
+- [ ] **Failure & Edge Behavior**: Are validation errors, empty states, duplicate submissions, and external provider failure behaviors defined?
+- [ ] **Zero Ambiguous Adjectives**: Are words like *"fast"*, *"intuitive"*, *"user-friendly"*, *"gracefully"*, or *"properly"* replaced with measurable thresholds?
+
+**Escalation Protocol**: Flag any failing AC as `[UNTESTABLE: <reason>]` and send a targeted clarification question citing `{{ac_id_format}}` to **{{spec_owner}}**. Do not invent assumptions or write test cases around an untestable AC (`BLOCKER` plan finding).
+
+---
+
+## 3. Canonical IDs & Two-Way Traceability Matrix (`Q3`, `Q12`)
+
+Use one canonical identifier scheme across requirements, test plans, execution logs, and defect reports:
+- **Acceptance Criteria IDs**: `{{ac_id_format}}` (and scenario IDs `{{scenario_id_format}}` where applicable)
+- **Test Case IDs**: `{{case_id_format}}`
+
+### Traceability Matrix Template
+
+| Source Requirement / Guard | Linked Test Case IDs (`{{case_id_format}}`) | Proving Test Level (`Q5`) | Risk Tier (`Q8`) |
+|---|---|---|---|
+| `{{ac_id_example_1}}` | `{{tc_id_example_1}}`, `{{tc_id_example_2}}` | `api` / `ui` | `BLOCKER` |
+| `{{ac_id_example_2}}` | `{{tc_id_example_3}}` | `visual` | `MAJOR` |
+| `security-handoff:{{sr_id_example}}` (`SR14`) | `{{tc_id_example_4}}` | `api` | `BLOCKER` |
+| `out-of-scope-guard` (`Q9`) | `{{tc_id_example_5}}` | `api` / `ui` | `MAJOR` |
+| `regression` (`Q10`) | `{{tc_id_example_6}}` | `api` / `ui` | `MAJOR` |
+
+### Traceability Invariants
+1. **Forward completeness**: Every approved `{{ac_id_format}}` and BDD scenario maps to at least one `{{case_id_format}}`.
+2. **Backward justification**: Every `{{case_id_format}}` cites either an `{{ac_id_format}}` or one of `security-handoff:<SR-ID>`, `out-of-scope-guard`, or `regression`. Orphan test cases are forbidden.
+
+<!-- custom:start -->
+<!-- custom:end -->

@@ -1,0 +1,83 @@
+# Review Triggers, Threat Model & Authorization Matrix
+
+> Topic: Security review triggers and read-only boundary (`SR1`, `SR13`), per-change STRIDE-lite threat model (`SR2`), and `Role × Environment × Action × Object` authorization & data-scope isolation matrix (`SR3`, `SR4`) for {{project_name}}.
+
+<!-- GEN: Why: Consolidate scope/triggers (01), per-change STRIDE-lite threat modeling (02), and the authorization/data-scope matrix (03) into one cohesive reference ({{ref_01}}). -->
+
+## 1. Security Review Triggers & Read-Only Boundary (`SR1`, `SR13`, `SR14`)
+
+### 1.1 Mandatory Review Triggers (`SR1`)
+
+Run a security review whenever a diff touches any of the following:
+- [ ] Authentication, session lifecycle, token/ticket issuance or verification
+- [ ] Authorization guards, role/permission definitions, or environment-specific access rules
+- [ ] Data-scope isolation (`{{scope_list}}`) in database queries, cache keys, background jobs, exports, or realtime channels
+- [ ] Secrets, credentials, encryption keys, or personal/regulated data (PII)
+- [ ] File uploads/downloads, archive extraction, user-supplied URLs, webhooks, or external redirects
+- [ ] New or upgraded third-party dependencies in lockfiles
+- [ ] {{workspace_triggers}}
+
+**Deep review areas** (trace callers/callees one level further and require explicit test evidence for every matrix cell): {{deep_areas}}.
+
+### 1.2 Execution Mode & Non-Destructive Boundary (`SR1`, `SR13`, `SR14`)
+
+- **Mode**: {{mode_description}}
+- **Fixed revision (`SR1`)**: Audit the exact revision specified in the handoff (`{{revision_notation}}`); never modify application code or tests during the review.
+- **No live exploitation (`SR13`)**: Never run exploit payloads against shared (`develop`, `staging`) or `production` environments, and never paste live secrets or real PII into notes or reports. Verify exclusively via read-only code tracing and local/disposable test runs (`{{local_stack}}`).
+
+### 1.3 Deterministic Audit Coverage Ledger (`SR1`)
+
+Before hunting for vulnerabilities, list every changed or reachable security-relevant unit (route, RPC handler, repository query, background job, webhook, client view) in the **Coverage Ledger**. No security review may sign off as `APPROVED` while any unit remains `UNCOVERED`:
+
+| Unit ID | File & Symbol / Entrypoint | Trust Boundary Crossed | Applicable Checks (`SR3`–`SR10`) | Audit Status (`COVERED` / `UNCOVERED`) |
+|---|---|---|---|---|
+| `U-01` | `{{path}}` (`{{operation}}`) | `Client → API → DB` | `SR3`, `SR4`, `SR5` | `COVERED` / `UNCOVERED` |
+
+---
+
+## 2. Per-Change Threat Model (`STRIDE-lite`, `SR2`)
+
+Write a concise 5–10 line threat model for the change before inspecting individual lines:
+
+```text
+Change:        <one-line summary of the diff @ revision>
+Assets:        <from: {{assets}}>
+Actors:        <from: {{actors}}>
+Entry points:  <routes, RPCs, CLI commands, jobs, webhooks, or UI actions touched>
+Boundaries:    <client→API, API→DB, API→{{providers}}, tenant→tenant, env→env>
+STRIDE Risks:
+  - S (Spoofing):            <can caller forge identity/tenant/ticket, or "n/a">
+  - T (Tampering):           <can caller mutate unowned fields/records or bypass state guards, or "n/a">
+  - R (Repudiation):         <are sensitive mutations audit-logged with actor + tenant + trace_id, or "n/a">
+  - I (Information Leak):    <can responses, errors, logs, caches, or streams leak cross-scope data, or "n/a">
+  - D (Denial of Service):   <can unbounded input/pagination/queues/uploads exhaust resources, or "n/a">
+  - E (Elevation of Priv):   <can a lower role invoke a higher role's operation, or "n/a">
+```
+
+---
+
+## 3. Authorization Matrix & Data-Scope Isolation (`SR3`, `SR4`)
+
+### 3.1 Authorization Matrix (`Role × Environment × Action × Object`, `SR3`)
+
+For every added or modified operation, fill out the authorization matrix using the workspace's confirmed roles ({{roles}}) and scopes ({{scope_list}}):
+
+| Operation / Endpoint | Role | Environment ({{environments}}) | Target Object Scope | Expected Outcome | Verification Evidence (Test or `file:line`) |
+|---|---|---|---|---|---|
+| `{{operation}}` | `{{role}}` | `{{env}}` | Own `{{scope_list}}` | Allow (`200`/`201`) | `{{test_or_path}}` |
+| `{{operation}}` | `{{role}}` | `{{env}}` | Other `{{scope_list}}` (Anti-IDOR) | Deny (`404` or `403`) | `{{test_or_path}}` |
+| `{{operation}}` | Unprivileged / Anonymous | `{{env}}` | Any | Deny (`401` or `403`) | `{{test_or_path}}` |
+
+- Any matrix cell lacking a verifying test or traced server-side guard is recorded as a **`PLAUSIBLE BLOCKER`** (or **`CONFIRMED BLOCKER`** when the guard is provably absent). Client/UI hiding never counts as authorization evidence.
+
+### 3.2 Data-Scope Isolation Checklist (`SR4`)
+
+Verify every changed data path carries the authenticated principal's scope:
+
+| Data Path | Required Scope Binding (`{{scope_list}}`) | Enforced At (`file:line`) | Status (`PASS` / `FAIL`) |
+|---|---|---|---|
+| Database read/write/replay queries | Bound from verified auth context in `WHERE` clause | `<path:line>` | `PASS` / `FAIL` |
+| Cache keys & pub/sub channels | Keyed by `(tenant_id, resource_id)` | `<path:line>` | `PASS` / `FAIL` |
+| Background jobs & exports | Job payload validates scope ownership before execution | `<path:line>` | `PASS` / `FAIL` |
+
+See [`references/02-security-checks-and-cli-gates.md`]({{ref_02}}) for boundary security checks and CLI gates, and [`references/03-findings-verdict-and-report.md`]({{ref_03}}) for exploit-scenario grading and reporting.

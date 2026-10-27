@@ -1,0 +1,36 @@
+# 01 — Folder Layout and Layer Roles
+
+<!-- GEN: Why: defines the confirmed directory tree and what each folder owns or must never contain, preventing ad-hoc folders and misplaced logic. Kind: Mandatory. -->
+
+## 1. Confirmed Directory Tree
+
+```text
+{{source_root}}/
+├── {{entry_or_bootstrap_file}}       # {{bootstrap_role}}
+├── {{core_dir}}/                     # Shared foundation, DI, config, and error hierarchy
+│   └── {{core_subfiles}}
+└── {{modules_or_layers_dir}}/
+    └── {{feature_or_layer}}/
+        ├── {{domain_dir}}/           # Pure business entities, contracts, and use cases
+        ├── {{data_dir}}/             # Data sources, storage models, mappers, and repo implementations
+        └── {{delivery_dir}}/         # Route handlers / screens / state holders
+```
+
+## 2. Layer Responsibilities & Ownership (A1, A2, A10)
+
+| Path | Owns | Must Never Contain |
+|---|---|---|
+| `{{layer_path}}` | {{owns}} | {{must_not_contain}} |
+
+- Add a directory or layer file only when the approved feature requires it (**A10**).
+
+## 3. Architectural Naming & Test Mirror
+
+| Kind | Pattern | Example |
+|---|---|---|
+| {{kind}} | `{{pattern}}` | `{{example}}` |
+
+- Test directories mirror the source tree (`{{test_mirror_layout}}`) so every unit's test has one deterministic path.
+
+<!-- custom:start -->
+<!-- custom:end -->

@@ -1,0 +1,53 @@
+# 10-Dimension Comparison Checklist, Deviation Grading, and Verdict
+
+<!-- GEN: Why: defines the 10-dimension comparison rubric, unified BLOCKER / MAJOR / MINOR grading, per-screen evidence table, and visual verdict rules. Kind: Mandatory. -->
+
+> Topic: 10-dimension visual comparison rubric, unified `BLOCKER` / `MAJOR` / `MINOR` deviation grading, per-screen evidence table, and visual verdict rules.
+
+Rules **V6**, **V7**, **V9**, **V10**, and **V12**.
+
+---
+
+## 1. 10-Dimension Visual Comparison Checklist (`V6`, `V7`)
+
+Compare every captured screenshot (`.png`) side-by-side against the approved visual reference (`.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png` and `design.md` `## UI/UX mapping`):
+
+| # | Dimension | Verification Check | `BLOCKER` (`FAIL`) | `MAJOR` (`FAIL`) / `MINOR` |
+|---|---|---|---|---|
+| **1** | **Layout & Hierarchy** | Screen regions appear in approved order (`app bar` → `header/filter` → `content` → `footer/CTA`); grid columns match viewport | Missing/reordered region or overlapping surfaces | `MAJOR`: tablet 2-column layout rendered as stretched 1-column |
+| **2** | **Spacing & Alignment** | Padding, margins, and gaps match token scale; edges and baselines align | Render overflow (`overflowed by N pixels`), clipped text/controls | `MINOR`: 2–4px non-destructive spacing variance |
+| **3** | **Typography** | Font family, size/weight hierarchy, and multi-line wrapping/ellipsis on long data | Truncated critical data (prices, IDs, status) or broken hierarchy | `MAJOR`: unguarded long text breaking row/card height |
+| **4** | **Color & Tokens** | Surface, text, border, and semantic colors (`success`, `warning`, `danger`) use approved theme tokens | Hardcoded color breaking theme/contrast; wrong semantic color | `MINOR`: subtle shade variance inherent to kit widget |
+| **5** | **Shared Components** | Approved UI kit / design-system components used per `design.md` mapping | Raw/custom widget built where an approved kit component fits without a `Core gap` (`D-NN`) | `MAJOR`: wrong component variant (e.g. primary vs secondary) |
+| **6** | **Icons & Media** | Approved icon set, sizes, aspect ratios, and image shimmer/placeholder states | Missing icon, broken asset, or misleading icon semantics | `MINOR`: minor icon size variance |
+| **7** | **4 Mandatory UI States** | `Loading`, `Content`, `Empty`, and `Error` (with retry/recovery) all rendered and verified | Any of the 4 states missing, blank, or crashing | `MAJOR`: loading spinner causes layout jump |
+| **8** | **Responsiveness & Safe Area** | Confirmed viewports (`.superpowers/ux/viewports.json`), portrait/landscape orientation, notch/home-bar/keyboard insets | Control hidden under notch, home indicator, or keyboard | `MAJOR`: horizontal overflow on target viewport |
+| **9** | **Copy & Formatting** | Exact labels, messages, units, and date/currency formatting from spec | Untranslated keys or copy that alters business meaning | `MINOR`: minor punctuation nuance |
+| **10** | **Accessibility Basics** | Touch targets (`>= 48x48dp` Android / `>= 44x44pt` iOS), contrast (`>= 4.5:1`), focus/keyboard navigation | Unreadable contrast or untappable control (`< 36dp`) | `MAJOR`: touch target below `48x48dp` / `44x44pt` |
+
+- **Decisions (`D-NN`)**: When a visual difference from the mockup occurs because an approved UI kit component enforces its own styling (`D-NN`), record it as `ACCEPTED (D-NN)` — never fail code for following an approved `D-NN`.
+
+---
+
+## 2. Deviation Line & Per-Screen Evidence Table (`V9`)
+
+Format each deviation as:
+```text
+<screen>/<state>@<viewport>: [<dimension>] expected <reference detail>, observed <actual detail> — BLOCKER | MAJOR | MINOR | ACCEPTED (D-NN) — <reason>
+```
+
+Record the per-screen visual verification table in the review or verification report:
+
+| Screen (`S-NN`) | State (`Loading` \| `Content` \| `Empty` \| `Error`) | Viewport / Orientation | Data Mode (`FE_MOCKOON` \| `BE_LIVE`) | Reference | Screenshot Artifact | Deviations (`BLOCKER` / `MAJOR` / `MINOR` / `ACCEPTED`) | Result (`PASS` \| `FAIL` \| `BLOCKED` \| `NOT_RUN`) |
+|---|---|---|---|---|---|---|---|
+| `{{screen}}` | `{{state}}` | `{{viewport}}` | `{{data_mode}}` | `{{reference}}` | `{{screenshot_path}}` | `{{deviations}}` | `{{result}}` |
+
+---
+
+## 3. Verdict & Revision Invalidation (`V10`, `V12`)
+
+- **`PASS`**: Zero `BLOCKER` and zero unaddressed `MAJOR` deviations across all required screens, 4 states, and viewports on `REVIEW_REVISION`.
+- **`FAIL`**: One or more `BLOCKER` or `MAJOR` deviations → return `CHANGES_REQUESTED` to `incremental-implementation`.
+- **`BLOCKED` / `NOT_RUN`**: Missing reference, target device, or uncaptured state; never counts as `PASS`.
+- **`N/A`**: Phase has `UI Impact: No` with recorded rationale.
+- Any code, style, asset, or theme fix creates a new revision and invalidates prior visual evidence for the affected screens.

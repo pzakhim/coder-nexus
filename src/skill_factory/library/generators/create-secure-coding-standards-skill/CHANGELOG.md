@@ -2,6 +2,15 @@
 
 Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see `~/.claude/skill-factory/core/sync-protocol.md`). Bump rules: `~/.claude/skill-factory/core/versioning.md`.
 
+## 1.2.0 — 2026-10-24
+
+- Standardized generator to 100% stack-agnostic structure: consolidated `references/` into `base-rules.md` and `deriving-the-model.md` (removed stack-specific `risks-by-stack.md`).
+- Consolidated generated skill references from 6 fragmented files (`shared/01..06`, `branch/04`) into 3 cohesive reference templates (`01-input-auth-and-data-scope.md.tmpl`, `02-secrets-data-and-crypto.md.tmpl`, `03-runtime-risks-deps-and-review.md.tmpl`) plus `SKILL.md.tmpl` with `<!-- {{profile_references}} -->`.
+- Enforced unified `PASS` / `FAIL` deterministic gates and `BLOCKER` / `MAJOR` / `MINOR` review severities (removed all `P1` / `P2` / `P3` severities).
+
+**Affects:** `SKILL.md`, `references/`, `templates/`.
+**Migration:** re-sync generated skills to consolidate `references/01..06` into `references/01..03` and adopt unified flags.
+
 ## 1.1.0 — 2026-10-23
 
 - Unified slot generator versioning for Coder Nexus v3.2.0 core-pack decoupling.

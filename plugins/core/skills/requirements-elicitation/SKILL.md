@@ -1,49 +1,51 @@
 ---
 name: requirements-elicitation
-description: Spec Writer's first stage of every work item (Stage 1A, 1A-0, 1A-G) - reads every source once into a Source Inventory (READ / UNREACHABLE / NOT_PROVIDED), settles the job type and stack, sizes the work, drafts 1-3 outcome goals with observable success signals plus non-goals, anti-goals and source conflicts, and asks the goal question (Confirm / Edit / Narrow) before any other Q-NN. Use at the start of a work item, when a ticket is no longer new, or when the user changes a goal.
+description: "Spec Writer's first stage of every work item (Stage 1A, 1A-0, 1A-G) in dev-team — reads every source once into a Source Inventory (READ / UNREACHABLE / NOT_PROVIDED, including L3 escalation-report.md from bug-squad without re-asking), settles job type and stack scope, sizes the work, drafts 1-3 outcome goals (G-NN) with observable success signals plus non-goals, anti-goals, and source conflicts, and asks the single Goal Question before any other Q-NN."
 ---
 
-# Goal Framing
+# Requirements Elicitation & Goal Framing
 
-Answer one question before any other: **what outcome must this work item deliver, and how will we see that it did?** Tickets are uneven: a one-line task, a parent with many children, the real requirements in a PO document that does not open, a PDF linked in a comment, or an AC added in a comment that contradicts the FR document. Never copy the ticket into requirements. Settle the goals with the user first; every later `Q-NN`, `BR-NN`, `AC-NN`, design element and `PHASE-NN` then serves a `G-NN`.
+Answer one question before any other: **what outcome must this work item deliver, and how will we observe that it did?** Tickets and inputs vary widely — a one-line task, a parent issue with many children, an L3 `escalation-report.md` from `bug-squad`, a PO document that cannot be opened, or a comment that changes an earlier criterion. Never copy raw ticket text blindly into `requirements.md`. Settle the goals (`G-NN`) with the user first; every later `Q-NN`, workflow `W-NN`, `BR-NN`, `AC-NN`, design element, and `PHASE-NN` then serves a confirmed `G-NN`.
 
-Spec Writer only. A workspace `.agents/skills/requirements-specification/` adds the team's own sources and question bank; it never replaces the steps or sections below.
+Used by `spec_writer` in **`dev-team`** (including when invoked from a `bug-squad` L3 escalation). When Gate 1 is already locked (`APPROVED`), `dev-team` skips `spec_writer` and `requirements-elicitation` completely.
 
-## Steps
+## Reference Guides
 
-| Stage | Step | Output | Asks the user? |
+| Guide | Topic |
+|---|---|
+| [01 — Source Intake, Job Type & Sizing](references/01-source-intake-and-job-type.md) | Stage 1A one-read source intake (Huly, downloads, L3 `escalation-report.md`, codebase), `## 0A. Source Inventory`, parent coverage check, Stage 1A-0 job-type classification, stack scope check, and work sizing |
+| [02 — Goal Framing, Split Check & Goal Question](references/02-goal-framing-and-question.md) | Stage 1A-G read-back, hypothesis & confidence, drafting 1–3 `G-NN` goals, non-goals, anti-goals, split check, asking the single Goal Question, and locking `## 0. Goals` |
+
+## Stage Sequence
+
+| Stage | Step | Output | Asks the User? |
 |---|---|---|---|
-| 1A | [Source intake](references/source-intake.md): read Huly, downloads, the prompt and the codebase once | `codebase-notes.md` → `## 0A. Source Inventory` | No |
-| 1A-0 | [Job type, stack and size](references/job-type-and-stack.md) | First `D-NN` (job type) when the ticket is no longer new; `BLOCKED` parts; artifact path | Only when the ticket is no longer new |
-| 1A-0 | Parent coverage (parent tickets) | `Parent part / Covered by / Status` table | Once, about `NO CHILD` parts |
-| 1A-G | [Goal candidates](references/goal-candidates.md): read-back, hypothesis, 1-3 goals, non-goals, anti-goals, conflicts, split check | Draft for the goal question | No |
-| 1A-G | [Goal question](references/goal-question.md) | `D-NN` + `requirements.md` → `## 0. Goals` with `Status: CONFIRMED` | Yes, one question, asked alone |
+| **1A** | [Source intake](references/01-source-intake-and-job-type.md#1-what-to-read-once-stage-1a--no-questions-yet): read Huly, downloads, L3 escalation report, prompt, and codebase once | `codebase-notes.md` → `## 0A. Source Inventory` & `## 3. Verified Baseline Facts` | No |
+| **1A-0** | [Job type, stack & size](references/01-source-intake-and-job-type.md#4-job-type-classification-stage-1a-0) | First `D-NN` (job type) when the ticket is not new; `BLOCKED` stack parts; artifact path (`brief.md` vs `requirements.md`) | Only when the ticket is not new |
+| **1A-0** | [Parent coverage](references/01-source-intake-and-job-type.md#3-parent--child-tickets-coverage) (parent tickets only) | `Parent part | Covered by | Status` table + `D-NN` | Once, about `NO CHILD` parts |
+| **1A-G** | [Goal candidates & split check](references/02-goal-framing-and-question.md#1-drafting-goal-candidates-stage-1a-g-prep) | Read-back, hypothesis + confidence, `G-01..G-03`, non-goals, anti-goals, conflicts, split table | No |
+| **1A-G** | [The Goal Question](references/02-goal-framing-and-question.md#3-asking-the-goal-question-single-ask_question-call) | `D-NN` + `requirements.md` → `## 0. Goals` (`Status: CONFIRMED`) | Yes — 1 question via `ask_question`, asked alone |
 
-Then Stage 1B drafts `requirements.md` + `codebase-notes.md` in the same turn, and the remaining `Q-NN` follow `grilling`.
+In the same turn that `## 0. Goals` is confirmed, Stage 1B drafts `requirements.md` + `codebase-notes.md`, Stage 1A-UX runs [`figma-intake`](../figma-intake/SKILL.md) to extract `S-NN` screens and `W-NN` workflows when UI is in scope, and the remaining `Q-NN` follow [`grilling`](../grilling/SKILL.md).
 
-## Rules
+## Golden Rules (`GF1`–`GF11`)
 
 | # | Rule | Why |
 |---|---|---|
-| GF1 | Read every source before the first question, and never ask what a source or the codebase already answers. | Each avoidable question spends the user's attention on nothing. |
-| GF2 | Never infer the content of an `UNREACHABLE` or `NOT_PROVIDED` source from its title or link text. Ask the user to attach or paste it, or to confirm the work goes ahead without it. | A guessed PO document becomes a confident wrong spec. |
-| GF3 | Huly is read through `huly-task-intake` only, once; consolidate what it returns so later agents never re-query Huly. | One read, one source of truth in `codebase-notes.md`. |
-| GF4 | Job type uses the 8 work-item Types; "change", "verification", "continue" and "restart" are only the words of the question. | One vocabulary for sequences, validators and reviews. |
-| GF5 | A part whose stack has no installed pack is `BLOCKED — out of plugin scope`: say so, list it under Non-goals with the reason, write nothing for it. | Guessed code in an unsupported stack cannot be reviewed or tested here. |
-| GF6 | A goal is an outcome (actor + result + business value) with an observable, technology-agnostic success signal. A feature list, a buzzword ("faster", "scalable") or a solution is not a goal. | Outcomes survive design changes; solutions lock the design before Gate 2. |
-| GF7 | Draft at most 3 goals. When the AC cluster into groups that could ship and be checked on their own, propose linked work items instead of more goals. | `validate_proposal_spec` warns above 3 (`REQ-005`); a batch with more goals is usually several features. |
-| GF8 | A topic still in scope but unclear is a `Q-NN`, not a non-goal. Non-goals are ruled out on purpose and carry a reason. | Fog parked under Non-goals silently drops scope. |
-| GF9 | The goal question is the first `Q-NN` after the job-type question (when that is asked) and is asked alone; only an explicit Confirm, Edit or Narrow answer closes it. | "Sounds good" or "whatever you think" is delegation, not a decision. |
-| GF10 | Your own read of the request appears as your proposal, never as something the user said. No Assumptions section, no informed guesses. | `grilling` Law 2: every inference is confirmed. |
+| `GF1` | Read every available source before the first question; never ask what a readable source or the codebase already answers. | Avoidable questions waste the user's attention. |
+| `GF2` | Never infer the content of an `UNREACHABLE` or `NOT_PROVIDED` source from its title or link text. Ask the user to attach/paste it or confirm proceeding without it (`D-NN`). | A guessed PO document produces a confident wrong spec. |
+| `GF3` | Read Huly once through [`huly-task-intake`](../huly-task-intake/SKILL.md) and consolidate into `codebase-notes.md` so no downstream agent re-queries Huly. | Single source of truth across all roles and departments. |
+| `GF4` | Job type maps onto the 8 canonical `work-item-contract` Types (`feature`, `bugfix`, `refactor`, `optimization`, `migration`, `maintenance`, `investigation`, `documentation`). | Unified vocabulary for sequences, validators, and reviews. |
+| `GF5` | Any part whose stack has no installed pack in `.agents/stack.json` is `BLOCKED — out of plugin scope`: report it, list it under Non-goals with the reason, and write no spec/design/code for it. | Unsupported stacks cannot be validated or tested in this workspace. |
+| `GF6` | A goal is a user/business outcome (`<actor> can <result> so that <business value>`) with an observable, technology-agnostic success signal — never a feature list, buzzword, or Gate 2 technical solution. | Outcomes survive architecture changes; technical solutions belong to Gate 2. |
+| `GF7` | Draft at most 3 goals (`G-01..G-03`). When AC cluster into independently shippable groups, propose linked work items via the split check instead of adding more goals. | `validate_proposal_spec` (`REQ-005`) flags >3 goals; larger batches are multiple features. |
+| `GF8` | An unclear topic that remains in scope is a `Q-NN`, never a non-goal. Non-goals are explicitly ruled out and carry a reason. | Parking unclear items under Non-goals silently drops required scope. |
+| `GF9` | The Goal Question is asked alone via `ask_question`; only an explicit `Confirm goals`, `Edit goals`, or `Narrow to G-01 only` closes it. | Vague replies (*"sounds good"*, *"whatever you think"*) are delegation, not a recorded decision. |
+| `GF10` | Present your own synthesis as a proposal to confirm, never as something the user stated. Never write an `Assumptions` section or unconfirmed guesses. | `grilling` Law 2: every inference is confirmed as a `D-NN`. |
+| `GF11` | **Zero-Re-Ask Continuity:** When starting from a `bug-squad` L3 `escalation-report.md`, ingest its reproduction, root cause, and impact directly into `codebase-notes.md` without re-asking symptom or reproduction steps. When Gate 1 is already locked (`APPROVED`), `dev-team` skips `requirements-elicitation` completely. | Eliminates redundant questioning across handoffs. |
 
-## Goal lock (pointer)
+## Hand-Off Contract
 
-After confirmation the goals are locked for the rest of the work item: every later question names its `G-NN`, every `BR-NN` / `AC-NN` cites one (`REQ-005`), design maps them in `## Goal alignment` (`DESIGN-007`), phases deliver them (`PLAN-V-010`), and gate presentations open with a one-line goal recap. The rule itself, including how a goal change re-opens Gate 1, lives in [`work-item-contract`](../work-item-contract/SKILL.md). This skill only produces the confirmed goals.
-
-## Hand-off
-
-- `codebase-notes.md`: `## 0A. Source Inventory` filled; the job-type, goal and parent-coverage answers in `## 1. Decision Log (D-NN)`.
-- `requirements.md` (or `brief.md` on the small path): `## 0. Goals` with each `G-NN` `CONFIRMED` and citing its `D-NN`, plus Non-goals and Anti-goals.
-- The sufficiency summary's "Next" line seeds the `Q-NN` queue that `grilling` orders.
-
-Sources and ideas not adopted: [references/sources.md](references/sources.md).
+- `codebase-notes.md`: `## 0A. Source Inventory` populated; job-type, parent-coverage, and goal confirmation recorded in `## 1. Decision Log (D-NN)`.
+- `requirements.md` (or `brief.md` on the small path): `## 0. Goals` with each `G-NN` set to `CONFIRMED` and citing its `D-NN`, plus `- **Non-goals**:` and `- **Anti-goals**:`.
+- Goal lock (`work-item-contract`) is now active: every subsequent `Q-NN`, `W-NN`, `BR-NN`, `AC-NN`, design element, and `PHASE-NN` must serve a confirmed `G-NN`.

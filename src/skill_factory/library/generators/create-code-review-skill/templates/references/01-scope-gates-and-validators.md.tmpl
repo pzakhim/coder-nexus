@@ -1,0 +1,33 @@
+# 01 — Scope, Verification Gates, and Validators
+
+> Topic: Fixed revision scope, read-only discipline, independent gate execution, and boundary validation (`R1`–`R3`, `R6`, `R9`)
+
+<!-- GEN: Why: a review of a moving tree or unverified claims proves nothing; the reviewer must lock the revision and rerun gates independently. Kind: Mandatory. -->
+
+## 1. Fixed Revision & Read-Only Discipline (`R1`, `R2`, `R9`)
+
+- **Fixed Revision (`R1`):** Record `BASE_REVISION` and `REVIEW_REVISION` plus staged, unstaged, and untracked files (`git status --short`, `git diff --stat <BASE_REVISION>..<REVIEW_REVISION>`). Review exactly that tree.
+- **Strictly Read-Only (`R2`):** Never edit application code, tests, generated files, schemas, or dependencies. Write only the review report.
+- **Diff & Caller Scope (`R9`):** Review changed files and any callers or module boundaries broken by the diff. Pre-existing legacy debt outside the diff is noted as a non-blocking remark, never a blocker.
+
+---
+
+## 2. Independent Gate Execution (`R3`, `R6`)
+
+1. **Rerun Hand-off & AC Commands (`R6`):** Treat Code Writer hand-off rows as claims. Run the analyzer, linter, typechecker, validators, and focused tests yourself on `REVIEW_REVISION`:
+   - `{{lint_cmd}}`
+   - `{{typecheck_cmd}}`
+   - `{{test_cmd}}`
+   `NOT_RUN`, `BLOCKED`, and `UNVERIFIED` never count as `PASS`.
+2. **Cold Bug-Hunt Pass (`R3`):** Run `{{bug_hunt_link}}` on the fixed scope before reading specification documents so design intent does not mask runtime defects.
+
+---
+
+## 3. Architecture & Cross-Boundary Validators
+
+| Rule / Check | Boundary | Verification Method | Failure Severity |
+|---|---|---|---|
+| `{{boundary_rule_id}}` | {{boundary_description}} | `{{arch_validator_cmd}}` | `BLOCKER` |
+
+<!-- custom:start -->
+<!-- custom:end -->

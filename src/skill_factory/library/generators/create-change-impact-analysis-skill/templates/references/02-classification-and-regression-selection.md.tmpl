@@ -1,0 +1,41 @@
+# 02 — Classification and Regression Selection (`CX3`–`CX6`)
+
+<!-- GEN: Why: every traced hit must be turned into either a concrete implementation task, a targeted regression test, a flagged contract break, or an explicit open question Q-NN. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+## 1. Classifying Every Traced Hit (`CX3`)
+
+Every hit discovered by the tracing recipes in `01` must be recorded in `change-impact.md` with its exact `file:symbol` (or route/table name) and classified into one of two action buckets:
+
+| Classification | Meaning | Downstream Handover | Required Evidence |
+|---|---|---|---|
+| `behavior changes` | The caller, screen, query, job, or consumer must be updated to support the new or modified behavior. | Becomes an implementation task in `implementation-planning` (`plan.md`). | Exact `file:symbol` path, current behavior at baseline revision, and required change. |
+| `regression only` | The caller or consumer must keep working unchanged, and could break if the shared dependency regresses. | Handed to `quality-planning` (`test-plan.md`) and added to the regression run list. | Exact `file:symbol` path, why it is exposed, and the covering test suite. |
+
+When an affected consumer is owned outside the current team or repository, record the owning team/system alongside the hit.
+
+## 2. Flagging Contract Breaks (`CX5`)
+
+Flag any change that breaks an existing contract so `git-workflow` can apply the right version bump and downstream consumers can migrate:
+
+- **Contract break rule in this workspace:** {{contract_break_rule}}
+- **What counts as a contract break:** Removing or renaming an endpoint/field, tightening request validation, changing response types or status codes, altering published event payloads, or dropping/renaming database columns read by existing releases.
+
+## 3. Handling Unknown Impact (`CX6`)
+
+- **Unknown is never `"no impact"`:** Whenever static search (`rg`) or dependency graphs cannot confirm whether an external client, dynamic caller, or production job uses a symbol, record an open question `Q-NN` with the owner who can answer it.
+- **Evidence required for `"no impact"`:** A category or module may be marked `"no impact"` only after running the category's tracing command and recording zero affected callers or consumers.
+
+## 4. Targeted Regression Selection (`CX4`)
+
+<!-- GEN: Rule CX4. Map workspace modules/areas to real unit, integration/API, and UI end-to-end suites with runnable CLI commands. -->
+
+Select the smallest set of test suites that covers every `behavior changes` and `regression only` hit:
+
+| Module / Area | Unit Suite | Integration / API Suite | End-to-End / UI Suite | Runnable Command |
+|---|---|---|---|---|
+{{suite_rows}}
+
+Hand the selected regression suites and affected scenarios to `quality-planning` as regression test cases; developer unit tests remain with the Code Writer.
+
+<!-- custom:start -->
+<!-- custom:end -->

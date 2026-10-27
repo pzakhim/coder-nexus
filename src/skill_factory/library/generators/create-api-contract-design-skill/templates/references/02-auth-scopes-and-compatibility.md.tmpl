@@ -1,0 +1,61 @@
+# Authentication Scopes, Compatibility & Versioning Policy
+
+> Topic: Per-endpoint authentication/authorization scopes and anti-IDOR rules (`CT5`), additive vs. breaking change classification (`CT7`), the `D-NN` breaking change protocol, and the One-Version Rule (`CT8`) for {{project_name}}.
+
+<!-- GEN: Why: Group authentication/authorization contract rules, anti-IDOR tenant ownership, additive vs. breaking classification, and deprecation/versioning policy into a single reference file ({{ref_02}}). -->
+
+## 1. Explicit Authentication, Authorization Scopes & Anti-IDOR (`CT5`)
+
+Security is part of the public API contract — never hide authentication in undocumented middleware or accept client-supplied identity fields in the request body:
+
+1. **Declare security schemes in the contract**:
+   - Bind protected routes to the project's declared security dependency (`{{auth_scheme}}` via `{{auth_dependency_path}}`) so the generated contract (`{{snapshot_path}}`) emits explicit `security` and `components.securitySchemes` blocks.
+   - Public endpoints (`GET /health`, `/auth/login`, signed webhooks) must explicitly declare why they are unauthenticated (and require HMAC signature verification for webhooks).
+2. **`401 Unauthorized` vs. `403 Forbidden`**:
+   - Return `401 Unauthorized` when credentials are missing, malformed, expired, or revoked.
+   - Return `403 Forbidden` when the principal is authenticated but lacks the required role, permission, or OAuth scope for the operation.
+3. **Anti-IDOR (Broken Object Level Authorization) & Tenant Isolation**:
+   - Resolve `user_id`, `tenant_id`, and `org_id` **exclusively** from the verified authentication token/session dependency — never from request body fields, headers, or query parameters (unless the caller holds an explicit cross-tenant admin scope).
+   - Every single-resource read/write/delete query scopes by `(resource_id, tenant_id)`.
+   - When a resource ID exists in the database but belongs to a **different tenant or unauthorized owner**, return **`404 Not Found`** (not `403 Forbidden`) whenever resource existence itself is sensitive, preventing UUID/ID enumeration.
+
+---
+
+## 2. Additive vs. Breaking Contract Changes (`CT7`)
+
+Treat the committed contract (`{{snapshot_path}}`) as a strict promise to all deployed consumers (mobile apps, web frontends, partner integrations, background workers). Under **Hyrum's Law**, any observable change in wire format, status codes, or error codes can break consumers:
+
+| Change Category | Classification | Rule |
+|---|---|---|
+| Adding a new endpoint or HTTP method | **Additive (Safe)** | Allowed in minor/feature releases; update `{{snapshot_path}}`. |
+| Adding an **optional** request field or query parameter with a backward-compatible default | **Additive (Safe)** | Existing callers omitting the field must observe identical behavior. |
+| Adding a new field to a response object | **Additive (Safe)** | Allowed when consumers ignore unknown response keys. |
+| Removing or renaming an endpoint, path parameter, query parameter, or response field | **Breaking** | **Forbidden** without an approved `D-NN` Decision Record (`CT7`). |
+| Changing a field's type, format, or nullability (`string` → `int`, non-null → `null` in response, optional → required in request) | **Breaking** | **Forbidden** without an approved `D-NN` Decision Record (`CT7`). |
+| Tightening request validation bounds (`max_length: 255` → `50`) or removing an enum value accepted in requests | **Breaking** | **Forbidden** without an approved `D-NN` Decision Record (`CT7`). |
+| Adding a new enum value to a **response** field | **Potentially Breaking** | Breaking for clients with exhaustive `switch` decoding unless the field is documented as an open enum with an `unknown` fallback. |
+| Changing success/error HTTP status codes or machine-readable `error.code` values | **Breaking** | **Forbidden** without an approved `D-NN` Decision Record (`CT7`). |
+
+---
+
+## 3. The 4-Step Breaking Change Protocol (`D-NN`, `CT7`)
+
+When a breaking contract change is unavoidable:
+
+1. **Author Decision Record `D-NN` in `design.md`**: Document the business justification, the exact endpoints/schemas affected, all impacted consumers, and the migration timeline.
+2. **Prefer Expand-and-Contract (Parallel Dual-Support)**:
+   - **Phase 1 (Expand)**: Add the new optional field or v2 endpoint alongside the existing field/endpoint; populate both in responses and accept both in requests. Mark the old field/endpoint `deprecated=True` in the contract (`CT8`).
+   - **Phase 2 (Migrate Consumers)**: Update `api_contract.json` (`shared_contracts/api_handshake_protocol.md`) and migrate all downstream clients.
+   - **Phase 3 (Contract)**: Remove the deprecated field/endpoint only after telemetry confirms zero traffic and the sunset date has passed.
+3. **Document in `contracts/contract-change.md`**: Record the base vs. head diff classification (`breaking` with `D-NN` reference) alongside the updated `{{snapshot_path}}`.
+4. **Update Downstream Handshake**: Synchronize `api_contract.json` before closing the task (`CT9`).
+
+---
+
+## 4. Deprecation & Versioning Policy (`CT8`)
+
+- **One-Version Rule within a major prefix (`/api/v1/...`)**: Do not proliferate `/api/v1.1`, `/api/v2`, `/api/v3` for routine feature work. Evolve `/api/v1` additively using Expand-and-Contract.
+- **Major version bump (`/api/v2/...`)**: Reserved strictly for structural domain rewrites approved via `D-NN` where Expand-and-Contract on `/api/v1` is impossible.
+- **Deprecation headers & metadata**: Deprecated endpoints must set `deprecated=True` in the OpenAPI/schema declaration and emit RFC 8594 `Deprecation: true` and `Sunset: <HTTP-date>` headers with a `Link: <successor-url>; rel="successor-version"` header.
+
+See [`references/01-conventions-schemas-and-idempotency.md`]({{ref_01}}) for DTO and pagination rules, and [`references/03-snapshot-handshake-and-review.md`]({{ref_03}}) for snapshot diffing and review severity gates.

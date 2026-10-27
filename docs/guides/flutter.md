@@ -9,7 +9,8 @@ A profile tells the agents where the project's reusable building blocks (base sc
 | Profile | Choose it when the project… | Agents will… |
 |---|---|---|
 | `external-standard` | has no shared foundation or design system | use standard Flutter widgets and add only the structure the feature needs |
-| `external-structured` | already has its own core layer or design system | inspect and reuse the existing patterns and components |
+| `external-structured` | already has its own core layer or design system (`lib/core/`, `lib/shared/`) | inspect and reuse the existing patterns and components |
+| `imespro` | resolves the internal sibling packages (`../app-core`, `../app-util`, `../app-ui-kit`) | read each package's `guidance/GUIDE.md` and reuse its foundation APIs and UI Kit components |
 
 All profiles ship in the same Flutter pack; no extra install is needed.
 
@@ -45,11 +46,15 @@ Later roles keep this choice and pass it to the architecture validators. To chan
 
 ## Where the guidance lives
 
+When you run `coder-nexus setup flutter --profile <profile>` (or sync the plugin into a configured workspace), `apply_workspace_profile` copies the active profile's reference files (`profiles/<profile>/*.md`) into each installed Flutter skill's `references/` folder and injects them into the skill's `SKILL.md` table:
+
 | Location | Content |
 |---|---|
-| `skills/flutter-core-package-usage/` (installed) | How each role discovers and reuses foundations |
-| `skills/flutter-core-package-usage/references/` | One reference per profile |
-| Each shared package's `guidance/GUIDE.md` | When to use (and not use) each API, with examples |
+| `skills/flutter-architecture-design/references/` | Profile-specific foundation discovery and `design.md` planning rules |
+| `skills/flutter-clean-architecture/references/` | Profile-specific layer, state, error, and navigation boundaries |
+| `skills/flutter-clean-code/references/` | Profile-specific base classes, result wrappers, and coding contracts |
+| `skills/flutter-ui-kit-mapping/references/` & `skills/flutter-visual-quality/references/` | Profile-specific component reuse and runtime visual parity rules |
+| Each shared package's `guidance/GUIDE.md` (`imespro`) | When to use (and not use) each `app_core`, `app_util`, and `app_ui_kit` API, with examples |
 
 ## Good to know
 

@@ -27,7 +27,7 @@ The Code Reviewer reuses these skills as rubrics; see [reviewer-skill-family.md]
 ## Linking
 
 - Refer to siblings by path: `.agents/skills/<name>/SKILL.md`. If a sibling does not exist yet, write "not set up in this workspace" instead of a dead link, and add a CHANGELOG-free note in the generated skill's custom block only if the user wants one.
-- Fullstack: link the branch file when it exists (e.g. `.agents/skills/clean-architecture/references/be/05-dependency-rules.md`).
+- Link cohesive reference files directly under `references/01..03-*.md` (see [layouts.md](layouts.md)).
 - Coder Nexus base rules and fixed skills are base inputs for generators, never runtime links from a workspace skill.
 
 ## Shared vocabulary
@@ -38,8 +38,9 @@ The Code Reviewer reuses these skills as rubrics; see [reviewer-skill-family.md]
 | Task | One ordered step inside a phase, with its own file scope and check |
 | Gate | A user approval (requirements, design, plan…) — agents never approve for the user |
 | Evidence | Exact command, revision, target and result |
-| `PASS` / `FAIL` | A check ran and passed / failed |
+| `PASS` / `FAIL` | Deterministic CLI/tool gate result: a check ran and passed / failed |
 | `NOT_RUN` / `BLOCKED` / `UNVERIFIED` | Not a pass. Must be reported as such |
+| `BLOCKER` / `MAJOR` / `MINOR` | Unified 3-tier finding severity scale (`shared_contracts/flags_and_statuses.md`) |
 
 Generated skills keep the workspace's own vocabulary when it already has one (P1), and map it to this table.
 

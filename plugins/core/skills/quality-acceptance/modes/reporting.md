@@ -1,6 +1,7 @@
 # Mode: reporting
+> Topic: Writing the acceptance report, per-AC results, defect blocks, and hand-off routing for the coordinator and Docs Writer.
 
-Write one acceptance report per run at `vN/evidence/final_qa/<revision>/acceptance-report.md` (or `evidence/<phase-id>/<revision>/` for a phase the plan marks for its own run), verdict first. The evidence-row and status vocabulary are the shared ones in `work-item-contract` → [handoff-and-status.md](../../work-item-contract/references/handoff-and-status.md).
+Write one acceptance report per run at `vN/evidence/final_qa/<revision>/acceptance-report.md` (or `evidence/<phase-id>/<revision>/` for a phase the plan marks for its own run), verdict first. The evidence-row and status vocabulary are the shared ones in `work-item-contract` (`references/handoff-and-status.md` §7).
 
 ## Report shape
 
@@ -17,7 +18,7 @@ Limitations: <stubbed providers, cases not run and why, roles not covered, flaky
 ## AC coverage
 | AC-NN | Owning phase | Cases | Result | Evidence |
 ## Results
-| Case | Covers | Priority | Level | Result | Evidence | Defect |
+Case table: Case ID | AC ID | Layer | Severity (BLOCKER|MAJOR|MINOR) | Status | Evidence (command or screenshot) | Notes.
 ## Evidence
 | Claim | Command (+cwd) | Revision | Exit code | Key output | Result |
 ## Defects
@@ -54,14 +55,14 @@ Evidence:   <files and evidence rows>
 Area:       <suspected screen / endpoint / module, if obvious — never a code fix>
 ```
 
-Severity and confidence follow the defect scale in [handoff-and-status.md](../../work-item-contract/references/handoff-and-status.md) §9. For a test defect, `CONFIRMED` means reproduced; `PLAUSIBLE` means seen once or dependent on something not visible, with what would confirm it.
+Severity and confidence follow the defect scale in `work-item-contract` (`references/handoff-and-status.md` §9). For a test defect, `CONFIRMED` means reproduced; `PLAUSIBLE` means seen once or dependent on something not visible, with what would confirm it.
 
 Defect status: `open` → `fixed-awaiting-retest` (new reviewed revision) → `verified` (re-test `PASS`), or `wont-fix` only with the user's recorded `D-NN`.
 
 ## Hand-off
 
 - To the coordinator: verdict, counts, report path, defect list, plan and spec conflict rows, open questions. The coordinator routes defects to the Code Writer under the owning phase, writes `PCR-NN` from conflict rows, and takes the verdict to the user.
-- To Docs Writer (via the coordinator): the report path for `as-built.md`.
+- To Docs Writer (via the coordinator): in `final_qa` when the verdict is `ACCEPTED`, the Coordinator dispatches `docs_writer` once with the report path to record `vN/as-built.md` (`RECORDED`).
 - Never post results to Huly, chat or email; never present the run as finished while any case lacks a result.
 
 ## Hygiene

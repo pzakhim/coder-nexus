@@ -1,0 +1,66 @@
+# 02 — Test Doubles, Fixtures & Assertion Quality
+
+<!-- GEN: Why: mocking the wrong boundary or writing tautological assertions makes green tests prove nothing. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+Rules **U1**, **U4**, **U5**, **U6**, **U7**, **U8**, **U9**, and **U11**.
+
+---
+
+## 1. Doubles Hierarchy: `Real > Fake > Stub > Mock` (`U4`, `U5`, `U6`)
+
+Move down the hierarchy only when the real dependency performs I/O, is non-deterministic, or has external side effects:
+
+| Dependency Type | What to Use | Forbidden (`BLOCKER` / `MAJOR`) |
+|---|---|---|
+| **Subject under test & pure domain collaborators (entities, value objects, mappers, policies)** | **Real** implementation | Mocking or stubbing the subject under test (`U5`) |
+| **Application-owned port boundaries (repositories, unit of work, gateways, use cases)** | **Fake** or typed interface mock preserving the port's exact return types and domain errors | Unspecced/loose mocks that accept arbitrary calls or return partial shapes |
+| **External HTTP / SDK adapters** | **Transport stub / mock** at the HTTP/SDK boundary | Live network calls (`U4`) |
+| **Authorization, ownership & data-scope guards** | **Real** policy/guard code | Mocking a guard to always return `true` / allow (`U6`) |
+| **Database queries & schema constraints** | Covered by **integration tests** (`{{verification_link}}`) | Mocking database sessions/drivers inside unit tests (`U6`) |
+
+---
+
+## 2. Reference Unit Test Patterns
+
+### Pattern A — Service / Use Case Test (Pass + Fail + Rollback/No-Side-Effect)
+
+```{{lang}}
+{{usecase_or_service_test_snippet}}
+```
+
+### Pattern B — Schema / Model / Mapper Boundary Test
+
+```{{lang}}
+{{mapper_or_schema_test_snippet}}
+```
+
+### Pattern C — Controller / Router / State Machine Test
+
+```{{lang}}
+{{controller_or_state_test_snippet}}
+```
+
+---
+
+## 3. Right-Reason Red Failure (`U14`)
+
+| Red Run Output | Meaning | Next Action |
+|---|---|---|
+| Expected assertion failure or missing expected error | **Right reason** | Proceed to write the minimal production code |
+| Test passes immediately | Behavior already exists or test is tautological | Inspect and fix the test so it fails on the missing behavior |
+| Syntax, import, fixture, or type error | **Not red yet** (broken setup) | Fix the test setup and re-run until the assertion itself fails |
+| `0 tests collected` / `skipped` / deselected | **Not run (`NOT_RUN`)** | Fix test discovery/filter; never record as red or green |
+
+---
+
+## 4. Independent Expectations, Determinism & Mutation Check (`U7`, `U8`)
+
+- **Independent Literal Expectations (`U8`):** Assert against concrete literals from `design.md` (Pass/Default, Fail, Empty rows). Never copy production formulas into the test to compute `expected`. Never write `isNotNull` / `is not None` as the sole assertion.
+- **Determinism (`U7`):**
+  - **Time:** {{time_determinism}}
+  - **IDs / Randomness:** {{id_random_determinism}}
+  - **Async & State Isolation:** {{async_state_determinism}}
+- **Pre-Handoff Mental Mutation Check:** Before marking a task done, verify that at least one test turns red if you: (1) flip a branch condition, (2) remove an error/refusal guard, (3) skip a state transition or commit, or (4) return an empty/default value.
+
+<!-- custom:start -->
+<!-- custom:end -->

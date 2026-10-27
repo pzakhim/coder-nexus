@@ -1,0 +1,76 @@
+# Contract Snapshot, Diffing, Handshake & Review Gates
+
+> Topic: Deterministic contract snapshot export (`CT1`), base-vs-head compatibility diffing (`CT7`), cross-repo `api_contract.json` handshake (`CT9`), CLI `PASS`/`FAIL` gates, and `BLOCKER`/`MAJOR`/`MINOR` review rubric for {{project_name}}.
+
+<!-- GEN: Why: Provide deterministic commands for exporting and diffing the committed contract snapshot, maintaining the cross-repo api_contract.json handshake, and enforcing unified PASS/FAIL and BLOCKER/MAJOR/MINOR review gates ({{ref_03}}). -->
+
+## 1. Exporting the Committed Contract Snapshot (`CT1`)
+
+The contract snapshot (`{{snapshot_path}}`) is a committed, reviewable artifact in Git — never rely on a transient local server URL as proof of contract compliance:
+
+1. **Export command**:
+   ```bash
+   {{snapshot_export_cmd}}
+   ```
+2. **Determinism rules**:
+   - Export keys in deterministic sorted order (`sort_keys=True` / canonical JSON formatting) so regeneration produces zero noisy diff lines.
+   - Run the export without requiring external network connections or live database queries.
+3. **Drift verification**:
+   ```bash
+   {{snapshot_export_cmd}} && git diff --exit-code {{snapshot_path}}
+   ```
+
+---
+
+## 2. Base vs. Head Contract Diff Workflow (`CT7`)
+
+Before opening a pull request or handing off to Reviewer, compare the base branch contract against the working tree contract:
+
+1. **Extract the base snapshot from Git**:
+   ```bash
+   git show origin/develop:{{snapshot_path}} > contracts/openapi.base.json
+   ```
+2. **Run the compatibility diff**:
+   ```bash
+   {{snapshot_diff_cmd}}
+   ```
+3. **Write `contracts/contract-change.md`** whenever `{{snapshot_path}}` changes:
+   - **Classification**: `additive` or `breaking (approved by D-NN in design.md)`.
+   - **Added / Modified / Deprecated operations**: List exact `METHOD /path` (`operationId`) and schema changes.
+   - **Auth & Tenant Scope Impact**: Confirm `security` scheme and tenant ownership (`CT5`) for every added or modified endpoint.
+
+---
+
+## 3. Cross-Repo Handshake (`api_contract.json`, `CT9`)
+
+When an API change affects a separate client repository (mobile app, web frontend, or partner service), synchronize `api_contract.json` in accordance with `shared_contracts/api_handshake_protocol.md`:
+
+- Every endpoint entry in `api_contract.json` records `method`, `path`, `operation_id`, `auth_required`, `request_schema`, `response_schema`, `error_codes`, and `idempotency_key_required`.
+- Never mark a backend feature phase ready for client integration if `{{snapshot_path}}` and `api_contract.json` disagree on field names, types, nullability, or status codes.
+
+---
+
+## 4. Deterministic CLI Verification Gates (`PASS` / `FAIL`)
+
+All automated checks report strictly **`PASS`** or **`FAIL`** (`shared_contracts/flags_and_statuses.md`; `NOT_RUN`, `BLOCKED`, and `UNVERIFIED` are never `PASS`):
+
+| Gate | Command | `PASS` Criterion | `FAIL` Action |
+|---|---|---|---|
+| **G1 — Snapshot Drift** | `{{snapshot_export_cmd}} && git diff --exit-code {{snapshot_path}}` | Exit `0` — `{{snapshot_path}}` is up-to-date | Re-export and stage `{{snapshot_path}}` |
+| **G2 — Breaking Diff Check** | `{{snapshot_diff_cmd}}` | Exit `0` — zero unapproved breaking changes | Revert breaking change or obtain approved `D-NN` in `design.md` |
+| **G3 — Raw Dict / Unbounded List Scan** | `rg -n "{{raw_wire_pattern}}" {{router_glob}}` | `0` matches | Replace raw dicts/ORM models with explicit DTOs (`CT2`) and bounded pagination (`CT6`) |
+| **G4 — Contract Test Suite** | `{{contract_test_cmd}}` | Exit `0` | Fix failing contract/schema tests before handoff |
+
+---
+
+## 5. Code Review Severity Rubric (`BLOCKER` / `MAJOR` / `MINOR`)
+
+Reviewer findings use the unified 3-tier scale from `shared_contracts/flags_and_statuses.md` (never use `P0`–`P3`):
+
+| Severity | Contract Violation Examples |
+|---|---|
+| **`BLOCKER`** | Unapproved breaking change (`CT7`) without `D-NN`; committed `{{snapshot_path}}` out of sync with code (`CT1`); missing authentication/scope dependency or IDOR tenant leak (`CT5`); ORM/persistence model or sensitive secret field exposed directly on the wire (`CT2`); `api_contract.json` out of sync with `{{snapshot_path}}` (`CT9`). |
+| **`MAJOR`** | Endpoint returns ad-hoc error shape instead of `{{error_envelope_model}}` (`CT3`); collection endpoint lacks bounded pagination (`max_limit`) or deterministic tie-breaker sort (`CT6`); state-changing `POST` lacks `Idempotency-Key` protection (`CT10`); wrong HTTP status code or missing `responses=` declaration (`CT4`); input DTO omits strict unknown-field rejection (`CT2`). |
+| **`MINOR`** | Missing or non-standard `operationId` / tag (`CT9`); missing field description or example in schema metadata; minor naming inconsistency in non-breaking internal schema alias. |
+
+See [`references/01-conventions-schemas-and-idempotency.md`]({{ref_01}}) for DTO/pagination patterns and [`references/02-auth-scopes-and-compatibility.md`]({{ref_02}}) for auth and compatibility rules.

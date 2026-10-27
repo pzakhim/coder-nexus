@@ -1,0 +1,51 @@
+# 03 — Runtime Risks, Dependencies, Audit Gates & Review Rubric
+
+<!-- GEN: Why: pairs stack-specific unsafe vs. safe patterns for injection, transport, and files with supply-chain vetting, deterministic CLI gates, handoff triggers, and the BLOCKER/MAJOR/MINOR review rubric (SC4, SC5, SC9, SC10, SC11, SC14). Kind: Mandatory. -->
+
+## 1. Runtime Risk Matrix — Unsafe vs. Safe (`SC4`, `SC5`, `SC9`, `SC10`)
+
+| Risk Area | Unsafe Pattern (Forbidden) | Safe Workspace Pattern | Rule |
+|---|---|---|---|
+| **Injection** | {{unsafe_injection_pattern}} | {{safe_injection_pattern}} | `SC4` |
+| **Output / WebView / Redirect** | {{unsafe_output_pattern}} | {{safe_output_pattern}} | `SC5` |
+| **Transport & Outbound Calls** | {{unsafe_transport_pattern}} | {{safe_transport_pattern}} | `SC9` |
+| **File & Payload Handling** | {{unsafe_file_pattern}} | {{safe_file_pattern}} | `SC10` |
+
+---
+
+## 2. Dependency Supply-Chain Vetting (`SC11`)
+
+1. Add third-party dependencies only when standard library or existing workspace packages cannot solve the problem.
+2. Pin versions in the lockfile (`{{lockfile_name}}`) and verify native/runtime permissions before adoption.
+3. Run `{{dependency_audit_cmd}}` to check for known security advisories.
+
+---
+
+## 3. Deterministic Pre-Handoff Security Gates (`PASS` / `FAIL`)
+
+```bash
+{{security_gate_commands}}
+```
+
+---
+
+## 4. Handoff Review Triggers (`SC14`) & Severity Rubric (`BLOCKER` / `MAJOR` / `MINOR`)
+
+### Handoff Triggers (`SC14`)
+Flag any diff touching these areas in the Code Writer handoff together with the guard that protects it:
+- [ ] Authentication, token refresh, session storage, or password/biometric flows (`SC6`, `SC7`)
+- [ ] Object-level authorization guards, role/capability checks, or route guards (`SC2`)
+- [ ] Data-scope filters, scoped cache keys, or background jobs (`SC3`)
+- [ ] File uploads/downloads, deep links, WebViews, or outbound URL calls (`SC5`, `SC9`, `SC10`)
+- [ ] New or upgraded dependencies or security linter suppressions (`SC11`)
+
+### Review Severity Rubric (`BLOCKER` / `MAJOR` / `MINOR`)
+
+| Severity | Security Triggers |
+|---|---|
+| **`BLOCKER`** | • Missing object-level authorization or data-scope filter (`SC2`, `SC3`)<br>• SQL, command, path, or script injection vector (`SC4`, `SC5`)<br>• Hardcoded secret in source/bundle or plaintext token storage (`SC6`)<br>• Disabled TLS certificate verification in production or fail-open exception catch (`SC9`, `SC13`) |
+| **`MAJOR`** | • Unbounded input collection or missing unknown-field rejection at a trust boundary (`SC1`)<br>• Sensitive PII, passwords, or tokens written to logs or exposed in error responses (`SC8`)<br>• Outbound network call without timeout/allow-list or unbounded file upload (`SC9`, `SC10`)<br>• Unpinned or un-audited third-party dependency addition (`SC11`) |
+| **`MINOR`** | • Defense-in-depth hardening or missing `SC14` handoff trigger annotation where runtime guards are already present |
+
+<!-- custom:start -->
+<!-- custom:end -->

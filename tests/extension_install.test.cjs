@@ -71,8 +71,8 @@ for (const [command, stack] of [
                         assert.ok(fs.statSync(path.resolve(path.dirname(document), link)).isFile(), link);
                     }
                 }
-                for (const ref of ['01_profile_imespro.md', '02_profile_external_structured.md', '03_profile_external_standard.md']) {
-                    assert.ok(fs.existsSync(path.join(installed, 'skills/flutter-core-package-usage/references', ref)));
+                for (const ref of ['01-layout-and-layer-roles.md', '02-dependencies-di-and-contracts.md', '03-screens-adding-and-splitting.md']) {
+                    assert.ok(fs.existsSync(path.join(installed, 'skills/flutter-clean-architecture/references', ref)));
                 }
             }
             assert.ok(fs.existsSync(path.join(workspace, '.agents/agents/code_reviewer.md')));
@@ -116,7 +116,7 @@ test('a different pack replaces the installed one only after the user confirms; 
         assert.equal(prompts.length, 1);
         assert.match(prompts[0], /Replace it with/);
         assert.deepEqual(stackOf(), [['flutter', ['apps/mobile']]]);
-        assert.ok(fs.readdirSync(skillsDir).includes('flutter-core-package-usage'));
+        assert.ok(fs.readdirSync(skillsDir).includes('flutter-clean-architecture'));
 
         // Different pack, user confirms: replaced, never merged.
         state.answer = 'Replace';
