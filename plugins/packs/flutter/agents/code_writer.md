@@ -1,11 +1,7 @@
----
-skills:
-  - {{slot:core-package-usage}}
----
 ## Flutter rules
 
 ### Flutter Architecture & Screen Rules
-Apply the Code Writer rules of `{{slot:core-package-usage}}` for the `architecture_profile.mode` in `design.md`, with that profile's reference (`references/01_profile_imespro.md`, `02_profile_external_structured.md` or `03_profile_external_standard.md`). On top of the skill:
+Apply the active `architecture_profile.mode` recorded in `design.md` (and `.superpowers/setup.json`) using the profile contracts in `{{slot:clean-architecture}}` and `{{slot:clean-code}}`:
 
 - **`imespro`**: `coder-nexus setup flutter --check` must be `READY`. Read the relevant `../app-*/guidance/GUIDE.md` sections, `examples/` and `lib/*.dart` signatures. Use exactly the core APIs the `Core usage` table marks as reused and build in the Client only what it records as a gap; never edit, format or copy files in `../app-*`. Route screens live in `presentation/screens/*_screen.dart`. Use a UI Kit widget (`AppButton`, `AppFormField`, `AppDialog`, `AppLoadingIndicator`, `AppNoData`, `ListViewPaging`) when its GUIDE "Use when" fits the approved need; never a raw Material button or input where a fitting UI Kit widget exists.
 - **`external-structured`**: read the Client's base files in `lib/core/` and `lib/shared/` per the `Client Core Mapping` table and follow the existing feature layout recorded in design.

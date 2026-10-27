@@ -1,0 +1,45 @@
+# 03 — Writing `change-impact.md` and Verification Gates (`CX7`)
+
+<!-- GEN: Why: the fixed change-impact.md template is part of Gate 1 for v2+; filled consistently with Behavior delta, AC delta, review severities, and CLI gates, it shows reviewers and validators exactly what changes. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+## 1. Filling `change-impact.md` (`CX7`)
+
+Keep all fixed sections of the `work-item-contract` template (`templates/change-impact.md.tpl`):
+
+1. **Baseline:** Identify the previous approved feature version (`vN-1`) and the exact baseline code revision (commit SHA). Explicitly note any divergence between the prior spec documents and the actual built code.
+2. **Behavior delta (`ADDED` / `MODIFIED` / `REMOVED`):**
+   - Compare against the **actual built code at the baseline revision**, never against stale design text.
+   - `ADDED`: Behavior (`BR-NN`, `W-NN`, endpoint, screen) that is not in the built code yet.
+   - `MODIFIED`: Existing built behavior whose rule, flow, contract, or state transitions change. State both previous (as built) and new behavior, linked goal or `D-NN`, reason, and `file:symbol` evidence.
+   - `REMOVED`: Existing built behavior that goes away. State the reason, `file:symbol` evidence, and **what happens to existing data, active users, and clients** (migrated, kept read-only, archived/deleted, or notified).
+3. **AC delta (`Add` / `Change` / `Remove` / `Keep`):**
+   - Classify each affected acceptance criterion as `Add`, `Change`, or `Remove` (unaffected criteria remain `Keep`).
+   - Every `Add`, `Change`, and `Remove` row must trace to at least one `ADDED`, `MODIFIED`, or `REMOVED` row in **Behavior delta**.
+4. **Code impact:** One row per traced hit from `01` and `02` with `file:symbol` evidence, classification (`behavior changes` vs `regression only`), contract-break flag, and risk note.
+5. **Regression and migration:**
+   - List the targeted regression suites and runnable commands selected in `02`.
+   - Document the concrete data, user, and client migration steps for every `REMOVED` or contract-breaking `MODIFIED` behavior.
+6. **Open questions (`Q-NN`):** Every unverified impact from `CX6` is listed as an open `Q-NN` blocking Gate 1 until resolved.
+
+## 2. Review Severity Rubric (`BLOCKER` / `MAJOR` / `MINOR`)
+
+Reviews of `change-impact.md` use strictly the 3-tier severity scale:
+
+| Severity | Criteria in `change-impact.md` |
+|---|---|
+| `BLOCKER` | Missing `change-impact.md` on a `v2+` work item; `"no impact"` claimed without recorded tracing command evidence (`CX1`, `CX6`); unknown external/data impact silently omitted instead of recorded as `Q-NN`; `REMOVED` behavior missing data/user migration handling; contract break unflagged (`CX5`); or `MODIFIED` used for behavior that does not exist in baseline code (`CX7`). |
+| `MAJOR` | An impact category present in the workspace was skipped (`CX2`); a traced hit lacks `file:symbol` evidence or `behavior changes` vs `regression only` classification (`CX3`); `AC delta` rows (`Add` / `Change` / `Remove`) do not trace to `Behavior delta` rows (`CX7`); or affected modules lack runnable regression commands (`CX4`). |
+| `MINOR` | Minor formatting drift in command output summaries, non-critical wording ambiguity in rationale columns, or redundant regression commands that can be consolidated. |
+
+## 3. Deterministic CLI Verification Gates (`PASS` / `FAIL`)
+
+Automated and pre-handover CLI gates report strictly `PASS` or `FAIL`:
+
+| Gate | Check | `PASS` Condition | `FAIL` Condition |
+|---|---|---|---|
+| Tracing Evidence Gate | Verify every impact category has recorded `rg` / dependency command output | All workspace categories have runnable commands and recorded outputs (`file:symbol` hits or verified 0 hits) | Any category has unverified `"no impact"` or placeholder text |
+| Delta Traceability Gate | Validate `Behavior delta` (`ADDED` / `MODIFIED` / `REMOVED`) and `AC delta` (`Add` / `Change` / `Remove` / `Keep`) | Every `AC delta` change traces to a `Behavior delta` row; every `REMOVED` row specifies data/user migration | Missing baseline SHA, invalid delta keyword, orphaned `AC delta`, or `REMOVED` without migration note |
+| Regression Command Gate | Dry-run or list-check the selected regression test commands | Every regression suite command resolves to existing test paths/targets in the workspace | Any regression command references a missing path, unknown test tag, or fails collection |
+
+<!-- custom:start -->
+<!-- custom:end -->

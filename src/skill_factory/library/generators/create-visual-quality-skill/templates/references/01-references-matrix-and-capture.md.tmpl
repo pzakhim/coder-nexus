@@ -1,0 +1,45 @@
+# Design References, Visual Matrix, and Runtime Capture
+
+<!-- GEN: Why: defines the approved design reference hierarchy, Screen × State × Viewport matrix, data provenance (FE_MOCKOON vs BE_LIVE), and runtime capture commands so visual checks compare like-for-like. Kind: Mandatory. -->
+
+> Topic: Visual reference priority (extracted Figma per-screen `.png` renders & `<stem>.spec.json`, `design.md` `## UI/UX mapping`, baseline), `Screen × State × Viewport` matrix, API data provenance (`FE_MOCKOON` vs `BE_LIVE`), and runtime target capture.
+
+Rules **V1**, **V2**, **V3**, **V4**, **V5**, **V10**, and **V11**.
+
+---
+
+## 1. Visual Reference Hierarchy (`V1`, `V10`)
+
+Resolve the visual reference in this strict order before capturing screenshots:
+1. **Extracted Figma Per-Screen Renders & Spec (`FIGMA_PROVIDED`)**: Open `.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png` alongside `<stem>.spec.json` (`screens[i].bounds` and `tree`), `tokens.json`, and `design.md` (`## UI/UX mapping`).
+2. **Labeled Pre-Change Baseline (`CODEBASE_ONLY` / Refactor)**: Captured before the change and labeled `baseline` — allowed for minor edge-case adjustments on existing screens (`CODEBASE_ONLY`) or refactoring/extension items when explicitly approved in `requirements.md` and `design.md`.
+3. **Missing Visual Reference**: Record `VISUAL_INPUT_MISSING` / `BLOCKED` and escalate to Gate 2. Never invent a layout or claim `PASS` without an approved reference.
+
+---
+
+## 2. Like-for-Like Visual Matrix (`V2`, `V5`)
+
+Every screen touched by the phase must be verified across all **4 mandatory visual states** using the exact viewport, orientation, theme, and data mode specified in `design.md`:
+
+| Screen ID (`S-NN`) | Mandatory States | Viewport / Orientation | Data Mode (`FE_MOCKOON` \| `BE_LIVE`) | Evidence Artifact Path |
+|---|---|---|---|---|
+| `{{screen_id}}` | `Loading`, `Content`, `Empty`, `Error` | `{{viewports_and_orientations}}` | `{{data_mode}}` | `{{evidence_dir}}/visual/<screen>_<state>_<viewport>.png` |
+
+- **Data Provenance (`api_handshake_protocol.md`)**:
+  - When `FE_MOCKOON` (`MOCKOON_MOCKED`) is used, start `mockoon-cli` with `mocks/<feature>_mockoon.json` and trigger the exact `200`, `[]`, and `400/500` rules to render `Content`, `Empty`, and `Error` states.
+  - Label fixture-backed captures as `FE_MOCKOON`; they prove UI/contract rendering only and never turn a required `BE_LIVE` integration AC into `PASS`.
+- **Data Hygiene (`V11`)**: Use test accounts and fixture data only; redact any tokens, URLs, or personal data before saving screenshots.
+
+---
+
+## 3. Launching Runtime Targets & Capturing Screenshots (`V3`, `V4`)
+
+Confirm workspace command prefixes and available targets (`{{device_discovery_command}}`) before launching:
+
+| Target Platform | Launch & Capture Commands |
+|---|---|
+| **Mobile Simulator / Emulator** | `{{mobile_launch_and_screenshot_commands}}` |
+| **Web / Desktop Target** | `{{web_or_desktop_launch_and_screenshot_commands}}` |
+
+- Save runtime screenshots under `.superpowers/work-items/<slug>/vN/evidence/<phase-id>/<revision>/visual/` and, when updating the project screen catalog, under `.superpowers/ux/current/<catalog-slug>/<viewport>.png`.
+- **Mandatory Visual Inspection (`V4`)**: Open and inspect every captured `.png` image to verify layout, states, and absence of rendering errors. A file path alone is `UNVERIFIED`.

@@ -1,11 +1,11 @@
-# Checklist — security-review
+# Checklist — `create-security-review-skill`
 
-Run this and `~/.claude/skill-factory/core/checklist-common.md`.
+Run this checklist alongside [../../core/checklist-common.md](../../core/checklist-common.md):
 
-- [ ] Every rule SR1–SR14 is adopted, adapted, or "not adopted" with a reason; SR1, SR3, SR4, SR11, SR12, SR13 are adopted
-- [ ] Mode (separate Security role or reviewer-run) and triggers confirmed; deep areas named
-- [ ] Roles, environments and scopes copied from the workspace's RBAC contract / secure-coding-standards
-- [ ] Checks per branch link the safe patterns instead of repeating them; tools listed only if installed
-- [ ] Severity and sign-off mapped to the workspace's levels and verdict words
-- [ ] Safe-testing boundary and disclosure channel stated; no real secret or personal data in any example
-- [ ] bug-hunt dimension 5 hand-over noted when a Security role exists
+- [ ] All rules `SR1`–`SR14` are enforced as mandatory compliance (zero `"not adopted"` carve-outs).
+- [ ] Security finding severities use strictly the unified 3-tier scale **`BLOCKER` / `MAJOR` / `MINOR`** (`shared_contracts/flags_and_statuses.md`; zero `CRITICAL`/`HIGH`/`MEDIUM`/`LOW` or `P0`–`P3` remnants).
+- [ ] Deterministic CLI security/scanner gates use strictly **`PASS` / `FAIL`** (`NOT_RUN`, `BLOCKED`, `UNVERIFIED` never count as `PASS`).
+- [ ] Generator and templates are 100% stack-agnostic (zero hardcoded `be/`/`fe/` branched folders or framework assumptions).
+- [ ] Generated skill uses the flat 3-reference layout (`references/01-triggers-threat-model-and-auth-matrix.md`, `references/02-security-checks-and-cli-gates.md`, `references/03-findings-verdict-and-report.md`) and `SKILL.md` is < 115 lines.
+- [ ] Every finding requires a concrete exploit scenario (`given → when → then`), confidence (`CONFIRMED` / `PLAUSIBLE`), and maps deterministically to `APPROVED` / `CHANGES_REQUESTED` / `BLOCKED`.
+- [ ] Safe-testing boundary (`SR13`: no live exploitation of shared/production environments, no real secrets/PII in reports) is explicitly stated.

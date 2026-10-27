@@ -2,6 +2,16 @@
 
 Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see `~/.claude/skill-factory/core/sync-protocol.md`).
 
+## 1.1.0 — 2026-10-24
+
+- Consolidated generated `references/` from 7 files (flat `01–07`, branched `shared/01–05`, `be/06–07`, `fe/06–07`) into 3: `01-preconditions-and-preflight.md`, `02-task-loop-and-checks.md` (loop, triage, commands, order of work, resuming) and `03-phase-end-and-handoff.md` (phase suite, bug-hunt, simplicity pass, evidence, hand-off). Dropped the branched layout and `{{branch_suffix}}`.
+- Added rules I15 (pre-flight Consumes / Produces table plus global constraints and review focus), I16 (triage against the expected result: match / code wrong / plan wrong) and I17 (resume from ticks and git history); I16 joins the never-"not adopted" set. I1–I14 keep their IDs.
+- Made the generator stack-agnostic: replaced `references/plan-formats.md` and `references/verification-by-stack.md` with `references/discovery-and-checks.md`; the per-stack order-of-work table became one inner-to-outer rule.
+- Step 1 no longer reads the Coder Nexus core skill as base input; the generator relies on its own `references/base-rules.md`.
+
+**Affects:** `SKILL.md`, `references/01-preconditions-and-preflight.md`, `references/02-task-loop-and-checks.md`, `references/03-phase-end-and-handoff.md`.
+**Migration:** merge `01` into `01-preconditions-and-preflight.md` and add the pre-flight section; merge `02` + `06` + `07` into `02-task-loop-and-checks.md` and add the triage table and resuming; merge `03` + `04` + `05` into `03-phase-end-and-handoff.md`; add rows I15–I17 to the `SKILL.md` rule table (keep workspace IDs, P5).
+
 ## 1.0.0 — 2026-10-22
 
 First version.

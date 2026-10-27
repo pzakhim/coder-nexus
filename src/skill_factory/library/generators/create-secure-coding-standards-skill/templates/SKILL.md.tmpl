@@ -1,49 +1,63 @@
 ---
 name: secure-coding-standards
-description: Secure coding standards of {{project_name}} - validate input at trust boundaries, authorize every operation per object, keep tenant/environment/owner scopes isolated, no injection or XSS, keep secrets and personal data out of code, logs and bundles, control outbound calls and files, fail closed. Use whenever writing or reviewing code that handles input, permissions, scoped data, secrets, files, URLs or new dependencies in {{dirs}}.
+description: "{{skill_description}}"
 ---
 
-# Secure Coding Standards — {{project_name}}
+<!-- GEN: Why: one-screen security routing table with deterministic PASS/FAIL gates, mandatory SC1-SC14 rules, and reference index. Kind: Mandatory. -->
 
-<!-- GEN: Why: the non-negotiables and the workspace's security model must be visible while coding, not only at review. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
-<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+# Secure Coding Standards — {{workspace_or_stack_title}}
 
-## Non-negotiables
+Use this skill when writing or reviewing code that touches untrusted input, authentication, authorization, data scopes, secrets, sensitive data/PII, outbound calls, file handling, or third-party dependencies.
 
-1. Validate untrusted input at the boundary; reject, do not guess.
-2. Authorize every operation on the server, per object; deny by default. UI hiding is UX only.
-3. Every query, cache key, file path and job carries its scope ({{scope_list}}).
-4. No string-built SQL, shell, template or path from input.
-5. No secrets or personal data in code, logs, URLs, client bundles or error messages.
-6. Fail closed: an error in validation or authorization denies.
+---
 
-## Security model (summary)
+## 1. Deterministic Security Gates (`PASS` / `FAIL`)
 
-<!-- GEN: One short table each, from references/deriving-the-model.md; details in 01–03. -->
-| Item | This workspace |
+Run these checks on touched files before handoff or review. Each gate produces a binary **`PASS`** or **`FAIL`** status (or `NOT_RUN` with an explicit blocker reason—never `PASS` when unrun):
+
+| Check | Command / Tool | Gate Status |
+|---|---|---|
+| **Static Security Linter** | `{{security_linter_cmd}}` | `PASS` / `FAIL` |
+| **Hardcoded Secrets Audit (`rg`)** | `{{rg_secrets_audit_cmd}}` (expect 0 matches) | `PASS` / `FAIL` |
+| **Injection & Transport Bypass Audit (`rg`)** | `{{rg_injection_or_tls_audit_cmd}}` (expect 0 matches) | `PASS` / `FAIL` |
+| **Sensitive Logging Audit (`rg`)** | `{{rg_sensitive_logging_audit_cmd}}` (expect 0 matches) | `PASS` / `FAIL` |
+| **Dependency & Lockfile Audit** | `{{dependency_audit_cmd}}` | `PASS` / `FAIL` |
+
+---
+
+## 2. Core Security Rules (`SC1`–`SC14` — Mandatory Compliance)
+
+All 14 security rules are **mandatory compliance** when designing, writing, or modifying code. During Code Review, violations are graded on the unified 3-tier scale (`BLOCKER` / `MAJOR` / `MINOR` — see [03 — Runtime Risks, Dependencies & Review]({{ref_03}})):
+
+| ID | Rule | Workspace Contract | Reference |
+|---|---|---|---|
+| **SC1** | **Validate Untrusted Input at the Boundary** | {{sc1_contract}} | [01 — Input, Auth & Data Scope]({{ref_01}}) |
+| **SC2** | **Authorize Every Operation per Object** | {{sc2_contract}} | [01 — Input, Auth & Data Scope]({{ref_01}}) |
+| **SC3** | **Isolate Data Scopes Explicitly** | {{sc3_contract}} | [01 — Input, Auth & Data Scope]({{ref_01}}) |
+| **SC4** | **Prevent Injection Across Interpreters** | {{sc4_contract}} | [03 — Runtime Risks, Deps & Review]({{ref_03}}) |
+| **SC5** | **Encode Output & Validate Navigation/Redirects** | {{sc5_contract}} | [01 — Input, Auth & Data Scope]({{ref_01}}), [03 — Runtime Risks, Deps & Review]({{ref_03}}) |
+| **SC6** | **Keep Secrets Out of Source, Bundles & Logs** | {{sc6_contract}} | [02 — Secrets, Data & Crypto]({{ref_02}}) |
+| **SC7** | **Use Verified Authentication & Session Lifecycles** | {{sc7_contract}} | [01 — Input, Auth & Data Scope]({{ref_01}}) |
+| **SC8** | **Redact Sensitive Data & PII from Logs & Errors** | {{sc8_contract}} | [02 — Secrets, Data & Crypto]({{ref_02}}) |
+| **SC9** | **Enforce Transport Security & Guard Outbound Calls** | {{sc9_contract}} | [03 — Runtime Risks, Deps & Review]({{ref_03}}) |
+| **SC10** | **Handle Files & External Payloads Defensively** | {{sc10_contract}} | [03 — Runtime Risks, Deps & Review]({{ref_03}}) |
+| **SC11** | **Vet Dependencies & Lock Supply Chain** | {{sc11_contract}} | [03 — Runtime Risks, Deps & Review]({{ref_03}}) |
+| **SC12** | **Use Vetted Cryptography & Secure Randomness** | {{sc12_contract}} | [02 — Secrets, Data & Crypto]({{ref_02}}) |
+| **SC13** | **Fail Closed on Security & Validation Errors** | {{sc13_contract}} | [01 — Input, Auth & Data Scope]({{ref_01}}), [03 — Runtime Risks, Deps & Review]({{ref_03}}) |
+| **SC14** | **Flag Security-Sensitive Changes in Handoff** | {{sc14_contract}} | [03 — Runtime Risks, Deps & Review]({{ref_03}}) |
+
+---
+
+## 3. Reference Guides
+
+Load only the reference file needed for the current task:
+
+| Reference | Topics Covered |
 |---|---|
-| Authentication | {{authn}} |
-| Authorization | {{authz_summary}} — guards in {{guard_location}} |
-| Data scopes | {{scopes_summary}} |
-| Secrets | {{secrets_summary}} |
-
-## Which file to read
-
-<!-- GEN: Flat: references/01–06. Branched: shared/01–03, 05, 06 + be/04, fe/04 with a "Working in" column. Remove rows for files merged away. -->
-| Doing | Read |
-|---|---|
-| Accepting input, adding an endpoint/handler | `{{ref_01}}` |
-| Permission checks, scoped data | `{{ref_02}}` |
-| Secrets, logging, error messages | `{{ref_03}}` |
-| SQL, shell, paths, HTML, URLs, files, outbound calls | `{{ref_04}}` |
-| Adding a dependency | `{{ref_05}}` |
-| Handing off a security-relevant change | `{{ref_06}}` |
-
-## Relationship with other skills
-
-<!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md; link existing siblings or write "not set up in this workspace". -->
-- Where guards and validation live: {{clean_architecture_link}}
-- Finding what slipped through: {{bug_hunt_link}} (dimension 5); deeper review: {{security_review_link}}
+| [01 — Input, Authentication, Authorization & Data Scope]({{ref_01}}) | Trust boundaries, input schema/form validation (`SC1`), navigation/redirect validation (`SC5`), authentication & token lifecycle (`SC7`), object-level authorization (`SC2`), data-scope isolation (`SC3`), and fail-closed handling (`SC13`) |
+| [02 — Secrets, Sensitive Data & Cryptography]({{ref_02}}) | Secret configuration & encrypted storage (`SC6`), PII/log/error redaction (`SC8`), and vetted cryptography & CSPRNG (`SC12`) |
+| [03 — Runtime Risks, Dependencies & Review Rubric]({{ref_03}}) | Unsafe-vs-safe patterns for injection (`SC4`), transport/SSRF (`SC9`), file handling (`SC10`), dependency supply-chain vetting (`SC11`), deterministic `rg` gates, `SC14` handoff triggers, and `BLOCKER` / `MAJOR` / `MINOR` review rubric |
+<!-- {{profile_references}} -->
 
 <!-- custom:start -->
 <!-- custom:end -->

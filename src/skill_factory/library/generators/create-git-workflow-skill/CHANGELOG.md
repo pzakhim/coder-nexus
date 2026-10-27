@@ -1,17 +1,13 @@
 # Changelog — create-git-workflow-skill
 
-Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see `~/.claude/skill-factory/core/sync-protocol.md`). Bump rules: `~/.claude/skill-factory/core/versioning.md`.
+## 1.1.0 — 2026-10-25
 
-## 1.0.0 — 2026-10-22
+### Changed
+- Added mandatory rule `M10` and expanded `G2`/`G3` for **Parent-Ticket Branch Naming + Sub-Ticket / Accepted-Phase Commit Traceability & Checkpoint Discipline** (no arbitrary WIP commits; every commit must bind to a verified Huly sub-ticket and/or accepted `PHASE-NN` checkpoint).
+- Replaced hardcoded `be-v…` / `fe-v…` tag examples with stack-neutral `<component>-v…` (`V7`).
+- Enforced mandatory compliance across `M1`–`M10`, `G1`–`G6`, `V1`–`V7`, `R1`–`R2` (removed `"not adopted"` carve-outs).
+- Consolidated `templates/` from 5 micro-files into `templates/SKILL.md.tmpl` and 3 cohesive reference templates under `templates/references/` (`01-branch-model-and-preflight.md.tmpl`, `02-naming-commits-and-merge-strategy.md.tmpl`, `03-versioning-release-and-gates.md.tmpl`) with binary `PASS`/`FAIL` CLI gates and `BLOCKER`/`MAJOR`/`MINOR` review grading.
 
-First version.
+## [1.0.0] - 2026-04-12
 
-- Base rules: M1–M9 (from the fixed `git-preflight` skill), G1–G6 (Git Flow for DEV/STG/PROD, generalised from a team policy), V1–V7 (SemVer 2.0.0 for applications), R1–R2 (release integrity with artifact promotion).
-- Presets: `gitflow-dev-stg-prod`, `github-flow`, `trunk-based`; read-only detection of branches, tags, merge history, CI, commit and release tools.
-- Agents never merge into the production branch, tag or deploy production; they prepare the commands and checklist.
-- Mandatory: `SKILL.md`, branch model, preflight table, naming and commits, merge and propagation, versioning and release.
-- Layout: always flat.
-- Output path: `<workspace>/.agents/skills/git-workflow/`.
-
-**Affects:** all generated files.
-**Migration:** existing Git or release skills → run the generator to **adopt** (keeps branch names, prefixes, merge rules and release steps).
+- Initial release of `create-git-workflow-skill`.

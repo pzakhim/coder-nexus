@@ -1,0 +1,66 @@
+# Disposable-DB Verification, Migration States, and DevOps Handoff Packet
+
+<!-- GEN: Why: proves the migration on a throwaway database with data, enforces the 3-tier authority model, and equips DevOps with a complete Changes + Reasons + Per-Environment (develop/staging/production) Schema & Data Runbook. Kind: Mandatory. -->
+
+> Topic: Disposable-DB verification checks (`V1`–`V8`), migration states, the mandatory DevOps Migration Handoff Packet (`develop` / `staging` / `production` schema & data runbook), and `BLOCKER` / `MAJOR` / `MINOR` review grading (`M9`–`M12`).
+
+Rules **M2**, **M9**, **M10**, **M11**, and **M12**.
+
+---
+
+## 1. Disposable-DB Verification Recipe (`V1`–`V8`, `M9`)
+
+Execute all 8 checks against a **local/disposable database** (`{{local_selector}}`) before marking a task done or migrating `develop`:
+
+| # | Check | Command / Query | Pass Criteria (`PASS` / `FAIL`) |
+|---|---|---|---|
+| **V1** | **Clean Install from Zero** | `{{clean_install_cmd}}` | `PASS` when entire chain applies from empty DB to head (`exit 0`) |
+| **V2** | **Single Head & Zero Drift** | `{{heads_and_drift_cmd}}` | `PASS` when 1 head exists and zero model/schema drift is detected |
+| **V3** | **Upgrade Over Seeded Data** | Step back (`downgrade -1`) → seed multi-tenant rows, `NULL`s, & edge cases → `upgrade head` | `PASS` when upgrade succeeds on realistic existing rows |
+| **V4** | **Data Backfill Invariants (`B7`)** | Run invariant SQL (`SELECT count(*) ... WHERE <unmigrated> = 0`) & cross-tenant isolation check | `PASS` when unmigrated count is `0` and other tenants' rows are untouched |
+| **V5** | **Reversibility (`downgrade` / `upgrade`)** | `{{reversibility_cmd}}` | `PASS` when `downgrade -1` and re-`upgrade head` both exit `0` |
+| **V6** | **Valid Indexes Check** | `{{invalid_index_query}}` | `PASS` when `0` invalid indexes exist |
+| **V7** | **Offline SQL & Lock Review** | `{{offline_sql_cmd}}` | `PASS` when generated SQL includes `lock_timeout` and matches safe patterns |
+| **V8** | **Automated Migration & API Tests** | `{{migration_test_cmd}}` | `PASS` when migration test suite and affected service/API tests exit `0` |
+
+---
+
+## 2. Canonical Migration States (`M11`)
+
+Record the migration state alongside the core gate status (`PASS` / `FAIL` / `BLOCKED` / `NOT_RUN`):
+
+| Migration State | Set By | Meaning & Required Evidence |
+|---|---|---|
+| `NOT_REQUIRED` | Agent | Task touches no schema or stored data (`drift_check_cmd` is clean) |
+| `PENDING` | Agent | Revision written and `V1`–`V8` verified `PASS` on disposable DB; not applied to shared DBs |
+| `READY_FOR_HANDOFF` | Agent | `PENDING` + `migration-handoff.md` is complete for the user / DevOps |
+| `APPLIED_UNVERIFIED` | User / DevOps (or Agent on `develop` when explicitly requested by user) | Migration applied to named target (`develop` / `staging` / `production`), postchecks pending |
+| `VERIFIED_IN_TARGET` | User / DevOps (or Agent on `develop` when explicitly requested by user) | Migration + data backfill + postchecks verified `PASS` on the named target |
+| `FAILED` | Agent / User / DevOps | Migration or postcheck failed; records failing step, error, and recovery action taken |
+
+---
+
+## 3. Mandatory DevOps Migration Handoff Packet (`migration-handoff.md`) (`M2`, `M10`, `M12`)
+
+Whenever a migration is created (and whenever the user asks to migrate `develop` or prepare for `staging`/`production`), generate `evidence/<phase-id>/<revision>/migration-handoff.md`. Because **`staging` and `production` are executed strictly by DevOps** (and `develop` is migrated only on explicit user request or by DevOps), the handoff packet must be 100% self-contained and include:
+
+1. **Summary of Changes & Why (Danh sách thay đổi & Lý do thay đổi)**:
+   - Every table, column, index, constraint, and data backfill item, linked to `AC-NN` / `D-NN`, with the clear business and technical reason why the change is required.
+2. **Environment-Specific Schema & Data Migration Runbook (`develop` / `staging` / `production`)**:
+   - **Rollout & Code Deployment Order**: Which revision runs before/after API and worker deployment (`expand` → deploy code → `backfill` → deploy code → `contract`).
+   - **Step-by-Step Commands for `develop`, `staging`, and `production`** (referencing `DATABASE_URL` from the target environment — zero secrets in the file):
+     1. **Pre-Checks & Backup (`M10`)**: Verify current revision, check active locks, and run the exact backup/snapshot command for `develop`, `staging`, and `production`.
+     2. **Schema Migration Step**: Exact upgrade command (`{{apply_cmd}}`) + pointer to the reviewed `--sql` file.
+     3. **Data Migration / Backfill Step**: Exact `--dry-run` command to preview affected rows, followed by the batched/scoped execution command (`--batch-size 1000`) and resume instructions.
+     4. **Post-Checks & Invariants**: Exact SQL queries to verify head revision, valid indexes (`V6`), and data backfill invariant (`V4` count = `0`).
+     5. **Rollback & Recovery Plan**: Exact `downgrade` command and what requires restoring from the backup snapshot.
+
+---
+
+## 4. Review Severity Rubric (`BLOCKER` / `MAJOR` / `MINOR`)
+
+| Severity | Database Migration Findings |
+|---|---|
+| **`BLOCKER`** | • Agent running migrations on `staging` or `production`, or on `develop` without explicit user request (**M2**)<br>• Delivering schema changes via `create_all()`, `db push`, `reset`, or manual SQL outside revisions (**M3**)<br>• Editing an already-deployed revision, leaving multiple Alembic/migration heads, or importing live app ORM models inside a revision (**M5**)<br>• Destructive drop/rename/type-change in the same phase as running code (`Expand → Contract` violated) or unguarded table rewrite / non-concurrent index build on a populated table (**M4, M6, M7**)<br>• Unscoped or unbatched data backfill, string-interpolated SQL, or secret/PII leaked in revision or handoff packet (**M8, M14**)<br>• Missing `V1`–`V8` disposable-DB verification or missing `migration-handoff.md` (**M9, M12**) |
+| **`MAJOR`** | • Missing `SET LOCAL lock_timeout` on DDL touching existing tables (**M7**)<br>• Missing or fake `downgrade()` without an explicit irreversible-data note and backup recovery procedure (**M5, M10**)<br>• Handoff packet missing the **Changes & Reasons** table or missing the **Data Backfill / Postcheck commands** for `develop`, `staging`, and `production` (**M12**) |
+| **`MINOR`** | • Non-imperative revision message slug or minor formatting inconsistency in `migration-handoff.md` |

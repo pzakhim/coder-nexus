@@ -1,0 +1,66 @@
+# 03 — Gate Review & Verification
+
+<!-- GEN: Why: a specification is ready for Gate 1 only when deterministic CLI checks pass and structured text-review questions find zero open gaps, ambiguities, or conflicts. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Rule RS6 (Mandatory Compliance). This file is the workspace component of Coder Nexus gate-review spec mode. Findings use [Gap] / [Ambiguity] / [Conflict] tags and strictly BLOCKER / MAJOR / MINOR severities (shared_contracts/flags_and_statuses.md). -->
+
+## 1. Execution Order Before Gate 1 (`RS6`)
+
+1. **Deterministic CLI Gates (`PASS` / `FAIL`):** Run every CLI check below; any non-zero exit or invalid match is `FAIL` and must be fixed before review.
+2. **Fixed `gate-review` Spec Mode Checklist:** Run the standard Coder Nexus spec-mode checks.
+3. **Workspace Gate 1 Review Questions:** Evaluate the specification text against the job-type questions below.
+
+Every review finding is tagged `[Gap]`, `[Ambiguity]`, or `[Conflict]`, graded `BLOCKER` / `MAJOR` / `MINOR`, and logged as a `Q-NN` in `codebase-notes.md`. Gate 1 is presented to the user only when all CLI gates are `PASS`, zero `BLOCKER` or `MAJOR` findings remain, and zero `Q-NN` are `OPEN`.
+
+## 2. Deterministic CLI Verification Gates (`PASS` / `FAIL`)
+
+```sh
+# 1. Structural & contract validator (PASS = exit 0, FAIL = exit != 0)
+{{validator_command}}
+
+# 2. Banned vague-word check in requirements.md (PASS = 0 matches, FAIL = any match)
+rg -n -i "{{banned_vague_words_regex}}" {{spec_dir}}/requirements.md
+
+# 3. Banned synonym check from domain-knowledge "Avoid saying" (PASS = 0 matches, FAIL = any match)
+rg -n -i "{{banned_synonyms_regex}}" {{spec_dir}}/requirements.md
+
+# 4. Unresolved OPEN questions check in codebase-notes.md (PASS = 0 OPEN Q-NN, FAIL = any match)
+rg -n "\| *Q-[0-9]+ *\|.*\| *OPEN *\|" {{spec_dir}}/codebase-notes.md
+
+# 5. AC traceability check (every AC-NN cites BR-NN / G-NN)
+rg -n "^\| *AC-[0-9]+" {{spec_dir}}/requirements.md
+```
+
+## 3. Unified Finding Tags & Severity Scale (`BLOCKER` / `MAJOR` / `MINOR`)
+
+| Tag | Meaning in Spec Review |
+|---|---|
+| `[Gap]` | Required behavior, edge case, migration note, or traceability link is missing from the text |
+| `[Ambiguity]` | Statement can be interpreted in two ways (vague word, synonym drift, unmeasurable `G-NN` signal) |
+| `[Conflict]` | Two statements in `requirements.md`, `change-impact.md`, or `D-NN` decisions contradict each other |
+
+| Severity | Gate 1 Rule (`shared_contracts/flags_and_statuses.md`) |
+|---|---|
+| `BLOCKER` | Contradiction (`[Conflict]`), unresolved `OPEN` `Q-NN`, missing Source Inventory, banned synonym/vague word masking behavior, or `REMOVED` behavior without a migration note. **Blocks Gate 1.** |
+| `MAJOR` | Omitted mandatory edge-case category (`[Gap]`), untestable `AC-NN` or unmeasurable `G-NN` (`[Ambiguity]`), or missing bug reproduction/environment facts. **Blocks Gate 1 until resolved via `Q-NN`.** |
+| `MINOR` | Non-blocking wording or formatting cleanup that does not change behavioral meaning or testability. |
+
+## 4. Workspace Gate 1 Questions by Job Type
+
+<!-- GEN: Phrase every item as a question about the spec text citing the section or ID checked, tagged [Gap], [Ambiguity], or [Conflict], with its default severity (BLOCKER / MAJOR / MINOR) when violated. -->
+
+### All Job Types
+- Does every `BR-NN` and `AC-NN` trace to a confirmed `G-NN` and source? `[Gap]` (`BLOCKER`)
+- Does any `G-NN`, `BR-NN`, `AC-NN`, or scenario use a banned synonym instead of the verbatim `domain-knowledge` glossary term? `[Ambiguity]` (`BLOCKER`)
+- Does any statement contain a phrase from the banned vague-word table ([02]({{ref_02}})) without a concrete threshold or state? `[Ambiguity]` (`BLOCKER`)
+- Can every `G-NN` success signal and `AC-NN` be observed and verified by QA without reading internal code? `[Ambiguity]` (`MAJOR`)
+- Is every mandatory edge-case category in [02]({{ref_02}}) covered by a `BR-NN`/`AC-NN` or explicitly marked `not applicable` with a reason? `[Gap]` (`MAJOR`)
+
+### Job-Type Specific Questions
+{{job_type_questions}}
+<!-- GEN: Add one subsection per job type used by this workspace (feature, bugfix, change [v2+ feature/refactor], verification/investigation, migration, documentation), built from real past Gate 1 findings. Examples:
+- Bugfix: Does the spec state the environment (DEV / STG / PROD), exact reproduction steps, expected vs actual behavior, and regression scope? [Gap] (MAJOR)
+- Change (v2+): Is every affected BR-NN classified ADDED / MODIFIED / REMOVED in change-impact.md "Behavior delta", and does every REMOVED row include a data/user migration note? [Gap] (BLOCKER)
+-->
+
+<!-- custom:start -->
+<!-- custom:end -->

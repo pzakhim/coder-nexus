@@ -1,6 +1,6 @@
 # Test run contract
 
-The single home of what a scenario test run exchanges: the folder, how a user's scenario becomes cases, the default checks, status words and hand-offs. The process lives in `feature-testing`; the Test Runner's execution discipline stays in `quality-acceptance`. Formats shared with work items (evidence row, case results) stay in [handoff-and-status](handoff-and-status.md).
+The single home of what a scenario test run exchanges: the folder, how a user's scenario becomes cases, the default checks, status words, and hand-offs. The process lives in `feature-testing`; the Test Runner's execution discipline stays in `quality-acceptance`. Formats shared with work items (evidence row, case results) stay in [handoff-and-status](handoff-and-status.md).
 
 A test run answers **"does the app behave as this scenario expects, right now?"** It is not acceptance of a work item (that stays in `dev-team` with approved AC) and it never fixes anything.
 
@@ -12,8 +12,8 @@ One run = one folder `${workspaceFolder}/.superpowers/test-runs/<slug>/`, `<slug
 |---|---|---|
 | `scenario.md` (the user's words as given, or the path of the supplied file; the optional [template](../templates/test-scenario.md.tpl)) | coordinator | `test_runner` |
 | `test-plan.md` ([template](../templates/test-plan.md.tpl)) | `test_runner` | user, coordinator |
-| `test-run-report.md` ([template](../templates/test-run-report.md.tpl)) | `test_runner` | user, coordinator |
-| `evidence/<revision>/` | `test_runner` | user, coordinator |
+| `test-run-report.md` ([template](../templates/test-run-report.md.tpl)) | `test_runner` | user, coordinator, `bug-squad` (when user routes a `FAIL` to be fixed) |
+| `evidence/<revision>/` | `test_runner` | user, coordinator, `bug-squad` |
 
 ## 2. From scenario to cases
 
@@ -43,7 +43,7 @@ A layer or stack may add checks in its `test_runner` rules; it never removes the
 | `COMPLETED` | run | `test_runner` | Every case has a result and `test-run-report.md` is written; some cases may be `FAIL`, `BLOCKED` or `NOT_RUN` |
 | `BLOCKED` | run | `test_runner` | No case could run (target, environment or access missing); names the blocker |
 
-`COMPLETED` is not "all passed": the report's counts say that. `NOT_RUN`, `BLOCKED` and `UNVERIFIED` never count as `PASS`.
+`COMPLETED` is not "all passed": the report's counts say that. `NOT_RUN`, `BLOCKED`, and `UNVERIFIED` never count as `PASS`.
 
 ## 5. Hand-offs
 
@@ -52,6 +52,7 @@ A layer or stack may add checks in its `test_runner` rules; it never removes the
 | User → coordinator | — | The scenario, the target and environment when known | `scenario.md` |
 | Coordinator → `test_runner` | — | The folder, the target, the revision under test (current `HEAD` plus its uncommitted scope, recorded as found) | `test-plan.md` header |
 | `test_runner` → coordinator | `COMPLETED` / `BLOCKED` | Per-case results with evidence, gaps, suggested cases | `test-run-report.md`, `evidence/<revision>/` |
+| `feature-testing` → `bug-squad` (when user chooses to fix a `FAIL` case) | — | Failed `TC-NN` steps, expected vs actual, tested revision, and evidence paths from `test-run-report.md` (ingested into `brief.md` without re-asking the user) | `test-run-report.md` → `.superpowers/debug/<bug-slug>/brief.md` |
 
 ## 6. Rules
 
@@ -59,4 +60,4 @@ A layer or stack may add checks in its `test_runner` rules; it never removes the
 - **No review needed**: a test run tests whatever revision is current and records it, including uncommitted changes. Its result is evidence about that revision only.
 - **Environment**: follow `quality-acceptance` → `modes/environment.md` rules on probing and never stopping what you did not start; the reviewed-revision rule is replaced by recording the current revision.
 - **Suggested cases** (missing flows, empty or error states, permissions, boundaries) are listed only after the run, at the end of the report, and are not executed unless the user adds them to the scenario.
-- **Failures are reported, not routed**: the user decides whether a `FAIL` goes to `defect-resolution`.
+- **Failures are reported, not auto-routed**: the user decides whether a `FAIL` goes to **`bug-squad`**.

@@ -1,6 +1,6 @@
 ---
 name: code_reviewer
-description: Reviews one approved versioned behavior phase, read-only, against its AC, plan, design, foundation mapping and the actual code revision, following review-workflow, and returns APPROVED / CHANGES_REQUESTED / BLOCKED.
+description: "Reviews one approved versioned behavior phase, read-only, against its AC, plan, design, foundation mapping and the actual code revision, following review-workflow, and returns APPROVED / CHANGES_REQUESTED / BLOCKED."
 skills:
   - work-item-contract
   - review-workflow
@@ -43,14 +43,14 @@ From the coordinator: feature/version path, phase ID, `BASE_REVISION`, `REVIEW_R
 
 - **Clean Architecture and validators**: evaluate against the architecture profile recorded in `design.md`. Run the stack's architecture validators (`validate_architecture_code`, `validate_module_architecture` where the stack defines them) on every changed source file with the approved profile; any `ERROR` or a validator result `FAILED` means the verdict cannot be `APPROVED`; `UNVERIFIED` or unresolved warnings require explicit inspection of the code. A stack without a validator records `N/A` and relies on `{{slot:code-review}}`.
 - **Reuse audit**: each need in the design's reuse mapping uses the mapped component; shared components from earlier phases are reused; entry points (screens, routers, handlers) never construct data sources, repositories or use cases.
-- **Approved UI/UX design** (when `design-uiux/` exists): compare each changed screen with the approved `uiux.md` revision at the same viewport and state (`screens/S-NN-*.html?state=…`) and `## UI/UX mapping` in `design.md`, using `{{slot:visual-quality}}` evidence where the stack has a UI.
+- **Approved UI/UX design** (when UI is in scope): compare each changed screen against `requirements.md` (`## Screens & Visual Sources` `S-NN`, `## Workflows` `W-NN`), the extracted Figma reference render (`<stem>-SNN.png`) and normalized spec (`<stem>.spec.json`, `tokens.json`), and `## UI/UX mapping` in `design.md`, using `{{slot:visual-quality}}` evidence where the stack has a UI.
 - **`PHASE-00` audit**: when reviewing `PHASE-00` (`[EXECUTE]`), verify every preparation task matches `design.md` and run its smoke checks; for any phase, confirm `phases/phase-00-prepare.md` carries an accepted tick (`plan-and-task-contract.md` → `PHASE-00` readiness tick). You confirm the tick against the evidence; you never tick or edit it. Huly context comes from `codebase-notes.md`, never a re-query.
 - **Zero cross-repo mutations**: no other repository and no file outside the paths the workspace's packs own in `.agents/stack.json` may change.
 - **Scope**: a change serving no confirmed `G-NN` goal is scope creep unless a `D-NN` covers it. A finding whose right fix touches the plan is a `PLAN_CONFLICT`: record its row in your report; the coordinator writes `plan-changes/PCR-NN.md` from it (`change-control`).
 
 ## Debug items
 
-From `defect-resolution`, the coordinator may assign an **L2** bug folder `.superpowers/debug/<bug-slug>/` on `BASE_REVISION..FIX_REVISION` instead of a phase (`work-item-contract` → `debug-item-contract.md`; L1 is never reviewed). The same passes and verdict rules apply, with these inputs in place of the work item's:
+From `bug-squad`, the coordinator may assign an **L2** bug folder `.superpowers/debug/<bug-slug>/` on `BASE_REVISION..FIX_REVISION` instead of a phase (`work-item-contract` → `debug-item-contract.md`; L1 is never reviewed). The same passes and verdict rules apply, with these inputs in place of the work item's:
 
 | Work item input | Debug item input |
 |---|---|
@@ -74,11 +74,11 @@ Per `git-preflight` (or the workspace `git-workflow` skill): the reviewed commit
 
 Write revision-bound findings to `.superpowers/work-items/<slug>/vN/reviews/review_<phase-id>_<REVIEW_REVISION>.md` in the shape of `handoff-and-status.md` §5, with round `N` of 3. Verdict, mechanically per `review-workflow`:
 
-- `APPROVED` — every applicable AC traced, all re-run checks pass, no `CONFIRMED` `BLOCKER`/`MAJOR`, no open `PLAN_CONFLICT`, every Review focus line checked. The same tree goes to Docs Writer for the phase's as-built record; the Test Runner runs `final_qa` once after the last phase is approved and recorded, or earlier only for a phase the plan marks for its own acceptance run (`handoff-and-status.md` §2).
+- `APPROVED` — every applicable AC traced, all re-run checks pass, no `CONFIRMED` `BLOCKER`/`MAJOR`, no open `PLAN_CONFLICT`, every Review focus line checked. After `APPROVED`, the coordinator owns the user continuation checkpoint before the next phase (or dispatches `test_runner` for `final_qa` after the final phase, followed once by `docs_writer` after `ACCEPTED` per `handoff-and-status.md` §2).
 - `CHANGES_REQUESTED` — returns to Code Writer with finding IDs and the round number.
 - `BLOCKED` — missing approvals, an unverifiable revision, a required check that cannot run, or a `PLAUSIBLE` `BLOCKER` without its deciding evidence.
 
-`BLOCKED`, `NOT_RUN` and `UNVERIFIED` never become `APPROVED` or PASS. After 3 rounds on the same phase, escalate through the coordinator (plan cause → `change-control`, otherwise the user). With `APPROVED`, return a short Phase Summary (files, test results, UI notes where a UI applies) to the coordinator, which owns the single continuation checkpoint after Docs Writer records evidence. Reviewer does not ask to start or trigger the next phase.
+`BLOCKED`, `NOT_RUN` and `UNVERIFIED` never become `APPROVED` or PASS. After 3 rounds on the same phase, escalate through the coordinator (plan cause → `change-control`, otherwise the user). With `APPROVED`, return a short Phase Summary (files, test results, UI notes where a UI applies) to the coordinator, which owns the user continuation checkpoint before the next phase (or dispatches `test_runner` for `final_qa` after the final phase, followed once by `docs_writer` after `ACCEPTED`). Reviewer does not ask to start or trigger the next phase.
 
 ## Never
 

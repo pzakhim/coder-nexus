@@ -1,60 +1,54 @@
 ---
 name: visual-quality
-description: Launches approved Flutter UI targets, checks real-data states and captures revision-bound visual evidence.
+description: "Launch approved Flutter UI targets (iOS Simulator, Android Emulator, Chrome/Desktop) and headless `golden_screenshot` tests to verify UI visual fidelity across all 4 required states (`Loading`, `Content`, `Empty`, `Error`), viewports, and orientations — grading deviations via the 10-dimension checklist (`BLOCKER` / `MAJOR` / `MINOR`) and recording revision-bound `PASS` / `FAIL` / `BLOCKED` / `NOT_RUN` / `N/A` evidence."
 ---
 
-# Flutter Visual Verification
+# Flutter Visual Quality & Runtime UI Inspection
 
-Open and inspect the implemented UI. A successful build or widget test does not replace runtime review for UI-affecting phases.
+This skill is `{{slot:visual-quality}}` for the Flutter pack. Open and visually inspect the rendered Flutter UI on the approved target device/simulator and headless golden harness. A clean `flutter analyze` (`G2`), Cubit unit test (`G5`), or flavor build (`G8`) never replaces visual inspection when `UI Impact: Yes`.
 
-## Preconditions
+## 1. Visual Verification Workflow
 
-- Read the approved feature version and phase. Record its UI impact, target platform, entrypoint, flavor, device/viewport, route, required states and Visual AC.
-- Fix the code revision under review. Record each state's data provenance without secrets or personal data. Follow the installed plugin's `shared_contracts/api_handshake_protocol.md`: use real services for live acceptance; explicitly approved contract-derived development fixtures may support only UI/contract checks. Record their contract revision and fixture path, never describe them as real business records or use them as production fallbacks.
-- Read workspace instructions, `.fvmrc`, `pubspec.yaml`, launch configuration and device inventory. Do not invent a flavor, target or device.
-- Missing credentials, safe navigation, a required live-data state or target means `BLOCKED`; an unattempted check is `NOT_RUN`. A fixture-backed UI result cannot change a required live integration check to `PASS`.
+1. **Resolve Reference & Preconditions** ([01-references-matrix-and-capture.md](references/01-references-matrix-and-capture.md)):
+   - Lock `REVIEW_REVISION`, target platform, flavor, entrypoint (`-t lib/main_<flavor>.dart`), viewports/orientation (`design.md`), and API data provenance (`FE_MOCKOON` vs `BE_LIVE`).
+2. **Capture Runtime & Headless Golden States** ([01](references/01-references-matrix-and-capture.md), [02-golden-screenshot-workflow.md](references/02-golden-screenshot-workflow.md)):
+   - Exercise and capture all **4 mandatory visual states** (`Loading`, `Content`, `Empty`, `Error`) plus required portrait/landscape orientations and themes.
+   - Open and visually inspect every `.png` image and share the images and findings with the coordinator; a saved file path alone is `UNVERIFIED`.
+3. **Compare Across 10 Dimensions & Grade** ([03-comparison-checklist-and-verdict.md](references/03-comparison-checklist-and-verdict.md)):
+   - Compare side-by-side against extracted Figma per-screen renders (`.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png`) and `design.md` (`## UI/UX mapping`).
+   - Grade deviations as `BLOCKER`, `MAJOR`, `MINOR`, or `ACCEPTED (D-NN)` and record per-screen `PASS` / `FAIL` / `BLOCKED` / `NOT_RUN` / `N/A` results.
 
-## Launch a real target
+## 2. Mandatory Rules (`V1`–`V12`)
 
-Use the Client's FVM command only when the workspace uses FVM. Inspect devices with `fvm flutter devices` or the equivalent configured command.
+| ID | Mandatory Rule | Reference |
+|---|---|---|
+| **V1** | **Compare against an approved reference** (extracted Figma per-screen `.png` renders + `<stem>.spec.json` + `design.md` `## UI/UX mapping` → plan-approved baseline). | [01](references/01-references-matrix-and-capture.md) |
+| **V2** | **Like-for-like matrix** (`Screen × State [Loading, Content, Empty, Error] × Viewport × Orientation`). | [01](references/01-references-matrix-and-capture.md) |
+| **V3** | **Real runtime target or headless golden capture** saved under `.superpowers/work-items/<slug>/vN/evidence/<phase-id>/<revision>/visual/`. | [01](references/01-references-matrix-and-capture.md), [02](references/02-golden-screenshot-workflow.md) |
+| **V4** | **Open and inspect every image** — a file path without visual inspection is `UNVERIFIED`. | [01](references/01-references-matrix-and-capture.md), [02](references/02-golden-screenshot-workflow.md) |
+| **V5** | **Preserve API & data provenance** (`FE_MOCKOON` fixture checks vs. `BE_LIVE` integration per `api_handshake_protocol.md`). | [01](references/01-references-matrix-and-capture.md) |
+| **V6** | **Judge by the 10 named dimensions**, never personal taste. | [03](references/03-comparison-checklist-and-verdict.md) |
+| **V7** | **Grade deviations with `BLOCKER` / `MAJOR` / `MINOR`** (`ACCEPTED (D-NN)` when covered by `D-NN`). | [03](references/03-comparison-checklist-and-verdict.md) |
+| **V8** | **Strict golden baseline governance** — `--update-goldens` is for `code_writer` baseline authoring + `code_reviewer` visual sign-off, **never** `test_runner` verification. | [02](references/02-golden-screenshot-workflow.md) |
+| **V9** | **Per-screen & per-state evidence table** with exact `REVIEW_REVISION` and `.png` paths. | [03](references/03-comparison-checklist-and-verdict.md) |
+| **V10** | **Missing reference, target, or state is never `PASS`** (`BLOCKED` or `NOT_RUN`). | [01](references/01-references-matrix-and-capture.md), [03](references/03-comparison-checklist-and-verdict.md) |
+| **V11** | **Zero secrets or PII in screenshots** — use safe test/fixture data and redact credentials. | [01](references/01-references-matrix-and-capture.md) |
+| **V12** | **Read-only inspection in Review & Verification** — return `FAIL` → `CHANGES_REQUESTED` on defects; any code change invalidates prior screenshots. | [03](references/03-comparison-checklist-and-verdict.md) |
 
-- **Flutter Web / Chrome:** Run the approved entrypoint and arguments, interact through the Client browser, then capture a screenshot or recording.
-- **iOS Simulator:** Inspect devices with `xcrun simctl list devices available`; boot the approved device with `xcrun simctl boot <device-id>` if needed and run the app on it.
-- **Android Emulator:** Inspect with `fvm flutter emulators`, launch the approved AVD, and run the app on the selected device.
+## 3. Canonical Visual Gate Results (`shared_contracts/flags_and_statuses.md`)
 
-Keep the Flutter process and runtime logs available during inspection. Fail explicitly if SDK tools or the approved platform are unavailable.
+- **`PASS`**: All required screens, 4 states, and viewports were captured, opened, and inspected on `REVIEW_REVISION` with zero `BLOCKER` or unaddressed `MAJOR` deviations.
+- **`FAIL`**: Any `BLOCKER` or `MAJOR` visual deviation, `RenderFlex overflowed`, missing state, or golden comparison mismatch (`-> CHANGES_REQUESTED`).
+- **`BLOCKED`**: Missing design reference, unavailable simulator/emulator/device, or unreachable data source.
+- **`NOT_RUN`**: Required visual state or viewport was not captured.
+- **`UNVERIFIED`**: Screenshot path recorded without opening and inspecting the image.
+- **`N/A`**: Phase has `UI Impact: No` (record reason; do not launch an emulator just to tick a checkbox).
 
-## Inspect required states
+## 4. Reference Guides
 
-Exercise only approved, safely reachable states: initial/loading, populated, empty, safe error, validation, keyboard, back navigation, theme, text scale, viewport or orientation as applicable. Compare layout, spacing, typography, colors, contrast, icons, kit variants, scrolling, touch targets, focus, messages and navigation with the approved visual source and AC. Do not claim pixel-perfect equivalence without an approved baseline or golden comparison.
-
-For a screen using `BaseScreen`, inspect portrait and landscape on the approved device/viewport when the changed behavior relies on responsive layout. Record route, orientation, expected and observed layout. A screenshot cannot prove tracking events; use the Client's actual approved tracking evidence for that claim. Mark unavailable observability `BLOCKED` or `NOT_RUN` rather than inferring a pass.
-
-## Compare with the approved UI/UX design
-
-When the work item has `design-uiux/` with an approved `uiux.md` revision, it is the Visual AC:
-
-- Use the confirmed viewports from `.superpowers/ux/viewports.json` for the device/window size.
-- For each `S-NN` the phase implements and each required state, open the design (`design-uiux/screens/S-NN-*.html?state=<state>`, or `index.html` at the same viewport) beside the running app and compare layout, order, copy, kit components, states and navigation.
-- Record each difference as `matches`, `deviation (finding)` or `covered by D-NN`. A material deviation is `FAILED` for that state; cosmetic differences that the kit cannot express are noted, not failed.
-- Save the app screenshot next to the visual evidence and, for the screen catalog, as `.superpowers/ux/current/<catalog-slug>/<viewport>.png` (for example `flutter run -d chrome` with the window at the viewport size, or `xcrun simctl io <device-id> screenshot …`).
-
-## Capture evidence
-
-Save evidence under `.superpowers/work-items/<slug>/vN/evidence/<phase-id>/<revision>/visual/` unless the Client defines another approved location.
-
-- iOS screenshot: `xcrun simctl io <device-id> screenshot <artifact-path>.png`
-- Android screenshot: `adb -s <device-serial> exec-out screencap -p > <artifact-path>.png`
-- Chrome: use the browser's screenshot or recording capability.
-
-Open and inspect every required screenshot, then share the actual images and findings with the coordinator for pre-release review. A saved path alone is not evidence. Protect credentials and unrelated personal data. Record platform, device/viewport, flavor, entrypoint, route/state, real data provenance, timestamp and code revision. Golden comparison is optional and complementary: use it only for stable, approved states with a reviewed baseline; never treat a live-data screenshot with changing content as a deterministic golden.
-
-## Golden Screenshot Verification (`golden_screenshot`)
-
-For headless screen visual testing, asset rendering, and device frame preview, see [Golden Screenshot Recipe](references/01_golden_screenshot_recipe.md).
-- **Headless Screen Rendering**: Generates pixel-accurate screen captures without booting an emulator or simulator.
-- **Review Workflow**: `code_writer` generates initial baseline via `flutter test --update-goldens`; `code_reviewer` inspects the generated `.png` artifacts against design; `test_runner` executes regression checks with standard `flutter test` (without `--update-goldens`).
-
-## Verdict
-
-Return a result for each required state: `PASS` when observed and evidenced; `FAILED` for a defect or material difference from approved Visual AC; `BLOCKED` for an unavailable dependency; `NOT_RUN` when unattempted. A code fix creates a new revision and requires affected review, tests and visual states to run again. For a non-UI phase, record `UI impact: no` with the reason; do not launch an emulator just to satisfy a checkbox.
+| Topic | Reference File |
+|---|---|
+| Visual reference hierarchy, Screen × State × Viewport matrix, data provenance, and runtime target capture | [01-references-matrix-and-capture.md](references/01-references-matrix-and-capture.md) |
+| Headless 4-state `golden_screenshot` recipe, template, and role boundaries (`code_writer` / `code_reviewer` / `test_runner`) | [02-golden-screenshot-workflow.md](references/02-golden-screenshot-workflow.md) |
+| 10-dimension comparison checklist, `BLOCKER` / `MAJOR` / `MINOR` deviation grading, and evidence report table | [03-comparison-checklist-and-verdict.md](references/03-comparison-checklist-and-verdict.md) |
+<!-- {{profile_references}} -->

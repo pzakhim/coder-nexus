@@ -1,0 +1,73 @@
+# 02 — Smell Catalog (Four Lenses)
+
+<!-- GEN: Why: real examples from this codebase, grouped by the Reuse / Simplification / Efficiency / Altitude lenses, tell the agent what avoidable complexity looks like here, which generic advice cannot. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules S4–S10. Keep only rows from references/smell-catalog.md that occur in this workspace; each with a real example (path + one line) or marked illustrative. Add the workspace's own rows found with references/discovery-and-checks.md §1. -->
+
+Ask in order: **needed?** → **already in the repo?** → **standard library / framework / platform?** → only then write the minimum.
+
+Pass the diff through the four lenses in order. A host that supports subagents may run the lenses in parallel; the findings and the rules are the same.
+
+## 1. Reuse
+
+| Tag | Smell here | Example | Technique |
+|---|---|---|---|
+| {{tag}} | {{smell}} | `{{path}}` — {{one_line}} | {{technique}} |
+
+### Already shipped
+
+| Hand-rolled | Use instead |
+|---|---|
+| {{hand_rolled}} | {{replacement}} |
+
+## 2. Simplification
+
+| Tag | Smell here | Example | Technique |
+|---|---|---|---|
+| {{tag}} | {{smell}} | `{{path}}` — {{one_line}} | {{technique}} |
+
+Dead code, wrappers and size/nesting limits: {{clean_code_link}} (C2, C1, C6) — not repeated here.
+
+## 3. Efficiency
+
+| Tag | Smell here | Example | Technique |
+|---|---|---|---|
+| {{tag}} | {{smell}} | `{{path}}` — {{one_line}} | {{technique}} |
+
+A hot-path change needs a measurement first ([01]({{ref_01}}) stop criteria).
+
+## 4. Altitude
+
+| Tag | Smell here | Example | Technique |
+|---|---|---|---|
+| {{tag}} | {{smell}} | `{{path}}` — {{one_line}} | {{technique}} |
+
+When the right depth lies outside the diff, record it in Concerns instead.
+
+## Rule of three
+
+Extract shared logic on the third repetition; two may stay. Definitions ({{definition_kinds}}) are never duplicated ({{clean_code_link}} C1).
+
+## Leave these alone
+
+- {{kept_abstractions}} <!-- GEN: abstractions required by decisions / clean-architecture ports -->
+- Long but linear code with one responsibility.
+- Defensive checks at trust boundaries.
+
+## Reduce or relocate?
+
+Count the concepts a reader must hold (names, branches, modes, layers) before and after. Same count means the complexity only moved: revert it.
+
+## Candidate line
+
+`<lens>/<tag> at <path:line>: <what to cut> -> <replacement>`
+
+## 5. Before / After Reference Examples
+
+<!-- GEN: Include 1–2 concise Before (Smell ❌) vs After (Simplified ✅) code snippets demonstrating the top stack smells in action. -->
+```{{lang}}
+{{before_after_examples}}
+```
+
+<!-- custom:start -->
+<!-- custom:end -->

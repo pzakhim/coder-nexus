@@ -6,7 +6,7 @@ Consolidated rules for naming (**C5**), size thresholds and widget decomposition
 
 ## 1. Identifier & Layer Naming (C5, C11)
 
-Follow **Effective Dart** and the active workspace conventions (`flutter-core-package-usage`):
+Follow **Effective Dart** and the active workspace conventions (`architecture_profile`):
 
 | Element | Convention | Good | Bad |
 |---|---|---|---|
@@ -55,7 +55,7 @@ Follow **Effective Dart** and the active workspace conventions (`flutter-core-pa
 ## 3. One Concept, One Place & Helper Locality (C1, C16)
 
 - **No pass-through wrappers or aliases (C1)**: Never create a class or function that merely forwards calls without adding behavior, transformation, or boundary translation. When renaming a symbol, update all call sites in the same task—never leave compatibility typedefs or re-exports.
-- **Reuse approved foundations (C1, C11)**: Before creating a custom button, input, dialog, or network wrapper, check the workspace's resolved foundation profile (`flutter-core-package-usage`).
+- **Reuse approved foundations (C1, C11)**: Before creating a custom button, input, dialog, or network wrapper, check the workspace's resolved foundation profile (`architecture_profile`).
 - **Helper locality (C16)**:
   - A helper function or sub-widget used by a single file stays private (`_name`) inside that file.
   - Extract to a shared file only when **two or more files** import it, placing it in the domain/feature module that owns the concept.

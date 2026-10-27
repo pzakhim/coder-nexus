@@ -1,0 +1,63 @@
+# Branch Model, Environment Mapping & Preflight Protocol
+
+> Topic: Lifecycle branch model (`G1`), protected branches (`M2`), preflight checks (`M1`, `M4`, `M9`), and the `D-NN` branch decision record (`M8`) for {{project_name}}.
+
+<!-- GEN: Why: Combine branch-to-environment mapping (01) and preflight base selection (02) into one cohesive reference ({{ref_01}}) so agents pick the right base branch and record D-NN before writing code. -->
+
+## 1. Lines, Environments & Protected Branches (`G1`, `M2`)
+
+Model: **{{branch_model}}** — {{model_one_line}}
+
+| Environment | Git Ref | Deployment Trigger | Role & Rules |
+|---|---|---|---|
+{{environment_rows}}
+
+### Protected Branches (`M2`, `M5`)
+
+- **Protected refs**: `{{protected_branches}}` ({{protection_notes}}).
+- Direct commits, force-pushes (`git push --force` / `--force-with-lease`), and branch deletions on `{{protected_branches}}` are strictly forbidden.
+
+---
+
+## 2. Two-Stage Preflight Protocol (`M1`, `M4`, `M8`, `M9`)
+
+### Stage A — Read-Only Check at Task Start (Before Gate 1)
+
+1. Inspect repository state without modifying branches or files:
+   ```sh
+   git fetch origin --prune
+   git status --short --branch
+   git branch -a --list "*{{ticket_prefix}}*"
+   git branch -r --list "origin/release/*"
+   git describe --tags --abbrev=0 origin/{{production_branch}}
+   ```
+2. **Pre-existing uncommitted changes (`M4`)**: If the working tree has modifications outside `.superpowers/work-items/`, stop and ask the user whether to commit them on the current branch, stash them, or abort. Never discard or overwrite them.
+3. **Pre-Gate 1 writing boundary (`M1`)**: Until Gate 1 (`requirements.md`) is approved by the user, write only uncommitted work-item documents under `{{work_items_path}}`.
+
+### Stage B — Branch Creation & Baseline Re-Verification (Right After Gate 1)
+
+| Job Type | Ask User First | Base Ref | Parent-Ticket Branch Name (`G2`) | Merge Target(s) |
+|---|---|---|---|---|
+{{preflight_rows}}
+
+1. **Create or switch to the Parent-Ticket branch**:
+   ```sh
+   git switch -c <branch-name> origin/<base-ref>
+   ```
+2. **Verify ancestry & freshness when reusing an existing branch**:
+   ```sh
+   git merge-base --is-ancestor origin/<base-ref> HEAD
+   git rev-list --count HEAD..origin/<base-ref>
+   ```
+3. **Re-check baseline facts (`M9`)**: When `origin/<base-ref>` differs from the ref on which `codebase-notes.md` was scanned, run `git diff --stat <scanned-sha> origin/<base-ref> -- <cited-paths>` and update any changed baseline facts.
+4. **Record `D-NN` in `codebase-notes.md` (`M8`)**:
+   ```text
+   D-NN Branch: {{example_branch}}
+        Parent Ticket: {{example_parent_ticket}}
+        Base: origin/{{example_base}} @ <sha>
+        Spec scanned on: <ref> @ <sha> (re-checked, <n> cited paths changed)
+        Merge targets: {{example_targets}}
+        Work-item docs tracked in Git: {{work_items_committed}}
+   ```
+
+See [`references/02-naming-commits-and-merge-strategy.md`]({{ref_02}}) for parent-ticket branch naming, sub-ticket/phase commit checkpoints, and merge rules, and [`references/03-versioning-release-and-gates.md`]({{ref_03}}) for SemVer and release gates.

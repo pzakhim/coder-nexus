@@ -9,14 +9,13 @@
     "bug-hunt"
   ],
   "slots": {
-    "core-package-usage": "Which existing foundations, shared components and UI kit the Client reuses, and how to record reuse or gaps.",
     "architecture-design": "Codebase scan, architectural options and the stack's design.md template for Gate 2.",
     "clean-architecture": "Module structure, layer boundaries, contracts and dependency wiring for the stack.",
     "unit-testing": "Developer unit tests for the stack: tools, paths and required pass/fail cases.",
     "code-review": "The stack's review rubric, validators and blocking rules.",
     "verification": "The stack's analyzer, test, build and evidence commands for a reviewed revision.",
     "visual-quality": "Launching UI targets and capturing revision-bound visual evidence.",
-    "ui-kit-mapping": "Where the Client's look comes from (UI kit, Client theme or framework defaults) and how the designer turns it into the HTML kit for UI/UX designs.",
+    "ui-kit-mapping": "Where the Client's look comes from (UI kit, Client theme or framework defaults) and how Planning maps extracted Figma tokens.json and <node>.spec.json to existing widgets, Clean Architecture, and C-NN / Core gap records at Gate 2.",
     "clean-code": "The stack's language idioms: naming, private and export conventions, debug calls and simplification smells with standard-library replacements.",
     "secure-coding-standards": "The stack's security risks: unsafe patterns next to their safe counterparts, secret and token storage, and audit commands.",
     "code-simplification": "The stack's simplification smells next to their standard-library or framework replacements, behavior-safety rules, stop criteria and the one-line simplify report.",

@@ -1,0 +1,46 @@
+# 02 — Isolate, Hypothesize & Symptom Matrix
+
+<!-- GEN: Why: one falsifiable hypothesis at a time and a stack-specific symptom matrix prevent shotgun debugging. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+Rules **D4**, **D5**, **D6**, and **D11**.
+
+---
+
+## 1. Minimize & Isolate the Boundary (`D4`)
+
+1. **Minimize the Input:** Remove fields, fixtures, and steps one at a time while re-running the reproduction until every remaining piece is load-bearing.
+2. **Diff Since Last Green:** Inspect `git diff <last-green-sha> -- {{source_root}}` and lockfile/codegen diffs to spot recent changes along the failing call path.
+3. **Binary Search Across Architectural Layers:** Trace data entering and leaving each layer boundary (`{{layer_pipeline}}`) to pinpoint the exact boundary where valid input becomes a wrong value or unhandled error.
+
+---
+
+## 2. Ranked Falsifiable Hypotheses (`D5`, `D6`)
+
+Write **3–5 ranked hypotheses** before editing code. Every hypothesis must state a **falsifiable prediction** ("if X is the cause, changing Y eliminates the failure"). Test one variable at a time:
+
+```text
+H1 (rank 1): <suspected cause> | predicts: <changing Y removes the failure> | probe: <command or read> | result: CONFIRMED / RULED OUT
+H2 (rank 2): <suspected cause> | predicts: <...> | probe: <...> | result: RULED OUT
+Fix attempts: 1/3 <what changed> -> reproduction <PASS/FAIL>
+```
+
+Once a hypothesis is `CONFIRMED`, trace the bad value backwards caller-by-caller until you reach the layer that owns the invariant (`D6`), and scan the current diff (`rg -n`) for sibling occurrences of the same mistake.
+
+---
+
+## 3. Temporary Tagged Instrumentation & Cleanup (`D11`)
+
+- Prefer non-invasive CLI flags first (`{{verbose_cmd}}`).
+- When temporary logging is required to observe runtime ordering or boundary values, tag every statement with a unique marker (e.g., `[DEBUG-7f3a]`) and never log secrets or PII.
+- **Mandatory Pre-Handoff Cleanup:** Delete all temporary logs before hand-off and prove zero matches via `{{debug_cleanup_cmd}}` (`exit 0` = `PASS`).
+
+---
+
+## 4. Symptom → First Moves → Typical Root Cause Matrix
+
+| Symptom | First Moves | Typical Root Cause |
+|---|---|---|
+| {{symptom}} | {{first_moves}} | {{typical_cause}} |
+
+<!-- custom:start -->
+<!-- custom:end -->

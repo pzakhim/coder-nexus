@@ -1,0 +1,85 @@
+# Semantic Versioning, Release Integrity & Verification Gates
+
+> Topic: Public contracts (`V1`), SemVer bump rules (`V2`–`V7`), release integrity checks (`R1`–`R2`), user-executed production release runbook (`M6`), binary CLI `PASS`/`FAIL` gates, and `BLOCKER`/`MAJOR`/`MINOR` review rubric for {{project_name}}.
+
+<!-- GEN: Why: Define SemVer contract rules, version SSOT synchronization, the human-executed production release runbook, and unified PASS/FAIL + BLOCKER/MAJOR/MINOR gates in one reference ({{ref_03}}). -->
+
+## 1. Public Contracts & SemVer Bump Rules (`V1`–`V7`)
+
+Version format: `MAJOR.MINOR.PATCH` · Tag pattern: `{{tag_format}}` · Current phase: **{{version_phase}}**
+
+### 1.1 Workspace Contract Surface (`V1`)
+
+A change is a **contract break (`MAJOR`)** when it breaks any of the following without backward compatibility:
+{{contract_list}}
+
+### 1.2 Determining the Next Version (`V2`–`V5`)
+
+| Bump | Trigger Criteria (Conventional Commits Since Last Tag) | Workspace Example |
+|---|---|---|
+| **`PATCH`** | `fix(...)`, `perf(...)`, security patches; zero new features and zero contract breaks | {{patch_example}} |
+| **`MINOR`** | At least one `feat(...)` backward-compatible feature, additive API/schema change, or deprecation (`PATCH` resets to `0`) | {{minor_example}} |
+| **`MAJOR`** | Any `type(...)!` or `BREAKING CHANGE:` footer breaking a `V1` contract, or an approved business-driven major release (`D-NN`) | {{major_example}} |
+
+- **Single Source of Truth (`V6`)**: Version files (`{{version_files}}`) are synchronized via `{{version_sync_cmd}}`.
+- **Human decision (`V4`)**: The agent inspects `git log <last-tag>..HEAD`, lists the commits and contract impact, and **proposes** the next version; **{{release_approver}} decides and approves the version**.
+
+---
+
+## 2. Production Release Runbook & Integrity Checks (`M6`, `R1`–`R2`)
+
+> **Mandatory Rule `M6`**: The agent **prepares** the checklist and exact commands below after verifying readiness, and **never executes** the merge into `{{production_branch}}`, the version tag, or the production deployment without explicit human execution/approval.
+
+1. **Cut & verify Release Candidate (`{{release_pattern}}`)**:
+   - Branch `release/X.Y.Z` from `{{integration_branch}}`, run `{{version_sync_cmd}}`, and run the full test/verification suite on STG. Only `fix/*` branches may target `release/X.Y.Z` (and must also merge back to `{{integration_branch}}`).
+2. **Check `R1` — Every Production Hotfix Is Included**:
+   ```sh
+   git fetch origin --prune
+   git log --oneline origin/release/X.Y.Z..origin/{{production_branch}}
+   ```
+   *(Must be empty — `0` unmerged commits on `{{production_branch}}`.)*
+3. **Merge `release/X.Y.Z` into `{{production_branch}}` (`--no-ff`, user-approved/executed)**:
+   ```sh
+   git switch {{production_branch}}
+   git merge --no-ff origin/release/X.Y.Z -m "Release vX.Y.Z"
+   ```
+4. **Check `R2` — Exact Tree Identity Between Tested Release and `{{production_branch}}`**:
+   ```sh
+   git diff origin/release/X.Y.Z HEAD
+   ```
+   *(Must be empty — `0` diff lines.)*
+5. **Create Annotated Tag & Atomic Push (user-approved/executed)**:
+   ```sh
+   git tag -a vX.Y.Z -m "{{project_name}} vX.Y.Z"
+   git push --atomic origin {{production_branch}} refs/tags/vX.Y.Z
+   ```
+   *(Never run `git push --tags` or `git push --all`.)*
+6. **Back-Merge & Cleanup**: Merge `{{production_branch}}` back into `{{integration_branch}}` and delete `release/X.Y.Z` after user confirmation.
+
+---
+
+## 3. Deterministic CLI Verification Gates (`PASS` / `FAIL`)
+
+All automated checks report strictly **`PASS`** or **`FAIL`** (`shared_contracts/flags_and_statuses.md`; `NOT_RUN`, `BLOCKED`, and `UNVERIFIED` never count as `PASS`):
+
+| Gate | Command | `PASS` Criterion | `FAIL` Action |
+|---|---|---|---|
+| **G1 — Protected Branch Guard (`M2`)** | `git branch --show-current` | Current branch is not in `{{protected_branches}}` | Switch to the `D-NN` work branch before editing or committing |
+| **G2 — Base Ancestry Check (`G1`)** | `git merge-base --is-ancestor origin/<base> HEAD` | Exit `0` | Rebase personal branch onto `origin/<base>` or alert user if wrong base |
+| **G3 — Staged Diff Hygiene (`M4`, `M7`)** | `git diff --cached --check && git status --short` | Exit `0`, zero secrets, only task-scoped files staged | Unstage unrelated files (`git restore --staged <path>`) and fix whitespace |
+| **G4 — Commit Traceability Gate (`G3`, `M10`)** | `{{commit_check_cmd}}` | Every commit cites `<SUB-TICKET>`, `<PARENT-TICKET> + [PHASE-NN]`, or `(phase-NN)` | Amend/reword personal unpushed commit to restore full ticket/phase traceability |
+| **G5 — Release Integrity (`R1` + `R2`)** | `git log origin/release/X.Y.Z..origin/{{production_branch}}` | Empty output (`0` missing hotfixes) | Merge missing hotfix into `release/X.Y.Z` and re-verify on STG |
+
+---
+
+## 4. Code Review Severity Rubric (`BLOCKER` / `MAJOR` / `MINOR`)
+
+Reviewer findings on Git workflow and branch hygiene use the unified 3-tier scale from `shared_contracts/flags_and_statuses.md`:
+
+| Severity | Git Workflow Finding Criteria |
+|---|---|
+| **`BLOCKER`** | • Direct commit or push to a protected branch (`{{protected_branches}}`, `M2`) or unauthorized merge/tag on `{{production_branch}}` (`M6`).<br>• Branch cut from the wrong base (`M1`/`G1`), pulling unverified `{{integration_branch}}` commits into a `{{release_pattern}}` fix or `hotfix/*`.<br>• Secret, token, or `.env` credential staged or committed in branch history (`M7`).<br>• Production hotfix not propagated to active `{{release_pattern}}` and `{{integration_branch}}` (`G5`), or `R1`/`R2` release integrity check failing.<br>• Breaking contract change (`V1`) omitting `!` / `BREAKING CHANGE:` and `D-NN` approval. |
+| **`MAJOR`** | • Arbitrary WIP commits (`wip`, `update`, `temp`, `fix bug`) created mid-phase before verification gates pass (`M10`).<br>• Commit subject missing required **Sub-Ticket ID** (`<SUB-TICKET>`) or **Accepted Phase (`PHASE-NN`)** traceability (`G3`).<br>• Branch name violates `<type>/<PARENT-TICKET>-<short-description>` pattern or uses developer personal names (`G2`).<br>• Unrelated files or untracked artifacts staged via `git add .` (`M4`).<br>• Version files (`{{version_files}}`) out of sync with `{{version_sync_cmd}}` (`V6`). |
+| **`MINOR`** | • Commit summary exceeds 72 characters or uses past tense instead of imperative mood.<br>• Minor formatting omission in PR description when `D-NN` and commit traceability are otherwise complete. |
+
+See [`references/01-branch-model-and-preflight.md`]({{ref_01}}) for preflight rules and [`references/02-naming-commits-and-merge-strategy.md`]({{ref_02}}) for branch/commit naming and merge strategy.

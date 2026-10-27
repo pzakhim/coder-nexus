@@ -1,51 +1,77 @@
-# Mode: plan (before Gate 3)
+# Mode: Plan — Gate 3 Pre-Gate Verification (`planning` in `dev-team`)
 
-Reviews `implementation-plan.md` and every linked `phases/*.md` against the approved `requirements.md`, `design.md` and `codebase-notes.md`. Pass 1 is clean before this file starts. Findings use the prefix `GR-P-NN`.
+Reviews `implementation-plan.md` and every linked `phases/phase-NN-*.md` against the approved `requirements.md`, `design.md`, and `codebase-notes.md`. Pass 1 (`validate_plan_slices` = `PASS`, including `PLAN-V-001`…`PLAN-V-010`) must be clean before starting Pass 2. Findings use `GR-P-NN`.
 
-`PLAN-V-006` and `PLAN-V-010` already check that every AC and goal is mapped to a phase, and `PLAN-V-009` that phases do not depend forward. This mode checks that the mapped tasks really deliver and fit together.
+The approved spec and design are binding authority; when the plan disagrees with them, the plan is wrong unless the user confirms a change through a `Q-NN`.
 
-The spec is the binding authority; the plan is its argument. When they disagree, the plan is wrong unless the spec owner confirms otherwise through a `Q-NN`.
+---
 
-## P1. Interface pre-flight table
+## Pass 2 — Plan Checklist (`P1`–`P5`)
 
-The table is the output; "no conflicts" without rows is not a review.
+### P1. Interface Pre-Flight Table (`Produces` ↔ `Consumes`)
+Construct one row for every pair of tasks (within a phase or across phases) that share a file or symbol:
 
-One row for every pair of tasks (in one phase or across phases) that share a file or a symbol:
-
-| Task A | Task B | Shared file / symbol | A produces | B consumes | Match | Finding |
+| Task A | Task B | Shared File / Symbol | A Produces | B Consumes | Match? | Finding |
 |---|---|---|---|---|---|---|
-| 1.2 | 2.1 | `OrderRepository.fetchPage` | `(page, size) -> Page<Order>` | `fetchPage(cursor)` | no: name/parameters differ | `GR-P-02` |
+| `1.2` | `2.1` | `OrderRepository.fetchPage` | `(page, size) -> Page<Order>` | `fetchPage(cursor)` | No — parameter mismatch | `GR-P-01` (`BLOCKER`) |
 
-- "Produces" comes from the task's **Produces** field; "consumes" from the other task's files, code direction and acceptance check.
-- Names, parameter and return types, nullability, error results, JSON keys and routes must match. A mismatch is `HIGH`.
-- A consumer ordered before its producer (inside a phase, or in an earlier phase) is `HIGH`.
+- Verify exact names, parameter/return types, nullability, error types, JSON keys, and route contracts. Any mismatch is **`BLOCKER`**.
+- Any consumer task ordered before its producer task (within a phase or in an earlier phase) is **`BLOCKER`**.
+- Any task whose internal instructions contradict themselves (e.g., test vs implementation signature, creating a file a later task assumes already existed) is **`BLOCKER`**.
 
-One row for every task whose own text disagrees with itself: the test it specifies against the code it specifies, a file it creates against a file a later task says already exists, an acceptance check that cannot fail. `HIGH`.
+### P2. Complete `AC-NN`, `BR-NN`, and `NEW COMPONENT` Delivery
+- Every `AC-NN` mapped to a phase must have both a task that builds the behavior and a decisive check that would fail without it. Listing an `AC-NN` ID in the phase header without a building task and check is **`BLOCKER`**.
+- Every behavioral `BR-NN`, every `NEW COMPONENT` (`C-NN`) in `design.md` → `## UI/UX mapping`, and every divergence rule (`D-NN`) must be implemented by an explicit task (**`BLOCKER`** if missing).
 
-## P2. Every AC and goal really covered
+### P3. Plan Proportion & Anti-Pattern Check
+- A plan more than ~3× the combined length of `requirements.md` + `design.md`, or tasks that paste full function bodies instead of concise direction + `Produces` signatures, is **`MAJOR`**.
+- Any task that instructs `code_writer` to write something `code_reviewer` would reject — a tautological test, duplicated logic, or a hardcoded fallback masking errors — is **`BLOCKER`**.
 
-- For each `AC-NN`, the owning phase has a task that builds the behavior and a decisive check that would fail without it. A phase that only lists the ID is `HIGH`.
-- Every `BR-NN` with behavior lands in a task; every `NEW COMPONENT` in the design's `## UI/UX mapping` is an explicit task; every design divergence rule (`D-NN`) is respected by the tasks that touch it. Gaps are `HIGH`.
-- Each `G-NN` is reached through its ACs (see `PLAN-V-010`); report goals reached only by a check that cannot fail.
+### P4. Global Constraints & Value Alignment
+Every constant or constraint repeated in `implementation-plan.md` or `phases/*.md` (limits, page sizes, timeouts, roles, data scopes, messages, API fields/status codes) must match `requirements.md`, `codebase-notes.md` (`## 4`, `## 5`), and `design.md` exactly (**`BLOCKER`** on mismatch).
 
-## P3. Proportion
+### P5. Falsifiable Task Checks & `## Review focus`
+- Every task must specify an **Acceptance Criteria** command with its `cwd` and a falsifiable **Expected** sourced from approved documents ([`plan-and-task-contract.md`](../../work-item-contract/references/plan-and-task-contract.md) §2). Missing `cwd`, unfalsifiable `Expected` (*"works"*, *"no errors"*), or `Expected` copied blindly from unverified current output is **`BLOCKER`**.
+- `## Review focus` must either list concrete risk items naming their owning task or state `None found after checking every AC and BR` (**`BLOCKER`** if blank).
 
-- A plan much longer than `requirements.md` plus `design.md` (roughly more than three times), or tasks that transcribe whole function bodies, is `MEDIUM`. The plan states direction, interfaces (**Produces**), files and checks; the Code Writer writes the code.
-- A task that mandates something review would reject - a test that asserts nothing, duplicated logic, a fake fallback that hides a failure - is `HIGH`.
+---
 
-## P4. Global constraints match the spec
+## P6. Pass 3 — Cold-Reader Subagent Check (Reader Plays `code_writer`)
 
-Every value the plan repeats - in a Global Constraints section when the plan has one, otherwise in `## Checkpoints and shared files`, phase code direction or checks - equals its source: limits, page sizes, timeouts, roles, data scopes, messages, API fields and statuses in `requirements.md`, `codebase-notes.md` `## 4.` / `## 5.` and `design.md`. A mismatch is `HIGH`; resolve it in the plan, or raise a `Q-NN` if the spec value itself is in doubt.
+After Pass 1 (`PASS`) and Pass 2 (`0 BLOCKER`, `0 MAJOR`), spawn one fresh read-only subagent with this exact prompt:
 
-## P5. Task checks and Review focus are filled
+```text
+You are the Code Writer of this team. You have been handed the implementation
+plan of a work item and must next execute it: PHASE-00 first, then each phase,
+task by task, from top to bottom. You cannot talk to the author, and you have
+no chat history.
 
-- Every task has an **Acceptance Criteria** command with its cwd and an **Expected** that can fail and is sourced from the approved documents (`AC-NN`, `BR-NN`, `D-NN`, design), per `work-item-contract` → `plan-and-task-contract.md` §2. A missing cwd, an Expected that cannot fail ("works", "no errors" for a check that reports none) or an Expected taken from current code output is `HIGH`.
-- `## Review focus` lists its lines, each naming an owning task, or reads `None found after checking every AC and BR`. An empty section is `HIGH`.
+Read the documents under review:
+- {{vN_path}}/implementation-plan.md
+- {{vN_path}}/phases/   (every phase file)
 
-## Coverage report (plan)
+Already approved Gate 1 & Gate 2 context (do not question unless the plan contradicts it):
+- {{vN_path}}/requirements.md
+- {{vN_path}}/codebase-notes.md
+- {{vN_path}}/design.md
 
-- P1: pairs checked, mismatches; tasks checked, self-contradictions.
-- P2: `AC n/N` with a building task and a decisive check; BR and `NEW COMPONENT` gaps.
-- P3: plan lines vs requirements + design lines; transcribed bodies found.
-- P4: values compared, mismatches.
-- P5: tasks checked, missing cwd / unfalsifiable or unsourced Expected; Review focus filled or `None found after checking every AC and BR`.
+You may open files these documents cite by path, read-only, only to verify that
+a cited file, symbol, or command exists. Do not use the codebase to fill gaps
+left by the plan. Do not write or modify any file and do not run builds or tests.
+
+Walk the plan as if executing it task by task. Report only the questions you
+would still need answered to finish every task without guessing: missing files
+or symbols, a task depending on something not yet produced, a check command
+that cannot decide PASS or FAIL, or an AC/goal no phase delivers.
+For each question provide:
+1. The question
+2. Where it comes from (phase, task, AC-NN, PHASE-00 item)
+3. Why the answer changes what you do
+4. What you would guess if forced
+Rank by importance, at most 10.
+
+Skip local variable naming and wording nits.
+If nothing important is left, reply: nothing important left
+```
+
+Sort every returned question per [`SKILL.md` §5](../SKILL.md#5-pass-3--fresh-cold-reader-subagent-check) (`Answered already`, `Minor — Agent's call`, or `User's call — OPEN Q-NN`).

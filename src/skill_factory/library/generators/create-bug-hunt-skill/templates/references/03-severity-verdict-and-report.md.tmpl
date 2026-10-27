@@ -1,0 +1,63 @@
+# 03 — Severity, Verdict Impact, and Reporting
+
+> Topic: Effort caps, unified BLOCKER/MAJOR/MINOR calibration, finding table format, verdict impact, and role duties (`H9`–`H14`)
+
+<!-- GEN: Why: coder and reviewer share one severity scale, one table format, and one verdict rule so findings translate directly into action without negotiation. Kind: Mandatory. -->
+
+## 1. Effort Levels & Caps (`H10`)
+
+| Effort | When | Dimensions | Cap |
+|---|---|---|---|
+| `quick` | Code Writer self-check, small non-feature item, docs-only | 1–4 (changed hunks) | 5 findings |
+| `standard` | Every feature phase review (`PHASE-01+`) | 1–7 (changed code + direct callers) | 10 findings |
+| `deep` | Final phase before close, {{deep_triggers}}, or a phase returned twice | 1–7 (+ callers one level further) | No cap |
+
+When the cap is reached, keep the highest-severity findings and note in the summary line that the cap truncated the list.
+
+---
+
+## 2. Unified Severity Calibration (`H9`)
+
+Use the single 3-tier scale (`BLOCKER` / `MAJOR` / `MINOR`) with `CONFIRMED` / `PLAUSIBLE`:
+
+| Severity | Stack Calibration |
+|---|---|
+| `BLOCKER` | {{blocker_examples}} |
+| `MAJOR` | {{major_examples}} |
+| `MINOR` | {{minor_examples}} |
+
+---
+
+## 3. Finding Row Format & Summary Line (`H11`, `H14`)
+
+Order findings most severe first, `CONFIRMED` before `PLAUSIBLE`:
+
+| ID | Pass | Severity | Confidence | File:line | Problem | Failure scenario / evidence | Fix direction |
+|---|---|---|---|---|---|---|---|
+| `BH-01` | 2 bug-hunt | `BLOCKER` | `CONFIRMED` | `{{example_path}}:42` | One sentence naming the defect | `given … → when … → then …`; traced path or command (`exit 1`); missing test | What must change, not the replacement code |
+
+End with the mandatory summary line:
+
+```text
+bug-hunt: 1 CONFIRMED, 1 PLAUSIBLE (effort standard) — dimensions 1-7
+bug-hunt: no defect found (effort quick) — dimensions 1-4 on changed hunks
+```
+
+Non-defect cleanups go below the table as `NOTE: <path:line> — <cleanup>` for `code-simplification`.
+
+---
+
+## 4. Verdict Impact & Role Responsibilities (`H12`, `H13`)
+
+| Finding Condition | Verdict Impact |
+|---|---|
+| Any `CONFIRMED` `BLOCKER` or `MAJOR` | Blocks approval (`REQUEST_CHANGES`) |
+| Any `PLAUSIBLE` `BLOCKER` | `BLOCKED` until the named evidence is supplied |
+| Other `PLAUSIBLE` findings | Non-blocking questions for the Code Writer |
+| `MINOR` only / Zero findings | Does not block approval (`APPROVED` when Pass 1 also passes) |
+
+- **Reviewer (`standard` / `deep`):** Runs cold as Pass 2 of `review-workflow`; strictly read-only toward code, tests, and schemas; records findings as `RV-NN`.
+- **Code Writer (`quick` self-check):** Runs on the phase diff after targeted checks pass and before `READY_FOR_REVIEW`; writes a failing regression test first for every `CONFIRMED` finding, fixes at the root inside approved scope, and records open `PLAUSIBLE` items plus the `bug-hunt:` summary line in `writer-handoff.md`.
+
+<!-- custom:start -->
+<!-- custom:end -->

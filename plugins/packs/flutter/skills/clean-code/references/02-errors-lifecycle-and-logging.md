@@ -10,7 +10,7 @@ Swallowing exceptions creates silent bugs and leaves screens stuck in perpetual 
 
 - **No swallowed errors**: Never write an empty `catch (_) {}` or ignore a failed result.
 - **Data / Repository boundary translation**:
-  - Catch specific exceptions (`DioException`, `FormatException`, `TimeoutException`, platform exceptions) at the data/repository boundary and translate them into the workspace's typed result/failure contract (per `flutter-core-package-usage`, e.g., `Result<T>` / `Either<Failure, T>` / `DataState<T>`).
+  - Catch specific exceptions (`DioException`, `FormatException`, `TimeoutException`, platform exceptions) at the data/repository boundary and translate them into the workspace's typed result/failure contract (per the active `architecture_profile`, e.g., `Result<T>` / `Either<Failure, T>` / `DataState<T>`).
   - Never let raw network or JSON parsing exceptions bubble unhandled into the UI widget tree.
 - **State holder handling**:
   - Every asynchronous action in a `Cubit` / `Bloc` / `Notifier` must handle both success and failure outcomes, logging operational errors and emitting an explicit failure state so the UI can render error feedback or retry controls.
@@ -39,13 +39,13 @@ switch (result) {
 ## 2. Pure `build()` & Widget Lifecycle (C12, C11)
 
 - **Pure `build()` methods (C12)**:
-  - `build(BuildContext context)` (or the workspace's base screen builder method per `flutter-core-package-usage`) must be deterministic and free of side effects.
+  - `build(BuildContext context)` (or the workspace's base screen builder method per the active `architecture_profile`) must be deterministic and free of side effects.
   - **Never** trigger network calls (`cubit.load()`), navigation (`Navigator.push` / `context.go`), dialogs/snackbars, or state mutations directly inside `build()`.
   - Trigger initialization in `initState()` or route provider creation, and trigger navigation/dialogs inside `BlocListener` or user event callbacks.
 - **Async `BuildContext` safety**:
   - After any `await` in a `StatefulWidget` or callback, check `if (!context.mounted) return;` before using `context`.
 - **Workspace Base Screen contracts (C11)**:
-  - Follow the approved `architecture_profile` (`flutter-core-package-usage`). If the project uses a custom base screen lifecycle (such as responsive/analytics base states), override only the designated layout builders and never bypass lifecycle hooks.
+  - Follow the approved `architecture_profile`. If the project uses a custom base screen lifecycle (such as responsive/analytics base states), override only the designated layout builders and never bypass lifecycle hooks.
 
 ---
 
@@ -74,6 +74,6 @@ void dispose() {
 - **No debug leftovers (C3)**:
   - Never commit `print()`, `debugPrint()`, `debugger()`, or temporary debug flags.
 - **Use the workspace's structured logger**:
-  - Route diagnostic, warning, and error logs through the project's configured logger (resolved via `flutter-core-package-usage`), including error objects and stack traces on failures.
+  - Route diagnostic, warning, and error logs through the project's configured logger (per the active `architecture_profile`), including error objects and stack traces on failures.
 - **Privacy & security**:
   - Never log authentication tokens, bearer headers, passwords, session secrets, or personal user data (PII).

@@ -1,36 +1,75 @@
 ---
 name: quality-environment
-description: How the Quality Engineer of {{project_name}} prepares the test environment - probe before starting and never stop a stack someone else started, start in the background with logs, wait for readiness, run the reviewed revision with its migrations, isolated test data and per-role accounts, sandboxes or labelled stubs for external providers, cleanup, and BLOCKED when the environment fails. Use whenever starting or checking the stack for testing, seeding test data, preparing test accounts or mocking a provider in {{dirs}}.
+description: "Prepare, seed, stub, and clean up the acceptance test environment for {{project_name}} — enforcing probe-before-start (`E2`), never stopping unowned stacks, background startup with log capture, deterministic CLI readiness gates (`PASS` / `FAIL`), reviewed revision alignment and local DB migration, isolated test data and per-role test accounts without leaked secrets, provider sandboxes or `stubbed: <provider>` network-edge stubs, `BLOCKED` on environment failures, and `BLOCKER` / `MAJOR` / `MINOR` review severities. Use whenever starting or checking services for testing, seeding test data, preparing role accounts, or mocking external providers in {{target_dir}}."
 ---
 
 # Quality Environment — {{project_name}}
 
-<!-- GEN: Why: the lifecycle and the never-list protect other people's work and make results trustworthy. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
-<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+<!-- GEN: Why: the lifecycle, deterministic readiness gates, mandatory rules E1–E14, and never-list protect running stacks and make acceptance test results reproducible. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow ../../core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
 
-## Lifecycle
+Target directory: `{{target_dir}}` · Logs: `{{log_dir}}`
 
-1. **Probe** {{ports}} — running and healthy → reuse ([01]({{ref_01}})).
-2. **Align** to the reviewed revision and migrate the local DB ([04]({{ref_04}})).
-3. **Start** only what is missing, in the background, logs to {{log_dir}}; record what you started.
-4. **Wait** for readiness ({{readiness_checks}}).
-5. **Seed** isolated data and per-role accounts ([02]({{ref_02}})); set sandboxes/stubs ([03]({{ref_03}})).
-6. **Record** the environment; after the run, **clean up** your own data and processes ([05]({{ref_05}})).
+## 1. Deterministic Environment Readiness Gates (`PASS` / `FAIL`)
 
-## Never
+<!-- GEN: Binary CLI gates (exit 0 = PASS, exit != 0 = FAIL). An unready or conflicted environment that cannot be resolved reports BLOCKED (never counts as PASS). -->
+| Readiness Gate | Command (`cwd: {{target_dir}}`) | Pass Criteria (`PASS` / `FAIL`) |
+|---|---|---|
+| **Port & Process Probe (`E2`)** | `{{probe_cmd}}` | `PASS` when ports are either free to start or healthy & reusable |
+| **Revision & Local Schema Alignment (`E8`, `E9`)** | `{{revision_and_migrate_cmd}}` | `PASS` when checked-out SHA matches target and local DB migration exits `0` |
+| **Service Health & Readiness (`E4`)** | `{{health_check_cmd}}` | `PASS` when all required health endpoints / readiness checks return ready within timeout |
+| **Isolated Seed & Stub Readiness (`E5`–`E7`)** | `{{seed_and_stub_check_cmd}}` | `PASS` when local seed succeeds and active stubs respond with `stubbed: <provider>` recorded |
 
-- Stop, restart or reset a stack you did not start.
-- Run {{forbidden_data_commands}} — they clone, reset or overwrite shared data.
-- Use production data or real users' accounts.
-- Print or report credential values.
-- Report a stubbed result without the `stubbed` label.
-- Work around an environment failure by changing application code — report `BLOCKED`.
+## 2. 6-Step Environment Lifecycle
 
-## Relationship with other skills
+1. **Probe first (`E2`)**: inspect `{{ports}}` — if running and healthy, reuse; if running, unhealthy, and unowned, report `BLOCKED` ([01]({{ref_01}})).
+2. **Align revision & schema (`E8`, `E9`)**: bring owned services to the exact reviewed revision and migrate the local/disposable DB ([01]({{ref_01}})).
+3. **Start missing services (`E1`, `E3`)**: start only missing services in the background with logs in `{{log_dir}}`, recording PIDs/containers you started ([01]({{ref_01}})).
+4. **Verify readiness (`E4`)**: wait for all readiness gates (`PASS` / `FAIL`) before running any test case ([01]({{ref_01}}), [03]({{ref_03}})).
+5. **Seed isolated data, accounts & stubs (`E5`–`E7`, `E10`, `E13`)**: load isolated fixtures, per-role accounts from config, and provider sandboxes or `stubbed: <provider>` mocks ([02]({{ref_02}})).
+6. **Record & clean up (`E11`, `E12`, `E14`)**: attach the environment record to test evidence and stop/clean only what you created ([03]({{ref_03}})).
 
-<!-- GEN: Per ~/.claude/skill-factory/core/quality-skill-family.md; link existing siblings or write "not set up in this workspace". -->
-- Which data and environments cases need: {{quality_planning_link}}
-- Running the cases: {{quality_acceptance_link}} · Migrations: {{database_migrations_link}}
+## 3. Never-List
+
+- **Never** stop, restart, or reset a stack or service you did not start (`E2`).
+- **Never** run `{{forbidden_data_commands}}` — they clone, reset, or overwrite shared data (`E5`).
+- **Never** use production data or real user accounts, or print/paste secret credential values (`E5`, `E6`, `E13`).
+- **Never** report a stubbed test result without the `stubbed: <provider>` label (`E7`).
+- **Never** modify application code to work around an environment failure — report `BLOCKED` (`E12`).
+
+## 4. Mandatory Rules (`E1`–`E14`)
+
+| ID | Rule | Reference |
+|---|---|---|
+| **E1** | **Know the service topology** (services, ports, `cwd`, start order, health checks). | [01]({{ref_01}}) |
+| **E2** | **Probe before starting; never stop what you did not start.** | [01]({{ref_01}}) |
+| **E3** | **Start in the background, capture logs, and record process ownership.** | [01]({{ref_01}}) |
+| **E4** | **Verify readiness with a bounded timeout before running tests.** | [01]({{ref_01}}), [03]({{ref_03}}) |
+| **E5** | **Use isolated test data** (dedicated tenant/run IDs or local fixtures; never shared/prod data). | [02]({{ref_02}}) |
+| **E6** | **Maintain per-role test accounts** referenced by config key only (never real users). | [02]({{ref_02}}) |
+| **E7** | **External providers: sandbox first, or network-edge stub labelled `stubbed: <provider>`.** | [02]({{ref_02}}) |
+| **E8** | **Migrate the local/disposable DB schema to the reviewed revision.** | [01]({{ref_01}}) |
+| **E9** | **Run the exact reviewed revision** across owned services and record the commit SHA. | [01]({{ref_01}}) |
+| **E10** | **Enforce the environment matrix** (logical in-app selectors vs. physical DB targets). | [02]({{ref_02}}) |
+| **E11** | **Clean up created test data and stop only owned processes after the run.** | [03]({{ref_03}}) |
+| **E12** | **Report `BLOCKED` on environment failure** — never work around via application code changes. | [03]({{ref_03}}) |
+| **E13** | **Keep secrets local** — never echo, log, or paste credential values into reports. | [02]({{ref_02}}), [03]({{ref_03}}) |
+| **E14** | **Record the complete environment block** alongside acceptance test evidence. | [03]({{ref_03}}) |
+
+## 5. Reference Guides
+
+| Topic | Reference File |
+|---|---|
+| Service topology, probe-before-start, process ownership, readiness checks, reviewed revision checkout, and local DB migration (`E1`–`E4`, `E8`–`E9`) | [01-stack-lifecycle-and-revision.md]({{ref_01}}) |
+| Isolated test data, per-role test accounts without leaked credentials, provider sandboxes vs. `stubbed: <provider>` stubs, and environment matrix (`E5`–`E7`, `E10`, `E13`) | [02-test-data-accounts-and-stubs.md]({{ref_02}}) |
+| Post-run cleanup, `BLOCKED` handling on environment failure, environment evidence record, CLI `PASS` / `FAIL` readiness gates, and `BLOCKER` / `MAJOR` / `MINOR` review rubric (`E11`, `E12`, `E14`) | [03-cleanup-blocked-handling-and-gates.md]({{ref_03}}) |
+<!-- {{profile_references}} -->
+
+## 6. Relationship with Other Skills
+
+<!-- GEN: Per ../../core/quality-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+- Test cases, required roles & environments: {{quality_planning_link}}
+- Executing acceptance cases: {{quality_acceptance_link}} · Local DB migrations: {{database_migrations_link}}
 
 <!-- custom:start -->
 <!-- custom:end -->

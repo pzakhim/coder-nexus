@@ -1,0 +1,63 @@
+# UI/Client & API/Service Runtime Execution Checks
+
+> Topic: Real UI/client surface execution (`A5`), API/service surface execution (`A6`), live `Role × Environment × Action × Object` (`401`/`403`/`404` anti-IDOR) and `security-review` (`SR14`) runtime verification, and out-of-scope guard/regression execution (`A11`) for {{project_name}}.
+
+<!-- GEN: Why: Replace the legacy branched fe/03 and be/03 templates with one cohesive, stack-agnostic execution reference ({{ref_02}}) organized by UI/Client Surface (A5) and API/Service Surface (A6), explicitly linked to security-review (SR14). -->
+
+## 1. UI / Client Surface Execution (`A5`)
+
+Primary tool: **{{ui_tool}}** (fallback: `{{ui_fallback}}`) · Target entry: `{{base_url}}` · Viewports: `{{viewports}}`
+
+### 1.1 Confirmed Tool Operations Map (`{{ui_tool}}`)
+
+| Verification Need | Operation with `{{ui_tool}}` | Evidence / Output Captured |
+|---|---|---|
+| Open / Navigate | `{{ui_op_navigate}}` | Initial URL & route state |
+| Inspect UI / Accessibility Tree | `{{ui_op_inspect}}` | DOM / widget snapshot |
+| Interact (fill / click / keyboard) | `{{ui_op_interact}}` | Step trace & focus behavior |
+| Wait for Async Settlement | `{{ui_op_wait}}` | Settled state confirmation |
+| Capture Visual State | `{{ui_op_screenshot}}` | Saved under `{{evidence_path}}` |
+| Inspect Runtime Console / Logs | `{{ui_op_console}}` | Uncaught errors / warnings excerpt |
+| Inspect Network Requests | `{{ui_op_network}}` | Request/response status & payload check |
+| Viewport / Device Switch | `{{ui_op_viewport}}` | Layout check across `{{viewports}}` |
+
+### 1.2 Mandatory UI / Client Runtime Checks (`A5`, `A4`)
+For every UI workflow in the plan, verify:
+1. **Real UI States (`A5`)**: Trigger and capture `loading`, `empty`, `error` (validation + server error), and `populated` states against the live runtime.
+2. **Role & Capability Visibility (`A5`)**: Log in using separate isolated sessions per role (`{{roles}}`) and confirm unauthorized actions/navigation items are absent or disabled as specified.
+3. **Environment / Scope Switching (`A5`)**: When switching tenant/organization/environment (`{{scope_list}}`), confirm data views and active caches refetch the new scope without stale cross-scope leakage.
+4. **Reload Persistence (`A4`)**: After any mutation, reload the screen/view and verify the updated state renders from persisted storage.
+5. **Console & Network Health (`A5`)**: Inspect console and network logs after every flow. Any new uncaught exception, framework hydration error, or unexpected `4xx`/`5xx` response outside documented baseline noise (`{{baseline_noise}}`) fails the case (`FAIL`).
+
+---
+
+## 2. API / Service Surface Execution & Security Hand-Off (`A6`, `SR14`)
+
+Primary tool: **{{api_tool}}** (fallback: `{{api_fallback}}`) · Service base: `{{api_base_url}}`
+
+### 2.1 Functional, Persistence & Side-Effect Checks (`A4`, `A6`)
+For every API/service case:
+- **Status & Contract**: Verify HTTP/RPC status code, response schema, error envelope structure, and pagination/filtering invariants.
+- **Persistence Read-Back (`A4`)**: Follow every `POST`/`PUT`/`PATCH`/`DELETE` (or command mutation) with a `GET` (or state query) to confirm persisted fields and timestamps.
+- **Asynchronous Side Effects (`A6`)**: Verify background jobs, emitted domain events, audit log records (`actor`, `tenant_id`, `action`), and cache invalidation triggered by the operation.
+- **Idempotency & Concurrency (`A6`)**: Replay mutating requests with the same idempotency key or duplicate submission to confirm safe deduplication or conflict (`409` / `422`) handling.
+
+### 2.2 Live Permission Matrix & `security-review` (`SR14`) Runtime Verification (`A6`)
+
+UI hiding never proves access control. Execute direct API/service calls across the workspace's **`Role × Environment × Action × Object`** matrix and any runtime-dependent **`PLAUSIBLE`** checks handed over by `security-review` (`SR14`, {{security_review_link}}):
+
+| Matrix Scenario | Caller Identity & Role (`{{roles}}`) | Target Scope (`{{scope_list}}`) | Expected Status & Behavior | Runtime Evidence (`{{evidence_path}}`) |
+|---|---|---|---|---|
+| **Unauthenticated Call** | No token / expired token | Any protected endpoint | `401 Unauthorized` (zero state change) | Redacted response capture |
+| **Insufficient Role (BFLA)** | Lower-privilege role calling privileged mutation | Own `{{scope_list}}` | `403 Forbidden` (zero state change) | Redacted response + read-back proving no mutation |
+| **Cross-Scope / Anti-IDOR (BOLA)** | Authenticated role in Tenant/Owner A | Resource owned by Tenant/Owner B | `404 Not Found` or `403 Forbidden` (zero data leak) | Redacted response + read-back on Tenant B resource |
+| **`security-review` `PLAUSIBLE` Hand-Off (`SR14`)** | Scenario specified in `{{security_report_location}}` | Target boundary from `SR14` | Disprove exploit (`PASS`) or confirm exploit (`FAIL` → `BLOCKER`) | Full request/response trace returned to Security Review |
+
+---
+
+## 3. Out-of-Scope Guards & Regression Suite (`A11`)
+
+- Execute all out-of-scope guard cases and adjacent-module regression cases defined in `{{plan_location}}` on the same revision (`{{revision_notation}}`).
+- Any regression failure is graded with the same `BLOCKER` / `MAJOR` / `MINOR` rubric in [`references/03-failures-retest-and-gates.md`]({{ref_03}}).
+
+See [`references/01-preconditions-safety-and-case-loop.md`]({{ref_01}}) for preconditions and the per-case loop, and [`references/03-failures-retest-and-gates.md`]({{ref_03}}) for defect grading, flakiness, and re-test rules.

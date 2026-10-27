@@ -1,73 +1,74 @@
 ---
 name: verification
-description: The exact gate commands for a Python + FastAPI + PostgreSQL service, detected from the workspace (uv, poetry or pip; pyproject.toml settings) - ruff check, ruff format --check, mypy, pytest -q with the coverage threshold only when the workspace sets one, alembic upgrade head and alembic check on a disposable database, and an OpenAPI diff against the agreed contract - with what counts as PASS, FAIL, BLOCKED and NOT_RUN for each, evidence rows, the never-production rule, PHASE-00 readiness for a backend item and task check examples for plans. Use when the Code Writer runs phase checks, when the Code Reviewer re-runs them on REVIEW_REVISION, when the Test Runner prepares a backend environment, and when Planning writes Acceptance Criteria commands for backend tasks.
+description: "Execute and verify deterministic backend quality gates for a Python + FastAPI + PostgreSQL service (`G0`–`G8`: `ruff format --check`, `ruff check`, `mypy`, `pytest` unit/integration/coverage, `alembic` disposable-DB migration checks, OpenAPI contract diff, `lint-imports`, and `pip-audit`). Use when Planning defines task Acceptance Criteria commands, Code Writer verifies phase completion (`READY_FOR_REVIEW`), Code Reviewer re-runs checks on `REVIEW_REVISION` (`APPROVED` / `CHANGES_REQUESTED`), or Test Runner prepares the environment and runs acceptance checks (`ACCEPTED` / `CHANGES_REQUESTED` / `BLOCKED`)."
 ---
 
 # Backend Verification (Python)
 
-This is `{{slot:verification}}` for the backend pack. How a claim is proven and recorded belongs to `evidence-standard`; the evidence row, status words and report shapes to [handoff-and-status](../work-item-contract/references/handoff-and-status.md). This file names the backend commands and how to read their results.
+This skill is `{{slot:verification}}` for the Backend pack. Claim proof rules belong to `evidence-standard`; unified flags, severities, and handoff statuses belong to [handoff-and-status](../work-item-contract/references/handoff-and-status.md) and `shared_contracts/flags_and_statuses.md`.
 
-Detail: [gate commands and results](references/gates.md), [workspace detection and task checks](references/workspace-detection.md), [environment and PHASE-00](references/environment-and-phase-00.md), [sources](references/sources.md). Evidence block: [templates/phase-gate-evidence.md.tpl](templates/phase-gate-evidence.md.tpl).
+## 1. Detect Workspace Tooling First (Never Assume)
 
-## 1. Detect, never assume
+Before running any gate, inspect from the service root (`cwd`): `pyproject.toml`, the lockfile, `alembic.ini`, `ruff.toml` / `mypy.ini` / `setup.cfg`, `.env.example`, and existing `Makefile` / `justfile` targets.
 
-Before the first gate, read from the service root: `pyproject.toml`, the lock file, `alembic.ini`, `ruff.toml` / `mypy.ini` / `setup.cfg` if present, `.env.example`, and any `Makefile` / `justfile` target the team already uses for the same checks. Reason: a command guessed from another project runs the wrong tool or the wrong scope and still exits 0.
-
-| Lock file | Prefix | Example |
+| Lockfile | Command Prefix | Example |
 |---|---|---|
 | `uv.lock` | `uv run` | `uv run ruff check .` |
 | `poetry.lock` | `poetry run` | `poetry run mypy app` |
-| `requirements*.txt` only | activated venv | `python -m pytest -q` |
+| `requirements*.txt` only | activated `venv` | `python -m pytest -q` |
 
-A workspace target (`make check`) is used only if it runs the same tools; record the expanded commands in the evidence row. Detection detail and how Planning writes task checks: [workspace detection](references/workspace-detection.md).
+See [01-workspace-detection-and-task-checks.md](references/01-workspace-detection-and-task-checks.md) for signal detection and how Planning writes task-level **Acceptance Criteria** commands.
 
-## 2. The gates
+## 2. Deterministic Backend Gate Matrix (`G1`–`G8`)
 
-cwd = the service root holding `pyproject.toml`. Run in this order; a later gate never replaces an earlier one (`evidence-standard` §2).
+Run in order from the service root holding `pyproject.toml`. A later gate never replaces an earlier one (`evidence-standard` §2).
 
-| # | Gate | Command (uv shown) | Runs when |
+| Gate | Purpose | Command (`uv` shown) | Runs When |
 |---|---|---|---|
-| G1 | Format | `uv run ruff format --check .` | ruff is configured or listed as a dev dependency |
-| G2 | Lint | `uv run ruff check .` | same |
-| G3 | Types | `uv run mypy <package>` (or the `files` set in `[tool.mypy]`) | mypy is configured or a dev dependency |
-| G4 | Unit tests | `uv run pytest tests/unit -q` (runs with `pytest-asyncio` and `pytest-randomly` installed by `setup tools`) | always when `tests/unit` exists |
-| G5 | Migrations | on a disposable DB: `uv run alembic upgrade head`, `uv run alembic check`, and `uv run pytest --test-alembic -q` (when configured) | the phase adds or changes models or migrations; always on the closing phase |
-| G6 | Integration tests | `uv run pytest tests/integration -q` against the test database | repositories, routers or migrations changed |
-| G7 | Coverage | `uv run pytest --cov=<package> --cov-report=term-missing -q` (`pytest-cov` installed by `setup tools`) | always on phase end to inspect uncovered branches; enforces `fail_under` when configured |
-| G8 | OpenAPI diff | export `app.openapi()` and diff against the agreed contract ([gates](references/gates.md#g8-openapi-diff)) | a route, schema or status code changed |
+| **G0** | Developer Tools Check | `coder-nexus setup tools --pack backend --check` | Pre-flight (`PHASE-00`) & before first phase gate (`PASS` when `TOOLS: READY`) |
+| **G1** | Format Check | `uv run ruff format --check .` | `ruff` is configured or listed as a dev dependency |
+| **G2** | Static Lint | `uv run ruff check .` | `ruff` is configured or listed as a dev dependency |
+| **G3** | Type Check | `uv run mypy <package>` (or `files` in `[tool.mypy]`) | `mypy` is configured or listed as a dev dependency |
+| **G4** | Unit Tests | `uv run pytest tests/unit -q` | Always when `tests/unit` exists (`pytest-asyncio` & `pytest-randomly` active) |
+| **G5** | Migrations (Disposable DB) | `uv run alembic heads && uv run alembic upgrade head && uv run alembic check` (plus `uv run pytest --test-alembic -q` if configured) | Phase adds/changes models or migrations; always on closing phase |
+| **G6** | Integration Tests | `uv run pytest tests/integration -q` (against guarded test DB) | Repositories, routers, or migrations changed |
+| **G7** | Coverage | `uv run pytest --cov=<package> --cov-report=term-missing -q` | Phase end to inspect uncovered branches; enforces `fail_under` when configured |
+| **G8** | OpenAPI Contract Diff | Export `app.openapi()` to `<evidence-dir>/openapi.review.json` and diff against agreed contract ([02](references/02-gate-commands-and-results.md#g8-openapi-contract-diff)) | Route, schema, or status code changed |
 
-Additional standard tools installed by `coder-nexus setup tools --pack backend` (`uv run lint-imports` from `import-linter` when `[tool.importlinter]` is present in `pyproject.toml`, and `uvx pip-audit` / `uv run pip-audit` when dependencies change per `{{slot:secure-coding-standards}}`) run alongside G1–G8. Never invent a custom threshold the workspace does not have. Reason: verification proves the agreed bar, it does not move it.
+- **Additional stack gates**: Run `uv run lint-imports` when `[tool.importlinter]` is present in `pyproject.toml` (`{{slot:clean-architecture}}`), and `uvx pip-audit` / `uv run pip-audit` when dependencies change (`{{slot:secure-coding-standards}}`).
 
-## 3. Reading results
+## 3. Canonical Gate Results & Role Verdicts
 
-| Result | When | Example |
+| Gate Flag | Meaning | Rule |
 |---|---|---|
-| `PASS` | The gate ran on the stated revision, exit 0, and the output shows the scope ran (file count, test count, `Success: no issues found`) | `ruff check .` → `All checks passed!` |
-| `FAIL` | The gate ran and reported a defect in the code under check | ruff exit 1; mypy exit 1; pytest exit 1; coverage under `fail_under`; `alembic check` reports new upgrade operations; breaking OpenAPI change not in `design.md` |
-| `BLOCKED` | The gate could not execute for a reason outside the code: tool missing from the environment, config error (ruff/mypy exit 2), test database unreachable, no disposable database allowed | `connection refused` in a session fixture |
-| `NOT_RUN` | Not attempted, or ran but proved nothing: pytest exit 5 ("no tests ran"), the changed tests reported as skipped or deselected | `0 passed, 3 skipped` for the phase's tests |
+| **`PASS`** | Command ran on `REVIEW_REVISION`, exited `0`, and output confirms non-empty scope (file count, test count, `All checks passed!`) | Record command, `cwd`, revision, exit code, and key output. |
+| **`FAIL`** | Command ran and reported a defect (`exit != 0`, coverage below `fail_under`, drift in `alembic check`, unapproved breaking OpenAPI diff) | Blocks `READY_FOR_REVIEW`, `APPROVED`, and `ACCEPTED`. Diagnose via `{{slot:root-cause-debugging}}`. |
+| **`BLOCKED`** | External/environment blocker (missing tool, config error `exit 2`, unreachable test DB, no disposable DB allowed) | Never counts as `PASS`. Name the exact blocker and owner. |
+| **`NOT_RUN`** | Not executed, or exited `5` (`no tests ran`), or required tests were skipped/deselected | Never counts as `PASS`. |
+| **`UNVERIFIED`** | Claim made without an executed command or verifiable evidence row | Treated as a failure to verify; never counts as `PASS`. |
 
-- Exit code and output are read together. Reason: exit 0 with `collected 0 items` proves nothing; exit 1 from a fixture `ConnectionRefusedError` is an environment problem (`BLOCKED`), not a code defect.
-- A `FAIL` goes back through `root-cause-debugging`; the gate is never edited, narrowed or given `--exit-zero`, `|| true`, `--deselect` / `-k` narrowing, a lowered `fail_under`, new `# type: ignore` or `per-file-ignores` to turn green. Reason: a bent gate hides the defect it exists to show.
-- `NOT_RUN`, `BLOCKED` and `UNVERIFIED` never count as `PASS` in any summary.
+- **Role Verdicts (`shared_contracts/flags_and_statuses.md` §4–§5)**:
+  - **Code Writer**: `READY_FOR_REVIEW` (all applicable `G0`–`G8` `PASS` on committed revision) or `BLOCKED`.
+  - **Code Reviewer**: Independently re-runs `G1`–`G8` on `REVIEW_REVISION` → `APPROVED`, `CHANGES_REQUESTED`, or `BLOCKED`.
+  - **Test Runner**: Runs acceptance against a running service on `REVIEW_REVISION` → `ACCEPTED`, `CHANGES_REQUESTED`, or `BLOCKED` (developer unit/integration tests are cited, never counted as acceptance).
 
-Full per-gate result table: [gates](references/gates.md).
+## 4. Mandatory Rules (`V1`–`V8`)
 
-## 4. Never against production
+| ID | Mandatory Rule |
+|---|---|
+| **V1** | **Detect, never assume** — Read workspace config files before choosing prefix, package target, or test path. |
+| **V2** | **Exit code + output together** — `exit 0` with `collected 0 items` or skipped phase tests is `NOT_RUN`, never `PASS`. |
+| **V3** | **Never bend a gate** — Never add `--fix`, `--exit-zero`, `|| true`, `--deselect`, lowered `fail_under`, `# noqa`, or `# type: ignore` to force green. |
+| **V4** | **Leave the verified tree clean** — Write OpenAPI exports and logs to `<evidence-dir>`, never inside the service source tree. |
+| **V5** | **Never run against production** — Every DB gate (`G5`, `G6`, seed, acceptance) requires a verified test/disposable database (`_test` suffix or local Docker). Unclassified `DATABASE_URI` is `BLOCKED`. |
+| **V6** | **Redact secrets in evidence** — Never print `DATABASE_URI`, passwords, API keys, or tokens in evidence rows; write `<REDACTED>`. |
+| **V7** | **Revision invalidation** — Any code, test, migration, or config change creates a new revision and invalidates prior gate evidence. |
+| **V8** | **Strict status vocabulary** — Use only `PASS` / `FAIL` / `BLOCKED` / `NOT_RUN` / `UNVERIFIED` for checks and `APPROVED` / `ACCEPTED` / `CHANGES_REQUESTED` / `BLOCKED` for verdicts. |
 
-- Every database gate runs on a database whose name or host matches the agreed test rule (for example a `_test` suffix or a local Docker service), checked before the command runs. Reason: `alembic upgrade` and test fixtures write; one wrong `DATABASE_URI` is data loss.
-- `DATABASE_URI` comes from the workspace `.env` and must point to a dev or test database. A URL you cannot classify is `BLOCKED`; never "try it and see".
-- The Postgres MCP (`crystaldba/postgres-mcp`, restricted mode, shipped by the pack) may be used to inspect the dev/test schema and plans (`backend-postgres`). Schema changes happen only through Alembic (`backend-database-migrations`).
-- Never print or paste the URL, password or tokens in evidence; write `<REDACTED>`.
+## 5. Reference Guides
 
-## 5. Evidence
-
-One row per gate in the format of `evidence-standard` §3, revision = the commit the gates ran on:
-
-| Claim | Command (+cwd) | Revision | Exit code | Key output | Result |
-|---|---|---|---|---|---|
-| G2 lint clean | `uv run ruff check .` (cwd `services/api`) | `a1b2c3d` | 0 | `All checks passed!` | PASS |
-| G6 integration tests | `uv run pytest tests/integration -q` (cwd `services/api`) | `a1b2c3d` | 1 | `1 failed, 41 passed` | FAIL |
-| G5 migrations | not run: no disposable database (`D-04` forbids shared dev DB) | `a1b2c3d` | - | - | BLOCKED |
-
-Per role: the Code Writer runs G1–G8 that apply at phase end and on the committed `REVIEW_REVISION`; the Code Reviewer re-runs them itself (`review-workflow` pass 1); the Test Runner runs the acceptance checks of `quality-acceptance` against a running service prepared per [environment and PHASE-00](references/environment-and-phase-00.md), never counting developer tests as acceptance.
+| Topic | Reference File |
+|---|---|
+| Workspace signal detection, monorepo `cwd` rules, and task check examples for Planning | [01-workspace-detection-and-task-checks.md](references/01-workspace-detection-and-task-checks.md) |
+| Detailed exit codes, command flags, and output rules for `G1`–`G8`, `lint-imports`, and `pip-audit` | [02-gate-commands-and-results.md](references/02-gate-commands-and-results.md) |
+| `PHASE-00` backend readiness, running-service acceptance environment, never-production guard, and evidence template | [03-phase00-environment-and-evidence.md](references/03-phase00-environment-and-evidence.md) |

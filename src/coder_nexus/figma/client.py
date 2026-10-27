@@ -1,4 +1,4 @@
-"""Figma REST client (READ-ONLY): parse a frame link, render it to PNG and save its node JSON.
+"""Figma REST client (READ-ONLY): parse a frame/section link, render screens to PNG/JPG, save raw JSON, DTCG tokens.json, and Framelink-style <node>.spec.json.
 
 Only two endpoints are called, both GET: `/v1/files/{key}/nodes` and `/v1/images/{key}`.
 The token is sent to api.figma.com only, never to the rendered-image URL it returns.
@@ -15,7 +15,8 @@ import httpx
 from pydantic import BaseModel, Field
 
 from ..huly.auth import parse_env_file
-from .summary import render_summary
+from .summary import build_spec_and_tokens, extract_screen_nodes, render_summary
+from .tokens import merge_and_save_tokens
 
 API_BASE = "https://api.figma.com"
 TOKEN_KEY = "FIGMA_TOKEN"
@@ -41,7 +42,10 @@ class FigmaFetchResult(BaseModel):
     node_id: Optional[str] = None
     name: Optional[str] = Field(default=None, description="Frame name, when read")
     png_path: Optional[str] = None
+    screen_images: list[str] = Field(default_factory=list, description="Per-screen rendered image paths (S01..SNN)")
     json_path: Optional[str] = None
+    tokens_path: Optional[str] = Field(default=None, description="File-level W3C DTCG design tokens (tokens.json)")
+    spec_path: Optional[str] = Field(default=None, description="Framelink-style normalized spec JSON (<node>.spec.json)")
     summary_path: Optional[str] = None
     note: Optional[str] = None
 
@@ -81,10 +85,11 @@ async def fetch_async(
     out_dir: str | Path,
     token: Optional[str],
     *,
+    image_format: str = "png",
     timeout: float = 30.0,
     transport: Optional[httpx.AsyncBaseTransport] = None,
 ) -> FigmaFetchResult:
-    """Save `<node>.png`, `<node>.json` and `<node>.summary.md` for one Figma frame into `out_dir`.
+    """Save `<node>.<ext>`, per-screen `<node>-SNN.<ext>`, `<node>.json`, `tokens.json`, `<node>.spec.json` and `<node>.summary.md`.
 
     Never raises for API problems: the result says READ, NOT_PROVIDED or UNREACHABLE with a note.
     """
@@ -101,6 +106,7 @@ async def fetch_async(
         result.note = "The link has no node-id (whole file). Ask for a link to the frame (Copy link to selection)."
         return result
 
+    fmt = "jpg" if image_format.lower() in ("jpg", "jpeg") else "png"
     headers = {"X-Figma-Token": token}
     params = {"ids": ref.node_id}
     try:
@@ -115,31 +121,88 @@ async def fetch_async(
                 result.note = f"Node {ref.node_id} not found in file {ref.file_key}."
                 return result
 
+            root_doc = entry["document"]
             out = Path(out_dir)
             out.mkdir(parents=True, exist_ok=True)
             stem = node_file_stem(ref.node_id)
             json_path = out / f"{stem}.json"
             json_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-            result.json_path, result.name = str(json_path), entry["document"].get("name")
+            result.json_path, result.name = str(json_path), root_doc.get("name")
+
+            screen_nodes = extract_screen_nodes(root_doc)
+            extra_screen_ids = [
+                str(s.get("id"))
+                for s in screen_nodes
+                if s.get("id") and str(s.get("id")) != ref.node_id
+            ]
+            image_ids = [ref.node_id, *extra_screen_ids]
 
             png_note = None
-            img_res = await http.get(f"{API_BASE}/v1/images/{ref.file_key}",
-                                     params={**params, "format": "png", "scale": "2"}, headers=headers)
-            image_url = (img_res.json().get("images") or {}).get(ref.node_id) if img_res.status_code == 200 else None
+            screen_image_paths: dict[str, str] = {}
+            screen_png_names: dict[str, str] = {}
+
+            img_res = await http.get(
+                f"{API_BASE}/v1/images/{ref.file_key}",
+                params={"ids": ",".join(image_ids), "format": fmt, "scale": "2"},
+                headers=headers,
+            )
+            images_map = (img_res.json().get("images") or {}) if img_res.status_code == 200 else {}
+            image_url = images_map.get(ref.node_id)
             if image_url:
                 png_res = await http.get(image_url)  # pre-signed render URL: no token
                 if png_res.status_code == 200:
-                    png_path = out / f"{stem}.png"
+                    png_path = out / f"{stem}.{fmt}"
                     png_path.write_bytes(png_res.content)
                     result.png_path = str(png_path)
                 else:
-                    png_note = f"PNG download returned HTTP {png_res.status_code}"
+                    png_note = f"{fmt.upper()} download returned HTTP {png_res.status_code}"
             else:
                 png_note = _http_note(img_res, "images") if img_res.status_code != 200 else "Figma did not render the frame"
 
+            if extra_screen_ids:
+                for idx, snode in enumerate(screen_nodes, start=1):
+                    snid = str(snode.get("id") or "")
+                    s_url = images_map.get(snid)
+                    if not s_url:
+                        continue
+                    s_res = await http.get(s_url)  # pre-signed render URL: no token
+                    if s_res.status_code == 200:
+                        s_name = f"{stem}-S{idx:02d}.{fmt}"
+                        s_path = out / s_name
+                        s_path.write_bytes(s_res.content)
+                        screen_image_paths[snid] = str(s_path)
+                        screen_png_names[snid] = s_name
+                        result.screen_images.append(str(s_path))
+            elif result.png_path:
+                result.screen_images = [result.png_path]
+
+            spec_data, token_registry = build_spec_and_tokens(
+                payload,
+                ref.node_id,
+                url,
+                file_key=ref.file_key,
+                root_image_path=result.png_path,
+                screen_image_paths=screen_image_paths,
+            )
+            tokens_path = out / "tokens.json"
+            merge_and_save_tokens(tokens_path, token_registry)
+            result.tokens_path = str(tokens_path)
+
+            spec_path = out / f"{stem}.spec.json"
+            spec_path.write_text(json.dumps(spec_data, indent=2, ensure_ascii=False), encoding="utf-8")
+            result.spec_path = str(spec_path)
+
             summary_path = out / f"{stem}.summary.md"
-            summary_path.write_text(render_summary(payload, ref.node_id, url, png_name=f"{stem}.png" if result.png_path else None),
-                                    encoding="utf-8")
+            summary_path.write_text(
+                render_summary(
+                    payload,
+                    ref.node_id,
+                    url,
+                    png_name=f"{stem}.{fmt}" if result.png_path else None,
+                    screen_png_names=screen_png_names,
+                ),
+                encoding="utf-8",
+            )
             result.summary_path = str(summary_path)
             result.status = "READ"
             result.note = f"{png_note}; JSON and summary saved" if png_note else None

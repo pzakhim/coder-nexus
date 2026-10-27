@@ -1,119 +1,58 @@
 ---
 name: create-git-workflow-skill
-description: Write a workspace's own git-workflow skill from the skill-factory knowledge base - the branch model (Git Flow with DEV/STG/PROD, GitHub Flow or trunk-based), which base each job type branches from (feature from develop, STG bug from the active release, PROD hotfix from main), branch and commit naming, merge strategy per source and target, hotfix propagation, no cherry-pick promotion, semantic versioning for applications (what is a contract, when PATCH, MINOR or MAJOR, rc tags, one source of truth) and release integrity checks - with the agent never merging to main, tagging or deploying production. Use whenever the user wants to set up, standardize or update the Git branching, commit, release or versioning rules of a workspace, or says things like "tạo skill git flow", "quy chuẩn branch", "checkout từ đâu", "khi nào tăng version", "hotfix quy trình", even if they do not say "skill". Writes .agents/skills/git-workflow/, then trial-runs it on real tasks.
-argument-hint: "[preset] [repo]"
+description: "Generate a workspace's `git-workflow` skill from the skill-factory knowledge base — covering the branch model (`gitflow-dev-stg-prod`, `github-flow`, or `trunk-based`), base branch per job type, parent-ticket branch naming (`G2`), sub-ticket and accepted-phase commit checkpoint discipline (`M10`, `G3`), merge strategy (`squash` vs `--no-ff`), hotfix propagation across active lines, SemVer (`MAJOR.MINOR.PATCH`) contract versioning, release integrity checks (`R1`–`R2`), binary `PASS` / `FAIL` CLI gates, and `BLOCKER` / `MAJOR` / `MINOR` review grading."
+argument-hint: "[preset] [target_dir]"
 ---
 
 # Create Git Workflow Skill
 
-Goal: produce `<workspace>/.agents/skills/git-workflow/` — the workspace's branch model, the base each job type branches from, naming, merge strategy, hotfix propagation and versioning, with its real branch names, ticket prefixes, CI and tools. The fixed core skill `git-preflight` runs the branch steps for every workspace; this generated skill supplies the workspace facts it reads and overrides its defaults.
+Goal: produce `<workspace>/.agents/skills/git-workflow/` — the workspace's branch model, base branch per job type, parent-ticket branch naming, sub-ticket / accepted-phase commit traceability (`M10`, `G3`), merge strategy, hotfix propagation, and SemVer release rules, aligned with `shared_contracts/flags_and_statuses.md`. This workspace skill overrides the defaults of the fixed `git-preflight` skill.
 
-User input: $ARGUMENTS
+User input: `$ARGUMENTS`
 
-Follow `~/.claude/skill-factory/core/workflow.md`, starting with **Step 0** (never write into `.agents/plugins/coder-nexus/` or extension-regenerated role files; a workspace skill overrides the fixed skill of the same topic — here `git-preflight`). Ownership: `~/.claude/skill-factory/core/coder-skill-family.md` — this skill owns branches, commits, merges and versions; incremental-implementation owns task order inside a phase; database-migrations decides whether a schema change breaks a contract.
+Follow [../../core/workflow.md](../../core/workflow.md), starting with **Step 0**. Ownership: [../../core/coder-skill-family.md](../../core/coder-skill-family.md) — `git-workflow` owns branches, commits, merges, and versions; `incremental-implementation` owns task order inside a phase; `database-migrations` and `api-contract-design` decide whether a schema or API change breaks a contract.
 
-## Step 1 — Context Card (+ Git setup)
+## Step 1 — Context Card (+ Git Setup)
 
-Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P1–P2 (`~/.claude/skill-factory/core/existing-project.md`). Additionally collect, read-only (`references/tooling-detection.md`):
+Run the core Context Card ([../../core/detect-stack.md](../../core/detect-stack.md)) and P1–P2 ([../../core/existing-project.md](../../core/existing-project.md)). Collect read-only Git facts ([references/tooling-detection.md](references/tooling-detection.md)):
 
-| Field | Where to look |
+| Field | Where to Look |
 |---|---|
-| Branches | `git branch -a`: `main`/`master`, `develop`, `release/*`, `hotfix/*`, `support/*`, environment branches (`dev`, `staging`, `prod`) |
-| Tags | `git tag --sort=-creatordate`: format (`v1.2.3`, `1.2.3`, `be-v…`), pre-release tags (`-rc.N`), first `1.0.0` or still `0.x` |
-| Merge history | `git log --merges --first-parent <integration branch>` and squash commit shapes: squash vs merge commits per target |
-| Naming | Last 50 branch names and commit subjects: ticket prefixes (for example `ABC-`), types, Conventional Commits |
-| CI/CD | `.github/workflows`, `.gitlab-ci.yml`, `Jenkinsfile`, `bitbucket-pipelines.yml`: which branch or tag deploys where, approvals for production |
-| Tools | commitlint, commitizen, husky/lefthook, semantic-release, release-please, changesets, standard-version |
-| Version files | `package.json`, `pubspec.yaml`, `pyproject.toml`, `build.gradle`, `*.csproj`, sync scripts |
-| Protection | Branch protection when readable (`gh api repos/<o>/<r>/branches/<b>/protection`); otherwise ask |
-| Policy docs | `CONTRIBUTING.md`, `docs/*git*`, release docs, a policy file the user provides |
-| Ignore | Whether `.superpowers/` or `.superpowers/work-items/` is ignored (`git check-ignore -v`) |
-| Existing skill | `.agents/skills/*git*`, `*release*`, `*commit*` |
+| **Branches** | `git branch -a`: `main`/`master`, `develop`, `release/*`, `hotfix/*`, `support/*` |
+| **Tags** | `git tag --sort=-creatordate`: format (`v1.2.3`, `1.2.3`, `<component>-v1.2.3`), pre-release tags (`-rc.N`), `0.x` vs `1.0.0+` |
+| **Merge History** | `git log --merges --first-parent <integration-branch>`: squash vs `--no-ff` merge commits per target |
+| **Ticket & Commit Conventions** | Last 50 branch names and commit subjects: parent ticket prefixes (e.g. `IMES-`, `ABC-`), sub-ticket & `PHASE-NN` commit scopes, Conventional Commits |
+| **CI/CD & Protection** | `.github/workflows`, `.gitlab-ci.yml`, `Jenkinsfile`: branch/tag deployment filters, protected branches, approval gates |
+| **Tools & Version SSOT** | `commitlint`, `commitizen`, `husky`/`lefthook`/`pre-commit`, `semantic-release`, `release-please`, `changesets`, version files (`package.json`, `pubspec.yaml`, `pyproject.toml`), sync scripts |
+| **Work-Item Tracking** | Whether `.superpowers/` or `.superpowers/work-items/` is ignored (`git check-ignore -v`) |
 
-## Step 2 — Map the base rules
+## Step 2 — Enforce Base Rules (`M1`–`M10`, `G1`–`G6`, `V1`–`V7`, `R1`–`R2`)
 
-Read `references/base-rules.md` and the preset files under `references/presets/`. For each rule M1–M9, G1–G6, V1–V7, R1–R2: adopted, adapted, or "not adopted" with a reason. M1–M9 come from the fixed `git-preflight` skill and are never "not adopted"; M6 (never merge to main, tag or deploy production) and V4's human approval are never weakened.
+Read [references/base-rules.md](references/base-rules.md) and the presets under `references/presets/` ([gitflow-dev-stg-prod.md](references/presets/gitflow-dev-stg-prod.md), [github-flow.md](references/presets/github-flow.md), [trunk-based.md](references/presets/trunk-based.md)). All rules **`M1`–`M10`, `G1`–`G6`, `V1`–`V7`, `R1`–`R2`** are **mandatory compliance** (adapted to the chosen preset; never dropped as `"not adopted"`). `M6` (agents never merge into `main`/production, tag, or deploy production) and `M10`/`G3` (no arbitrary commits; every commit must bind to a verified sub-ticket or accepted `PHASE-NN`) are never weakened.
 
-## Step 3 — Propose
+## Step 3 — Propose & Step 4 — Gate (User Confirms)
 
-- **Established repository:** document the model as it is (branches, merges, tags seen in history), then list drift from the closest preset and open decisions.
-- **New or unclear repository:** propose one of `gitflow-dev-stg-prod`, `github-flow`, `trunk-based` with reasons drawn from the Context Card (environments, release cadence, team size, mobile store releases).
-- Show the base table, naming, merge table and version rules as they would read in the generated skill.
-
-## Step 4 — Gate (user confirms)
-
-AskUserQuestion, ≤ 4 questions per round, recommendation first. Rounds as needed:
-
-| # | Question | Default proposal |
-|---|---|---|
-| Q1 | Branch model | `gitflow-dev-stg-prod` when `develop` + `release/*` exist; `github-flow` when only `main` |
-| Q2 | Integration and protected branch names | `develop`, `main`, `release/*` as found |
-| Q3 | Ticket prefixes and branch types in use | From recent branches and commits |
-| Q4 | Merge strategy per source → target | The preset's merge table (G4) |
-| Q5 | The workspace's contracts (V1) | V1 default list minus what does not exist |
-| Q6 | Still `0.x` or already `1.0.0` | From the latest tag |
-| Q7 | `-rc.N` tags on each STG deploy | Yes |
-| Q8 | Monorepo: one version or per component (V7) | One version |
-| Q9 | Only when `.superpowers/` is ignored: un-ignore `.superpowers/work-items/` so specs are committed with the branch? | Yes; keep `.superpowers/sources/` ignored |
+Confirm in one round (recommendation first):
+1. **Branch Model & Protected Lines**: `gitflow-dev-stg-prod` (when `develop` + `release/*` exist), `github-flow`, or `trunk-based`; confirm `develop`, `release/*`, `main`.
+2. **Parent-Ticket Branch Naming & Sub-Ticket / Phase Commit Rule (`G2`, `G3`, `M10`)**: Confirm ticket prefix (e.g., `IMES-`), parent-ticket branch pattern (`<type>/<PARENT-TICKET>-<short-description>`), and sub-ticket / `PHASE-NN` commit format.
+3. **Merge Strategy & Hotfix Propagation (`G4`–`G6`)**: Squash for work branches into `develop` / `release/*`; `--no-ff` merge commit for `release/*` → `main` and `hotfix/*` → `main`.
+4. **Contracts, Versioning & `.superpowers/work-items/` Tracking (`V1`–`V7`)**: Public contracts, `0.x` vs `1.0.0+`, `-rc.N` tags, single version vs `<component>-v…`, and whether `.superpowers/work-items/` is committed with the branch.
 
 Nothing is written before the user confirms.
 
-## Step 5 — Author
+## Step 5 — Author (`templates/SKILL.md.tmpl` + `templates/references/01..03.md.tmpl`)
 
-Read `~/.claude/skill-factory/core/authoring-guide.md`. Templates are suggested shapes; **Mandatory** content is fixed. Layout: always **flat** (`references/01–05`); a monorepo with per-component versions adds one table per component in `05`, not branches.
+Read [../../core/authoring-guide.md](../../core/authoring-guide.md). Generate the flat, cohesive 3-reference skill structure:
 
-| Output | Template | Kind | Why it exists |
-|---|---|---|---|
-| `SKILL.md` | `templates/SKILL.md.tmpl` | **Mandatory** | The never-list and the base table on one screen |
-| `references/01-branch-model.md` | `templates/01-branch-model.md.tmpl` | **Mandatory** | Which line is DEV, STG and PROD, and what is protected |
-| `references/02-preflight.md` | `templates/02-preflight.md.tmpl` | **Mandatory** | Base and merge targets per job type, read by `git-preflight` |
-| `references/03-naming-and-commits.md` | `templates/03-naming-and-commits.md.tmpl` | **Mandatory** | Branch and commit names drive review, changelog and versioning |
-| `references/04-merge-and-propagation.md` | `templates/04-merge-and-propagation.md.tmpl` | **Mandatory** | Merge strategy, hotfix propagation, no cherry-pick promotion |
-| `references/05-versioning-and-release.md` | `templates/05-versioning-and-release.md.tmpl` | **Mandatory** | When PATCH, MINOR, MAJOR; release integrity; what the user runs |
+| Output File | Template | Purpose |
+|---|---|---|
+| `SKILL.md` | [templates/SKILL.md.tmpl](templates/SKILL.md.tmpl) | Concise routing table (< 115 lines), `M1`–`M10` never-list, base table, and binary `PASS`/`FAIL` CLI gates |
+| `references/01-branch-model-and-preflight.md` | [templates/references/01-branch-model-and-preflight.md.tmpl](templates/references/01-branch-model-and-preflight.md.tmpl) | `M1`, `M2`, `M4`, `M8`, `M9`, `G1` — environment-to-branch mapping, protected lines, base & merge targets per job type, `D-NN` branch record |
+| `references/02-naming-commits-and-merge-strategy.md` | [templates/references/02-naming-commits-and-merge-strategy.md.tmpl](templates/references/02-naming-commits-and-merge-strategy.md.tmpl) | `M3`, `M5`, `M7`, `M10`, `G2`–`G6` — parent-ticket branch naming, sub-ticket / accepted-phase commit traceability (`G3`, `M10`), squash vs `--no-ff` merge table, hotfix propagation, no cherry-pick promotion |
+| `references/03-versioning-release-and-gates.md` | [templates/references/03-versioning-release-and-gates.md.tmpl](templates/references/03-versioning-release-and-gates.md.tmpl) | `M6`, `V1`–`V7`, `R1`–`R2` — SemVer contracts, version SSOT, user-executed release runbook, CLI `PASS`/`FAIL` gates, and `BLOCKER`/`MAJOR`/`MINOR` review rubric |
 
-Writing rules: real branch names, prefixes and commands from Step 1; every rule with its reason; commands are prepared for the user wherever M6 applies; no secret, registry credential or internal host value (use placeholders such as `<registry>/<app>:<sha>`); replace every `{{…}}`, delete every `<!-- GEN … -->`, English, < ~200 lines per file, custom block at the end.
+## Step 6 — Wire, Step 7 — Trial Run & Step 8–9 — Verify
 
-If the user chose to un-ignore `.superpowers/work-items/` (Q9), propose the exact `.gitignore` change and apply it only after the user confirms it.
-
-## Step 6 — Wire
-
-1. Pointer in `CLAUDE.md` / `AGENTS.md` (unless an equivalent exists):
-   ```markdown
-   ## Git workflow
-   Branches, commits, merges and versions follow `.agents/skills/git-workflow/SKILL.md`. Agents never merge into `main`, tag or deploy production.
-   ```
-2. If commitlint or similar runs in the repo, link its config from `03` instead of restating every rule.
-
-## Step 7 — Trial run
-
-`~/.claude/skill-factory/core/trial-run.md`. Plan only; never create real branches, commits or tags. Task ideas:
-
-- A new feature ticket: which base, which name, which merge target?
-- A bug reported on STG while `develop` has moved on.
-- A PROD hotfix while a release is under test: which lines receive the fix, what version is proposed?
-- "Release it to production": does the agent prepare commands and the R1–R2 check instead of merging and tagging?
-- A change that removes an API field: is it marked breaking and proposed as MAJOR?
-
-## Step 8 — Description
-
-Per the authoring guide: workspace name; situations (start a task, create a branch, bug on STG/PROD, hotfix, cut a release, choose a version, write a commit message, open a PR); team trigger words. Should not trigger for code-only questions inside an existing branch.
-
-## Step 9 — Verify, record & report
-
-`checklist.md` + `~/.claude/skill-factory/core/checklist-common.md`; record provenance (`~/.claude/skill-factory/core/provenance.md`); report deviations, rules adapted or not adopted, trial results.
-
-## Update mode
-
-Existing `.agents/skills/git-workflow/` or a workspace Git/release skill: registered → sync (`~/.claude/skill-factory/core/sync-protocol.md`); not registered → adopt (P3, P5: keep branch names, prefixes, merge rules and release steps verbatim).
-
-## Changing this generator
-
-Follow `~/.claude/skill-factory/core/versioning.md` (work under `## Unreleased`, bump once per batch).
-
-## Resources
-
-- `references/base-rules.md` — M1–M9, G1–G6, V1–V7, R1–R2 with reasons
-- `references/presets/` — `gitflow-dev-stg-prod.md`, `github-flow.md`, `trunk-based.md`
-- `references/tooling-detection.md` — what to read and how to use the repo's own tools as checks
-- `templates/` — `SKILL.md.tmpl`, `01–05` (suggested shapes)
-- `checklist.md` — topic checks
+1. Add a pointer in `AGENTS.md` / `CLAUDE.md` to `.agents/skills/git-workflow/SKILL.md`.
+2. Run a plan-only trial ([../../core/trial-run.md](../../core/trial-run.md)): test a multi-phase feature with Huly sub-tickets, a STG bug while `develop` moved on, a PROD hotfix propagation, and a release readiness check (`R1`–`R2`).
+3. Verify against [checklist.md](checklist.md) and [../../core/checklist-common.md](../../core/checklist-common.md), and record provenance ([../../core/provenance.md](../../core/provenance.md)).

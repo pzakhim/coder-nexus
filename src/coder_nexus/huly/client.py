@@ -771,10 +771,14 @@ class HulyClient:
             description = await self._fetch_markup(http, workspace_id, target.get("description"))
             text = description.text
 
-            figma_url = next((l.href for l in description.links if "figma.com" in l.href), None)
-            if not figma_url:
-                fig = re.search(r"(https://[^\s]*figma\.com[^\s\)\]]+)", text)
-                figma_url = fig.group(1) if fig else None
+            figma_urls: list[str] = []
+            for l in description.links:
+                if "figma.com" in l.href and l.href not in figma_urls:
+                    figma_urls.append(l.href)
+            for m in re.finditer(r"(https://[^\s]*figma\.com[^\s\)\]]+)", text):
+                if m.group(1) not in figma_urls:
+                    figma_urls.append(m.group(1))
+            figma_url = figma_urls[0] if figma_urls else None
 
             acceptance_criteria, ac_source = extract_acceptance_criteria(text)
             status, category = await self._status(http, workspace_id, target.get("status"))
@@ -783,10 +787,15 @@ class HulyClient:
             sub_issues = await self._resolve_sub_issues(http, workspace_id, target) if include_sub_issues else []
             comments = await self._comments(http, workspace_id, target)
             sources = await self._collect_sources(http, workspace_id, target, description, comments)
+            for s in sources:
+                if s.url and "figma.com" in s.url and s.url not in figma_urls:
+                    figma_urls.append(s.url)
+            if not figma_url and figma_urls:
+                figma_url = figma_urls[0]
             if download_dir:
                 await self._download_sources(http, workspace_id, sources, Path(download_dir))
-                if figma_url:
-                    await _fetch_figma_source(sources, figma_url, Path(download_dir) / "figma", workspace_path)
+                for furl in figma_urls:
+                    await _fetch_figma_source(sources, furl, Path(download_dir) / "figma", workspace_path)
 
             return HulyTaskDetail(
                 id=target.get("identifier") or ref,
@@ -824,7 +833,9 @@ async def _fetch_figma_source(sources: list[HulySource], figma_url: str, target:
     if result.status == "READ":
         src.local_path = result.png_path or result.summary_path
         src.mime = "image/png" if result.png_path else "text/markdown"
-        saved = ", ".join(Path(p).name for p in (result.png_path, result.json_path, result.summary_path) if p)
+        extra_imgs = [p for p in result.screen_images if p != result.png_path]
+        all_paths = [p for p in (result.png_path, *extra_imgs, result.tokens_path, result.spec_path, result.json_path, result.summary_path) if p]
+        saved = ", ".join(Path(p).name for p in all_paths)
         src.note = f"Saved to {target}: {saved}" + (f" ({result.note})" if result.note else "")
         text = Path(result.summary_path).read_text(encoding="utf-8")
         src.text = text[:DOC_TEXT_LIMIT] + ("\n…[truncated]" if len(text) > DOC_TEXT_LIMIT else "")

@@ -1,0 +1,63 @@
+# Actionable Defect Reports, Flakiness, Re-Test Protocol & CLI Gates
+
+> Topic: Actionable defect reporting with unified `BLOCKER`/`MAJOR`/`MINOR` severities (`A10`), flakiness classification (`A14`), re-test protocol on the fixed revision (`A12`), and deterministic CLI `PASS`/`FAIL` execution gates for {{project_name}}.
+
+<!-- GEN: Why: Consolidate failure reporting, flakiness handling, re-test scope (legacy 04), and deterministic CLI PASS/FAIL verification gates into one reference ({{ref_03}}) aligned with shared_contracts/flags_and_statuses.md. -->
+
+## 1. Actionable Defect Reports & Unified Severity Rubric (`A10`)
+
+Every `FAIL` case produces a reproducible defect report graded strictly with the unified 3-tier severity scale **`BLOCKER` / `MAJOR` / `MINOR`** (`shared_contracts/flags_and_statuses.md`; never use ad-hoc priority tags):
+
+| Severity | Acceptance Defect Criteria | Delivery Impact |
+|---|---|---|
+| **`BLOCKER`** | • Core acceptance criterion or primary user flow fails on `{{revision_notation}}`.<br>• Any `Role × Environment × Action × Object` authorization bypass, cross-tenant data leak (`401`/`403`/`404` anti-IDOR failure), or confirmed `security-review` (`SR14`) exploit.<br>• Unhandled runtime crash, data corruption, silent data loss on persistence read-back (`A4`), or unhandled `5xx` on a valid request. | Blocks acceptance sign-off immediately; requires code fix and re-review |
+| **`MAJOR`** | • Secondary flow, validation error state, or edge/boundary case fails without corrupting persisted data.<br>• Required UI state (`loading`, `empty`, `error`) missing, broken capability visibility in UI (when API still blocks), or unexpected console error.<br>• Flaky / intermittent test outcome across reruns (`A14`). | Blocks acceptance sign-off unless explicitly waived by the user at the gate |
+| **`MINOR`** | • Minor visual/copy alignment issue or non-blocking telemetry warning that does not violate functional or security acceptance criteria. | Recorded in report for polish or follow-up; does not block sign-off when zero `BLOCKER`/`MAJOR` exist |
+
+### Structured Defect Report Template (`A10`, `A13`)
+
+Send defect reports to **{{defect_channel}}** for the Code Writer (never edit code yourself per `A2`, and redact all secrets/PII per `A13`):
+
+```text
+Defect ID:   <DEFECT-ID> | Case: <CASE-ID> | Severity: BLOCKER | MAJOR | MINOR
+Context:     revision={{revision_notation}} | env=<environment> | role=<role> | surface=UI | API
+Step Failed: <exact step number and action from the plan>
+Expected:    <concrete expected behavior from the approved plan>
+Actual:      <observed runtime behavior, HTTP status, or console/network error>
+Evidence:    <paths under {{evidence_path}}>
+Reproduce:   <minimal deterministic steps or redacted curl/runner command>
+Suspected:   <module / endpoint / boundary — observation only, not a code patch>
+```
+
+---
+
+## 2. Flakiness Classification Protocol (`A14`)
+
+1. When a case fails unexpectedly, re-run the exact same steps **once** on the unchanged environment and revision (`{{revision_notation}}`).
+2. If the case fails once and passes once (intermittent), classify the case as **`FAIL` (Flaky — `BLOCKER` or `MAJOR`)**, never `PASS`.
+3. Attach evidence from **both** runs (the failing run and the passing rerun) so the Code Writer can diagnose the race condition, timing assumption, or shared-state pollution.
+
+---
+
+## 3. Re-Test Protocol After a Fix (`A12`)
+
+When the Code Writer delivers a fix:
+1. **Verify New Reviewed Revision (`A1`, `A12`)**: Confirm code review (and security review if applicable) approved the new git revision SHA (`<new-rev>`), and update the prepared test environment to `<new-rev>`.
+2. **Execute Failed + Blast-Radius Cases (`A12`)**:
+   - Re-run every previously `FAIL` or `BLOCKED` case on `<new-rev>`.
+   - Re-run all regression and permission-matrix cases touching the modified files, endpoints, or shared components.
+3. **Update Evidence Record (`A8`)**: Save fresh evidence bound to `<new-rev>` under `{{evidence_path}}` before handing results to {{quality_reporting_link}}.
+
+---
+
+## 4. Deterministic CLI Execution Gates (`PASS` / `FAIL`, `A14`)
+
+All automated acceptance and smoke commands report strictly **`PASS`** or **`FAIL`** (`shared_contracts/flags_and_statuses.md`; `NOT_RUN`, `BLOCKED`, and `UNVERIFIED` never count as `PASS`):
+
+| Gate | Command | `PASS` Criterion | `FAIL` Action |
+|---|---|---|---|
+| **G1 — Runtime Health & Revision Probe (`A1`, `A7`)** | `{{health_check_cmd}}` | Exit `0` — target service & revision live | Mark affected cases `BLOCKED` and halt execution |
+| **G2 — Automated API & Permission Matrix Suite (`A6`, `SR14`)** | `{{api_acceptance_cmd}}` | Exit `0` — all contract, persistence & `401`/`403`/`404` tests pass | File `BLOCKER` / `MAJOR` defect with failing test output |
+| **G3 — Automated UI / E2E Smoke Suite (`A5`, `A11`)** | `{{ui_e2e_cmd}}` | Exit `0` — all critical user flows and regressions pass | File defect with screenshot, trace, and console log |
+
+See [`references/01-preconditions-safety-and-case-loop.md`]({{ref_01}}) for preconditions and case recording, and [`references/02-ui-and-api-execution-checks.md`]({{ref_02}}) for UI and API runtime checks.

@@ -1,40 +1,58 @@
 ---
 name: requirements-specification
-description: How {{project_name}} writes requirements inside the Coder Nexus grilling process - its requirement sources ({{sources_summary}}), the questions to ask per dimension, the edge cases never skipped, how business rules and acceptance criteria are written, how changes and bugs are specified, and what the Gate 1 review asks. Use whenever a new ticket or request arrives, a spec, requirements.md, BR or AC is written or reviewed, or a bug is reported in {{project_name}}, even if the user just pastes a ticket.
+description: "How {{project_name}} writes and verifies requirements inside the Coder Nexus grilling process - its requirement sources ({{sources_summary}}), grilling questions per dimension, mandatory domain edge cases, observable BR-NN and AC-NN rules, v2+ change deltas (ADDED / MODIFIED / REMOVED) and bug specs, plus Gate 1 CLI checks (PASS / FAIL) and spec review questions (BLOCKER / MAJOR / MINOR). Use whenever a new ticket or request arrives, a spec, requirements.md, BR-NN, or AC-NN is written or reviewed, or a bug is reported in {{project_name}}, even if the user only pastes a ticket."
 ---
 
 # Requirements Specification — {{project_name}}
 
-<!-- GEN: Why: the fixed grilling process says how to ask; this skill says what to ask and how to write it in this workspace, on one screen. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
-<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+<!-- GEN: Why: the fixed grilling process defines how to interview and gate; this skill defines what to ask, write, and verify in this workspace on one screen. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Description: follow core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
 
-This skill adds workspace content to the Coder Nexus `grilling` process, `gate-review` spec mode and `requirements.md` template. Their gates, laws and sections stay as they are.
+This skill supplies workspace-specific rules to the Coder Nexus `grilling` process, `gate-review` spec mode, and `requirements.md` template. All fixed gates, laws, and validated template sections remain unchanged.
 
-## Always
+## 1. Deterministic Verification Gates (`PASS` / `FAIL`)
 
-- Use the glossary terms of the domain skill verbatim; a synonym is a defect. Add a missing term there before using it.
-- Ask only questions that serve a confirmed goal; one question at a time, recommendation first.
-- Check every mandatory edge-case category ([03]({{ref_03}})) against the item; record "not applicable" with the reason.
-- Write AC as observable behavior that QA can test, with no vague words; write success signals that can be measured ([04]({{ref_04}})).
-- For a change, classify each affected BR and AC as ADDED / MODIFIED / REMOVED against the built code ([04]({{ref_04}})).
-- Present Gate 1 only after the review questions find nothing open ([05]({{ref_05}})).
+<!-- GEN: Binary CLI gates run before presenting Gate 1 (exit 0 / 0 invalid matches = PASS; otherwise FAIL). -->
+| Gate | Command | Enforces |
+|---|---|---|
+| Spec & delta validator | `{{validator_command}}` | `requirements.md`, `codebase-notes.md`, and `change-impact.md` structural and ID rules |
+| Banned vague-word audit | `{{rg_vague_words_command}}` | Zero unquantified vague words in `requirements.md` (`RS4`) |
+| Banned synonym audit | `{{rg_synonyms_command}}` | Verbatim `domain-knowledge` glossary terms; zero `"Avoid saying"` synonyms (`RS5`) |
+| Open question & AC traceability check | `{{rg_open_questions_command}}` | Zero `OPEN` `Q-NN` in `codebase-notes.md` and every `AC-NN` traced to `BR-NN` / `G-NN` (`RS4`, `RS6`) |
 
-Documents for the user are written in {{team_language}}; code names stay as in code.
+## 2. Mandatory Specification Principles (`RS1`–`RS10`)
 
-## Read next
+<!-- GEN: Every rule RS1–RS10 is mandatory compliance. No per-rule severity column; Gate 1 findings use BLOCKER / MAJOR / MINOR. -->
+| Rule | Mandatory Principle | Why | Reference |
+|---|---|---|---|
+| `RS1` | Read all mapped sources first; resolve conflicts by source priority; never guess unreachable sources | Keeps the Source Inventory accurate from turn 1 | [01]({{ref_01}}) |
+| `RS2` | Ask one question at a time per `grilling` dimension, recommendation first, citing its `G-NN` | Shortens grilling and prevents scope drift | [01]({{ref_01}}) |
+| `RS3` | Check every mandatory domain edge-case category or record `not applicable` with a reason | Catches recurring domain defects before design | [02]({{ref_02}}) |
+| `RS4` | Write observable `BR-NN` / `AC-NN` and measurable `G-NN` signals; replace banned vague words or raise `Q-NN` | Ensures QA testability and unambiguous user approval | [02]({{ref_02}}) |
+| `RS5` | Use `domain-knowledge` glossary terms verbatim across goals, `BR-NN`, `AC-NN`, and scenarios | Prevents synonym drift across spec and code | [02]({{ref_02}}) |
+| `RS6` | Run `PASS` / `FAIL` CLI checks and Gate 1 review questions (`[Gap]` / `[Ambiguity]` / `[Conflict]`) before approval | Presents Gate 1 only when 0 `OPEN` `Q-NN` remain | [03]({{ref_03}}) |
+| `RS7` | Include environment (`DEV` / `STG` / `PROD`), reproduction steps, expected vs actual, impact, and regression scope on bugs | Gives root-cause debugging and QA exact diagnostic facts | [02]({{ref_02}}) |
+| `RS8` | Write user-facing documents in {{team_language}}; keep code symbols and identifiers in English | Lets stakeholders review in their language while matching code | [01]({{ref_01}}) |
+| `RS9` | Keep all fixed `grilling` laws, `gate-review` steps, and `requirements.md` sections intact | Preserves handshake compatibility across agents | [01]({{ref_01}}) |
+| `RS10` | Classify `v2+` changes as `ADDED` / `MODIFIED` / `REMOVED` against baseline code with `REMOVED` migration notes | Makes behavioral deltas and data migrations explicit | [02]({{ref_02}}) |
 
-1. Sources and intake ([01]({{ref_01}})).
-2. Question bank ([02]({{ref_02}})).
-3. Mandatory edge cases ([03]({{ref_03}})).
-4. Writing BR, AC, deltas and bug specs ([04]({{ref_04}})).
-5. Gate 1 review questions ([05]({{ref_05}})).
+Gate 1 review findings are tagged `[Gap]` / `[Ambiguity]` / `[Conflict]` and graded strictly on the unified `BLOCKER` / `MAJOR` / `MINOR` scale (`shared_contracts/flags_and_statuses.md`).
 
-## Relationship with other skills
+## 3. Reference Guides
 
-<!-- GEN: Per ~/.claude/skill-factory/core/planning-skill-family.md; link existing siblings or write "not set up in this workspace". -->
+| Topic | Reference |
+|---|---|
+| Source intake map, conflict priority, `grilling` question bank (`G-NN`), language rules, and fixed process (`RS1`, `RS2`, `RS8`, `RS9`) | [01 — Sources & Grilling Questions]({{ref_01}}) |
+| Mandatory domain edge cases, observable `BR-NN` / `AC-NN`, banned vague words, verbatim glossary terms, bug specs, and `v2+` deltas (`RS3`–`RS5`, `RS7`, `RS10`) | [02 — Edge Cases & Writing Rules]({{ref_02}}) |
+| Deterministic `PASS` / `FAIL` CLI checks and Gate 1 spec review questions (`[Gap]` / `[Ambiguity]` / `[Conflict]`, `BLOCKER` / `MAJOR` / `MINOR`) (`RS6`) | [03 — Gate Review & Verification]({{ref_03}}) |
+<!-- {{profile_references}} -->
+
+## 4. Relationship with Other Skills
+
+<!-- GEN: Per core/planning-skill-family.md; link existing siblings or write "not set up in this workspace". -->
 - Terms, entities, roles × scopes: {{domain_knowledge_link}}
-- Changes to existing behavior: {{change_impact_link}}
-- Test cases from the AC: {{quality_planning_link}}
+- Changes to existing behavior (`v2+` deltas): {{change_impact_link}}
+- Test cases derived from `AC-NN`: {{quality_planning_link}}
 
 <!-- custom:start -->
 <!-- custom:end -->

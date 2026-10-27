@@ -1,0 +1,33 @@
+# 02 — Entities, Lifecycles & Business Rules
+
+<!-- GEN: Why: status transitions (DK2) are where specifications most frequently miss edge cases, and the business-rule catalog (DK4) ensures Planning modifies each invariant at its single enforcement point. Kind: Mandatory — keep the purpose, adapt the structure. -->
+<!-- GEN: Include one card per core business entity; for large domains, split per module into references/modules/<module>.md and keep this file as the index. -->
+
+## 1. Entity Cards & Status Lifecycles (`DK2`, `DK5`)
+
+### {{entity_name}}
+
+- **Owning Module**: `{{entity_module}}`
+- **Key Fields**: {{entity_fields}}
+- **Status Values**: {{entity_statuses}}
+
+| From Status | To Status | Trigger (Actor / Event) | Enforced In (`file:symbol`) | Fact Label (`VERIFIED` / `CONFIRMED` / `OPEN`) |
+|---|---|---|---|---|
+{{transition_rows}}
+<!-- GEN: Example row: | `Draft` | `Submitted` | Creator invokes submit action | `<src>/orders/application/submit_order.ext:SubmitOrder` | `VERIFIED` | -->
+
+- **Forbidden Transitions**: {{forbidden_transitions}}
+
+<!-- GEN: Repeat the ### <Entity> subsection for each domain entity in scope. Entities without a lifecycle still document Owning Module, Key Fields, and `Status Values: N/A (stateless entity)`. -->
+
+## 2. Business-Rule Catalog (`DK4`, `DK5`)
+
+Domain-level invariants that hold across work items. Work-item-specific rules belong in the work item's `requirements.md`, while durable domain invariants are catalogued here so Planning updates them in one place and new specs never contradict them.
+
+| Rule ID (`BR-NN` / `DR-NN`) | Business Rule Statement | Enforced In (`file:symbol`) | Source (Doc / Ticket / User) | Fact Label (`VERIFIED` / `CONFIRMED` / `OPEN`) |
+|---|---|---|---|---|
+{{rule_rows}}
+<!-- GEN: Use stable domain prefixes such as DR-01 / BR-DOM-01 when work items use BR-01 locally, so IDs remain unambiguous. -->
+
+<!-- custom:start -->
+<!-- custom:end -->

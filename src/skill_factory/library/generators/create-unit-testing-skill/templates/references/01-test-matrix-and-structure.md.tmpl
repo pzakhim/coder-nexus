@@ -1,0 +1,43 @@
+# 01 — Per-Layer Test Matrix, Directory Tree & Naming
+
+<!-- GEN: Why: per-layer Pass/Fail/Empty cases and a mirrored test tree stop happy-path-only suites and undiscoverable tests. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+Rules **U2**, **U3**, **U9**, **U10**, **U11**, and **U14**.
+
+> **Workspace Convention Rule (`C11` / `U11` — `EXTEND` vs `INIT`):**
+> - **Existing project (`EXTEND`):** Inspect the workspace's test runner config, existing test folders, shared fixtures, and naming style first. Follow the workspace's established layout and conventions; record any legacy drift in `Concerns` without renaming unrelated test files.
+> - **Greenfield project (`INIT`):** Apply the default mirrored test tree and naming conventions below.
+
+---
+
+## 1. Per-Layer Unit Test Matrix (No Live DB, No Live Network)
+
+Every changed behavior must cover **Pass/Default**, **every handled Fail**, and **Empty / Edge** cases derived from the approved `design.md`:
+
+| Layer / Subject | Example Source Path | Boundary Doubled | Required Cases (Pass / Fail / Empty & Edge) |
+|---|---|---|---|
+| {{layer_name}} | `{{source_path}}` | {{double_strategy}} | {{required_cases}} |
+
+---
+
+## 2. Mirrored Test Directory Tree (`U10`)
+
+One test file per source module, mirroring the source path under the unit test root:
+
+```text
+{{test_directory_tree}}
+```
+
+---
+
+## 3. Naming & Case Design Conventions (`U9`)
+
+- **Test File Name:** `{{test_file_pattern}}`
+- **Test Case Name:** `{{test_name_pattern}}` — states the **behavior**, the **condition**, and the **expected outcome** using domain glossary terms.
+- **Bug Fix & Review Finding Regression (`U3`):**
+  1. Write a test reproducing the broken behavior (named for the behavior rule, never the ticket ID).
+  2. Run it **red** on the unfixed code and record the failure evidence row.
+  3. Apply the fix via `{{debugging_link}}`, run **green**, then run the module suite.
+
+<!-- custom:start -->
+<!-- custom:end -->

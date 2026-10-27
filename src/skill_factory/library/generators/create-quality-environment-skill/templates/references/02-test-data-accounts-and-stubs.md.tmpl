@@ -1,0 +1,40 @@
+# 02 — Test Data, Role Accounts, and External Stubs (`E5`–`E7`, `E10`, `E13`)
+
+<!-- GEN: Why: shared or production data corrupts test outcomes, permission matrices require isolated role accounts without leaked secrets, and unlabelled stubs hide broken integrations. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Populate rules E5–E7, E10, E13 with the workspace's seed commands, forbidden data commands, role account config keys, environment matrix, and provider sandboxes/stubs. -->
+
+## 1. Isolated Test Data & Forbidden Commands (`E5`)
+
+- **Isolation strategy**: `{{isolation_strategy}}` (e.g., dedicated tenant/workspace per test run, run-ID prefixes, or disposable local database fixtures).
+- **Local seed command**: `{{seed_cmd}}` (executes against local/disposable storage only).
+- **Forbidden data commands**: **never** run `{{forbidden_data_commands}}` — they clone, reset, or overwrite shared business data. Never use production data or production database snapshots.
+
+## 2. Per-Role Test Accounts & Secret Hygiene (`E6`, `E13`)
+
+| Role | Target Environment | Account Identifier (Name Only) | Config / Env Key Reference |
+|---|---|---|---|
+| `{{role_name}}` | `{{env_name}}` | `{{account_identifier}}` | `{{config_key_ref}}` |
+
+- Load credentials exclusively from `{{credentials_source}}` (local, git-ignored config).
+- **Secret hygiene (`E13`)**: never echo, log, or paste passwords, tokens, or API keys into terminal output, test logs, or the environment record. Never test with real user accounts.
+
+## 3. External Providers: Sandboxes vs. Labelled Stubs (`E7`)
+
+| External Provider | Preferred Sandbox | Network-Edge Stub (Tool & Spec) | Required Scenarios | Config Switch |
+|---|---|---|---|---|
+| `{{provider_name}}` | `{{sandbox_mode}}` | `{{stub_tool_and_file}}` | `success` · `4xx` · `401/403` · `5xx` · `timeout` · `malformed` | `{{provider_switch_env}}` |
+
+- **Order of preference**: (1) provider sandbox/test mode, (2) network-edge stub configured via URL/env override without changing application code, (3) report **`BLOCKED`** if neither exists.
+- **Mandatory labelling**: every test case executed against a stub must record `stubbed: <provider>` in the evidence (`[03]({{ref_03}})`), and state which integration cases still require verification against the live provider sandbox.
+
+## 4. Environment Matrix (`E10`)
+
+`{{environment_matrix_rules}}`
+
+| Logical / Physical Selector | Backing Storage | Allowed Operations | Switching Mechanism |
+|---|---|---|---|
+| `{{selector_name}}` | `{{backing_storage}}` | `{{allowed_ops}}` | `{{switch_mechanism}}` |
+
+<!-- custom:start -->
+<!-- custom:end -->

@@ -1,64 +1,75 @@
 ---
 name: realtime
-description: How a Python + FastAPI + PostgreSQL service pushes data to the frontend client in real time - choosing polling, Server-Sent Events or WebSockets; native FastAPI SSE (fastapi.sse EventSourceResponse and ServerSentEvent with yield, durable event ids, retry, Last-Event-ID resume, keep-alive, disconnect, short database sessions, backpressure); WebSocket endpoints (auth at connect, close codes, heartbeat, per-connection state, one sender per connection, broadcast through PostgreSQL LISTEN/NOTIFY or another pub/sub when there is more than one process); Pydantic message schemas; documenting channels in design.md; realtime security (authorization per message, rate and size limits); and how to test both. Use when a requirement says live updates, push, notifications, progress, streaming, chat, presence or "without refresh", when Planning designs a channel, when the Code Writer touches an EventSourceResponse or @router.websocket path, and when the Code Reviewer reviews one.
+description: "Design, implement, scale, secure, and test real-time server-to-client channels in Python + FastAPI + PostgreSQL: transport selection (Polling vs. SSE vs. WebSockets), native FastAPI SSE (`fastapi.sse` `EventSourceResponse` & `ServerSentEvent` with `Last-Event-ID` durable replay), WebSocket endpoints (pre-accept auth, close codes, Pydantic v2 discriminated unions, single-sender `TaskGroup`), short DB session lifecycle, multi-worker fan-out via PostgreSQL `LISTEN/NOTIFY` or Redis, anti-IDOR scope isolation, and deterministic CLI/review gates."
 ---
 
-# Backend Realtime (FastAPI)
+# Backend Realtime (FastAPI + PostgreSQL)
 
-An extra skill of the backend pack. It adds stack knowledge only: the process (gates, tasks, unit testing, review, evidence) stays in the core skills linked below. Layer placement comes from `{{slot:clean-architecture}}`; schemas and errors from [api-contract-design](../api-contract-design/SKILL.md); security rules from `{{slot:secure-coding-standards}}`.
+This skill governs real-time server push channels in the Backend pack. It works alongside `{{slot:clean-architecture}}` (layer boundaries), `backend-api-contract-design` (HTTP/DTO contracts & `api_contract.json`), `{{slot:secure-coding-standards}}` (OWASP security controls), and `{{slot:unit-testing}}` (async/sync test harnesses).
 
-Detail: [SSE](references/sse.md) · [WebSockets](references/websockets.md) · [fan-out and scaling](references/fanout-and-scaling.md) · [security](references/security.md) · [testing](references/testing.md) · [sources](references/sources.md). The `design.md` section: [templates/realtime-channels.md.tpl](templates/realtime-channels.md.tpl).
+---
 
-## 1. Choose the transport first (Planning, before Gate 2)
+## 1. Choose the Simplest Transport First (Gate 2 `D-NN`)
 
-Pick the simplest transport that meets the requirement; the choice is a `D-NN` with its reason.
+Pick the simplest transport that satisfies the latency and directionality requirement, and record the choice as a `D-NN` Decision Record in `design.md`:
 
-| Need | Choose | Reason |
+| Requirement | Transport Choice | Rationale |
 |---|---|---|
-| Data changes rarely, or a delay of 10–60 s is acceptable | **Polling** a normal `GET` (with `ETag` / `If-None-Match` or an `updated_after` cursor) | No long-lived connection, works through every proxy, already covered by the OpenAPI contract and normal tests |
-| Server → client only: notifications, progress, feeds, token streams | **SSE** (`fastapi.sse`, FastAPI ≥ 0.135) | Plain HTTP: same auth dependencies, same middleware, automatic reconnect with `Last-Event-ID`, appears in `openapi.json` |
-| Both directions at high frequency: chat, collaborative editing, presence, live control | **WebSocket** | One connection carries client → server messages without a request per message |
-| A one-off result of a slow job | `202 Accepted` + status endpoint (polling) or SSE progress | A socket for a single answer adds state with no benefit |
+| Delay of 10–60 s is acceptable, or updates are infrequent | **HTTP Polling** (`GET` with `ETag` / `If-None-Match` or `updated_after` cursor) | Stateless, works through every proxy/CDN, covered by standard OpenAPI contracts and HTTP tests. |
+| **Server → Client only**: live notifications, status boards, job progress, AI token streams | **SSE (`fastapi.sse`, FastAPI ≥ 0.135)** | Standard HTTP: reuses FastAPI dependencies/middleware, built-in `: ping` keep-alive, automatic `Last-Event-ID` resume, and appears in `contracts/openapi.json`. |
+| **Bidirectional (`Client ↔ Server`) at high frequency**: live chat, collaborative editing, operator control, presence | **WebSocket (`@router.websocket`)** | Single persistent connection carries low-latency client-to-server frames without HTTP request overhead per message. |
+| One-off result of a slow background task | **`202 Accepted` + Polling or SSE progress** | Opening a stateful bidirectional WebSocket for a single completion signal adds security and scaling complexity with zero benefit. |
 
-Ask the user (`Q-NN`) when the requirement does not state the acceptable delay or who sends messages. Never pick WebSocket "for future flexibility": every extra direction is extra auth, rate-limit and test surface.
+---
 
-## 2. Rules for every channel
+## 2. Mandatory Channel Invariants (`RT1`–`RT10`, Mandatory Compliance)
 
-| # | Rule | Reason |
-|---|---|---|
-| RT1 | Every channel is documented in `design.md` with the [channel template](templates/realtime-channels.md.tpl): path, transport, auth, scope, message types with their Pydantic models, ids and resume, close codes, limits | WebSocket messages never appear in `openapi.json`, and SSE payloads sent through `ServerSentEvent` appear only as a generic event; the design is the contract the frontend client and the reviewer check |
-| RT2 | Every message is a named Pydantic model; inbound WebSocket messages are one discriminated union validated with a `TypeAdapter`; outbound payloads are built from response models, never from ORM objects or raw dicts | Validation at the boundary (SC1) and no accidental field leaks (SC6) |
-| RT3 | Authenticate before streaming or `accept()`, through the workspace's auth dependency; authorize every subscription and every inbound action in the service layer, per object and data scope | A socket accepted without auth holds resources for anyone; a check only at connect lets a user act on objects of another scope later (SC2, SC3) |
-| RT4 | Never hold a request-scoped database session for the life of a stream or socket; open a short `async with session_factory() as session:` per unit of work | A `yield` dependency stays open until the stream or socket ends, so each idle client pins one pool connection and the pool runs dry |
-| RT5 | Long-lived handlers are `async def`; blocking calls go through the async driver or `anyio.to_thread.run_sync` | A sync generator or blocking call holds a worker thread (default limit 40) until it returns, and cannot be stopped on disconnect |
-| RT6 | Every per-connection buffer is bounded and has a stated overflow policy (drop and ask the client to resync, or close with a code) | An unbounded queue behind a slow client grows until the process runs out of memory |
-| RT7 | Events that a client must not miss carry a durable, ordered id (a database sequence or outbox id), and resume replays from the database | An in-memory counter restarts at 1 after a deploy and the client silently skips or repeats events |
-| RT8 | In-memory connection registries are valid for one process only; more than one process or instance needs a pub/sub decided in `design.md` | `uvicorn --workers 4` or two pods each see a quarter of the clients; broadcasts silently miss the rest |
-| RT9 | Limits are explicit: max message size, messages per second per connection, connections per user, idle timeout | Unbounded realtime endpoints are an easy resource-exhaustion target (OWASP API4) |
-| RT10 | No fake events: a channel whose source is not built yet is `BLOCKED` or out of scope, never fed by a timer that invents data | A fake source passes the demo and hides that the real integration does not exist (core "no fake fallbacks") |
+Every invariant below is **mandatory compliance** — never invent per-rule severity columns or mark any invariant as `"not adopted"`:
 
-## 3. Code placement
+| ID | Invariant | Enforcement Summary | Reference |
+|---|---|---|---|
+| `RT1` | **Explicit Channel Contract in `design.md`** | Document every SSE/WebSocket channel in `design.md` using [`templates/realtime-channels.md.tpl`](templates/realtime-channels.md.tpl) (path, transport, auth, tenant scope, Pydantic models, replay rules, close codes, limits). | [01-sse-and-websocket-patterns.md](references/01-sse-and-websocket-patterns.md) |
+| `RT2` | **Strict Pydantic v2 Message Schemas** | Validate inbound WebSocket messages via a single discriminated union `TypeAdapter` (`ConfigDict(extra="forbid")`); serialize outbound SSE/WS payloads from explicit `*Out` / `*Event` Pydantic models (never ORM entities or raw `dict`). | [01-sse-and-websocket-patterns.md](references/01-sse-and-websocket-patterns.md) |
+| `RT3` | **Authenticate Before Streaming/`accept()` & Authorize Every Scope** | Authenticate before the first SSE byte or before `websocket.accept()`; authorize every subscription/action in the service layer per `(tenant_id, object_id)` (anti-IDOR). | [02-fanout-scaling-and-security.md](references/02-fanout-scaling-and-security.md) |
+| `RT4` | **Never Hold a DB Session Across a Long-Lived Connection** | Never inject a `yield`-based `Depends(get_session)` into a long-lived stream/socket; open short `async with session_factory() as session:` blocks per query/replay so idle clients never exhaust the PostgreSQL pool. | [01-sse-and-websocket-patterns.md](references/01-sse-and-websocket-patterns.md) |
+| `RT5` | **Non-Blocking `async def` Handlers Only** | All stream generators and socket loops are `async def`; offload any unavoidable CPU/sync work via `anyio.to_thread.run_sync`. | [01-sse-and-websocket-patterns.md](references/01-sse-and-websocket-patterns.md) |
+| `RT6` | **Bounded Per-Connection Queues & Single Socket Writer** | Every connection uses `asyncio.Queue(maxsize=N)` with an explicit `QueueFull` policy (`event: resync` or close `1013`), and exactly one `send_loop` task writes to each WebSocket. | [01-sse-and-websocket-patterns.md](references/01-sse-and-websocket-patterns.md) |
+| `RT7` | **Durable Ordered Event IDs & Gap-Free Replay** | Resumable streams use durable database sequence/outbox IDs (never in-memory counters); subscribe to the live bus **before** running the replay query and filter `event.id > high_water`. | [01-sse-and-websocket-patterns.md](references/01-sse-and-websocket-patterns.md) |
+| `RT8` | **Multi-Worker Fan-Out via Shared Pub/Sub** | In-memory hubs are valid only for single-process deployments (`D-NN`); multi-worker/multi-pod deployments must fan out via PostgreSQL `LISTEN/NOTIFY` or Redis/broker. | [02-fanout-scaling-and-security.md](references/02-fanout-scaling-and-security.md) |
+| `RT9` | **Explicit Frame Size, Rate, Connection & Replay Limits** | Enforce `--ws-max-size`, per-connection message rate limits, per-actor connection caps, and `replay_max` bounds (`OWASP API4`). | [02-fanout-scaling-and-security.md](references/02-fanout-scaling-and-security.md) |
+| `RT10` | **No Fake Timer/Mock Streams in Production Code** | If the real event source is not built yet, mark the channel `BLOCKED` or out of scope — never ship a timer that fabricates demo events. | [03-testing-cli-gates-and-review.md](references/03-testing-cli-gates-and-review.md) |
 
-| Layer | Owns |
+---
+
+## 3. Clean Architecture Layer Placement
+
+| Layer | Responsibility |
 |---|---|
-| Router (`api/`) | `@router.get(..., response_class=EventSourceResponse)` or `@router.websocket(...)`; auth dependency; parsing messages into models; mapping domain errors to close codes or error events |
-| Service | Authorization per subscription and per action; the business effect of an inbound message; publishing a domain event after the commit |
-| Realtime adapter (`app/api/realtime.py` or `app/core/realtime.py`) | Connection registry, pub/sub listener (LISTEN/NOTIFY, Redis), per-connection queues |
-| Repository | Replay queries (`WHERE id > :last_id AND <scope> ORDER BY id LIMIT :n`) |
+| **Presentation (`api/routers/`)** | `@router.get(..., response_class=EventSourceResponse)` or `@router.websocket(...)`, handshake auth dependency, `TypeAdapter` frame parsing, mapping domain errors to WS close codes / SSE terminal events. |
+| **Application (`application/services/`)** | Per-subscription and per-action authorization (`ensure_visible`), business command execution, emitting domain events after transaction commit. |
+| **Infrastructure (`infrastructure/realtime/`)** | Scoped connection hub (`(tenant_id, topic)` → bounded queues), PostgreSQL `LISTEN/NOTIFY` (`asyncpg`) or Redis subscriber, outbox/replay repository queries. |
 
-Reason: the router stays thin and the same service rules apply to HTTP, SSE and WebSocket callers.
+---
 
-## 4. Planning and tasks
+## 4. Reference Routing Table
 
-- Split a realtime feature into vertical phases like any other behavior (`implementation-planning`): first the event source and its replay query, then the channel endpoint, then fan-out across processes if needed.
-- Task checks use real commands with cwd, detected from the workspace (`uv run`, `poetry run` or the active virtualenv): `pytest tests/integration/test_order_events.py -q`, `ruff check app/api/realtime`, `mypy app`.
-- **Expected** names the observable result: event names and ids received, the close code for a refused connection, the resume starting after the given id.
+| Reference / Template | Topic & Coverage | Load When |
+|---|---|---|
+| [`references/01-sse-and-websocket-patterns.md`](references/01-sse-and-websocket-patterns.md) | Native FastAPI SSE (`EventSourceResponse`, `ServerSentEvent`), gap-free `Last-Event-ID` replay (`RT7`), short DB sessions (`RT4`), WebSocket handshake auth, close codes (`1000`–`4999`), discriminated union `TypeAdapter` (`RT2`), and single-sender `asyncio.TaskGroup` (`RT6`). | Implementing or refactoring an SSE stream or WebSocket endpoint. |
+| [`references/02-fanout-scaling-and-security.md`](references/02-fanout-scaling-and-security.md) | Single-process vs. multi-worker fan-out (`RT8`), PostgreSQL `LISTEN/NOTIFY` with `asyncpg` & transactional `pg_notify`, single-use short-lived tickets (`<= 60s`), `Origin` CSWSH checks, `(tenant_id, object_id)` anti-IDOR hub isolation (`RT3`), and resource caps (`RT9`). | Designing multi-worker fan-out, wiring `LISTEN/NOTIFY` or Redis, or hardening realtime auth and rate limits. |
+| [`references/03-testing-cli-gates-and-review.md`](references/03-testing-cli-gates-and-review.md) | Mandatory channel test matrix, `httpx` SSE streaming tests, Starlette `TestClient` WebSocket tests, deterministic CLI `PASS`/`FAIL` gates, and `BLOCKER`/`MAJOR`/`MINOR` review rubric. | Writing realtime integration tests, running CLI verification gates, or reviewing a realtime PR. |
+| [`templates/realtime-channels.md.tpl`](templates/realtime-channels.md.tpl) | Standard `design.md` specification template for `CH-NN` channels. | Authoring or updating `design.md` (Gate 2) for any realtime feature. |
+<!-- {{profile_references}} -->
 
-## 5. Review focus (Code Reviewer adds to the core rubric)
+---
 
-- RT1–RT10 above, then the [security checklist](references/security.md#review-checklist).
-- A broadcast that awaits each socket in turn, `receive_text()` without size or rate limits, `except Exception: pass` around the loop, a missing `WebSocketDisconnect` cleanup: each is a finding with a failure scenario.
+## 5. Deterministic CLI Verification Gates (`PASS` / `FAIL`)
 
-## Related skills
+All automated checks report strictly **`PASS`** or **`FAIL`** (`shared_contracts/flags_and_statuses.md`; `NOT_RUN`, `BLOCKED`, and `UNVERIFIED` never count as `PASS`):
 
-[unit-testing](../unit-testing/SKILL.md) · [incremental-implementation](../incremental-implementation/SKILL.md) · [root-cause-debugging](../root-cause-debugging/SKILL.md) · [evidence-standard](../evidence-standard/SKILL.md) · [review-workflow](../review-workflow/SKILL.md) · [secure-coding-standards](../secure-coding-standards/SKILL.md).
+| Gate | Command | Pass Criterion |
+|---|---|---|
+| **G1 — Long-Lived DB Session Leak Scan (`RT4`)** | `rg -n "websocket.*Depends\(get_session\)|EventSourceResponse[\s\S]{0,160}Depends\(get_session\)" app/ src/ -g "*.py"` | `0` matches (`PASS`) — streams/sockets use `session_factory` per unit of work |
+| **G2 — Unbounded Queue Scan (`RT6`)** | `rg -n "asyncio\.Queue\(\s*\)" app/ src/ -g "*.py"` | `0` matches (`PASS`) — every `asyncio.Queue` sets `maxsize=` |
+| **G3 — Unvalidated `receive_json()` Scan (`RT2`)** | `rg -n "\.receive_json\(\)" app/ src/ -g "*.py"` | `0` matches (`PASS`) — use `receive_text()` + size check + `TypeAdapter.validate_json()` |
+| **G4 — Realtime Integration Test Suite** | `uv run pytest -q -k "sse or websocket or realtime"` | Exit `0` (`PASS`) |

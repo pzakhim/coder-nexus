@@ -1,6 +1,6 @@
 ---
 name: evidence-standard
-description: The gate every role passes before saying something works - identify the claim, run the check that proves it fresh on the stated revision, read the exit code and output, then claim exactly what the evidence shows, recorded as an evidence row. Use whenever the Code Writer, Code Reviewer, Test Runner or Docs Writer is about to write passed, fixed, done, clean, ACCEPTED, APPROVED or READY_FOR_REVIEW, or tick a task.
+description: "Require fresh command or runtime evidence on the current revision before any role (Code Writer, Bug Fixer, Code Reviewer, Test Runner, Docs Writer, or Coordinator) claims PASS, FIXED, APPROVED, ACCEPTED, or RECORDED."
 ---
 
 # Evidence Before Claims
@@ -41,14 +41,14 @@ A fixture, mock or stubbed run is labelled as such in the row and never reported
 
 ## 3. Evidence row
 
-Use the format from [handoff-and-status](../work-item-contract/references/handoff-and-status.md):
+Use the format from `work-item-contract` (`references/handoff-and-status.md` §4):
 
 | Claim | Command (+cwd) | Revision | Exit code | Key output | Result |
 |---|---|---|---|---|---|
 | AC-03 empty list shows the empty state | `<check command>` (cwd `app/`) | `a1b2c3d` | 0 | `12 passed, 0 skipped` | PASS |
 | Live payment call succeeds | not run: sandbox credentials missing | `a1b2c3d` | - | - | BLOCKED |
 
-- **Revision** is the commit the claim is about; if the tree has uncommitted changes, say so (`<sha>+dirty`, allowed only on intermediate task ticks: `READY_FOR_REVIEW` needs a committed `REVIEW_REVISION`, [handoff-and-status](../work-item-contract/references/handoff-and-status.md) §2). Evidence from another revision is stale: a new revision invalidates every row for the code it touched.
+- **Revision** is the commit the claim is about; if the tree has uncommitted changes, say so (`<sha>+dirty`, allowed only on intermediate task ticks: `READY_FOR_REVIEW` needs a committed `REVIEW_REVISION`, per `work-item-contract` (`references/handoff-and-status.md` §2 and §4)). Evidence from another revision is stale: a new revision invalidates every row for the code it touched.
 - **Key output** is the shortest quote that proves the result, secrets and personal data replaced with `<REDACTED>`.
 - **Result** uses the shared status words. `NOT_RUN` (not executed), `BLOCKED` (could not execute, with the reason) and `UNVERIFIED` (claimed without a check that proves it) are **never** counted, rounded or summarised as `PASS`. A verdict over items that include them cannot be `ACCEPTED` / `APPROVED` for those items.
 
@@ -67,6 +67,7 @@ Stop and run the gate when you notice: "should", "probably", "seems to", "looks 
 | Role | Applies the gate to |
 |---|---|
 | Code Writer | Every task tick, `READY_FOR_REVIEW` (phase checks re-run on the committed `REVIEW_REVISION`), every `FIXED` reply in `review-resolution`, every fix in `{{slot:root-cause-debugging}}` |
+| Bug Fixer | Reproduction before fix (`red`), fix verification (`green`), regression checks via `{{slot:verification}}`, and `READY_FOR_REVIEW` / `VERIFIED_FIXED` hand-off in `.superpowers/debug/<bug-slug>/` |
 | Code Reviewer | Reruns the checks independently on the review revision; never copies the writer's rows as its own evidence |
 | Test Runner | One row per AC with PASS / FAIL / BLOCKED / NOT_RUN; the feature verdict follows the rows |
 | Docs Writer | Every claim that a command, link, path or behaviour in a document works: run or open it on the stated revision |

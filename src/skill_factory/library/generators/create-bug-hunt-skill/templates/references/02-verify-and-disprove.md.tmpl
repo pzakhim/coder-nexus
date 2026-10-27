@@ -1,0 +1,34 @@
+# 02 — Verify and Disprove Candidates
+
+> Topic: Adversarial disproof workflow, concrete failure scenarios, read-only CLI checks, and confidence grading (`H6`–`H8`)
+
+<!-- GEN: Why: disproving candidates before reporting keeps defect reports free of false positives and speculative noise. Kind: Mandatory. -->
+
+## 1. Adversarial Disproof Steps (`H6`–`H8`)
+
+Verify every candidate from `01-scope-dimensions-and-patterns.md` before promoting it to a finding:
+
+1. **Trace the Real Execution Path (`H6`):** Walk from a real entry point ({{entry_points}}) to the suspect line. Inspect upstream guards, validators, middleware/interceptors, lifecycle checks, and framework defaults.
+2. **Write the Concrete Failure Scenario (`H7`):**
+   ```text
+   given <concrete input/state> → when <action/trigger> → then <observed wrong result>
+   ```
+   No concrete scenario → no finding. Vague remarks ("might fail", "consider adding error handling") are rejected.
+3. **Run Read-Only CLI Checks (`H6`):** When a read-only command decides the question ({{readonly_commands}}), run it and record the exact command, exit code, and `PASS` / `FAIL` output. Never edit application code, tests, or schemas during the hunt. Unrun commands are `NOT_RUN`.
+4. **Classify Confidence (`H8`):**
+   - `CONFIRMED` — execution path traced end-to-end with no guard preventing the failure, or a read-only command demonstrated the failure.
+   - `PLAUSIBLE` — depends on external runtime state not visible in the repo ({{plausible_examples}}). State the exact check or evidence that would confirm or refute it.
+   - **Rejected** — an upstream guard, type/schema constraint, or framework guarantee prevents the failure. Drop silently.
+
+---
+
+## 2. Typical Disproofs in This Stack
+
+| Suspicion | Often Disproved By |
+|---|---|
+| {{suspicion_example}} | {{disproof_example}} |
+
+Always verify the guard in the actual codebase; an assumed disproof is as invalid as an assumed defect.
+
+<!-- custom:start -->
+<!-- custom:end -->

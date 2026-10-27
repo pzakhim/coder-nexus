@@ -1,87 +1,76 @@
 ---
 name: incremental-implementation
-description: The Code Writer's process for executing one approved phase of a work item task by task - preconditions, a pre-flight check of what tasks consume and produce, a per-task loop that compares each check with its Expected result, phase-end verification and the hand-off. Use after Gate 3 (or for an approved brief task) whenever code is written for .superpowers/work-items/<slug>/vN/; never for brainstorming or unapproved scope.
+description: Execute one approved phase of a work item task by task — verifying preconditions, running a Consumes/Produces interface pre-flight, executing the A–E task loop with Expected-result triage, running phase-end checks, and writing a revision-bound hand-off.
 ---
 
-# Incremental Implementation
+# Incremental Implementation (Core Code Writer Workflow)
 
-One Code Writer executes one approved phase, tasks strictly in order, and proves each task before the next. Reason: a defect found right after the change that caused it is cheap; found at phase end it is tangled with every other task. Legacy `docs/features/<module>/<feature>/vN/` work keeps the same loop.
+One Code Writer executes one approved phase, tasks strictly in order, and proves each task before moving to the next. Formats for task fields and amendment classes live in [plan-and-task-contract.md](../work-item-contract/references/plan-and-task-contract.md); statuses and evidence rows live in [handoff-and-status.md](../work-item-contract/references/handoff-and-status.md).
 
-Formats live in one place: task fields and amendment classes in [plan-and-task contract](../work-item-contract/references/plan-and-task-contract.md), statuses and evidence rows in [hand-off and status](../work-item-contract/references/handoff-and-status.md). Detail for this skill: [pre-flight and hand-off](references/preflight-and-handoff.md), [sources](references/sources.md).
+---
 
-## 1. Preconditions
+## 1. Execution Flow & Canonical Statuses
 
-Stop with `BLOCKED` if any is missing. Reason: code built on an unapproved or unverified base is work the user may reject.
+1. **Before coding ([01 — Preconditions & Pre-flight](references/01-preconditions-and-preflight.md)):** Verify Gate 1–3 approvals, `PHASE-00` readiness, and the active Git branch; build the **Consumes / Produces Pre-flight Table** against real code signatures before Task 1.
+2. **Per-task loop ([02 — Task Loop & Checks](references/02-task-loop-and-checks.md)):** Execute tasks top to bottom (**A. Read & Ground → B. Code in Scope → C. Run Check → D. Triage → E. Tick & Re-read**). Never code two tasks in one pass.
+3. **Phase end ([03 — Phase End & Hand-off](references/03-phase-end-and-handoff.md)):** Run full phase verification (`{{slot:verification}}`), UI checks (`{{slot:visual-quality}}`), self bug-hunt (`{{slot:bug-hunt}}`), and named-smell simplification (`{{slot:code-simplification}}`).
+4. **Hand-off ([03 — Phase End & Hand-off](references/03-phase-end-and-handoff.md)):** Commit the phase, re-run phase checks on the committed `REVIEW_REVISION`, and write `evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md`.
 
-| Check | Where |
+| Category | Canonical Flags ([`handoff-and-status.md`](../work-item-contract/references/handoff-and-status.md)) |
 |---|---|
-| Gate 1, 2, 3 approvals cover this `vN` (a phase-free item: approved `brief.md`) | `implementation-plan.md` approval references, `work-item-contract` |
-| `PHASE-00` carries an accepted tick (`[x] PREPARED / COMPLETED`, `[x] PREPARED (INFO_READY)` or `[x] PREPARED (NO_EXTERNAL_API)`; [plan-and-task contract](../work-item-contract/references/plan-and-task-contract.md) → `PHASE-00` readiness tick); every phase in `Depends on` passed | `phases/phase-00-prepare.md`, `implementation-plan.md` |
-| `git branch --show-current` equals the branch in the `git-preflight` `D-NN` | `codebase-notes.md` |
-| Every task has concrete Scope / Files, Acceptance Criteria (command + cwd) and Expected | phase file; a gap is a plan change request (`change-control`), never a guess |
+| **Deterministic Tool / Evidence Gate** | `PASS` · `FAIL` · `NOT_RUN` · `BLOCKED` · `UNVERIFIED` (`NOT_RUN`, `BLOCKED`, `UNVERIFIED` are never `PASS`) |
+| **Per-Task Check Triage** | `MATCH` (tick & continue) · `CODE_WRONG` (debug & fix in scope) · `PLAN_WRONG` (leave unticked, raise `PCR-NN`, return `BLOCKED`) |
+| **Phase Hand-off Status** | `READY_FOR_REVIEW` · `BLOCKED` · `NEEDS_CONTEXT` |
 
-Context comes from the approved files only: Huly and source facts from `codebase-notes.md`, the API contract from `design.md` (handshake rules in plugin-root `shared_contracts/api_handshake_protocol.md`). Never re-query Huly or invent a record a source lacks.
+---
 
-Assigned `PHASE-00 [EXECUTE]` itself: run its tasks with this same loop and tick `[x] PREPARED / COMPLETED` in `phases/phase-00-prepare.md` and `implementation-plan.md` before the hand-off; the reviewer only confirms that tick. Preparation specifics (fixture or stub servers, test-data files, smoke commands) come from the stack part of the Code Writer profile and `{{slot:verification}}`.
+## 2. Core Implementation Rules (`I1`–`I17` — Mandatory Compliance)
 
-**Resuming** (new session or lost context): ticks in the phase file and `git log` are the record, not memory. Resume at the first unticked task; re-run its predecessor's check once if the tree changed since its tick.
+All 17 rules are **mandatory compliance** across every stack pack:
 
-## 2. Pre-flight before Task 1
+| ID | Rule | Contract | Reference |
+|---|---|---|---|
+| **I1** | **Approved Scope Only** | Implement only what an approved `implementation-plan.md` + phase file (or approved phase-free `brief.md`) covers; never widen scope or start before Gate 1–3 approvals | [01 — Preconditions & Pre-flight](references/01-preconditions-and-preflight.md) |
+| **I2** | **One Phase at a Time** | Execute only the assigned phase after `PHASE-00` is ticked ready and all phases in `Depends on` have passed | [01 — Preconditions & Pre-flight](references/01-preconditions-and-preflight.md) |
+| **I3** | **Concrete Task Contract** | Every task must specify `Scope / Files`, `Acceptance Criteria` (command + cwd), and `Expected`; missing fields require a `PCR-NN` (`change-control`), never a guess | [01 — Preconditions & Pre-flight](references/01-preconditions-and-preflight.md) |
+| **I4** | **Strict A–E Task Loop** | Run **Read → Code → Check → Triage → Tick & Re-read** per task; never batch-code multiple tasks | [02 — Task Loop & Checks](references/02-task-loop-and-checks.md) |
+| **I5** | **Edit Only Task Scope** | Modify only files listed in the active task's `Scope / Files` and use the mapped components from `design.md` | [02 — Task Loop & Checks](references/02-task-loop-and-checks.md) |
+| **I6** | **Immediate Task Check** | Execute the task's Acceptance Criteria command in its cwd immediately after coding and read the full output before ticking | [02 — Task Loop & Checks](references/02-task-loop-and-checks.md) |
+| **I7** | **Full Phase Verification** | After all tasks are ticked, run the full phase suite (analyzer, type check, tests, build, architecture validator) via `{{slot:verification}}` | [03 — Phase End & Hand-off](references/03-phase-end-and-handoff.md) |
+| **I8** | **Visual Verification (UI)** | For UI-impacting phases, verify approved targets and states via `{{slot:visual-quality}}` | [03 — Phase End & Hand-off](references/03-phase-end-and-handoff.md) |
+| **I9** | **Self Bug-Hunt Pass** | Run `{{slot:bug-hunt}}` (`quick` effort) on the phase diff; fix `CONFIRMED` defects with reproducing tests (`{{slot:unit-testing}}`) and carry `PLAUSIBLE` ones as Concerns | [03 — Phase End & Hand-off](references/03-phase-end-and-handoff.md) |
+| **I10** | **Honest Evidence Ledger** | Record `claim \| command (+cwd) \| revision \| exit code \| key output \| result` per `evidence-standard` | [03 — Phase End & Hand-off](references/03-phase-end-and-handoff.md) |
+| **I11** | **Contract Changes Go to Gate** | Any fix requiring a behavior, API, architecture, dependency, or mapped-component change stops and routes through `change-control` (`PCR-NN`) | [01 — Preconditions & Pre-flight](references/01-preconditions-and-preflight.md), [03 — Phase End & Hand-off](references/03-phase-end-and-handoff.md) |
+| **I12** | **Targeted Simplicity Pass** | Run `{{slot:code-simplification}}` on changed code only when a named smell from its 4-lens catalog or `{{slot:clean-code}}` is present; re-run checks after | [03 — Phase End & Hand-off](references/03-phase-end-and-handoff.md) |
+| **I13** | **Revision-Bound Hand-off** | Commit the phase before final phase checks so `REVIEW_REVISION` is a clean commit SHA (never `+dirty`), and write `writer-handoff.md` | [03 — Phase End & Hand-off](references/03-phase-end-and-handoff.md) |
+| **I14** | **Zero Fabrication or Test Weakening** | Never invent business records, mock fallbacks in production code, or placeholder successes; never delete, skip, or loosen test assertions | [01 — Preconditions & Pre-flight](references/01-preconditions-and-preflight.md), [02 — Task Loop & Checks](references/02-task-loop-and-checks.md) |
+| **I15** | **Pre-Flight Before Task 1** | Build the Consumes / Produces table against real code signatures before writing code; raise a `PCR-NN` on any mismatch | [01 — Preconditions & Pre-flight](references/01-preconditions-and-preflight.md) |
+| **I16** | **Triage Against Expected** | Compare check output against `Expected` (`MATCH` / `CODE_WRONG` / `PLAN_WRONG`); never patch output to mimic `Expected` | [02 — Task Loop & Checks](references/02-task-loop-and-checks.md) |
+| **I17** | **Resume from the Record** | When resuming a session, use phase-file ticks (`- [x]`) and `git log` as the source of truth; re-run the last ticked task's check if the working tree changed | [02 — Task Loop & Checks](references/02-task-loop-and-checks.md) |
 
-1. Read `## Global constraints` and `## Review focus` in `implementation-plan.md`. Constraints bind every task; Review focus names inputs the reviewer will try deliberately, so plan tests or guards for them now.
-2. Build the Consumes / Produces table for the phase: one row per edge between tasks, or between a task and existing code (format in [pre-flight](references/preflight-and-handoff.md#pre-flight-table)). Open the existing symbol and compare the real signature, not the plan's description of it.
-3. Any mismatch, missing producer, task that contradicts a Global constraint, or check command that cannot work → raise a `PCR-NN` (`change-control`) before writing code and return `BLOCKED` naming it. Planning answers `AMENDED` (class `TASK_DETAIL`) or `ESCALATED`.
+---
 
-A clean table is still written down. Reason: "no conflicts" without rows is a scan nobody ran.
+## 3. Reference Guides
 
-## 3. Task loop
+Load only the reference file needed for your current step:
 
-For each task, top to bottom. Never code two tasks in one pass.
-
-| Step | Do | Reason |
-|---|---|---|
-| A. Read | Re-open the phase file; take the first unticked task; confirm every earlier task is ticked; note Scope / Files, Reused Components, Consumes, Produces, Acceptance Criteria, Expected | What you remember is a summary; the file has the exact values |
-| B. Code | Edit only Scope / Files. Use the Reused Components and the conventions of `{{slot:clean-architecture}}`, `{{slot:core-package-usage}}`, `{{slot:clean-code}}`, `{{slot:secure-coding-standards}}`. Write the failing test first where `{{slot:unit-testing}}` requires it | Files outside scope are unreviewed design changes |
-| C. Check | Run the Acceptance Criteria command in its cwd; read the whole output | Only a run you read is evidence (`evidence-standard`) |
-| D. Triage | Compare the output with Expected (table below) | Silent deviation is a decision made without the people who approved the plan |
-| E. Tick | `- [x]` the task with the revision and command (format in [hand-off](references/preflight-and-handoff.md#tick-line)); then re-read the plan before the next task | The tick is the ledger that survives lost context |
-
-| Outcome | Meaning | Action |
-|---|---|---|
-| `MATCH` | Output equals Expected | Tick, continue |
-| `CODE_WRONG` | The plan is right, the code is not | `{{slot:root-cause-debugging}}`; fix inside Scope / Files; re-run C. Never patch the output to look like Expected |
-| `PLAN_WRONG` | Expected, a signature, a file list or the command itself is wrong or impossible | Task stays unticked; raise a `PCR-NN` (`change-control`) and return `BLOCKED` naming it; resume only after `AMENDED` |
-
-Hard rules for every task:
-
-- **No bulk coding, no context drift**: one task, one check, one tick, then re-read.
-- **No bypassing the mapping**: a mapped component that does not fit is `PLAN_WRONG`, never a local substitute.
-- **No construction in entry points**: screens, handlers and other entry points receive dependencies through the approved wiring convention.
-- **Never weaken tests**: no deleted assertion, loosened expectation, added skip or edited expected value to turn a check green (see `{{slot:unit-testing}}`).
-- **No fake success**: no invented data, stub fallbacks or placeholder results to make a missing dependency look available; fail explicitly.
-- **Keep it buildable**: after each tick the project builds and earlier checks still pass.
-- **Noticed but not touching**: an unrelated problem goes on the hand-off list, not into the diff.
-
-## 4. Phase end
-
-When every task is ticked:
-
-1. Full phase checks with `{{slot:verification}}` (analyzer, tests, build). Task checks are narrow; only the full run shows interactions.
-2. UI impact: `{{slot:visual-quality}}` on the approved target and states.
-3. `{{slot:bug-hunt}}` at `quick` effort on the phase diff; grade with [handoff-and-status.md](../work-item-contract/references/handoff-and-status.md) §9 and put its `bug-hunt:` line in the hand-off. Fix each `CONFIRMED` finding with a reproducing test first (`{{slot:unit-testing}}`), re-run affected checks; carry `PLAUSIBLE` ones as Concerns.
-4. `{{slot:code-simplification}}` only when a concrete smell from `{{slot:clean-code}}` exists in changed code; re-run affected checks after; put its `simplify:` line (§9) in the hand-off.
-5. `evidence-standard`: every claim in the hand-off has an evidence row; `NOT_RUN`, `BLOCKED` and `UNVERIFIED` are never `PASS`.
-
-## 5. Hand-off
-
-Commit the phase, then write `evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md` (the folder is named after the committed `REVIEW_REVISION`) and return exactly one status (fields in [hand-off](references/preflight-and-handoff.md#hand-off)):
-
-| Status | When |
+| Reference | Topics Covered |
 |---|---|
-| `READY_FOR_REVIEW` | All tasks `MATCH`, phase checks run on a committed `REVIEW_REVISION` (never `+dirty`); optional **Concerns** list |
-| `BLOCKED` | A precondition, environment, approval or open `PCR-NN` stops the work and nothing in scope can fix it |
-| `NEEDS_CONTEXT` | A fact is missing; state what was tried and what is needed |
+| [01 — Preconditions & Pre-flight](references/01-preconditions-and-preflight.md) | Gate 1–3 & `PHASE-00` readiness checks, `PHASE-00 [EXECUTE]` handling, authoritative sources of truth, and the **Consumes / Produces Pre-flight Table** (`I1`–`I3`, `I14`, `I15`) |
+| [02 — Task Loop, Triage & Tick Format](references/02-task-loop-and-checks.md) | Step-by-step A–E task loop, `MATCH` / `CODE_WRONG` / `PLAN_WRONG` triage matrix, exact `- [x]` tick line format, 7 hard rules during coding, and session resume protocol (`I4`–`I6`, `I14`, `I16`, `I17`) |
+| [03 — Phase-End Checks, Hand-off & Review Rounds](references/03-phase-end-and-handoff.md) | 5 phase-end verification gates, `evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md` template, status rules, and round-N review replies (`I7`–`I13`) |
 
-Every status carries the **Noticed but not touching** list and any `TASK_DETAIL` amendments made during the phase, so the coordinator can tell the user at the phase checkpoint.
+---
 
-After review: findings come back through `review-resolution`; the round-N reply goes into the new `writer-handoff.md` under `## Review reply (round N)`. Every fix is a new revision that invalidates the affected review, test and visual evidence. Three review rounds on the same phase without `APPROVED` → escalate through `change-control` or the coordinator. The approved plan stays stable; actual results go to `as-built.md`, written by Docs Writer from the evidence.
+## 4. Stack Slots & Core Handshake Skills Called
+
+| Need | Target Skill / Slot |
+|---|---|
+| Layer placement, module structure & profile architecture contracts | `{{slot:clean-architecture}}` |
+| Code structure, naming, foundation/UI kit reuse & self-check | `{{slot:clean-code}}` |
+| Input, auth, scope & secret safety | `{{slot:secure-coding-standards}}` |
+| Writing & running unit tests | `{{slot:unit-testing}}` |
+| Diagnosing a `CODE_WRONG` failure | `{{slot:root-cause-debugging}}` |
+| Phase-end self bug-hunt & simplification | `{{slot:bug-hunt}}`, `{{slot:code-simplification}}` |
+| Phase-end suite & UI visual verification | `{{slot:verification}}`, `{{slot:visual-quality}}` |
+| Plan defects (`PLAN_WRONG`), review replies & evidence | [`change-control`](../change-control/SKILL.md), [`review-resolution`](../review-resolution/SKILL.md), [`evidence-standard`](../evidence-standard/SKILL.md) |

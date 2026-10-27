@@ -1,18 +1,18 @@
 # Changelog — create-change-impact-analysis-skill
 
-Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see `~/.claude/skill-factory/core/sync-protocol.md`). Bump rules: `~/.claude/skill-factory/core/versioning.md`.
+Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see [../../core/sync-protocol.md](../../core/sync-protocol.md)). Bump rules: [../../core/versioning.md](../../core/versioning.md).
 
-## Unreleased
+## 1.1.0 — 2026-10-25
 
-- Changed: CX7 uses the ADDED / MODIFIED / REMOVED vocabulary shared with `requirements-specification` RS10 — classified against the built code in the template's new "Behavior delta" section, each row with reason and evidence, REMOVED with its effect on existing data and users; AC delta rows (Add / Change / Remove / Keep) trace to them → `references/04-writing-change-impact.md` "Behavior delta", "AC delta", "Regression and migration"; `SKILL.md` "Rules". (minor)
-- Changed: the fixed template is named at its new home (`work-item-contract` skill, `templates/change-impact.md.tpl`); the default for when the analysis is mandatory follows the work-item Types (every `v2+`, bugfixes on built code). (patch)
-- Added: `references/sources.md` with the external sources and ideas not adopted. (patch)
+- Changed: Consolidated the 4 reference templates into 3 cohesive files under `templates/references/` (`01-impact-map-and-tracing-recipes.md.tmpl`, `02-classification-and-regression-selection.md.tmpl`, `03-writing-change-impact-and-gates.md.tmpl`) and added `<!-- {{profile_references}} -->` to `templates/SKILL.md.tmpl`.
+- Changed: Enforced mandatory compliance for all rules `CX1`–`CX7` (`CX7` standardizes `ADDED` / `MODIFIED` / `REMOVED` behavior deltas against baseline built code with migration notes for `REMOVED` and `Add` / `Change` / `Remove` / `Keep` AC deltas), unified review severities (`BLOCKER` / `MAJOR` / `MINOR`), and deterministic CLI verification gates (`PASS` / `FAIL`).
+- Changed: Replaced stack-biased terms in `SKILL.md` and `references/detection.md` with stack-neutral guidance across application layers, and removed `references/sources.md`.
 
-**Affects (when released):** `SKILL.md`, `references/04-writing-change-impact.md`.
-**Migration (when released):**
-1. In `references/04-writing-change-impact.md`, add the "Behavior delta" bullet (ADDED / MODIFIED / REMOVED against the built code), make the AC delta bullet trace to it, and add the migration of REMOVED behavior to "Regression and migration".
-2. In `SKILL.md` "Rules", add the behavior-delta bullet.
-3. If the workspace says "Change and bug-fix job types" for when the analysis runs, align it with the work-item Types (every `v2+`, bugfixes on built code) after confirming with the user.
+**Affects:** `SKILL.md`, `references/01-impact-map-and-tracing-recipes.md`, `references/02-classification-and-regression-selection.md`, `references/03-writing-change-impact-and-gates.md`.
+**Migration:**
+1. Merge `01-impact-map.md` and `02-tracing-recipes.md` into `references/01-impact-map-and-tracing-recipes.md`.
+2. Merge classification rules and `03-regression-selection.md` into `references/02-classification-and-regression-selection.md`.
+3. Update `04-writing-change-impact.md` to `references/03-writing-change-impact-and-gates.md` with `ADDED` / `MODIFIED` / `REMOVED` behavior deltas, `BLOCKER` / `MAJOR` / `MINOR` review severities, and `PASS` / `FAIL` CLI gates.
 
 ## 1.0.0 — 2026-10-22
 

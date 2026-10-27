@@ -1,35 +1,40 @@
-# Security checks and read-only tools by stack
+# Boundary Security Checks & Read-Only Verification Catalog
 
-Checks for `04-checks.md`. Link the workspace's secure-coding-standards for the safe patterns; this file lists what to *look for* and which tools help. Run a tool only if it is installed; never install one without the user's agreement.
+Use this catalog to populate `references/02-security-checks-and-cli-gates.md` (`SR5`–`SR10`). Organize checks by **architectural boundary** tailored to the target workspace's detected language and toolchain. Run CLI scanners **read-only** and only when installed in the workspace.
 
-## Backend (Python / FastAPI and similar)
+## 1. Entrypoint, Auth & Session Boundary (`SR3`, `SR10`)
 
-| Look for | How |
+| Look For | How to Verify (Read-Only Trace / `rg` Scan) |
 |---|---|
-| Missing or wrong guard on a changed operation | Trace route → use case → guard call; compare with the authorization matrix |
-| Query/cache/job without its scope | Read every changed query and cache key for the scope columns |
-| String-built SQL / shell / paths | `rg -n "f\"SELECT|f'SELECT|shell=True|\.format\(.*(SELECT|INSERT|UPDATE|DELETE)" <changed files>` |
-| Unsafe deserialization | `rg -n "pickle\.loads|yaml\.load\(|eval\(|exec\(" <changed files>` |
-| Outbound calls with user URLs | Changed `httpx`/`requests` calls → is the workspace's network guard used? timeout set? |
-| Secrets/PII in logs or errors | Changed logging and exception messages |
-| Tools | `bandit -r <paths>`, `semgrep --config auto <paths>`, `pip-audit` / `uv pip audit`, `gitleaks detect --no-git -s <paths>` |
+| Missing authentication or role/scope guard on a new/modified endpoint, RPC handler, or stream | Trace route/handler declaration → auth dependency → application service guard call; cross-check every cell in the Authorization Matrix (`01`). |
+| Unbounded input / missing strict DTO rejection (mass assignment) | Verify request schemas reject unknown fields and enforce explicit string/list/numeric bounds (`SR5`). |
+| Weak token/ticket handling or missing signature verification | Verify JWT/webhook HMAC validation uses constant-time comparison, explicit algorithm allow-lists, and short-lived tickets for realtime/download URLs (`SR10`). |
 
-## Frontend (TypeScript / React / Next.js)
+## 2. Persistence, Query & Cache Boundary (`SR4`, `SR5`)
 
-| Look for | How |
+| Look For | How to Verify (Read-Only Trace / `rg` Scan) |
 |---|---|
-| Raw HTML from user content | `rg -n "dangerouslySetInnerHTML|innerHTML" <changed files>` |
-| Redirects from params | `rg -n "router\.(push|replace)\(.*(searchParams|query)" <changed files>` |
-| Secrets in the client graph | `NEXT_PUBLIC_*` usage, server-only imports reachable from `'use client'` files |
-| Token storage | `localStorage`/`sessionStorage` with tokens |
-| UI-only authorization | Role/capability checks without a server guard for the same action |
-| Tools | `npm audit --omit=dev`, `eslint` with security plugin if configured, `semgrep` |
+| Missing tenant/owner scope filter (`IDOR` / cross-tenant data leak) | Inspect every changed database query, repository method, cache key, search index query, and background job payload to confirm `tenant_id` / `owner_id` comes from the verified principal (`SR4`). |
+| String-interpolated SQL, shell commands, or unsafe deserialization | Scan changed files with `rg` for raw query string interpolation, `shell=True`, `eval`, `exec`, `pickle`, unsafe `yaml.load`, or unescaped template rendering (`SR5`). |
 
-## Mobile (Flutter)
+## 3. Client & UI Boundary (`SR6`)
 
-Secrets in source/assets, tokens in plain preferences, disabled certificate checks, deep links acting without server validation.
+| Look For | How to Verify (Read-Only Trace / `rg` Scan) |
+|---|---|
+| Unescaped HTML/DOM injection (XSS) or unvalidated deep-link/redirect targets | Scan changed UI components and route handlers for raw HTML injection sinks and unvalidated redirect query parameters. |
+| Plaintext token/secret storage or client-bundled server secrets | Inspect client storage adapters (ensure secure keychain/encrypted storage or `HttpOnly` cookies) and public environment variable prefixes. |
+| UI-only authorization checks | Verify every conditional UI button/route is backed by a server-side `403`/`404` check in the Authorization Matrix (`01`). |
 
-## Evidence without live exploitation
+## 4. Outbound Network, Webhook & File Boundary (`SR8`)
 
-- Prefer existing tests (authorization 401/403 tests, scope tests) — run them read-only on a local/disposable stack.
-- Otherwise trace the code path and state it as `PLAUSIBLE` with the evidence that would confirm it.
+| Look For | How to Verify (Read-Only Trace / `rg` Scan) |
+|---|---|
+| Server-Side Request Forgery (SSRF) & missing outbound timeouts | Check every HTTP client call accepting user-influenced URLs/hosts for scheme/domain allow-listing, private CIDR blocking, disabled redirects, and explicit timeouts. |
+| Unsafe file upload/download or path traversal | Check `Path.resolve()` containment against base directory, upload byte-size caps, magic-byte/MIME validation, and non-executable object storage keys. |
+
+## 5. Secrets, Logging & Supply-Chain Boundary (`SR7`, `SR9`)
+
+| Look For | How to Verify (Read-Only Trace / `rg` Scan) |
+|---|---|
+| Hardcoded secrets, tokens, or PII in logs/error responses | Scan diff with `rg` and installed secret scanners (`gitleaks`, `trufflehog`); verify exception handlers return sanitized error codes without stack traces or raw inputs. |
+| Vulnerable or unpinned dependencies | Run the workspace's installed dependency auditor (`uv pip audit`, `pip-audit`, `npm audit --omit=dev`, `osv-scanner`, `cargo audit`, etc.) whenever lockfiles change. |

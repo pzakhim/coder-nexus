@@ -1,14 +1,14 @@
-# Where delivery facts are found
+# Delivery Facts Detection (Read-Only)
 
-Read-only. Skip what the workspace does not have.
+Inspect the workspace read-only to ground `IP1`–`IP17` in real repository evidence. Skip artifacts the workspace does not use.
 
-| Fact | Typical places |
-|---|---|
-| Layout | `.agents/stack.json`, top-level folders, workspace files (`pnpm-workspace.yaml`, `melos.yaml`, `go.work`, `settings.gradle`) |
-| Past plans | `.superpowers/work-items/*/v*/implementation-plan.md`, `phases/*.md`; `docs/features/**`; their `as-built.md` and review reports show rework |
-| Checks | `Makefile`, `package.json` scripts, `pyproject.toml` tool sections, `analysis_options.yaml`, CI files (`.github/workflows`, `.gitlab-ci.yml`) |
-| Targeted tests | Test runner filters: `pytest <path> -k`, `jest <path> -t`, `go test ./pkg/... -run`, `flutter test <file>` |
-| Readiness | Migration runner, seed scripts, `docker-compose*.yml`, mock configs (Mockoon, MSW, WireMock), feature-flag service config, test-account docs |
-| Change size | `git log --shortstat -50`, PR history if available; review reports and follow-up fix commits show which sizes needed rework |
-| Global constraints | Item-wide values in approved `requirements.md` (BR-NN) and `design.md` of past work items: limits, version floors, formats, fixed copy |
-| Review-focus gaps | Defects found in review or acceptance that no planned check covered (`as-built.md`, review and QA reports, bug tickets) |
+| Fact | Where to Inspect | Used For |
+|---|---|---|
+| **Module & Layer Layout** | `.agents/stack.json`, top-level directories, workspace manifests (`pyproject.toml`, `package.json`, `pubspec.yaml`, `pnpm-workspace.yaml`, `melos.yaml`, `go.work`, `Cargo.toml`) | `IP1`, `IP3` |
+| **Delivered Plans & Rework History** | `.superpowers/work-items/*/v*/implementation-plan.md`, `phases/*.md`, `docs/features/**`, `as-built.md`, review reports | `IP1`, `IP11`, `IP12` |
+| **Static Analysis & Check Commands** | `Makefile`, `package.json` scripts, `pyproject.toml`, `analysis_options.yaml`, CI workflows (`.github/workflows/`, `.gitlab-ci.yml`) | `IP4`, `IP6` |
+| **Targeted Test Runners** | Runner filter syntax with `cwd`: `uv run pytest <path> -k`, `flutter test <file>`, `npm test -- <path>`, `go test ./pkg/... -run` | `IP4`, `IP17` |
+| **`PHASE-00` Readiness Tooling** | Migration runners, seed scripts, `docker-compose*.yml`, mock configs, feature-flag configs, `.env.example`, test-account fixtures | `IP5`, `IP8`, `IP9` |
+| **Commit Size & Checkpoint History** | `git log --shortstat -50`, branch naming and commit subjects (`<SUB-TICKET>`, `<PARENT-TICKET>`, `PHASE-NN`), follow-up fix commits | `IP7`, `IP12` |
+| **Global Constraints in Specs** | Item-wide constants in approved `requirements.md` (`BR-NN`) and `design.md` (`D-NN`): limits, timeouts, version floors, formats, fixed copy | `IP10` |
+| **Uncovered Edge-Case Defects** | Review findings (`BLOCKER` / `MAJOR` / `MINOR`), QA reports, and bug tickets where an unvalidated input or failure mode lacked a task check | `IP11` |

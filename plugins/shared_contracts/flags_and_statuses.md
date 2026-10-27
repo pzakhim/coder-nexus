@@ -49,7 +49,6 @@ Used alongside `BLOCKER` / `MAJOR` / `MINOR` during `bug-hunt` and `code-review`
 
 | Status Flag | Returned By | Meaning |
 |---|---|---|
-| `READY_FOR_SPEC` | Designer | UI/UX design package (`design-uiux/`) validated and approved for Spec Writer. |
 | `READY_FOR_PLANNING` | Spec Writer | Gate 1 approved (`requirements.md`, `codebase-notes.md`, `change-impact.md` for `v2+`, 0 `OPEN` `Q-NN`). |
 | `READY_FOR_VERIFICATION` | Spec Writer | Findings-only / verification item ready for Test Runner (no code phases). |
 | `BRANCH_READY` | Spec Writer (`git-preflight`) | Work branch created/switched from the approved base and recorded in `D-NN`. |
@@ -57,7 +56,7 @@ Used alongside `BLOCKER` / `MAJOR` / `MINOR` during `bug-hunt` and `code-review`
 | `READY_FOR_BUILD` | Planning | Gate 3 approved; names the next phase for Code Writer to execute. |
 | `AMENDED` | Planning | Approved `TASK_DETAIL` plan change (`PCR-NN`) logged; build resumes. |
 | `ESCALATED` | Planning / Bug Fixer | Change requires Gate 2 (`DESIGN_CHANGE`), Gate 1 (`SCOPE_CHANGE`), or L3 bug escalation to `dev-team`. |
-| `SKIPPED` | Designer / Planning | Step does not apply to this work item `Type`; reason recorded. |
+| `SKIPPED` | Planning | Step does not apply to this work item `Type`; reason recorded. |
 | `READY_FOR_REVIEW` | Code Writer / Docs Writer | All tasks matched (`MATCH`), tool gates `PASS` on a committed revision, `writer-handoff.md` written. |
 | `RECORDED` | Docs Writer | Phase or final QA evidence rows recorded in `as-built.md` / `verification.md`. |
 | `NEEDS_CONTEXT` | Code Writer | Required input missing from handoff; lists what was checked and what is needed. |
@@ -101,7 +100,7 @@ Defined in [`api_handshake_protocol.md`](api_handshake_protocol.md):
 
 ---
 
-## 8. Debug & Bug-Fix Workflow Flags (`defect-resolution` / `debug-investigation`)
+## 8. Debug & Bug-Fix Workflow Flags (`bug-squad` / `debug-investigation`)
 
 | Category | Flags | Meaning |
 |---|---|---|

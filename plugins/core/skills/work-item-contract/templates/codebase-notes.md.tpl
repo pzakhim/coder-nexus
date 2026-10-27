@@ -17,7 +17,7 @@
 
 > Queue every ambiguity, inference, API/UX gap, or architectural trade-off here before asking via `ask_question` (1 question per turn). Before presenting Gate 1 or Gate 2 for approval, **0 rows may remain `OPEN`**.
 
-| ID | Status (`OPEN` \| `CLOSED -> D-NN`) | Dimension (order: `grilling`) | Owner (`spec_writer` \| `designer` \| `planning`) | Question / Inference to Confirm | Recommended Option |
+| ID | Status (`OPEN` \| `CLOSED -> D-NN`) | Dimension (order: `grilling`) | Owner (`spec_writer` \| `planning`) | Question / Inference to Confirm | Recommended Option |
 |---|---|---|---|---|---|
 | **Q-01** | `CLOSED -> D-01` | {{Dimension}} | {{Owner}} | {{QuestionAskedToUser}} | {{RecommendedOptionPresented}} |
 

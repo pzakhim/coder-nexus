@@ -1,0 +1,87 @@
+# Route Conventions, Input/Output Schemas, Pagination & Idempotency
+
+> Topic: Resource route conventions, strict input/output DTO separation (`CT2`), single error envelope (`CT3`), status codes (`CT4`), bounded pagination (`CT6`), and atomic idempotency (`CT10`) for {{project_name}}.
+
+<!-- GEN: Why: Consolidate route creation, DTO separation, error envelope, status codes, pagination, and idempotency rules into a single cohesive reference file ({{ref_01}}) with project-concrete code examples. -->
+
+## 1. Resource Naming, Path Hierarchy & HTTP Methods (`CT4`, `CT9`)
+
+- **Plural nouns, kebab-case paths**: `/api/v1/work-orders`, `/api/v1/work-orders/{work_order_id}/items`. Never use verbs in resource paths (`/api/v1/createWorkOrder` is forbidden) unless modeling an explicit state-transition sub-resource (`POST /api/v1/work-orders/{work_order_id}/cancel`).
+- **Nesting depth**: At most **2 levels** (`/parent/{parent_id}/children`). Deeper relationships are addressed by their own top-level resource with a filter query parameter (`GET /api/v1/tasks?work_order_id=...`).
+- **Deterministic `operationId` and tags (`CT9`)**: Every endpoint declares an explicit `tags=[...]` and stable `<resource>_<action>` `operationId` so generated SDKs and contract diffs never churn on function renames.
+- **Wire field casing**: Follow the project's canonical wire convention (`{{wire_field_casing}}`) consistently across path parameters, query parameters, request bodies, and response payloads.
+
+---
+
+## 2. Separate Input and Output Schemas (`CT2`)
+
+Never share a single class across request and response, and never serialize an ORM/persistence model or internal domain entity directly on the wire:
+
+| Direction | Naming & Validation Contract | Project Pattern |
+|---|---|---|
+| **Create Input (`POST`)** | `<Resource>CreateRequest` — strict input validation (`{{strict_input_config}}`), explicit bounds on strings/collections/numbers; excludes server-generated `id`, `created_at`, `tenant_id`, and privileged role/status flags. | `{{create_schema_example}}` |
+| **Patch Input (`PATCH`)** | `<Resource>UpdateRequest` — only mutable fields, all optional with explicit partial-update semantics (`exclude_unset=True` or equivalent), strict unknown-field rejection (`{{strict_input_config}}`). | `{{update_schema_example}}` |
+| **Output (`200`/`201`)** | `<Resource>Response` / `<Resource>SummaryResponse` — explicit public projection; excludes password hashes, secret tokens, internal audit columns, and raw foreign-key join tables. | `{{response_schema_example}}` |
+
+---
+
+## 3. Single Structured Error Envelope & Status Codes (`CT3`, `CT4`)
+
+All `4xx` and `5xx` responses across the service — including framework validation errors (`422`), authentication failures (`401`), permission denials (`403`), and unhandled exceptions (`500`) — must return the project's single structured error envelope (`{{error_envelope_model}}` at `{{error_envelope_path}}`):
+
+```json
+{
+  "error": {
+    "code": "RESOURCE_NOT_FOUND",
+    "message": "Work order was not found.",
+    "details": [
+      { "field": "work_order_id", "code": "NOT_FOUND", "message": "No record matches the supplied identifier." }
+    ],
+    "trace_id": "01J8Z9X4K2M3N4P5Q6R7S8T9U0"
+  }
+}
+```
+
+### Status Code Decision Table (`CT4`)
+
+| Status | Meaning | Required Contract Declaration |
+|---|---|---|
+| `200 OK` | Synchronous read (`GET`) or state transition returning updated resource | Explicit `<Resource>Response` or `Page[<Resource>SummaryResponse]` |
+| `201 Created` | Resource created (`POST`) | Explicit `<Resource>Response` + `Location` header when applicable |
+| `202 Accepted` | Asynchronous job accepted | Explicit `JobAcceptedResponse` (`job_id`, `status_url`) |
+| `204 No Content` | Delete or void command with empty body | Explicit empty response body (`status_code=204`) |
+| `400 Bad Request` | Malformed syntax or unparseable query/header | `{{error_envelope_model}}` (`BAD_REQUEST`) |
+| `401 Unauthorized` | Missing, expired, or invalid authentication credential | `{{error_envelope_model}}` (`UNAUTHENTICATED`) + `WWW-Authenticate` |
+| `403 Forbidden` | Authenticated principal lacks required role/scope (`CT5`) | `{{error_envelope_model}}` (`PERMISSION_DENIED`) |
+| `404 Not Found` | Resource does not exist **or** belongs to another tenant/owner (`CT5` anti-IDOR) | `{{error_envelope_model}}` (`RESOURCE_NOT_FOUND`) |
+| `409 Conflict` | Business state conflict, optimistic lock version mismatch, or duplicate `Idempotency-Key` with mismatched payload | `{{error_envelope_model}}` (`CONFLICT` / `IDEMPOTENCY_KEY_CONFLICT`) |
+| `422 Unprocessable Entity` | Request DTO/field validation failure | `{{error_envelope_model}}` (`VALIDATION_ERROR` with `details[].field`) |
+| `429 Too Many Requests` | Rate limit or quota exceeded | `{{error_envelope_model}}` (`RATE_LIMITED`) + `Retry-After` header |
+
+---
+
+## 4. Bounded Pagination, Deterministic Sort & Allow-Listed Filtering (`CT6`)
+
+Every collection endpoint must bound its result size and declare a deterministic sort order:
+
+- **Pagination parameters (`{{pagination_style}}`)**:
+  - Enforce an explicit default limit (e.g. `20`) and a hard maximum limit (e.g. `<= 100`) at the schema boundary (`{{pagination_schema_path}}`). Requests exceeding the maximum limit are rejected with `422`.
+- **Deterministic tie-breaker sort**:
+  - Every paginated query appends a unique tie-breaker column (`ORDER BY created_at DESC, id DESC`) so concurrent inserts never cause duplicate or skipped rows across pages.
+- **Allow-listed filtering & sorting**:
+  - Sort and filter fields use explicit enums/typed attributes. Never interpolate raw client query strings into SQL `ORDER BY` or `WHERE` clauses.
+
+---
+
+## 5. Idempotency & Safe Retries for State-Changing Operations (`CT10`)
+
+Non-idempotent mutations (`POST` creations, payment/inventory commands, state transitions, webhook receivers) must protect against network retries and duplicate submissions:
+
+1. **Header contract**: Accept `Idempotency-Key` (UUID/ULID string, max 128 chars) in the request header and document it in the endpoint schema.
+2. **Atomic key + payload fingerprint storage**: Compute a SHA-256 fingerprint of `(principal_id, route, canonical_request_body)` and store `(idempotency_key, fingerprint, status_code, response_body, expires_at)` with a unique constraint and TTL (`{{idempotency_store_info}}`).
+3. **Replay vs. conflict behavior**:
+   - **Same key + same payload fingerprint**: Return the originally recorded status code and response body without re-executing the business mutation.
+   - **Same key + different payload fingerprint**: Reject immediately with `409 Conflict` (`IDEMPOTENCY_KEY_CONFLICT`).
+   - **In-flight concurrent request with same key**: Reject with `409 Conflict` (`IDEMPOTENCY_REQUEST_IN_PROGRESS`) or wait on the row lock.
+
+See [`references/02-auth-scopes-and-compatibility.md`]({{ref_02}}) for authentication/authorization scopes and compatibility rules, and [`references/03-snapshot-handshake-and-review.md`]({{ref_03}}) for snapshot diffing and review gates.

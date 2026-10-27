@@ -1,24 +1,24 @@
-# Where domain facts usually are
+# Where Domain Facts Usually Are
 
-Read-only. Use only what the workspace has; skip a row when the category does not exist. Names below are illustrations.
+Read-only discovery guide. Inspect only the sources the workspace actually has; record `N/A for this workspace` when a category does not exist. All search commands use `<src>` so discovery stays 100% stack-agnostic.
 
-| Fact | Typical places | What to extract |
+| Fact | Typical Places in `<src>` | What to Extract |
 |---|---|---|
-| Entities and fields | ORM models (SQLAlchemy, Django, Prisma, TypeORM, Entity Framework, Frappe DocTypes), migrations, DTOs/schemas, mobile/web model classes | Entity names, key fields, relations |
-| Status values | Enums, `status`/`state` columns, constants, state machines, workflow configs | The values and their order |
-| Transitions | Service methods that change status, state-machine tables, workflow definitions, guards | From → to, trigger (user action, job, event), where enforced |
-| Roles | Role enums/tables, permission decorators or guards, policy classes, route guards in the front end | Role names and the actions they allow |
-| Data scopes | Query filters added for every request (by customer, organization, owner, environment…), row-level security, repository base classes | The condition and which roles bypass it |
-| User-facing words | Translation files (`i18n`, `l10n`, `.arb`, `locales/*.json`), UI labels, error messages | Business names for code keys |
-| Business documents | `docs/`, BA specs, approved `requirements.md` in `.superpowers/work-items/` or `docs/features/`, README sections | Definitions, rules, glossary drafts |
-| Existing glossary | `GLOSSARY.md`, `docs/*glossary*`, `codebase-notes.md` → Glossary | Terms to keep verbatim (P5) |
-| Tracker history (optional) | Closed tickets, with the user's agreement and a configured tracker | Recurring terms and rules |
+| Entities and fields | Domain models, ORM entities, database schemas/migrations, DTOs, state/model classes | Entity names, owning module, key fields, relations |
+| Status values | Enums, `status`/`state` columns, constants, state machines, workflow definitions | Allowed status values and terminal states |
+| Transitions | Domain/application services that mutate status, state-machine tables, transition guards | `From → To`, trigger actor/event, `file:symbol` where enforced |
+| Roles | Role enums/tables, authorization decorators, policy/guard classes, route guards | Role names and permitted actions |
+| Data scopes | Query filters applied per request (tenant, organization, branch, owner), row-level security, base repositories | Filtering condition, bypass roles, `file:symbol` enforcement point |
+| User-facing words | Localization/translation files (`i18n`, `l10n`, `.arb`, `locales/*.json`), UI labels, validation messages | Team-language business names mapped to code identifiers |
+| Business documents | `docs/`, BA specifications, approved `requirements.md` in `.superpowers/work-items/` or `docs/features/`, `README.md` | Definitions, invariants, candidate business rules |
+| Existing glossary | `GLOSSARY.md`, `docs/*glossary*`, `codebase-notes.md` → Glossary | Existing terms, IDs, and confirmed meanings to preserve verbatim |
+| Tracker history (optional) | Closed tickets, only when a tracker is configured and the user agrees | Recurring domain terms, synonyms, and business rules |
 
-Useful searches (adapt to the stack):
+Stack-agnostic `rg` searches (adapt globs to the workspace):
 
 ```sh
-rg -n "class .*\(.*Model\)|@Entity|model [A-Z]" <be_dir>
-rg -n "status|state" -g "*enum*" -g "*constants*" <src>
-rg -n "permission|has_role|@roles|can\(|authorize" <src>
-rg --files -g "*locale*" -g "*i18n*" -g "*.arb"
+rg -n "class .*\(.*Model\)|@Entity|model [A-Z]|struct [A-Z]" <src>
+rg -n "status|state" -g "*enum*" -g "*const*" <src>
+rg -n "permission|has_role|@roles|can\(|authorize|guard" <src>
+rg --files -g "*locale*" -g "*i18n*" -g "*.arb" <src>
 ```

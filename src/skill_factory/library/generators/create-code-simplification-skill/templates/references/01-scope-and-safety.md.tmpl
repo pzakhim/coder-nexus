@@ -1,0 +1,76 @@
+# 01 — Scope, Behavior Safety & Stop Criteria
+
+<!-- GEN: Why: simplifying at the wrong time, outside the diff or past the point where behavior changes turns a cleanup into an unreviewed feature change. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules S1, S2, S3, S11, S12, S13 with the workspace's real phase/diff notions, checks and protected boundaries (references/discovery-and-checks.md §2). -->
+
+> **Workspace Convention Rule (`C11` — `EXTEND` vs `INIT`):**
+> - **Existing project (`EXTEND`):** Simplify strictly toward the patterns, base classes, state management, and idioms already used in the target module. Never introduce a competing idiom or paradigm during a simplification pass.
+> - **Greenfield project (`INIT`):** Follow the stack's default idioms and approved architecture profile (`design.md`).
+
+## 1. When
+
+| Situation | Simplify? |
+|---|---|
+| The phase's checks pass and the diff has a named smell | Yes, inside the changed code only — the simplicity pass of {{incremental_link}} |
+| A review finding names unnecessary complexity in the phase's code | Yes, as the fix revision for that finding |
+| Checks are red | No — fix behavior first ({{debugging_link}}) |
+| The smell is outside the diff, or the code is about to be rewritten | No — record it in Concerns |
+| Writing a new feature or fixing a bug | No — that changes behavior and follows the plan |
+
+## 2. Scope
+
+Only the files and lines changed in this phase:
+
+```bash
+{{diff_command}}
+```
+<!-- GEN: e.g. git diff --name-only <base>...HEAD -- <source globs> -->
+
+- Inside the diff: avoidable complexity under any of the four lenses is fair game.
+- Outside the diff: report it in Concerns, never touch it.
+- {{scope_exceptions}} <!-- GEN: history that must not be rewritten (applied migrations), generated code; delete if none -->
+
+## 3. Before editing
+
+Read the callers ({{caller_lookup}}), including dynamic use (string names, reflection, configuration keys), side effects, error paths, lifecycle and the tests that cover the code.
+
+## 4. Must stay identical
+
+Inputs · outputs · raised errors and messages · side effects and their order · state transitions · {{lifecycle_boundaries}} · accessibility behavior · performance limits.
+
+Existing tests pass **unchanged**; the only allowed test edit is an import path after a move.
+
+{{stack_traps}} <!-- GEN: 3–5 traps where a "simpler" form changes behavior in this stack; delete if none found -->
+
+## 5. One step at a time
+
+After each simplification run (`exit 0` = `PASS`, `exit != 0` = `FAIL`):
+
+```bash
+{{check_commands}}
+```
+
+Keep each command and exit code as an evidence row. Red after a step and the cause is not obvious → revert that step.
+
+## 6. Never
+
+- Change a test to make a simplification pass.
+- Remove validation, error mapping, authorization or data-scope checks, dependency-injection boundaries, transactions or package contracts ({{protected_examples}}).
+- Leave a wrapper, alias or re-export after moving code ({{clean_code_link}} C1).
+- Add a suppression directive to make a check pass.
+
+## 7. Stop criteria
+
+| Situation | Do instead |
+|---|---|
+| Behavior or a public contract would change | Stop; return to {{gate_for_changes}} |
+| A workspace decision ({{decision_notation}}) or architecture port requires the abstraction | Leave it; mention it in Concerns if it looks unnecessary |
+| The gain is cosmetic (renaming taste, reordering) | Leave it |
+| A hot path would change without a measurement | Measure first or leave it |
+| The next step (or the right depth for an Altitude fix) needs code outside the diff | Record it in Concerns |
+| Checks turn red and the cause is not obvious | Revert the last step |
+| No named smell remains | Stop and report |
+
+<!-- custom:start -->
+<!-- custom:end -->

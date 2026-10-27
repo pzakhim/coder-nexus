@@ -1,0 +1,42 @@
+# Boundary Security Checks & Deterministic CLI Gates
+
+> Topic: Stack-specific security checks across architectural boundaries (`SR5`–`SR10`) and deterministic read-only CLI `PASS`/`FAIL` verification gates for {{project_name}}.
+
+<!-- GEN: Why: Replace the legacy branched 04-checks template with a unified, boundary-driven security check and CLI gate reference ({{ref_02}}). -->
+
+## 1. Security Checks by Architectural Boundary (`SR5`–`SR10`)
+
+Cross-reference the workspace's safe implementation patterns in {{secure_coding_link}}:
+
+| Boundary & Rule | What to Inspect in the Diff | Safe Pattern Requirement | Read-Only Scan / Verification Command |
+|---|---|---|---|
+| **Input, Injection & Deserialization (`SR5`)** | Dynamic SQL/command/path construction, unsafe deserialization, or request schemas missing unknown-field rejection | Parameterized queries only; strict DTO validation (`extra="forbid"` or equivalent); no `eval`/`exec`/`pickle`/`shell=True` | `rg -n "{{injection_sink_pattern}}" {{target_dir}}` |
+| **Client & UI Boundary (`SR6`)** | Raw HTML/DOM injection, unvalidated redirect targets, plaintext token storage, or missing WebSocket `Origin` check | Context-aware escaping, allow-listed redirects, secure credential storage, and server-side guard enforcement | `rg -n "{{client_sink_pattern}}" {{target_dir}}` |
+| **Secrets, PII & Error Envelopes (`SR7`)** | Hardcoded API keys/passwords/tokens in code/fixtures, or PII/stack traces leaked in logs and error responses | Secrets loaded from environment/secret manager only; structured error envelope without internal details | `{{secret_scan_cmd}}` |
+| **Outbound Network & File Handling (`SR8`)** | User-influenced URLs passed to HTTP clients (SSRF), missing timeouts, or unvalidated file uploads/paths | Host/scheme allow-list, private IP block, explicit timeout, `Path.resolve()` containment, upload size & MIME validation | `rg -n "{{outbound_file_pattern}}" {{target_dir}}` |
+| **Supply-Chain & Dependencies (`SR9`)** | Added or upgraded packages in dependency manifests / lockfiles | Justified need, pinned lockfile entry, zero known exploitable vulnerabilities | `{{dependency_audit_cmd}}` |
+| **Cryptography & Auth Flows (`SR10`)** | Token generation, password hashing, webhook signature checks, session expiration/revocation | CSPRNG (`secrets`), platform crypto, constant-time digest comparison (`hmac.compare_digest`), bounded token TTL | `rg -n "{{weak_crypto_pattern}}" {{target_dir}}` |
+
+---
+
+## 2. Installed Read-Only Security Tools
+
+Available in this workspace: {{tools}}
+
+- Run security linters and dependency auditors **read-only** against the review revision (`{{revision_notation}}`).
+- Never install new global/workspace packages during a security review without explicit user approval.
+
+---
+
+## 3. Deterministic CLI Verification Gates (`PASS` / `FAIL`)
+
+All automated checks report strictly **`PASS`** or **`FAIL`** (`shared_contracts/flags_and_statuses.md`; `NOT_RUN`, `BLOCKED`, and `UNVERIFIED` never count as `PASS`):
+
+| Gate | Command | `PASS` Criterion | `FAIL` Classification |
+|---|---|---|---|
+| **G1 — Injection & Unsafe Deserialization Scan (`SR5`)** | `rg -n "{{injection_sink_pattern}}" {{target_dir}}` | `0` unapproved matches | `BLOCKER` if reachable by untrusted input |
+| **G2 — Secret & Credential Leak Scan (`SR7`)** | `{{secret_scan_cmd}}` | Exit `0` (`0` leaked secrets) | `BLOCKER` on any committed/staged secret |
+| **G3 — Supply-Chain Advisory Audit (`SR9`)** | `{{dependency_audit_cmd}}` | Exit `0` (`0` exploitable advisories) | `BLOCKER` / `MAJOR` depending on reachability |
+| **G4 — Auth & Tenant Isolation Suite (`SR3`, `SR4`)** | `{{auth_test_cmd}}` | Exit `0` — all `401`/`403`/`404` scope tests pass | `BLOCKER` on failing access-control test |
+
+See [`references/01-triggers-threat-model-and-auth-matrix.md`]({{ref_01}}) for the authorization matrix and [`references/03-findings-verdict-and-report.md`]({{ref_03}}) for finding severity grading and report formatting.

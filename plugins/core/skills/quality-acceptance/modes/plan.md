@@ -1,4 +1,5 @@
 # Mode: plan
+> Topic: Turning approved acceptance criteria and workflows into a traceable test plan graded by BLOCKER/MAJOR/MINOR severity.
 
 Turn the approved specs into a test plan before touching the environment. Write it to `vN/evidence/test-plan.md` (one plan per work-item version; later phases add cases, never rewrite earlier ones).
 
@@ -44,22 +45,24 @@ For each AC, consider each category and write a case or a one-line reason it doe
 |---|---|---|
 | Service / API acceptance | Rules, permissions, status codes, persisted data, side effects through the real interface and real auth | Business rules, role denials, idempotency, error codes |
 | UI end-to-end | What the user sees and does on the running app | Flows, the four states, role-driven visibility |
-| Visual | Fidelity to the approved `uiux.md` screens `S-NN` | UI items with an approved design ({{slot:visual-quality}}) |
+| Visual | Fidelity to the approved `S-NN` screens (`design.md` & extracted Figma screen renders when present) | UI items with an approved design ({{slot:visual-quality}}) |
 | Manual | What cannot be automated now | Only with a written reason and step-by-step evidence |
 
 Developer unit tests belong to the Code Writer ({{slot:unit-testing}}); cite them, never count them as acceptance. Reason: each case at the most expensive level makes the run slow and flaky; each case at too cheap a level proves nothing the user sees.
 
 ## 5. Case format
 
+Every case has: ID, AC ID, layer (unit|widget|integration|api|visual|manual), severity BLOCKER|MAJOR|MINOR, precondition, steps, expected result, and pass/fail rule.
+
 ```
-TC-NN  covers <AC-NN | BR-NN | W-NN#step | RF-n | guard | regression>  priority P1|P2|P3  level api|ui|visual|manual
+TC-NN  covers <AC-NN | BR-NN | W-NN#step | RF-n | guard | regression>  severity BLOCKER|MAJOR|MINOR  level api|ui|visual|manual
 Given:  <data and state, with its source (seed, fixture, approved record)>
 When:   <action, as which role, on which target>
 Then:   <observable result: state / message / persisted value / status code>
 Check:  <command or tool action, cwd> — from {{slot:verification}} or {{slot:visual-quality}}
 ```
 
-Priority: P1 = critical flows, permissions and data scopes, data integrity; P2 = validation, states, shared-component regression; P3 = rare or cosmetic. Run P1 first so that a short run still covers what matters.
+Grade severity by business and security impact (shared_contracts/flags_and_statuses.md): BLOCKER for critical flows, permissions/data scopes, and data integrity; MAJOR for validation, state transitions, and shared-component regression; MINOR for rare edge cases or cosmetic details. Execute BLOCKER cases first.
 
 ## 6. Plan table and gaps
 

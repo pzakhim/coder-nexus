@@ -57,7 +57,10 @@ def test_bundle_manifest_inventory():
     assert manifest["hub_version"] == "0.1.0"
     assert manifest["resource_base"] == "plugins/"
     assert "flutter/verification" in manifest["public_skills"]
-    assert len(manifest["mcp_tools"]) == 9
+    assert "core/figma-intake" in manifest["public_skills"]
+    assert "core/design-studio" not in manifest["public_skills"]
+    assert "core/ui-ux-design" not in manifest["public_skills"]
+    assert len(manifest["mcp_tools"]) == 8
     packaged_skills = {f"core/{p.parent.name}" for p in (PLUGIN_DIR / "core" / "skills").glob("*/SKILL.md")}
     packaged_skills |= {f"{p.parent.parent.parent.name}/{p.parent.name}" for p in (PLUGIN_DIR / "packs").glob("*/skills/*/SKILL.md")}
     assert set(manifest["public_skills"]) == packaged_skills
@@ -249,16 +252,16 @@ def test_shared_contract_edit_and_framework_switch_refresh_projection(tmp_path):
     assert _install_plugin_projection("flutter", destination, REPO_ROOT, plugins_dir=plugins) == "updated"
     assert (destination / "shared_contracts/api_handshake_protocol.md").read_bytes() == protocol.read_bytes()
     assert _install_plugin_projection("backend", destination, REPO_ROOT, plugins_dir=plugins) == "updated"
-    assert not (destination / "skills/flutter-core-package-usage").exists()
+    assert not (destination / "skills/flutter-clean-architecture").exists()
     assert (destination / "skills/backend-api-contract-design/SKILL.md").is_file()
 
 
 def test_plugin_agent_definitions_structure():
-    """Verify all eight agent profiles exist and have valid frontmatter structure."""
+    """Verify all seven agent profiles exist and have valid frontmatter structure."""
     agents_dir = PLUGIN_DIR / "core" / "agents"
     assert agents_dir.is_dir(), f"Missing agents directory at {agents_dir}"
 
-    agent_names = ["spec_writer", "planning", "code_writer", "code_reviewer", "test_runner", "docs_writer", "designer", "bug_fixer"]
+    agent_names = ["spec_writer", "planning", "code_writer", "code_reviewer", "test_runner", "docs_writer", "bug_fixer"]
     for name in agent_names:
         agent_file = agents_dir / f"{name}.md"
         assert agent_file.exists(), f"Missing agent definition file: {agent_file}"
@@ -279,7 +282,7 @@ def test_backend_pack_structure_and_installation(tmp_path):
     assert pack["status"] == "maintained"
     assert {"clean-architecture", "unit-testing", "code-review", "verification", "architecture-design"} <= set(pack["slots"])
     assert "api-contract-design" in pack["extra"]
-    for agent in ("spec_writer.md", "planning.md", "code_writer.md", "code_reviewer.md", "test_runner.md", "docs_writer.md"):
+    for agent in ("spec_writer.md", "planning.md", "code_writer.md", "code_reviewer.md", "test_runner.md", "docs_writer.md", "bug_fixer.md"):
         assert (PLUGIN_DIR / "packs" / "backend" / "agents" / agent).exists(), f"Missing Backend overlay: {agent}"
 
     args = argparse.Namespace(is_global=False, workspace=str(tmp_path), plugin="be")
@@ -290,7 +293,6 @@ def test_backend_pack_structure_and_installation(tmp_path):
     assert not any(name.startswith("flutter-") for name in skills)
     stubs = json.loads((installed / "slot_stubs.json").read_text(encoding="utf-8"))
     assert stubs == {
-        "backend-core-package-usage": "not_applicable",
         "backend-visual-quality": "not_applicable",
         "backend-ui-kit-mapping": "not_applicable",
     }
@@ -310,12 +312,12 @@ def test_cli_installs_one_pack_per_workspace(tmp_path, capsys):
     assert (installed / "installed_version.json").read_text(encoding="utf-8") == meta_before
     stack = json.loads((tmp_path / ".agents" / "stack.json").read_text(encoding="utf-8"))
     assert [pack["stack"] for pack in stack["packs"]] == ["flutter"]
-    assert (tmp_path / ".agents/plugins/coder-nexus/skills/flutter-core-package-usage").is_dir()
+    assert (tmp_path / ".agents/plugins/coder-nexus/skills/flutter-clean-architecture").is_dir()
     assert cmd_install_plugin(argparse.Namespace(is_global=False, workspace=str(tmp_path), pack=["flutter", "backend"])) == 1
     assert cmd_install_plugin(argparse.Namespace(is_global=False, workspace=str(tmp_path), pack=["backend"], replace=True)) == 0
     stack = json.loads((tmp_path / ".agents" / "stack.json").read_text(encoding="utf-8"))
     assert [pack["stack"] for pack in stack["packs"]] == ["backend"]
-    assert not (tmp_path / ".agents/plugins/coder-nexus/skills/flutter-core-package-usage").exists()
+    assert not (tmp_path / ".agents/plugins/coder-nexus/skills/flutter-clean-architecture").exists()
     assert (tmp_path / ".agents/plugins/coder-nexus/skills/backend-api-contract-design").is_dir()
 
 
@@ -359,7 +361,7 @@ def test_built_projections_apply_identically_for_every_variant(tmp_path):
         installed = workspace / spec["managed"][0]
         assert installed.name == "coder-nexus"
         assert not (installed / "agents").exists()
-        assert len(list((workspace / ".agents/agents").glob("*.md"))) == 8
+        assert len(list((workspace / ".agents/agents").glob("*.md"))) == 7
         assert not any((workspace / rel).exists() for rel in spec["remove"]), "pre-2.8 plugins must be removed"
         manifest = json.loads((installed / "bundle_manifest.json").read_text(encoding="utf-8"))
         assert manifest["packs"] == [key]
@@ -382,9 +384,9 @@ def test_framework_skills_are_prefixed_and_agent_skills_resolve(tmp_path):
     files = target / "files"
     skills = files / ".agents/plugins/coder-nexus/skills"
     names = {p.name for p in skills.iterdir()}
-    assert {"flutter-core-package-usage", "flutter-clean-architecture", "work-item-contract", "delivery-workflow"} <= names
-    assert "core-package-usage" not in names and "clean-architecture" not in names
-    assert "name: flutter-core-package-usage" in (skills / "flutter-core-package-usage/SKILL.md").read_text(encoding="utf-8")
+    assert {"flutter-architecture-design", "flutter-clean-architecture", "flutter-ui-kit-mapping", "work-item-contract", "figma-intake", "dev-team"} <= names
+    assert "architecture-design" not in names and "clean-architecture" not in names
+    assert "name: flutter-clean-architecture" in (skills / "flutter-clean-architecture/SKILL.md").read_text(encoding="utf-8")
     for agent in (files / ".agents/agents").glob("*.md"):
         text = agent.read_text(encoding="utf-8")
         assert "{{slot:" not in text
@@ -522,6 +524,7 @@ def test_pack_generated_from_matches_generator_versions():
     """generated_from in pack.json matches the actual VERSION files in skill-factory generators."""
     generators_dir = REPO_ROOT / "src/skill_factory/library/generators"
     required_slots = (
+        "clean-architecture",
         "clean-code",
         "code-simplification",
         "secure-coding-standards",

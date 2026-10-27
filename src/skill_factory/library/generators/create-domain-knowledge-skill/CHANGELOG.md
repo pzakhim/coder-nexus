@@ -1,19 +1,19 @@
 # Changelog — create-domain-knowledge-skill
 
-Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see `~/.claude/skill-factory/core/sync-protocol.md`). Bump rules: `~/.claude/skill-factory/core/versioning.md`.
+Each entry lists what changed, which generated files it affects, and how to migrate an existing workspace (see [../../core/sync-protocol.md](../../core/sync-protocol.md)). Bump rules: [../../core/versioning.md](../../core/versioning.md).
 
-## Unreleased
+## 1.1.0 — 2026-10-25
 
-- Changed: DK1 — "Avoid saying" is data that `gate-review` spec mode checks; a listed word in a goal, BR, AC or scenario is a finding → `references/01-glossary.md`. (minor)
-- Added: DK9 challenge new and fuzzy words — name the candidate glossary terms and ask which one (answer → `D-NN`), compare claims about behavior with the code (contradiction → `Q-NN`), add the resolved term in the same work item → `references/01-glossary.md` "New and fuzzy words", `SKILL.md` "Use it like this". DK9 is never "not adopted". (minor)
-- Changed: Step 3 drafts "Avoid saying" from words that name one thing in different places and lists overloaded words; two trial prompts added (overloaded word, behavior claim the code contradicts). (patch)
-- Added: `references/sources.md` with the external sources and ideas not adopted. (patch)
+- Consolidated generated `references/` from 5 fragmented files into 3 cohesive topic files: `01-glossary-and-ubiquitous-language.md` (`DK1`, `DK9`), `02-entities-lifecycles-and-rules.md` (`DK2`, `DK4`), and `03-roles-scopes-and-upkeep.md` (`DK3`, `DK5`–`DK8`).
+- Standardized all rules `DK1`–`DK9` as mandatory compliance (workspaces without RBAC roles or data scopes document a one-line `N/A for this workspace` entry).
+- Added deterministic CLI tool gates (`PASS` / `FAIL`) for banned synonym (`"Avoid saying"`), unresolved `OPEN` fact, and secret/PII checks alongside the unified `BLOCKER` / `MAJOR` / `MINOR` review rubric (`shared_contracts/flags_and_statuses.md`).
+- Added `<!-- {{profile_references}} -->` marker support for `profiles/{imespro,external-structured,external-standard}/` and removed `references/sources.md`.
+- Made `references/detection.md` 100% stack-agnostic (`<src>`).
 
-**Affects (when released):** `SKILL.md`, `references/01-glossary.md`.
-**Migration (when released):**
-1. In `references/01-glossary.md`, add the line that `gate-review` checks "Avoid saying", and the "New and fuzzy words" section; pick a real overloaded word of the workspace for the example (look in labels vs code names vs past tickets first) and name where a behavior claim is checked (entity cards, rule locations).
-2. In `SKILL.md` "Use it like this", replace the glossary bullet with the verbatim-terms bullet and add the fuzzy-word bullet.
-3. Fill missing "Avoid saying" cells where the workspace has known synonyms; ask the user to confirm them.
+**Affects:** `SKILL.md`, `references/01-glossary-and-ubiquitous-language.md`, `references/02-entities-lifecycles-and-rules.md`, `references/03-roles-scopes-and-upkeep.md`.
+**Migration:**
+1. Merge `01-glossary.md` into `references/01-glossary-and-ubiquitous-language.md` (`DK1`, `DK9`), `02-entities-and-lifecycles.md` + `04-business-rules.md` into `references/02-entities-lifecycles-and-rules.md` (`DK2`, `DK4`), and `03-roles-and-scopes.md` + `05-sources-and-upkeep.md` into `references/03-roles-scopes-and-upkeep.md` (`DK3`, `DK5`–`DK8`).
+2. Update `SKILL.md` with the deterministic `PASS` / `FAIL` CLI gate table, mandatory `DK1`–`DK9` principle index, `BLOCKER` / `MAJOR` / `MINOR` review note, and `<!-- {{profile_references}} -->` marker.
 
 ## 1.0.0 — 2026-10-22
 

@@ -1,6 +1,8 @@
-# 02 — Schema: keys, types, constraints and indexes
+# 02 — Schema: Keys, Types, Constraints, and Indexes (`PG8`–`PG9`)
 
-How SQLAlchemy 2 models map to PostgreSQL. The workspace's existing conventions win when they already exist (record them in `codebase-notes.md`); these are the defaults for new tables. Every change here ships as an Alembic revision (`backend-database-migrations`).
+> Topic: SQLAlchemy 2 constraint naming conventions, primary key strategies (`Identity` vs `UUIDv7`), PostgreSQL column types (`timestamptz`, `Numeric`, `JSONB`), and mandatory foreign-key/filter indexing.
+
+How SQLAlchemy 2 models map to PostgreSQL. Existing workspace conventions win when recorded in `codebase-notes.md`; these are the mandatory defaults for new tables. Every schema change ships via an Alembic revision (`backend-database-migrations`).
 
 ## Naming convention (once, on the declarative base)
 

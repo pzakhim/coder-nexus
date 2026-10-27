@@ -1,54 +1,47 @@
-# Base rules (generic, every workspace)
+# Base Rules — Git Workflow (`M1`–`M10`, `G1`–`G6`, `V1`–`V7`, `R1`–`R2`)
 
-Generalised from a team Git Flow policy for DEV / STG / PROD and from Semantic Versioning 2.0.0. Each rule goes into the generated skill with the workspace's real branch names, prefixes and tools **and its reason**, or is marked "not adopted" with a reason.
+All rules below are **mandatory compliance** across every generated `git-workflow` skill (adapted to the confirmed preset `gitflow-dev-stg-prod`, `github-flow`, or `trunk-based`; never dropped as `"not adopted"`).
 
-## M — safety (from the fixed `git-preflight` skill; never "not adopted")
+## 1. `M` — Mandatory Safety & Checkpoint Rules (Shared with `git-preflight`)
 
-| # | Rule | Why | Goes into |
+| ID | Rule | Why | Target Reference |
 |---|---|---|---|
-| M1 | Before the item branch exists, only work-item documents are written, uncommitted; the branch is created right after Gate 1. | Code written on the wrong base must be moved by hand. | 02 |
-| M2 | No direct work on long-lived or protected branches. | Shared lines bypass review otherwise. | 01, SKILL |
-| M3 | One branch per ticket or logical change. | Clean review, revert and release scope. | 03 |
-| M4 | Never discard the user's uncommitted changes; stash or commit only on the user's choice. | Local work cannot be recovered. | 02 |
-| M5 | No force-push on shared branches; rebase only personal, unshared branches. | Rewritten shared history breaks every clone. | 04, SKILL |
-| M6 | **Agents never merge into the production branch, tag, or deploy production**, even when asked; they prepare commands and a checklist for the user. Merges into integration/release lines and remote branch deletion need explicit approval. | Production releases stay a human decision. | SKILL, 05 |
-| M7 | No secrets in commits. | History is copied everywhere. | 03 |
-| M8 | The branch decision is a `D-NN` (branch, base + SHA, merge targets, scanned ref). | Every later role works from the same base and targets. | 02 |
-| M9 | Re-check baseline facts when the base differs from the scanned ref. | Release and production lines can differ from the integration line. | 02 |
+| `M1` | **Pre-Gate 1 Spec-Only Rule**: Before the work-item branch exists, write only uncommitted work-item documents under `.superpowers/work-items/`; create the branch only after Gate 1 approval. | Code written on the wrong base branch must be transplanted manually and risks contaminating shared lines. | `01` |
+| `M2` | **No Direct Commits on Protected Lines**: Never commit directly on `main`, `develop`, `release/*`, or `support/*`. | Long-lived lines are shared integration/release targets and require PR review. | `SKILL.md`, `01` |
+| `M3` | **One Branch per Parent Feature / Work Item Ticket**: Cut one branch per parent ticket (or confirmed user work item); do not spawn arbitrary sub-branches per sub-task unless explicitly requested by the user. | Keeps PR review, CI history, and revert scope cohesive for the feature. | `02` |
+| `M4` | **Preserve User Uncommitted Work**: Never discard, reset, or overwrite pre-existing uncommitted user changes; stash or commit only after the user explicitly chooses. | Local uncommitted work cannot be recovered once wiped. | `01` |
+| `M5` | **No Force-Push on Shared Branches**: Never force-push `main`, `develop`, `release/*`, or any branch another person/agent pulls; rebase only personal, unshared work branches. | Rewriting shared history breaks downstream clones and open PRs. | `SKILL.md`, `02` |
+| `M6` | **Human-Only Production Merge, Tag & Deploy**: **Agents never merge into `main`/production, never create production release tags, and never trigger production deployments**, even if asked; agents prepare the exact commands and `R1`–`R2` checklist for the user. Merging into `develop` or `release/*` and deleting remote branches each require explicit user approval. | Production releases and shared branch integrations are human accountability gates. | `SKILL.md`, `03` |
+| `M7` | **Zero Secrets in Git History**: Never stage or commit `.env` files, tokens, private keys, or credentials. | Git history is replicated to every clone and CI runner. | `02` |
+| `M8` | **Branch Decision Record (`D-NN`)**: Record the confirmed branch name, base ref + SHA, scanned ref + SHA, and merge targets as a `D-NN` in `codebase-notes.md`. | Ensures Planner, Code Writer, and Reviewer operate on the exact same base and target branches. | `01` |
+| `M9` | **Re-Verify Baseline Facts on Base Switch**: When the chosen base branch (`origin/release/x.y.z` or `origin/main`) differs from the ref where the spec was scanned, diff cited paths and re-verify baseline facts. | Code on `release/*` or `main` may differ from `develop`. | `01` |
+| `M10` | **Verified Phase / Sub-Ticket Commit Checkpoints Only (No Arbitrary WIP Commits)**: Agents **never commit arbitrarily mid-phase** (`wip`, `update`, `temp`). A commit is created **only** after a Huly sub-ticket or an approved `PHASE-NN` slice has passed its verification gates (`PASS`) and phase review/acceptance (or on explicit user instruction for that verified checkpoint). | Guarantees every commit on the feature branch is a self-contained, verified, auditable unit of delivery. | `SKILL.md`, `02` |
 
-## G — branch model (preset `gitflow-dev-stg-prod`; other presets adapt or replace)
+---
 
-| # | Rule | Why | Goes into |
+## 2. `G` — Branching, Parent/Sub-Ticket Naming & Merge Strategy
+
+| ID | Rule | Why | Target Reference |
 |---|---|---|---|
-| G1 | Base and merge targets per job type; environments map to lines (`develop` = DEV, `release/x.y.z` = STG, `main` + tag = PROD); no branch per environment. | Branches show code lifecycle, environments show where it runs. | 01, 02 |
-| G2 | Branch name `<type>/<TICKET>-<short-description>`, lowercase, hyphens, no person names; `release/x.y.z`; the user confirms the name; without a ticket ID the user names it freely. | Names must tell the work, not the owner. | 03 |
-| G3 | Commit subject `type(TICKET): summary` (Conventional Commits; ticket as scope); `!` or `BREAKING CHANGE:` for a contract break. | Commits feed review, changelog and the version bump. | 03 |
-| G4 | Squash feature/fix work into its target; merge commits for release → main and hotfix → main. | "Squash the developer's work; preserve the release's history." | 04 |
-| G5 | A PROD hotfix reaches `main`, the active `release/*` (when it contains the affected code) and `develop`. | Otherwise the next release brings the bug back. | 04 |
-| G6 | No cherry-pick as promotion between environments; cherry-pick only as a deliberate backport with a reason. | Promotion by cherry-pick loses ancestry and duplicates commits. | 04 |
+| `G1` | **Lifecycle Branches vs. Runtime Environments**: Map environments to lifecycle refs (`develop` = DEV, `release/x.y.z` = STG/UAT candidate, `main` + tag `vx.y.z` = PROD in `gitflow-dev-stg-prod`; adapted per preset). Never maintain long-lived `dev` / `staging` / `prod` environment branches with cherry-picked features. | Branches represent code maturity; CI/CD pipelines deploy artifacts to environments. | `01` |
+| `G2` | **Parent-Ticket Branch Naming**: Name the branch after the **Parent / Feature Ticket**: `<type>/<PARENT-TICKET>-<short-description>` (lowercase, hyphen-separated, no developer names, e.g., `feature/IMES-1200-order-workflow`, `fix/IMES-1240-tax-rounding`, `hotfix/IMES-1299-auth-timeout`). When no ticket exists, use `<type>/<short-description>` confirmed by the user. | Links the branch directly to the feature epic/ticket in Huly/tracker without personal/vague names. | `02` |
+| `G3` | **Sub-Ticket & Accepted-Phase Commit Traceability**: Every commit subject follows Conventional Commits and **must** carry explicit ticket and/or accepted phase traceability:<br>• **Parent Ticket + Huly Sub-Tickets**: `<type>(<SUB-TICKET>): <summary> [parent: <PARENT-TICKET>, PHASE-NN]` (or `Refs: <PARENT-TICKET>, PHASE-NN` in footer).<br>• **Parent Ticket + Multi-Phase (no separate sub-ticket ID)**: `<type>(<PARENT-TICKET>): [PHASE-NN] <summary>`.<br>• **No Ticket ID (user-supplied requirement)**: Allowed only after completing a clearly accepted phase: `<type>(phase-NN): <summary>`.<br>• Append `!` or `BREAKING CHANGE:` footer whenever a public contract breaks (`V1`). | Prevents ad-hoc untraceable commits inside a multi-phase feature branch and feeds automated changelogs and SemVer bumps. | `02` |
+| `G4` | **Squash Work Branches; Merge-Commit Releases & Hotfixes**: Squash-merge `feature/*` / `fix/*` / `refactor/*` into `develop` (or `fix/*` into `release/*`); use `--no-ff` merge commits for `release/*` → `main` and `hotfix/*` → `main`. | Compresses granular sub-ticket/phase commits into one clean feature commit on `develop` while preserving exact release ancestry on `main`. | `02` |
+| `G5` | **Complete Hotfix Propagation**: Every `hotfix/*` merged into `main` must be propagated to the active `release/*` (when affected) and to `develop`. | Prevents the next release from re-introducing a fixed production regression. | `02` |
+| `G6` | **No Cherry-Pick Promotion**: Never use `git cherry-pick` to promote features between environments; cherry-pick is allowed only as a documented backport with an explicit justification in the PR. | Cherry-picking duplicates commit SHAs and corrupts merge-base ancestry. | `02` |
 
-## V — versioning (SemVer 2.0.0 for applications)
+---
 
-| # | Rule | Why | Goes into |
+## 3. `V` — Semantic Versioning (`MAJOR.MINOR.PATCH`) & `R` — Release Integrity
+
+| ID | Rule | Why | Target Reference |
 |---|---|---|---|
-| V1 | The workspace names its **contracts**: APIs used by mobile, a separate FE or third parties; events; import/export and webhook formats; required environment variables and config; a database other systems read; mobile app versions still installed. | SemVer needs a public API; an application must say what that is. | 05 |
-| V2 | PATCH = fixes, security patches, behavior-neutral performance; MINOR = at least one backward-compatible feature (PATCH resets); MAJOR = any contract break. The highest impact in the release wins. A business-driven MAJOR is allowed as a recorded, approved decision. | Consumers read the number to judge upgrade risk. | 05 |
-| V3 | `0.y.z` before the first production release (breaks bump MINOR); `1.0.0` is the first production release with a stable contract. | SemVer's initial development phase. | 05 |
-| V4 | The bump is computed from commits (`feat` → MINOR, `fix`/`perf` → PATCH, `!`/`BREAKING CHANGE` → MAJOR, others alone → none or PATCH if released); the agent proposes it with evidence, a human approves. The reviewer flags breaking changes without `!`. | Commits are the evidence; the decision stays human. | 05 |
-| V5 | The release branch name is fixed at cut; STG takes fixes only; `-rc.N` tags per STG build (optional); hotfixes bump PATCH on `main` and never break a contract; DEV builds use the SHA, no tag. | Version and tested artifact must stay traceable. | 05 |
-| V6 | The tag is the single source of truth; version files are synced from it by script; mobile build numbers are monotonic CI numbers after `+`; the changelog is grouped Added / Changed / Fixed / Security and edited for humans. | Hand-edited versions in many files drift. | 05 |
-| V7 | Monorepo: one version for the repo (default) or per-component tags (`be-v…`, `fe-v…`). | Release trains differ per team. | 05 |
-
-## R — release integrity (Git Flow with artifact promotion)
-
-| # | Rule | Why | Goes into |
-|---|---|---|---|
-| R1 | Before release → main, the release line contains every hotfix already on `main`. | Otherwise the merge result differs from what STG tested. | 05 |
-| R2 | After the merge, `git diff <release-tip> <merge-commit>` is empty; then promote the exact tested artifact and record the release SHA in the tag message. Not empty → test again on STG. | "Build once, promote many" only holds if the code is identical. | 05 |
-
-## Recommended (reviewer flags, does not block)
-
-- Build once and promote the same artifact; runtime configuration, no secrets in images; flag build-time API URLs in front-end bundles.
-- At most one active `release/*`; long-term versions use `support/*` with a backport policy.
-- Rebase a personal branch on its base before opening the PR.
-- Delete the release branch after release; check `develop` has every fix.
+| `V1` | **Explicit Public Contracts**: Enumerate what constitutes a versioned contract in this workspace (HTTP/RPC/realtime APIs, event/webhook schemas, CLI flags, required environment variables, shared database schemas). | SemVer requires a well-defined public contract boundary. | `03` |
+| `V2` | **Deterministic Bump Classification**: `PATCH` = bug fixes, security patches, behavior-neutral perf; `MINOR` = backward-compatible features/additive contracts; `MAJOR` = any breaking contract change (or approved business-driven major release). Highest impact wins. | Communicates upgrade risk to downstream consumers and DevOps. | `03` |
+| `V3` | **`0.y.z` vs `1.0.0+` Lifecycle**: `0.y.z` for pre-production development; `1.0.0` marks the first production release with a stable contract. | Aligns with SemVer 2.0.0 initial development semantics. | `03` |
+| `V4` | **Evidence-Based Version Proposal & Human Approval**: Compute the proposed bump from commits since the last tag (`feat` → MINOR, `fix`/`perf` → PATCH, `!`/`BREAKING CHANGE` → MAJOR) and present the commit list to the user; **the user decides the version**. | Keeps version numbering deterministic and human-approved. | `03` |
+| `V5` | **Frozen Release Candidate & Pre-Release Tags**: `release/X.Y.Z` accepts fixes only (`fix/*`); optional `-rc.N` tags mark STG builds; DEV builds use commit SHAs without version tags. | Guarantees every tag maps to an immutable, traceable build. | `03` |
+| `V6` | **Single Source of Truth (SSOT) Version Sync**: Synchronize all manifest files (`package.json`, `pyproject.toml`, `pubspec.yaml`, `bundle_manifest.json`) via the workspace's version sync script before tagging. | Eliminates version drift across package manifests. | `03` |
+| `V7` | **Monorepo Versioning Policy**: Use one unified repo version (`vX.Y.Z`) by default, or explicit component-prefixed tags (`<component>-vX.Y.Z`, e.g., `api-v1.2.0`, `worker-v1.2.0`) when components release independently. | Prevents tag collisions in multi-component repositories. | `03` |
+| `R1` | **Hotfix Inclusion Check Before Release**: Verify `git log release/X.Y.Z..main` is empty before merging `release/X.Y.Z` into `main` so every production hotfix is included. | Prevents a release merge from overwriting a recent production hotfix. | `03` |
+| `R2` | **Tree-Identity Verification After Release Merge**: Verify `git diff release/X.Y.Z <merge-commit>` is empty on `main` so the exact STG-verified tree is what ships to production. | Proves "build/verify once, promote the exact same tree to production". | `03` |

@@ -90,10 +90,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_dbg.add_argument("--workspace-path", help="Path to client project workspace containing .env")
     p_dbg.add_argument("--out", help="Output file (default: ./huly-debug-<ID>.json)")
 
-    # ux (design source, HTML kit, viewports)
-    from .ux.commands import add_ux_parser
-    add_ux_parser(subparsers)
-
     # figma (read-only frame extraction)
     from .figma.commands import add_figma_parser
     add_figma_parser(subparsers)
@@ -186,11 +182,6 @@ def cmd_huly_debug(args: argparse.Namespace) -> int:
     return 0
 
 
-def _cmd_ux(args: argparse.Namespace) -> int:
-    from .ux.commands import cmd_ux
-    return cmd_ux(args)
-
-
 def _cmd_figma(args: argparse.Namespace) -> int:
     from .figma.commands import cmd_figma
     return cmd_figma(args)
@@ -225,7 +216,6 @@ def main() -> int:
         "task-detail": cmd_task_detail,
         "serve": cmd_serve,
         "huly-debug": cmd_huly_debug,
-        "ux": _cmd_ux,
         "figma": _cmd_figma,
         "install-plugin": cmd_install_plugin,
     }

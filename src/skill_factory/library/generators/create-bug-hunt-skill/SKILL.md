@@ -1,12 +1,12 @@
 ---
 name: create-bug-hunt-skill
-description: Write a workspace's own bug-hunt skill from the skill-factory knowledge base - finding real defects in a fixed code revision - scope and callers, a cold pass, seven defect dimensions, adversarial disproof with given/when/then failure scenarios, effort levels, severity, report format and verdict impact, plus the workspace's own bug patterns (data scopes, authorization, async, migrations) - for any stack and fullstack repos. Use whenever the user wants to set up, standardize or update how the coder self-checks or the reviewer hunts bugs in a workspace, or says things like "tạo skill bug hunt", "tìm bug trước review", "self-check của coder", "review tìm lỗi", even if they do not say "skill". Writes .agents/skills/bug-hunt/, then trial-runs it on a real diff.
+description: Write a workspace's own bug-hunt skill from the skill-factory knowledge base - finding real defects in a fixed code revision - scope and callers, a cold pass, seven defect dimensions, adversarial disproof with given/when/then failure scenarios, effort levels, unified BLOCKER/MAJOR/MINOR severity, report format and verdict impact, plus the workspace's own bug patterns - for any stack. Use whenever the user wants to set up, standardize or update how the coder self-checks or the reviewer hunts bugs in a workspace, or says things like "tạo skill bug hunt", "tìm bug trước review", "self-check của coder", "review tìm lỗi", even if they do not say "skill". Writes .agents/skills/bug-hunt/, then trial-runs it on a real diff.
 argument-hint: "[stack/framework] [review process]"
 ---
 
 # Create Bug Hunt Skill
 
-Goal: produce `<workspace>/.agents/skills/bug-hunt/` — how the Code Writer (quick self-check) and the Reviewer (standard/deep pass) find **real defects** in a fixed revision of this workspace, with the workspace's own bug patterns, vocabulary and report location.
+Goal: produce `<workspace>/.agents/skills/bug-hunt/` — how the Code Writer (quick self-check) and the Reviewer (standard/deep pass) find **real defects** in a fixed revision of this workspace, with the workspace's own bug patterns, vocabulary, and report location.
 
 User input: $ARGUMENTS
 
@@ -19,20 +19,20 @@ Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P
 | Field | Where to look |
 |---|---|
 | Existing review skills | `.agents/skills/bug-hunt`, `code-review*`, `*reviewer*` role files |
-| Vocabulary | Finding IDs, verdict words, severity scale (e.g. `F-BR-NN`, `REQUEST_CHANGES`, `P0–P3`), where reports are written |
-| Project risk areas | Data scopes (tenant/environment), authorization model, money/quantities, migrations/backfills, external providers, release/publish flows — from `CLAUDE.md`, `AGENTS.md`, architecture docs, past incidents/bug fixes in git log |
-| Read-only commands | Focused tests, analyzer, caller search (`rg`, code-intelligence tools such as GitNexus if configured) |
-| Base inputs (read-only) | `references/base-rules.md` (this generator's own base rules) |
+| Vocabulary | Finding IDs (`BH-NN`, `RV-NN`), verdict words (`APPROVED`, `REQUEST_CHANGES`, `BLOCKED`), unified severity scale (`BLOCKER` / `MAJOR` / `MINOR`), confidence (`CONFIRMED` / `PLAUSIBLE`), where reports are written |
+| Project risk areas | Data scopes (tenant/environment), authorization model, money/quantities, migrations/backfills, lifecycle/state mutations, external providers, release/publish flows — from `CLAUDE.md`, `AGENTS.md`, architecture docs, past incidents/bug fixes in git log |
+| Read-only commands | Focused tests, static analyzer/typechecker, caller search (`rg`, code-intelligence tools such as GitNexus if configured) |
+| Base inputs (read-only) | [references/base-rules.md](references/base-rules.md) and [references/deriving-the-model.md](references/deriving-the-model.md) |
 
 ## Step 2 — Map the base rules
 
-Read `references/base-rules.md`, `references/dimensions.md`, `references/bug-patterns-by-stack.md`. For each rule H1–H14: adopted, adapted (workspace vocabulary/report location), or "not adopted" with a reason. H1, H2, H6, H7, H8, H13 are never "not adopted".
+Read [references/base-rules.md](references/base-rules.md) and [references/deriving-the-model.md](references/deriving-the-model.md). Every rule `H1`–`H14` is mandatory compliance and is adapted to the workspace's stack, commands, and report location.
 
 ## Step 3 — Propose
 
-- **Bug patterns** per branch: stack patterns that apply + **project patterns** derived from the risk areas in Step 1 (each a one-line "looks like / goes wrong when" with a real path).
-- **Effort triggers:** which items run `quick` / `standard` / `deep` here (e.g. auth, migrations, release pipeline → deep).
-- **Mapping** of BLOCKER/MAJOR/MINOR and CONFIRMED/PLAUSIBLE to the workspace's finding levels and verdicts; where the report goes.
+- **Bug patterns:** stack patterns that apply to this workspace + **project patterns** derived from the risk areas in Step 1 (each a row: *Looks like* → *Goes wrong when* → *Check*, naming real workspace paths).
+- **Effort triggers:** which items run `quick` / `standard` / `deep` here (e.g. auth, state/lifecycle boundaries, migrations, money arithmetic → `deep`).
+- **Severity & verdict mapping:** unified `BLOCKER` / `MAJOR` / `MINOR` and `CONFIRMED` / `PLAUSIBLE` mapped to the workspace's finding tables and verdicts; where the report goes.
 
 ## Step 4 — Gate (user confirms)
 
@@ -40,16 +40,14 @@ One AskUserQuestion round where possible: (1) project bug patterns, (2) effort t
 
 ## Step 5 — Author
 
-Read `~/.claude/skill-factory/core/authoring-guide.md`. Templates are suggested shapes; **Mandatory** content is fixed. Layout per `~/.claude/skill-factory/core/layouts.md` (flat: `references/01–05`; branched: `shared/01–04`, `be/05`, `fe/05`).
+Read `~/.claude/skill-factory/core/authoring-guide.md`. Write a cohesive 3-reference skill under `.agents/skills/bug-hunt/`:
 
-| Output (flat) | Output (branched) | Template | Kind | Why it exists |
-|---|---|---|---|---|
-| `SKILL.md` | `SKILL.md` | `templates/SKILL.md.tmpl` | **Mandatory** | The one question, the loop and the effort table on one screen |
-| `references/01-scope-and-candidates.md` | `shared/01-…` | `templates/shared/01-scope-and-candidates.md.tmpl` | **Mandatory** | Fixed revision, callers, cold pass, seven dimensions — where real bugs are found |
-| `references/02-verify.md` | `shared/02-…` | `templates/shared/02-verify.md.tmpl` | **Mandatory** | Disproving candidates keeps reports free of noise |
-| `references/03-effort-severity-report.md` | `shared/03-…` | `templates/shared/03-effort-severity-report.md.tmpl` | **Mandatory** | Same scale and format for coder and reviewer |
-| `references/04-verdict-and-roles.md` | `shared/04-…` | `templates/shared/04-verdict-and-roles.md.tmpl` | Suggested | How findings change the verdict, who does what; may merge into 03 |
-| `references/05-bug-patterns.md` | `be/05-…`, `fe/05-…` | `templates/branch/05-bug-patterns.md.tmpl` | **Mandatory** | The workspace's own failure modes — the part generic advice cannot supply |
+| Output | Template | Kind | Why it exists |
+|---|---|---|---|
+| `SKILL.md` | [templates/SKILL.md.tmpl](templates/SKILL.md.tmpl) | **Mandatory** | The one question, read-only CLI gates, the 5-step loop, effort triggers, `H1`–`H14` index, and routing table (< 150 lines) |
+| `references/01-scope-dimensions-and-patterns.md` | [templates/references/01-scope-dimensions-and-patterns.md.tmpl](templates/references/01-scope-dimensions-and-patterns.md.tmpl) | **Mandatory** | Fixed revision, whole context & callers, cold pass first, 7 defect dimensions, and stack/project bug patterns |
+| `references/02-verify-and-disprove.md` | [templates/references/02-verify-and-disprove.md.tmpl](templates/references/02-verify-and-disprove.md.tmpl) | **Mandatory** | Adversarial disproof path tracing, `given → when → then` scenarios, read-only CLI verification, `CONFIRMED`/`PLAUSIBLE` rules, and typical disproofs |
+| `references/03-severity-verdict-and-report.md` | [templates/references/03-severity-verdict-and-report.md.tmpl](templates/references/03-severity-verdict-and-report.md.tmpl) | **Mandatory** | Effort caps, `BLOCKER`/`MAJOR`/`MINOR` calibration, finding row format, `bug-hunt:` summary line, verdict impact, and Code Writer vs Reviewer duties |
 
 Writing rules: keep each template's purpose, give every rule its reason, workspace vocabulary kept (P5), real paths in patterns, replace every `{{…}}`, delete every `<!-- GEN … -->`, English, < ~200 lines per file, custom block at the end.
 
@@ -68,22 +66,22 @@ Writing rules: keep each template's purpose, give every rule its reason, workspa
 `~/.claude/skill-factory/core/trial-run.md`. Task ideas:
 
 - Bug-hunt a real recent diff at `quick` and at `standard` (plan the findings list only).
-- A diff with a seeded realistic defect (described to the subagent as a normal change, e.g. a missing scope filter or an un-awaited call) — is it found and CONFIRMED with a scenario?
-- A diff with no defect — does the agent report "no defect found" instead of style remarks?
+- A diff with a seeded realistic defect (described to the subagent as a normal change, e.g. a missing scope filter or an un-awaited/undisposed call) — is it found and `CONFIRMED` with a `given → when → then` scenario?
+- A diff with no defect — does the agent report `bug-hunt: no defect found` instead of style remarks?
 
-Compare: every finding has a given/when/then scenario and evidence, verdict classes used correctly, cleanups kept out, project patterns applied.
+Compare: every finding has a `given → when → then` scenario and evidence, verdict classes used correctly, cleanups kept out (`NOTE`), project patterns applied.
 
 ## Step 8 — Description
 
-Per the authoring guide: workspace name; situations (before handing off a phase, reviewer first pass, "find bugs in this diff"); team trigger words. Should not trigger for style/compliance review requests.
+Per the authoring guide: workspace name; situations (before handing off a phase, reviewer pass, "find bugs in this diff"); team trigger words. Should not trigger for style/compliance review requests.
 
 ## Step 9 — Verify, record & report
 
-`checklist.md` + `~/.claude/skill-factory/core/checklist-common.md`; record provenance (`~/.claude/skill-factory/core/provenance.md`); report deviations, rules adapted/not adopted, project patterns added, trial results.
+[checklist.md](checklist.md) + `~/.claude/skill-factory/core/checklist-common.md`; record provenance (`~/.claude/skill-factory/core/provenance.md`); report rules adapted, project patterns added, trial results.
 
 ## Update mode
 
-Existing `.agents/skills/bug-hunt/`: registered → sync (`~/.claude/skill-factory/core/sync-protocol.md`); not registered → adopt (P3, P5: keep vocabulary, report location, project pattern file).
+Existing `.agents/skills/bug-hunt/`: registered → sync (`~/.claude/skill-factory/core/sync-protocol.md`); not registered → adopt (P3, P5: keep vocabulary, report location, project patterns).
 
 ## Changing this generator
 
@@ -91,8 +89,7 @@ Follow `~/.claude/skill-factory/core/versioning.md` (work under `## Unreleased`,
 
 ## Resources
 
-- `references/base-rules.md` — H1–H14 with reasons
-- `references/dimensions.md` — the seven defect dimensions with prompts
-- `references/bug-patterns-by-stack.md` — stack patterns + how to derive project patterns
-- `templates/` — `SKILL.md.tmpl`, `shared/01–04`, `branch/05` (suggested shapes)
-- `checklist.md` — topic checks
+- [references/base-rules.md](references/base-rules.md) — `H1`–`H14` mandatory rules, `PASS`/`FAIL` verification gates, and `BLOCKER`/`MAJOR`/`MINOR` severities
+- [references/deriving-the-model.md](references/deriving-the-model.md) — the 7 defect dimensions and how to derive stack/project bug patterns
+- `templates/` — `SKILL.md.tmpl` and `templates/references/01..03.md.tmpl`
+- [checklist.md](checklist.md) — topic checks

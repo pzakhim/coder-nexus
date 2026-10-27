@@ -1,103 +1,77 @@
 ---
 name: create-secure-coding-standards-skill
-description: Write a workspace's own secure-coding-standards skill from the skill-factory knowledge base - how code is written safe the first time - input validation at trust boundaries, object-level authorization and data-scope isolation (tenant, environment, owner), injection and XSS prevention, secrets and sensitive data, authentication and sessions, outbound calls (SSRF), file handling, dependencies, fail-closed errors, and what to flag for security review - mapped onto the workspace's real auth model, scopes and stack, for fullstack repos with backend and frontend branches. Use whenever the user wants to set up, standardize or update secure coding rules for the coder, reviewer or security roles in a workspace, or says things like "tạo skill secure coding", "chuẩn bảo mật khi code", "phân quyền dữ liệu", "OWASP", even if they do not say "skill". Writes .agents/skills/secure-coding-standards/, then trial-runs it on real code.
-argument-hint: "[stack/framework] [auth model]"
+description: Generate or update a workspace's secure-coding-standards skill from the stack-agnostic Skill Factory knowledge base — mapping universal security rules (SC1–SC14) for boundary input validation, authentication, object-level authorization, data-scope isolation, secrets and PII protection, cryptography, injection/transport/file safety, dependency vetting, deterministic PASS/FAIL gates, and BLOCKER/MAJOR/MINOR review grading onto the workspace's real security model.
+argument-hint: "[target workspace or security model notes]"
 ---
 
 # Create Secure Coding Standards Skill
 
-Goal: produce `<workspace>/.agents/skills/secure-coding-standards/` — the rules the Code Writer follows **while writing** so the code is safe by default, which the Code Reviewer grades against and the Security role reviews deeper. Built from generic secure-coding rules plus the workspace's real trust boundaries, authorization model, data scopes and stack.
+Goal: produce `<workspace>/.agents/skills/secure-coding-standards/` — the security contract that Code Writer follows while authoring code and Code Reviewer grades against during review.
 
 User input: $ARGUMENTS
 
-Follow `~/.claude/skill-factory/core/workflow.md`, starting with **Step 0** (never write into `.agents/plugins/coder-nexus/` or extension-regenerated role files; a workspace skill overrides the fixed skill of the same name). Ownership: `~/.claude/skill-factory/core/coder-skill-family.md` — this skill is how to write it safe; clean-architecture decides *where* guards live; bug-hunt (dimension 5) and the future `security-review` find what slipped through.
+Follow `~/.claude/skill-factory/core/workflow.md`, starting with **Step 0** (never write into `.agents/plugins/coder-nexus/` or extension-regenerated role files; a workspace skill in `.agents/skills/secure-coding-standards/` overrides the pack skill of the same slot). Ownership: `~/.claude/skill-factory/core/coder-skill-family.md`.
 
-## Step 1 — Context Card (+ security model)
+---
 
-Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P1–P2 (`~/.claude/skill-factory/core/existing-project.md`). Read `references/deriving-the-model.md` and collect:
+## Step 1 — Discover the Workspace Security Model
 
-| Field | Where to look |
+Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and `P1`–`P2` (`~/.claude/skill-factory/core/existing-project.md`). Read [deriving-the-model.md](references/deriving-the-model.md) and collect:
+
+| Dimension | What to Inspect in the Workspace |
 |---|---|
-| Authentication | Login flow, identity provider (OAuth/OIDC/MSAL…), session/token storage |
-| Authorization model | Roles, capabilities/permissions, where guards live, "UI hiding is not authorization" rules (`CLAUDE.md`, `AGENTS.md`, RBAC docs) |
-| Data scopes | Tenant / environment / owner / release scopes and how they reach queries and caches |
-| Trust boundaries | Public endpoints, webhooks, workers, file uploads, external providers, browser → API |
-| Secrets | Settings object, secret store, encryption at rest, env files and what is git-ignored |
-| Existing security code | Validation layer, guards, network allow-lists (e.g. an SSRF guard), crypto helpers |
-| Gates | Security linters (bandit, eslint-plugin-security, semgrep), dependency audit, AST tests |
-| Past security fixes | `git log --grep='security\|auth\|permission\|xss\|inject'` |
+| **Trust Boundaries (`SC1`, `SC5`)** | External entry points (endpoints/handlers, UI forms, deep links/navigation URIs, webhooks, queue consumers, file imports, external provider responses) and their validation/schema boundary |
+| **Authentication & Session Lifecycle (`SC7`)** | Login/token verification helper, single-flight token refresh flow, and credential wipe on logout/expiry |
+| **Authorization Model (`SC2`)** | Roles/capabilities, where object-level guards execute, and the rule that UI visibility gates are UX only |
+| **Data Scopes (`SC3`)** | Active isolation dimensions (tenant, owner/user, environment, release state) and how scope filters reach queries, caches, and storage keys |
+| **Secrets & Sensitive Data (`SC6`, `SC8`, `SC12`)** | Typed config/compile-time injection, encrypted/hardware-backed credential store, logger redaction, generic error envelopes, and cryptographic helpers |
+| **Deterministic Security Gates** | Installed security linters, dependency advisory scanners, lockfile checks, and `rg` anti-pattern audits |
 
-## Step 2 — Map the base rules
+---
 
-Read `references/base-rules.md` and `references/risks-by-stack.md`. For each rule SC1–SC14: enforced by a gate (cite it), adopted, adapted to the workspace model, or "not adopted" with a reason. SC1, SC2, SC3, SC4, SC6, SC13 are never "not adopted" (for a single-tenant app SC3 still applies to owner/user scope).
+## Step 2 — Map Base Rules (`SC1`–`SC14`)
 
-## Step 3 — Propose
+Read [base-rules.md](references/base-rules.md) and [deriving-the-model.md](references/deriving-the-model.md). Map all 14 mandatory rules (`SC1`–`SC14`) onto the workspace's real guards, helpers, and error types. `SC1`, `SC2`, `SC3`, `SC4`, `SC6`, and `SC13` are never omitted (in single-tenant apps, `SC3` applies to user/owner and environment scopes).
 
-- The workspace's **security model on one page**: trust boundaries, authorization model with real guard names, data scopes with how each is enforced.
-- Per branch, the stack risks that apply, each with the workspace's safe pattern (real function/component names) and the unsafe pattern to avoid.
-- **Review triggers:** which changes must be flagged for the reviewer/security role (auth code, guards, scopes, migrations touching sensitive data, new dependencies, file/URL handling).
+---
 
-## Step 4 — Gate (user confirms)
+## Step 3 — Propose & Confirm (User Gate)
 
-One AskUserQuestion round where possible: (1) security model (boundaries, authz, scopes), (2) safe patterns per branch, (3) secrets and logging policy, (4) review triggers and severities.
+Present a concise summary for user confirmation in one round:
+1. **Security Model:** Trust boundaries, authentication/session flow, object-level authorization guards, and data scopes.
+2. **Secrets, PII & Runtime Risk Guards:** Secret storage, log/error redaction, and unsafe-vs-safe patterns for injection, transport/TLS, outbound calls, and files.
+3. **Deterministic Gates & Review Rubric:** Exact CLI/`rg` commands (`PASS` / `FAIL`) and `BLOCKER` / `MAJOR` / `MINOR` review triggers.
 
-## Step 5 — Author
+---
 
-Read `~/.claude/skill-factory/core/authoring-guide.md`. Templates are suggested shapes; **Mandatory** content is fixed. Layout per `~/.claude/skill-factory/core/layouts.md` (flat: `references/01–06`; branched: `shared/01–03, 05, 06`, `be/04`, `fe/04`).
+## Step 4 — Author the Skill (`SKILL.md` + 3 Cohesive References)
 
-| Output (flat) | Output (branched) | Template | Kind | Why it exists |
-|---|---|---|---|---|
-| `SKILL.md` | `SKILL.md` | `templates/SKILL.md.tmpl` | **Mandatory** | The non-negotiables and the security model on one screen |
-| `references/01-trust-boundaries-and-input.md` | `shared/01-…` | `templates/shared/01-trust-boundaries-and-input.md.tmpl` | **Mandatory** | Everything starts with knowing where untrusted data enters |
-| `references/02-authorization-and-data-scope.md` | `shared/02-…` | `templates/shared/02-authorization-and-data-scope.md.tmpl` | **Mandatory** | Broken access control and scope leaks are the costliest bugs |
-| `references/03-secrets-and-sensitive-data.md` | `shared/03-…` | `templates/shared/03-secrets-and-sensitive-data.md.tmpl` | **Mandatory** | Leaked secrets and PII cannot be un-leaked |
-| `references/04-stack-risks.md` | `be/04-…`, `fe/04-…` | `templates/branch/04-stack-risks.md.tmpl` | **Mandatory** | Injection, XSS, SSRF, uploads — safe vs unsafe pattern in this stack |
-| `references/05-dependencies.md` | `shared/05-…` | `templates/shared/05-dependencies.md.tmpl` | Suggested | Supply-chain rules; may merge into 06 |
-| `references/06-review-triggers.md` | `shared/06-…` | `templates/shared/06-review-triggers.md.tmpl` | Suggested | What must be flagged for review; may merge into `SKILL.md` |
+Read `~/.claude/skill-factory/core/authoring-guide.md`. Generate a clean, flat 3-reference skill structure (never fragment into micro-files or `be/`/`fe/` branches):
 
-Writing rules: keep each template's purpose, give every rule its reason, real guard/helper names and paths, safe pattern next to the unsafe one, rules enforced by a gate cite it, replace every `{{…}}`, delete every `<!-- GEN … -->`, English, < ~200 lines per file, custom block at the end. Never paste real secrets or tokens as examples.
+| Output File | Template | Purpose |
+|---|---|---|
+| `SKILL.md` | [templates/SKILL.md.tmpl](templates/SKILL.md.tmpl) | Routing table (< 150 lines): Deterministic Security Gates (`PASS` / `FAIL`), Core Security Rules (`SC1`–`SC14` — Mandatory Compliance), and Reference Guides index (with `<!-- {{profile_references}} -->` when profiles apply) |
+| `references/01-input-auth-and-data-scope.md` | [templates/references/01-input-auth-and-data-scope.md.tmpl](templates/references/01-input-auth-and-data-scope.md.tmpl) | Trust boundaries, input validation (`SC1`), navigation/redirect allow-lists (`SC5`), authentication (`SC7`), object-level authorization (`SC2`), data-scope isolation (`SC3`), and fail-closed handling (`SC13`) |
+| `references/02-secrets-data-and-crypto.md` | [templates/references/02-secrets-data-and-crypto.md.tmpl](templates/references/02-secrets-data-and-crypto.md.tmpl) | Secrets management & encrypted storage (`SC6`), PII/log/error redaction (`SC8`), and vetted cryptography & CSPRNG (`SC12`) |
+| `references/03-runtime-risks-deps-and-review.md` | [templates/references/03-runtime-risks-deps-and-review.md.tmpl](templates/references/03-runtime-risks-deps-and-review.md.tmpl) | Unsafe-vs-safe patterns for injection (`SC4`), transport/SSRF (`SC9`), file handling (`SC10`), dependency supply-chain vetting (`SC11`), deterministic `rg` gates, `SC14` handoff triggers, and `BLOCKER` / `MAJOR` / `MINOR` review rubric |
 
-## Step 6 — Wire
+Authoring rules:
+- Use only the unified gate statuses (`PASS` / `FAIL`) and 3-tier review severities (`BLOCKER` / `MAJOR` / `MINOR`); never invent `P1` / `P2` / `P3` severities.
+- Keep base files 100% stack-generic when authoring a multi-profile pack skill, placing company/profile-specific contracts in `profiles/{imespro,external-structured,external-standard}/security-contracts.md`.
+- Replace every `{{…}}` placeholder, strip `<!-- GEN: … -->` comments, and never include real secrets or PII in examples.
 
-1. Pointer in `CLAUDE.md` / `AGENTS.md` (unless an equivalent exists):
-   ```markdown
-   ## Secure coding
-   Code that handles input, authorization, data scopes, secrets or external calls follows `.agents/skills/secure-coding-standards/SKILL.md`.
-   ```
-2. Offer to link it from the coder, reviewer and (when it exists) security role files (P3).
-3. If `bug-hunt` exists, offer to link its dimension 5 to this skill's model.
+---
 
-## Step 7 — Trial run
+## Step 5 — Wire, Trial-Run & Verify
 
-`~/.claude/skill-factory/core/trial-run.md`. Task ideas:
+1. **Wire:** Add a pointer in `AGENTS.md` / `CLAUDE.md` if not already present.
+2. **Trial-run:** Walk a real security-sensitive change (e.g., a mutating action, deep link/outbound URL, or credential storage path) against the generated skill (`~/.claude/skill-factory/core/trial-run.md`).
+3. **Verify & Record:** Run [checklist.md](checklist.md) and `~/.claude/skill-factory/core/checklist-common.md`, then record provenance (`~/.claude/skill-factory/core/provenance.md`).
 
-- Add a mutating endpoint / server action for a real resource — are validation, object-level authorization and scope filters planned?
-- Add a feature that calls a user-supplied URL or accepts a file upload.
-- Render user-provided rich text in the frontend.
-- A change that logs request data — are secrets/PII kept out?
-
-Compare: guards and scopes named correctly, safe patterns used, no secrets in examples, review triggers flagged.
-
-## Step 8 — Description
-
-Per the authoring guide: workspace name; situations (new endpoint, permission check, tenant/environment data, file upload, external URL, rendering user content, logging, new dependency); team trigger words.
-
-## Step 9 — Verify, record & report
-
-`checklist.md` + `~/.claude/skill-factory/core/checklist-common.md`; record provenance (`~/.claude/skill-factory/core/provenance.md`); report deviations, rules adapted/not adopted, trial results.
-
-## Update mode
-
-Existing `.agents/skills/secure-coding-standards/` (or security sections in other skills): registered → sync (`~/.claude/skill-factory/core/sync-protocol.md`); not registered → adopt (P3, P5: keep the workspace's RBAC contract and scope matrix verbatim).
-
-## Changing this generator
-
-Follow `~/.claude/skill-factory/core/versioning.md` (work under `## Unreleased`, bump once per batch).
+---
 
 ## Resources
 
-- `references/base-rules.md` — SC1–SC14 with reasons
-- `references/risks-by-stack.md` — safe vs unsafe patterns per stack
-- `references/deriving-the-model.md` — how to derive trust boundaries, authz model and scopes from a workspace
-- `templates/` — `SKILL.md.tmpl`, `shared/01–03, 05, 06`, `branch/04` (suggested shapes)
-- `checklist.md` — topic checks
+- [references/base-rules.md](references/base-rules.md) — Universal security rules `SC1`–`SC14`, `PASS` / `FAIL` gate contract, and `BLOCKER` / `MAJOR` / `MINOR` review scale
+- [references/deriving-the-model.md](references/deriving-the-model.md) — Stack-agnostic security model discovery, risk taxonomy, and `rg` audit design
+- [checklist.md](checklist.md) — Verification checklist for the generated skill

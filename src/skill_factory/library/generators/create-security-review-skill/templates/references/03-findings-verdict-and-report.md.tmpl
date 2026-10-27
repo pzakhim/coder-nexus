@@ -1,0 +1,61 @@
+# Exploit-Scenario Findings, Severity Rubric & Security Report
+
+> Topic: Mandatory exploit-scenario finding structure (`SR11`), unified `BLOCKER`/`MAJOR`/`MINOR` severity rubric (`SR12`), redacted report template (`SR13`), and prevention feedback loop (`SR14`) for {{project_name}}.
+
+<!-- GEN: Why: Combine findings/verdict (05) and safe report formatting (06) into one cohesive reference ({{ref_03}}) using the unified BLOCKER/MAJOR/MINOR severity scale. -->
+
+## 1. Adversarial Source-to-Sink Disproof & Finding Structure (`SR11`)
+
+Never report a raw suspicion directly. Every candidate vulnerability must pass a **2-step Adversarial Disproof Protocol** inspired by `security-audit-skill`:
+
+1. **Step 1 — Trace `Source → Guards → Sink` & Attempt Disproof**:
+   - Identify the untrusted **Source** (request body/query/header, webhook, file, deep link), the sensitive **Sink** (SQL query, command, file path, outbound HTTP call, response serializer), and every intermediate **Guard** (auth dependency, `extra="forbid"` DTO validator, `(tenant_id, id)` SQL filter, middleware).
+   - Actively try to **disprove** the vulnerability by checking whether an upstream guard, framework default, or type constraint already neutralizes the input.
+2. **Step 2 — Classify into `CONFIRMED`, `PLAUSIBLE`, or `REJECTED`**:
+   - **`CONFIRMED`**: Complete `Source → Sink` trace with no neutralizing guard, paired with a concrete exploit scenario (`given <attacker/role/state> → when <action> → then <impact>`).
+   - **`PLAUSIBLE`**: Reachability depends on a specific runtime/infrastructure/proxy fact not visible in static code (must name the exact missing evidence and hand off to QA/QC for runtime verification if applicable).
+   - **`REJECTED`**: Disproved during Step 1 because an existing guard (`file:line`) blocks the attack path. Record a 1-line summary in the report's `Rejected Candidates` section so reviewers see the path was verified.
+
+| Finding ID | Severity (`BLOCKER` / `MAJOR` / `MINOR`) | Confidence (`CONFIRMED` / `PLAUSIBLE`) | Location (`file:line`) | Rule (`SR#`) | Source-to-Sink Trace & Exploit Scenario (`given → when → then`) | Verification Evidence | Fix Direction |
+|---|---|---|---|---|---|---|---|
+| `SEC-01` | `BLOCKER` | `CONFIRMED` | `{{path}}:42` | `SR3` / `SR4` | **Trace**: `GET /orders/{id}` → `OrderRepo.get_by_id` (no `tenant_id` filter).<br>**Scenario**: **Given** an authenticated Tenant A operator, **when** calling `GET /api/v1/orders/{tenant_b_order_id}`, **then** Tenant B's order payload is returned. | Traced route → repo query at `{{path}}:42`; verified by `test_order_cross_tenant_404` | Scope query by `(order_id, principal.tenant_id)` and return `404` when not found |
+
+---
+
+## 2. Unified Security Severity Rubric (`BLOCKER` / `MAJOR` / `MINOR`, `SR11`–`SR12`)
+
+Security reviews use the unified 3-tier severity scale from `shared_contracts/flags_and_statuses.md` (never use `CRITICAL`/`HIGH`/`MEDIUM`/`LOW` or `P0`–`P3`):
+
+| Severity | Security Finding Criteria | Impact on Sign-Off Verdict (`SR12`) |
+|---|---|---|
+| **`BLOCKER`** | • Authentication bypass, missing authentication on protected entrypoint, or broken session/token validation (`SR3`, `SR10`).<br>• Cross-tenant data leak / IDOR (`SR4`) or vertical privilege escalation (`SR3`).<br>• SQL/command/template injection, unsafe deserialization, path traversal, or SSRF to internal networks (`SR5`, `SR8`).<br>• Hardcoded secret, private key, credential, or raw PII leak in code, logs, or responses (`SR7`).<br>• Exploitable high-severity CVE in a reachable dependency (`SR9`). | • **`CONFIRMED BLOCKER` → `CHANGES_REQUESTED`**<br>• **`PLAUSIBLE BLOCKER` → `BLOCKED`** (until disproving/confirming evidence is supplied) |
+| **`MAJOR`** | • Missing mass-assignment protection (`extra="forbid"`), unbounded pagination/upload size, or missing rate/connection caps enabling resource exhaustion (`SR5`, `SR8`).<br>• Missing `Origin` check on cookie-authenticated WebSocket, or long-lived token passed in URL query string (`SR6`, `SR10`).<br>• Missing outbound HTTP timeout, overly broad CORS, or incomplete audit logging on sensitive state transitions (`SR2`, `SR8`).<br>• Authorization matrix cell missing automated test coverage on a deep-risk path (`SR3`). | • **`CONFIRMED MAJOR` → `CHANGES_REQUESTED`**<br>• **`PLAUSIBLE MAJOR` → `BLOCKED`** (until evidence is supplied) |
+| **`MINOR`** | • Defense-in-depth hardening gap with no direct exploit path (e.g., redundant security header tuning when upstream proxy already sets it, minor log-redaction improvement on non-sensitive fields). | • **`APPROVED`** (findings listed for follow-up or quick polish) |
+
+---
+
+## 3. Redacted Security Review Report Template (`SR13`, `SR14`)
+
+Write the security review report to `{{report_location}}` and share only via {{disclosure_channel}}. **Never paste raw secret values, tokens, or real PII into the report** — cite `file:line` and variable names only:
+
+```markdown
+# Security Review Report — <work-item> @ <revision-sha>
+
+- **Execution Mode**: {{security_mode}}
+- **Triggers Matched**: <list of matched triggers from 01>
+- **Threat Model Summary**: <Assets, Actors, Entrypoints, Trust Boundaries, STRIDE risks>
+- **Coverage Ledger (`SR1`)**: <N/N units COVERED, 0 UNCOVERED>
+- **Authorization Matrix Coverage (`SR3`)**: <N/N cells verified>
+- **CLI Gates Run**:
+  - G1 Injection Scan: `PASS` | `FAIL`
+  - G2 Secret Scan: `PASS` | `FAIL`
+  - G3 Dependency Audit: `PASS` | `FAIL`
+  - G4 Auth & Scope Test Suite: `PASS` | `FAIL`
+- **Confirmed & Plausible Findings (`SR11`)**: <table of SEC-NN findings sorted BLOCKER → MAJOR → MINOR, or "0 findings">
+- **Disproved / Rejected Candidates (`REJECTED`, `SR11`)**: <1-line per candidate disproved during Source→Guard→Sink trace, citing the protecting guard at file:line>
+- **QA/QC Runtime Verification Hand-Off (`SR14`)**: <permission matrix rows or runtime-dependent PLAUSIBLE checks for QA/QC to execute on the live test environment>
+- **Security Sign-Off Verdict (`SR12`)**: `APPROVED` | `CHANGES_REQUESTED` | `BLOCKED`
+- **Prevention Rule Proposals (`SR14`)**: <new pattern/check to add to {{secure_coding_link}}, if any>
+```
+
+See [`references/01-triggers-threat-model-and-auth-matrix.md`]({{ref_01}}) for threat modeling and the authorization matrix, and [`references/02-security-checks-and-cli-gates.md`]({{ref_02}}) for boundary security checks and CLI gates.

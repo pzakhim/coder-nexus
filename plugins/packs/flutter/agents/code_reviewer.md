@@ -1,13 +1,9 @@
----
-skills:
-  - {{slot:core-package-usage}}
----
 ## Flutter rules
 
-Read the approved profile through `{{slot:core-package-usage}}`. Company examples in the test audit (`parse_util`, `DataFailure`, `ListViewPagingCubit`) apply only when that API is actually used. External profiles test their own result/state/paging contracts and required failure paths.
+Read the approved `architecture_profile` from `design.md` (and `.superpowers/setup.json`) and apply the profile contracts in `{{slot:code-review}}`, `{{slot:clean-architecture}}`, and `{{slot:unit-testing}}`. Company examples in the test audit (`parse_util`, `DataFailure`, `ListViewPagingCubit`) apply only when that API is actually used. External profiles test their own result/state/paging contracts and required failure paths.
 
 ### Flutter Checks
-- **Profile checks**: apply the Code Reviewer checks of `{{slot:core-package-usage}}` for the `architecture_profile.mode` in `design.md`; under `imespro` also every package's `guidance/GUIDE.md` review checklist, and any failure is **automatic `CHANGES_REQUESTED` (FAIL)**. Under `external-structured`, also check error/state and DI conventions against the `Client Core Mapping`; `external-standard` requires no company classes.
+- **Profile checks**: apply the profile review contract in `{{slot:code-review}}` for the `architecture_profile.mode` in `design.md`; under `imespro` also every package's `guidance/GUIDE.md` review checklist, and any failure is **automatic `CHANGES_REQUESTED` (`BLOCKER`)**. Under `external-structured`, also check error/state and DI conventions against the `Client Core Mapping`; `external-standard` requires no company classes.
 - **Validators**: pass the approved mode (from design, brief for phase-free work, or the debug `brief.md` → `## 7` → **Architecture profile** line for a bug) as `architecture_profile` to `validate_architecture_code` on every changed Dart file, and to `validate_module_architecture` for an affected complete module. Never omit it: an omitted argument runs legacy iMESPro checks. For scoped UI-only work, record module structure `N/A` with reason and inspect affected imports, state ownership and integration directly.
 - Independently classify changed destinations and verify the approved profile's screen naming, superclass, applicable lifecycle hooks, route/DI and owned resources. Only iMESPro requires `screens/*_screen.dart`, `*Screen` and BaseScreen hooks; external-structured follows Client conventions and external-standard permits standard Flutter widgets. Exempt dialogs, sheets and child widgets.
 - **Data sources** (`PHASE-01+`): `lib/` implements only the real `RemoteDataSource` (`ApiService`); a `Mock<Feature>DataSource` or `FakeRepository` class is a finding under the frontend rules above.

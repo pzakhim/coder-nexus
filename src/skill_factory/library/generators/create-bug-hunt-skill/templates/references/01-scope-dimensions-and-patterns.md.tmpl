@@ -1,0 +1,50 @@
+# 01 — Scope, Dimensions, and Bug Patterns
+
+> Topic: Fixed revision scope, caller tracing, cold pass, the 7 defect dimensions, and stack/project bug patterns (`H1`–`H5`)
+
+<!-- GEN: Why: real defects are found in a fixed tree, in the callers of what changed, and by walking systematic defect dimensions plus stack-specific failure patterns. Kind: Mandatory. -->
+
+## 1. Fix the Scope (`H2`, `H3`)
+
+- **Fixed Revision (`H2`):** Record `BASE_REVISION` and `REVIEW_REVISION` plus staged, unstaged, and untracked files belonging to the item (`git status --short`, `git diff --stat <BASE_REVISION>..<REVIEW_REVISION>`). Review exactly that tree.
+- **Whole Context (`H3`):** Read each changed hunk with its entire enclosing function, class, component, or migration file so early returns, lifecycle hooks, and `finally` blocks are visible.
+- **Callers (`H3`):** For every changed public symbol ({{public_symbols}}), locate and read its callers using `{{caller_search_cmd}}`. A broken caller outside the diff is in scope.
+
+---
+
+## 2. Cold Pass First (`H4`)
+
+Hunt from the code **before** reading requirements, design, contracts, or hand-off notes. Read specification documents afterwards only to verify whether a suspicious behavior is an intended decision or a defect.
+
+---
+
+## 3. The Seven Defect Dimensions (`H5`)
+
+Walk the scope once per dimension and log each suspicion as `file:line — hypothesis`:
+
+1. **Logic and data flow:** {{dim_1_prompts}}
+2. **Error and edge paths:** {{dim_2_prompts}}
+3. **State, async, and lifecycle:** {{dim_3_prompts}}
+4. **Contract and caller breakage:** {{dim_4_prompts}}
+5. **Security, scope, and data safety:** {{dim_5_prompts}}
+6. **Stack and project bug patterns:** Every applicable row in Section 4 below.
+7. **Test blind spots:** Would an existing test fail if this candidate were real? Check for over-mocked collaborators or skipped assertions, and name the missing regression test.
+
+`quick` effort runs dimensions **1–4** on changed hunks only.
+
+---
+
+## 4. Stack and Project Bug Patterns (Dimension 6)
+
+| Looks like | Goes wrong when | Check |
+|---|---|---|
+| {{pattern_looks_like}} | {{pattern_goes_wrong}} | {{pattern_check}} |
+
+---
+
+## 5. Non-Candidates (`H14`)
+
+Reuse, simplification, or minor efficiency opportunities that do not cause wrong behavior, crashes, leaks, or timeouts are not defects. Record them only as `NOTE` lines for `code-simplification`.
+
+<!-- custom:start -->
+<!-- custom:end -->

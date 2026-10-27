@@ -41,4 +41,4 @@
 
 ## 7. Next step
 
-{{FixThroughDefectResolution_or_NoActionNeeded_or_OpenQuestions}}
+{{FixThroughBugSquad_or_NoActionNeeded_or_OpenQuestions}}

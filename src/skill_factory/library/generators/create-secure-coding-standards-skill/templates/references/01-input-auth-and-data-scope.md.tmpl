@@ -1,0 +1,41 @@
+# 01 — Trust Boundaries, Input Validation, Auth & Data Scope
+
+<!-- GEN: Why: defines where untrusted input enters and how authentication, object-level authorization, data-scope isolation, and fail-closed rules are enforced (SC1, SC2, SC3, SC5, SC7, SC13). Kind: Mandatory. -->
+
+## 1. Trust Boundaries & Input Validation (`SC1`, `SC5`)
+
+| Boundary | Entry Path / Component | Mandatory Validation Contract |
+|---|---|---|
+| {{boundary_name}} | `{{boundary_path}}` | {{boundary_validator}} |
+
+- Reject invalid or unexpected fields at the boundary rather than guessing or repairing values (`SC1`).
+- Validate navigation targets, deep-link routes, and redirect URLs against an explicit allow-list (`SC5`).
+
+```{{code_lang}}
+// Unsafe
+{{unsafe_input_example}}
+
+// Safe
+{{safe_input_example}}
+```
+
+---
+
+## 2. Authentication & Session Lifecycle (`SC7`)
+
+- {{authentication_contract}}
+- {{token_refresh_and_revocation_contract}}
+
+---
+
+## 3. Object-Level Authorization & Data-Scope Isolation (`SC2`, `SC3`, `SC13`)
+
+| Scope Dimension | Carried By | Enforced In | What a Leak Looks Like |
+|---|---|---|---|
+| {{scope_name}} | `{{scope_carrier}}` | `{{scope_enforcement_point}}` | {{scope_leak_example}} |
+
+- Client/UI visibility checks are UX only; enforce authorization per object on the authoritative boundary (`SC2`).
+- **Fail closed (`SC13`):** Any exception or missing context during validation, token verification, or permission checks denies the operation—never return permissive defaults or fabricated fallback data.
+
+<!-- custom:start -->
+<!-- custom:end -->

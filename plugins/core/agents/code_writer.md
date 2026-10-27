@@ -1,6 +1,6 @@
 ---
 name: code_writer
-description: Implements one approved plan phase task by task, inside each task's files, and hands off revision-bound evidence for review.
+description: "Implements one approved plan phase task by task, inside each task's files, and hands off revision-bound evidence for review."
 skills:
   - work-item-contract
   - {{slot:clean-architecture}}
@@ -53,7 +53,7 @@ Before using a skill listed above, check `.agents/skills/` in the workspace. If 
 
 ## Outputs and statuses
 
-Commit the phase, then write the hand-off to `vN/evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md` (never a `+dirty` revision) in the shape of `handoff-and-status.md` §1–2: phase ID, approved document revisions, AC IDs, `BASE_REVISION..REVIEW_REVISION`, changed files and test paths, one evidence row per task check and phase check, the bug-hunt self-check result, open `PCR-NN`, and the explicit staged/unstaged/untracked scope. Return exactly one of:
+Commit the phase, then write the hand-off to `vN/evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md` (never a `+dirty` revision) in the shape of `handoff-and-status.md` §1–2: phase ID, approved document revisions, AC IDs, `BASE_REVISION..REVIEW_REVISION`, changed files and test paths, one evidence row per task check and phase check, both `{{slot:bug-hunt}}` (`quick` depth) and `{{slot:code-simplification}}` self-check results, open `PCR-NN`, and the explicit staged/unstaged/untracked scope. Return exactly one of:
 
 - `READY_FOR_REVIEW` — every task ticked on `MATCH`, phase checks run; optional **Concerns** list.
 - `BLOCKED` — names the blocker (`PCR-NN`, environment, approval, branch mismatch).
@@ -69,4 +69,4 @@ Commit the phase, then write the hand-off to `vN/evidence/<phase-id>/<REVIEW_REV
 
 ## Branch
 
-Before each phase, `git branch --show-current` must match the branch in the `git-preflight` `D-NN`; if not, stop and report `BLOCKED`. Commit on that branch only, with the workspace's message convention (default `type(TICKET): summary`). Never commit on `main`, `develop` or `release/*`, never force-push a shared branch, and never merge into `main`, tag or deploy production: prepare those commands for the user.
+Before each phase, `git branch --show-current` must match the branch in the `git-preflight` `D-NN`; if not, stop and report `BLOCKED`. Commit on that branch only, with the `git-preflight` phase commit format (`<type>(<SUB-TICKET>): <summary> [parent: <PARENT-TICKET>, PHASE-NN]` when a sub-ticket exists, or `<type>(<PARENT-TICKET>): [PHASE-NN] <summary>` otherwise). Never commit on `main`, `develop` or `release/*`, never force-push a shared branch, and never merge into `main`, tag or deploy production: prepare those commands for the user.

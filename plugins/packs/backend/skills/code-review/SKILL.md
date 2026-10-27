@@ -1,43 +1,43 @@
 ---
 name: code-review
-description: Backend review rubric — Two Review Gates and Four Mandatory Audit Axes (task checkbox audit, Clean Architecture & security, adversarial unit tests, API schema contract).
+description: Backend code review rubric and verification gates for Python 3.12+ / FastAPI / Pydantic v2 / SQLAlchemy 2.x async / Alembic / PostgreSQL services - strictly read-only, runs bug-hunt first, executes deterministic CLI/migration/contract gates independently, grades five review axes against the Backend pack skills, and issues an APPROVED / CHANGES_REQUESTED / BLOCKED verdict with RV-NN findings.
 ---
 
-# Backend Code Review
+# Code Review — Backend (Python / FastAPI)
 
-Inspects code diffs independently across Two Gates and Four Mandatory Audit Axes. The reviewer is strictly read-only.
+Reviewer is strictly read-only toward implementation, tests, migrations, and dependencies; write review reports only (`vN/reviews/review_<phase-id>_<REVIEW_REVISION>.md`). Follow `review-workflow` for pass ordering and [handoff-and-status](../work-item-contract/references/handoff-and-status.md) for unified finding rows and status flags.
 
-## 0. Bug hunt first
+## 1. CLI & Contract Verification Gates (`PASS` / `FAIL`)
 
-Run `{{slot:bug-hunt}}` on the fixed scope before the axes below; its dimension 6 uses [the backend bug patterns](references/bug_patterns.md). A `CONFIRMED` `BLOCKER`/`MAJOR` blocks `APPROVED` even when all four axes pass.
+Rerun applicable checks independently on `REVIEW_REVISION` (`R6`). `NOT_RUN`, `BLOCKED`, and `UNVERIFIED` never count as `PASS`:
 
-## 1. The Two Review Gates
+| Gate | Command | Pass Criteria |
+|---|---|---|
+| **Static Lint & Import Rules** | `uv run ruff check app tests` | `PASS` (`exit 0`, zero layer/async/bug lint violations) |
+| **Strict Typecheck** | `uv run mypy app tests` | `PASS` (`exit 0`, zero `[unused-coroutine]` or type errors) |
+| **Security Scanner** | `uv run bandit -r app -ll` | `PASS` (zero medium/high security findings) |
+| **Independent Test Suite** | `uv run pytest -q` | `PASS` (all unit & integration tests green) |
+| **Offline Migration SQL** | `uv run alembic heads && uv run alembic upgrade <base>:<head> --sql` | `PASS` (single head; non-destructive SQL matching ORM models) |
 
-1. **Phase Gate**: Verifies newly added code respects clean boundaries (Domain does not depend on DB/frameworks; SQL parameterized; auth checks present) for an individual behavior phase.
-2. **Close Gate**: Verifies end-to-end contract conformity against `api_contract.json` and overall backend test suite health before closing the work item.
+## 2. Order of Passes
 
-## 2. Four Mandatory Review Axes
+1. **Fix the revision & rerun gates (`R1`, `R2`, `R6`):** Verify `BASE_REVISION..REVIEW_REVISION` and uncommitted scope; check `PHASE-00` (`3RD_PARTY_MOCKOON`) or `PHASE-01+` gates and rerun all CLI checks ([01 — Scope, Gates & Validators](references/01-scope-gates-and-validators.md)).
+2. **Cold bug-hunt pass (`R3`):** Run `{{slot:bug-hunt}}` cold at `standard` (or `deep` for migrations, auth, transactions, money, or tenant scoping) before reading specification documents.
+3. **Grade the 5 Backend review axes (`R4`, `R5`):** Audit Plan/AC traceability, Clean Architecture & Transactions, Code Quality & Simplicity, Adversarial Tests (`TEST-TAMPER-001`), and Security/API Contract/Migrations ([02 — Review Axes & Rubric](references/02-review-axes-and-rubric.md)).
+4. **Write findings & decide verdict (`R7`–`R14`):** Grade findings with unified `BLOCKER` / `MAJOR` / `MINOR` severities, enforce no-waiver rules (`PLAN_CONFLICT` → `change-control`), and write the revision-bound report ([03 — Findings, Verdict & Report](references/03-findings-verdict-and-report.md)).
 
-1. **Planning & Task Checkbox Audit**:
-   - Verify that `code_writer` ticked `- [x]` for each completed task in `phases/phase-NN-*.md` and recorded real `Evidence:`.
-   - Ensure implementation adheres strictly to locked-in decisions (`D-NN`) in `codebase-notes.md`. If code contradicts `D-NN`, reject with `CHANGES_REQUESTED`.
-2. **Clean Architecture & Security Audit** (see `{{slot:clean-architecture}}`):
-   - Verify Domain entities and repository interfaces have zero dependencies on web/DB frameworks.
-   - Verify parameterized queries (zero SQL injection risks) and explicit authentication/authorization guards on all endpoints.
-   - Verify transaction management: DB operations that mutate multiple tables must be wrapped in transactions with verified rollback on failure.
-3. **Adversarial Unit Test Audit (Anti-Happy-Path Bias)** (see `{{slot:unit-testing}}`):
-   - **MANDATORY REJECTION**: If unit tests only verify the **Happy Path** (200/201 valid response) while ignoring error paths, reject with `CHANGES_REQUESTED`!
-   - Require unit tests to cover:
-     * Validation failures (400 Bad Request on invalid payload types/missing fields).
-     * Auth failures (401 Unauthorized / 403 Forbidden).
-     * Resource missing (404 Not Found).
-     * Database transaction failure & rollback.
-   - Run the test suite independently via `run_command` to verify all tests pass.
-4. **API Schema Contract Audit**:
-   - Verify that endpoint request/response JSON schemas match 100% of `api_contract.json` (or `design.md` backend contract).
-   - When `3RD_PARTY_MOCKOON` is used, audit `mocks/<provider>_mockoon.json` against the agreed trigger table in `design.md`, verify via `mockoon-cli` / `curl`, and confirm `app/` implements only the real HTTP client (`httpx`) without fake provider classes.
+## 3. Mandatory Rules (`R1`–`R14`)
 
-## 3. Verdict
+| ID | Rule Summary | Reference |
+|---|---|---|
+| **R1–R3, R6, R9** | Fixed revision, strictly read-only, bug-hunt first, rerun CLI gates independently, diff + broken callers scope | [01 — Scope, Gates & Validators](references/01-scope-gates-and-validators.md) |
+| **R4–R5** | Grade axes with Backend rubric skills, trace every AC, reject happy-path-only or tampered tests (`TEST-TAMPER-001`) | [02 — Review Axes & Rubric](references/02-review-axes-and-rubric.md) |
+| **R7–R8, R10–R14** | No reviewer waivers (`PLAN_CONFLICT`), actionable `RV-NN` rows, verdict criteria, 3-round cap, delta re-review, report | [03 — Findings, Verdict & Report](references/03-findings-verdict-and-report.md) |
 
-- Return structured findings to `code_writer` when issues are found (`CHANGES_REQUESTED`).
-- Issue `APPROVED` only when all 4 axes pass cleanly and bug hunt left no `CONFIRMED` `BLOCKER`/`MAJOR`.
+## 4. Reference Guides
+
+| Guide | Topic |
+|---|---|
+| [01 — Scope, Gates & Validators](references/01-scope-gates-and-validators.md) | Fixed revision, read-only rule, Phase/Close/Mockoon gates, CLI checks, and layer boundary validation |
+| [02 — Review Axes & Rubric](references/02-review-axes-and-rubric.md) | The 5 Backend review axes, rubric skill links, AC traceability, and anti-happy-path test audit |
+| [03 — Findings, Verdict & Report](references/03-findings-verdict-and-report.md) | Unified `BLOCKER`/`MAJOR`/`MINOR` findings, no-waiver rules, verdict thresholds, rounds, and report structure |

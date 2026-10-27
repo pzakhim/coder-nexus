@@ -1,0 +1,69 @@
+# 01 — Report Structure, AC Roll-Up, and Feature Verdict (`RP1`–`RP4`, `RP6`, `RP7`, `RP11`, `RP12`)
+
+<!-- GEN: Why: Ensure readers find the feature verdict, honest counts, and limitations first, and guarantee that AC coverage and the final verdict are computed deterministically from per-case evidence. Kind: Mandatory — keep the purpose, adapt the structure (../../core/authoring-guide.md). -->
+<!-- GEN: Rules RP1, RP2, RP3, RP4, RP6, RP7, RP11, RP12. Start from references/report-template.md; use the workspace's real report paths, IDs, and surface tables (API / Service Surface and UI / Client Surface, or a single unified table). -->
+
+Write each test round report to `{{report_location}}` (naming convention: `{{report_naming}}`).
+
+---
+
+## 1. Verdict-First Executive Header (`RP6`, `RP7`, `RP11`)
+
+Every report starts with a 5-line executive block so any reader can see the decision and coverage gaps immediately:
+
+1. **Verdict**: `{{accepted_word}}` (`ACCEPTED`) | `{{changes_word}}` (`CHANGES_REQUESTED`) | `{{blocked_word}}` (`BLOCKED`) — plus a one-sentence rationale.
+2. **Case Counts (`RP7`)**: `<p> PASS · <f> FAIL · <b> BLOCKED · <n> NOT_RUN (of <total> cases)`. Percentages are allowed only alongside their explicit denominator.
+3. **AC Coverage Summary**: `<a_pass>/<a_total> PASS` — explicitly listing any `FAIL`, `BLOCKED`, or `NOT_RUN` AC IDs.
+4. **Open Defects**: `<blocker_count> BLOCKER · <major_count> MAJOR · <minor_count> MINOR`.
+5. **Limitations (`RP6`)**: Stubbed external providers, cases not run and why, roles or environments not covered, and known flaky checks (write `None` only when zero limitations exist).
+
+---
+
+## 2. Mandatory Report Body Sections (`RP1`, `RP2`, `RP12`)
+
+1. **Context & Environment Record (`RP1`)**:
+   - **Revision**: Tested Git commit SHA (`{{revision_notation}}`) and link to the corresponding Code Review report.
+   - **Test Plan**: Link and version of the approved test plan.
+   - **Environment**: Running services and versions, database/seed state, stubbed dependencies, test accounts by role, and whether services were started fresh or reused.
+2. **Acceptance Criteria Roll-Up Table (`RP3`)**:
+   - Maps each `AC ID` → `Mapped Case IDs` → `AC Result` (`PASS` / `FAIL` / `BLOCKED` / `NOT_RUN`).
+3. **Per-Case Execution Results (`RP2`)**:
+   - Organized as {{results_tables}} (`API / Service Surface` and `UI / Client Surface`, or a single unified table when the workspace has one surface).
+   - Columns: `Case ID` | `AC ID` | `Surface / Level` | `Result` | `Evidence Link` | `Defect ID`.
+4. **Defects (`RP5`)**: Detailed in [02-defects-and-retest-history.md]({{ref_02}}).
+5. **Deviations from the Plan (`RP12`)**:
+   - Expected results from the approved test plan are **never** edited or softened inside the report to make a failing check pass.
+   - Any approved departure from planned steps or environment setup is itemized here with its reason.
+6. **Re-Test History (`RP10`)**: Detailed in [02-defects-and-retest-history.md]({{ref_02}}).
+
+---
+
+## 3. Deterministic Per-Case to Per-AC Roll-Up (`RP3`)
+
+Compute each Acceptance Criterion's status strictly from all test cases mapped to that AC:
+
+| Mapped Case Results for the AC | Derived AC Result |
+|---|---|
+| Every mapped case is `PASS` | **`PASS`** |
+| Any mapped case is `FAIL` | **`FAIL`** |
+| Zero `FAIL`, and `>= 1` mapped case is `BLOCKED` | **`BLOCKED`** |
+| Zero `FAIL` and zero `BLOCKED`, and `>= 1` mapped case is `NOT_RUN` or `UNVERIFIED` | **`NOT_RUN`** |
+
+---
+
+## 4. Deterministic Feature Verdict Decision Table (`RP4`, `RP7`)
+
+Evaluate the rules below in order (`shared_contracts/flags_and_statuses.md`):
+
+| Priority | Condition Across All ACs, Cases & Defects | Feature Verdict |
+|---|---|---|
+| **1** | Any AC is `FAIL`, **or** `>= 1` open `BLOCKER` or `MAJOR` defect exists | **`{{changes_word}}` (`CHANGES_REQUESTED`)** |
+| **2** | Zero `FAIL` ACs and zero open `BLOCKER`/`MAJOR` defects, **but** any AC or planned case is `BLOCKED`, `NOT_RUN`, or `UNVERIFIED` | **`{{blocked_word}}` (`BLOCKED`)** — name the missing environment, tool, or data evidence |
+| **3** | Every AC is `PASS`, all planned cases are `PASS`, and `0` open `BLOCKER` or `MAJOR` defects remain (`MINOR` defects, if any, are logged and tracked) | **`{{accepted_word}}` (`ACCEPTED`)** |
+
+### Honest Counting Rules (`RP6`, `RP7`)
+- **`NOT_RUN`, `BLOCKED`, and `UNVERIFIED` never count as `PASS`**: Do not merge unrun or blocked checks into passing totals or round up summary phrases ("almost all passed").
+- **Stubbed Dependencies (`RP6`)**: A case executed against a labelled stub proves only the application's handling of that stubbed contract; list the stubbed dependency under **Limitations** at the top of the report.
+
+<!-- custom:start -->
+<!-- custom:end -->

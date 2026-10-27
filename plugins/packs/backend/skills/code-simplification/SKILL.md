@@ -1,57 +1,56 @@
 ---
 name: code-simplification
-description: Simplification standard for a Backend (Python 3.12+ / FastAPI / Pydantic v2 / SQLAlchemy 2.x async) service - reduces the code changed in the current task or phase to the simplest form a newcomer understands on first read while behavior stays exactly the same - only after ruff, mypy and pytest are green, one named smell at a time (needless class, single-implementation Protocol, generic repository, `**kwargs` pass-through, dict as record, hand-rolled stdlib), delete before writing, stdlib and framework first, YAGNI, rule of three, small steps with checks, never weakening tests, Pydantic validation, authorization or dependency boundaries, with stop rules and the one-line `simplify:` report. Use after implementation checks pass and before the self-check for READY_FOR_REVIEW, when asked to "clean this up", "simplify", "this is too complex" or "over-engineered", or when a review finding names unnecessary complexity in the diff, even if the word "simplify" is not used. Not for red code, code outside the diff, new features, bug fixes or any behavior change.
+description: Simplification standard for a Backend (Python 3.12+ / FastAPI / Pydantic v2 / SQLAlchemy 2.x async) service - reduces the code changed in the current task or phase to the simplest form a newcomer understands on first read while behavior stays exactly the same - only after ruff, mypy and pytest are green, through four lenses (reuse, simplification, efficiency, altitude) with one named smell at a time (needless class, single-implementation Protocol, generic repository, `**kwargs` pass-through, N+1 query, special case in a shared dependency, hand-rolled stdlib), small steps with checks, never weakening tests, Pydantic validation, authorization or dependency boundaries, with stop rules and the one-line `simplify:` report. Use after implementation checks pass and before the self-check for READY_FOR_REVIEW, when asked to "clean this up", "simplify", "this is too complex" or "over-engineered", or when a review finding names unnecessary complexity in the diff, even if the word "simplify" is not used. Not for red code, code outside the diff, new features, bug fixes or any behavior change.
 ---
 
 # Code Simplification — Backend (Python / FastAPI)
 
 Goal: code a newcomer reads, understands and maintains on the first read. Not the fewest lines: a change is a simplification only when a reader holds **fewer concepts** afterwards (names, branches, modes, layers). Moving the same complexity somewhere else is not simpler.
 
-## The loop
+All check flags (`PASS` / `FAIL`) and review severities (`BLOCKER` / `MAJOR` / `MINOR`) follow `shared_contracts/flags_and_statuses.md` and `work-item-contract` (`references/handoff-and-status.md` §9).
 
-1. `ruff check`, `mypy` and the affected `pytest` tests are green; take only the phase's diff ([01 — when and scope](references/01-when-and-scope.md)).
-2. Read callers, side effects, error paths, transactions and tests of the code ([02 — behavior safety](references/02-behavior-safety.md)).
-3. Name the smell from the catalog; skip code that is already clear ([03 — smell catalog](references/03-smell-catalog.md)).
-4. One small simplification → rerun `ruff format`, `ruff check`, `mypy` and the affected tests.
-5. Stop at the stop criteria ([04 — stop criteria](references/04-stop-criteria.md)).
-6. Report one `simplify:` line ([05 — report and review](references/05-report.md)).
+## 1. The loop
+
+1. `ruff check`, `mypy` and the affected `pytest` tests are green; take only the phase's diff ([01](references/01-scope-and-safety.md)).
+2. Read callers, FastAPI dependencies, side effects, error paths, transactions and tests of the code ([01](references/01-scope-and-safety.md)).
+3. Pass the diff through the four lenses — **Reuse, Simplification, Efficiency, Altitude** — and name each smell from the catalog; skip code that is already clear ([02](references/02-smell-catalog.md)).
+4. One small simplification → rerun `ruff format --check`, `ruff check`, `mypy` and the affected tests (`PASS` / `FAIL`).
+5. Stop at the stop criteria; findings that would change behavior or reach outside the diff go to Concerns ([01](references/01-scope-and-safety.md) §7).
+6. Report one `simplify:` line ([03](references/03-report-and-review.md)).
 
 A simplification made after READY_FOR_REVIEW is a new revision: rerun the affected checks; earlier review and test evidence for that code no longer counts (`evidence-standard`).
 
-## Rules
+## 2. Rules (Mandatory Compliance)
 
-| # | Rule | Why | Severity | Enforced by |
-|---|---|---|---|---|
-| SM1 | **Behavior identical.** Same inputs, outputs, HTTP status codes and response bodies, raised exceptions and messages, side effects, query count and ordering, transaction boundaries, state transitions and performance limits. Existing tests pass unchanged (an import path after a move is the only allowed edit). | A "simplification" that changes behavior is an unreviewed feature change. | P1 | `pytest` on the affected tests; review |
-| SM2 | **Understand first.** Read the callers (`rg -n`), FastAPI dependencies, side effects, error paths, session/transaction lifecycle and tests before editing. | Code that looks redundant often guards an edge case (a retry, a rollback, a tenant filter). | P2 | Review |
-| SM3 | **A named smell is required.** Pick a row from [03](references/03-smell-catalog.md) or a rule from `{{slot:clean-code}}`; "I had to read it twice" counts only when you can say what forced the second read. | Simplifying clear code is churn that costs a review round. | P3 | Review |
-| SM4 | **Delete before writing.** Ask in order: needed at all? already in the repository? shipped by the stdlib, FastAPI, Pydantic or SQLAlchemy? Only then write the minimum. | The cheapest code to maintain is code that does not exist. | P2 | Review; ruff `F401`, `F841`, `ARG`, `ERA001` where enabled |
-| SM5 | **One way of doing things.** Reuse the patterns and libraries already in the repository; no new dependency in `pyproject.toml` for what a few lines do (if one is added, the reason goes into the hand-off). | Two ways of doing one thing double the learning and the bugs. | P2 | Review of `pyproject.toml` diff |
-| SM6 | **Small steps with checks.** One simplification at a time; run the formatter, linter, type checker and affected tests after each and keep the evidence. | A failing check after one small step points straight at the cause. | P2 | Evidence rows in the hand-off |
-| SM7 | **Never weaken protection.** Never edit a test to make a simplification pass; never remove Pydantic validation, error mapping, authorization or data-scope checks, `Depends` boundaries, transactions or the API contract; never leave a wrapper, alias or re-export after moving code (`{{slot:clean-code}}` wrapper and alias rules). | These remove safety, not complexity. | P1 | Review; `pytest` |
-| SM8 | **Stop** when behavior or a public contract would change, when a `D-NN` or `{{slot:clean-architecture}}` keeps the abstraction, when the gain is cosmetic, or when a hot path would change without a measurement ([04](references/04-stop-criteria.md)). | Past these points it is a design change that needs `change-control`, not simplification. | P1 | Review |
-| SM9 | **Only after checks pass, only the changed code.** Simplify the phase's diff once it is green; anything outside goes into the hand-off's Concerns. | Simplifying red code or code outside the diff mixes refactoring with behavior change and bloats review. | P1 | `git diff --name-only`; review |
-| SM10 | **YAGNI.** No `Protocol`, ABC, factory, settings field or layer with one implementation, a constant value or one caller, unless a `D-NN` or a `{{slot:clean-architecture}}` port requires it. | Speculative flexibility costs every reader and is rarely used as imagined. | P2 | Review |
-| SM11 | **Rule of three for logic.** Extract shared logic on the third repetition; two may stay. Definitions (Pydantic models, ORM models, enums, SQL) are never duplicated. | Early extraction couples code that later diverges; duplicated definitions drift. | P2 | Review |
-| SM12 | **Flat and plain.** Guard clauses over nesting (limits from `{{slot:clean-code}}`); no nested comprehensions, `reduce` chains, metaclasses, `getattr` dispatch or dynamic imports where plain code reads at once; composition over inheritance for reuse. | Clever code saves the writer seconds and costs every reader minutes. | P2 | ruff `C901`, `PLR09xx`, `SIM`, `RET` where enabled; review |
-| SM13 | **Report one line.** The `simplify:` line of [handoff-and-status §9](../work-item-contract/references/handoff-and-status.md); deliberate shortcuts are named with their limit and upgrade path. | Reviewers see the intent; shortcuts do not silently become permanent. | P3 | Review of the hand-off |
+| Rule | Principle | Why | Reference |
+|---|---|---|---|
+| **S1** | **Only after checks pass, only the changed code.** Anything outside the phase's diff goes into the hand-off's Concerns. | Simplifying red code or code outside the diff mixes refactoring with behavior change. | [01](references/01-scope-and-safety.md) |
+| **S2** | **Behavior identical.** Same outputs, HTTP status codes and bodies, exceptions and messages, side effects, query count and order, transaction boundaries, state transitions. Existing tests pass unchanged (an import path after a move is the only allowed edit). | A "simplification" that changes behavior is an unreviewed feature change. | [01](references/01-scope-and-safety.md) |
+| **S3** | **Understand first.** Read callers (`rg -n`, plus string/dynamic use), `Depends` chains, side effects, error paths, session lifecycle and tests. | Code that looks redundant often guards an edge case (a retry, a rollback, a tenant filter). | [01](references/01-scope-and-safety.md) |
+| **S4** | **A named smell is required.** One catalog row under one of the four lenses, or a `{{slot:clean-code}}` rule. | Simplifying clear code is churn that costs a review round. | [02](references/02-smell-catalog.md) |
+| **S5** | **Reuse before writing** *(Reuse)*. Needed? → in the repo? → stdlib, FastAPI, Pydantic or SQLAlchemy? → only then the minimum. No new `pyproject.toml` dependency for a few lines. | The cheapest code to maintain is code that does not exist. | [02](references/02-smell-catalog.md) |
+| **S6** | **YAGNI.** No `Protocol`, ABC, factory, settings field or layer with one implementation, a constant value or one caller, unless a `D-NN` or a `{{slot:clean-architecture}}` port requires it. | Speculative flexibility costs every reader. | [02](references/02-smell-catalog.md) |
+| **S7** | **Rule of three for logic.** Extract on the third repetition. Definitions (Pydantic/ORM models, enums, SQL) are never duplicated (`{{slot:clean-code}}` C1). | Early extraction couples code that later diverges. | [02](references/02-smell-catalog.md) |
+| **S8** | **Flat and plain** *(Simplification)*. No derivable state, copy-paste variants, deep nesting (C6 limit) or clever code (nested comprehensions, `reduce`, metaclasses, `getattr` dispatch). | Clever code costs every reader minutes. | [02](references/02-smell-catalog.md) |
+| **S9** | **No wasted work** *(Efficiency)*. No N+1 queries, repeated reads in one request, needlessly sequential independent awaits, blocking work at import or in async paths. Hot-path changes need a measurement. | Wasted work in new code is paid on every request. | [02](references/02-smell-catalog.md) |
+| **S10** | **Fix at the right depth** *(Altitude)*. No special cases for one endpoint inside shared dependencies or middleware; fix the cause, not the symptom. Outside the diff → Concerns. | A patched symptom leaves special cases every reader must remember. | [02](references/02-smell-catalog.md) |
+| **S11** | **Small steps with checks.** One simplification at a time; checks after each, with evidence. | A failing check after one small step points straight at the cause. | [01](references/01-scope-and-safety.md) |
+| **S12** | **Never weaken protection.** No edited tests, no removed Pydantic validation, error mapping, authorization/data-scope checks, `Depends` boundaries or transactions, no leftover wrapper/alias (C1), no `# type: ignore` / `# noqa` to pass. | These remove safety, not complexity. | [01](references/01-scope-and-safety.md) |
+| **S13** | **Stop** when behavior or a contract would change, a `D-NN` keeps the abstraction, the gain is cosmetic, a hot path changes unmeasured, or the next step leaves the diff. | Past these points it needs `change-control`, not simplification. | [01](references/01-scope-and-safety.md) |
+| **S14** | **Report one line.** The §9 `simplify:` line; skipped findings in Concerns; shortcuts with their limit and upgrade path. | Reviewers see intent; nothing is silently dropped or made permanent. | [03](references/03-report-and-review.md) |
 
-Severity uses the `P1`/`P2`/`P3` rule-violation scale of [handoff-and-status §9](../work-item-contract/references/handoff-and-status.md); a "simplification" that produced a wrong result is graded there as a defect instead.
+## 3. Reference Guides
 
-## Relationship with other skills
+| Topic | Reference |
+|---|---|
+| When and scope, behavior safety and Python traps, per-step checks, never-rules and stop criteria | [01 — Scope & Safety](references/01-scope-and-safety.md) |
+| Smell → technique catalog by lens (Reuse, Simplification, Efficiency, Altitude), rule of three, what to leave alone | [02 — Smell Catalog](references/02-smell-catalog.md) |
+| `simplify:` report line, skipped findings, shortcuts and review grading (`BLOCKER` / `MAJOR` / `MINOR`) | [03 — Report & Review](references/03-report-and-review.md) |
 
-- Thresholds (function length, parameters, nesting), naming, wrapper/alias, dead-code and duplicated-definition rules: `{{slot:clean-code}}` — linked, not repeated here.
+## 4. Relationship with Other Skills
+
+- Thresholds (function length, parameters, nesting), naming, wrappers/aliases, dead code and duplicated definitions: `{{slot:clean-code}}` — linked, not repeated here.
 - Placement, ports and who may import whom: `{{slot:clean-architecture}}`; decisions (`D-NN`) keep the abstractions they require.
 - Guards from `{{slot:secure-coding-standards}}` are never simplified away.
-- Called from the simplicity pass of `incremental-implementation`, before the `bug-hunt` self-check hand-off; findings are graded by `{{slot:code-review}}` with the §9 scale.
+- Called from the simplicity pass of `incremental-implementation`, before the `bug-hunt` self-check hand-off; findings are graded by `{{slot:code-review}}`.
 - Red checks: fix with `{{slot:root-cause-debugging}}` first.
-
-## Not adopted
-
-- "Fewer lines" as the target: the goal is first-read understanding; net lines are reported, never targeted.
-- Splitting a large file before adding to it: file splitting and placement are planned work (`{{slot:clean-architecture}}`, the plan's file list), not an in-task simplification.
-- Replacing repeated `if`/`match` with class polymorphism: it adds hierarchies to small tasks; a lookup dict or a single `match` is the simpler form.
-
-## Sources
-
-[references/sources.md](references/sources.md)

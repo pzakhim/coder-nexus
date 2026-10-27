@@ -1,101 +1,78 @@
 ---
 name: create-database-migrations-skill
-description: Write a workspace's own database-migrations skill from the skill-factory knowledge base - how schema and data changes are designed, verified and delivered safely - the real migration runner and targets, authority to apply, expand/backfill/contract, idempotent ALTERs, defaults and constraints on existing data, locks and volume, scope-aware backfills, verification on a disposable database, backup and recovery, migration states and the DevOps handoff packet - for the backend of any stack (Alembic, Django, Prisma, TypeORM, golang-migrate, raw SQL runners). Use whenever the user wants to set up, standardize or update how the coder agent writes or ships migrations in a workspace, or says things like "tạo skill migration", "quy trình migrate DB", "thay đổi schema an toàn", even if they do not say "skill". Writes .agents/skills/database-migrations/, then trial-runs it on a real schema change.
+description: "Generate a workspace's `database-migrations` skill from the skill-factory knowledge base — enforcing the 3-tier environment authority model (Local/Disposable = autonomous; Develop = only on explicit user request; Staging & Production = strictly DevOps via handoff packet), expand/backfill/contract rollout, lock-aware DDL, scoped/batched data backfills, disposable-DB verification (`PASS` / `FAIL`), and the DevOps Migration Handoff Packet (changes + reasons + `develop`/`staging`/`production` schema & data runbook) across any migration runner (Alembic, Django, Prisma, TypeORM, golang-migrate, Drift, SQL runners)."
 argument-hint: "[migration tool] [database]"
 ---
 
 # Create Database Migrations Skill
 
-Goal: produce `<workspace>/.agents/skills/database-migrations/` — how the Code Writer designs, verifies and delivers schema/data changes in this workspace's backend, with its real runner, targets, authority and recovery rules. Backend only: in a fullstack repo the skill covers `<be_dir>`.
+Goal: produce `<workspace>/.agents/skills/database-migrations/` — governing how the Code Writer, Reviewer, and Test Runner design, verify, and hand off schema and data migrations in this workspace (`{{target_dir}}`).
 
-User input: $ARGUMENTS
+User input: `$ARGUMENTS`
 
-Follow `~/.claude/skill-factory/core/workflow.md`, starting with **Step 0** (never write into `.agents/plugins/coder-nexus/` or extension-regenerated role files; a workspace skill overrides the fixed skill of the same name). Ownership: `~/.claude/skill-factory/core/coder-skill-family.md` — clean-architecture decides where migrations live; secure-coding-standards covers sensitive data moved by a migration; this skill covers how a migration is designed, verified and delivered.
+Follow [../../core/workflow.md](../../core/workflow.md), starting with **Step 0** (never write into `.agents/plugins/coder-nexus/` or extension-regenerated role files; a workspace skill overrides the fixed pack skill of the same name). Ownership: [../../core/coder-skill-family.md](../../core/coder-skill-family.md) — `clean-architecture` decides where migrations live; `secure-coding-standards` covers sensitive data moved by a migration; this skill covers how a migration is designed, verified, and handed off to DevOps.
 
-## Step 1 — Context Card (+ migration setup)
+## Step 1 — Context Card (+ Migration Setup)
 
-Run the core Context Card (`~/.claude/skill-factory/core/detect-stack.md`) and P1–P2 (`~/.claude/skill-factory/core/existing-project.md`). Additionally collect:
+Run the core Context Card ([../../core/detect-stack.md](../../core/detect-stack.md)) and P1–P2 ([../../core/existing-project.md](../../core/existing-project.md)). Additionally collect:
 
-| Field | Where to look |
+| Field | Where to Inspect |
 |---|---|
-| Runner | Alembic (`alembic.ini`, `versions/`), Django (`migrations/`), Prisma (`schema.prisma`, `migrations/`), TypeORM, golang-migrate, or a custom SQL runner (`schema/manifest.json`, a loader module) — read its code, do not assume |
-| Commands | `Makefile` / scripts: migrate, status, validate, backup; which are safe and which reset or clone data |
-| Targets | How the destination database is selected (env vars), local/disposable DB, DEV/STG/PROD, read-only sources that are not targets |
-| Authority | Who may apply DDL to which target; DevOps ownership; "credentials do not grant authority" rules |
-| Data scopes | Tenant/environment/owner columns that backfills must respect |
-| Existing skill | `.agents/skills/*migration*` (e.g. `be-database-migration`) |
-| Database engine & version | PostgreSQL/MySQL/SQLite version — decides lock behavior and online index support |
+| **Runner** | Alembic (`alembic.ini`, `versions/`), Django (`migrations/`), Prisma (`schema.prisma`, `migrations/`), TypeORM, golang-migrate, Drift, or custom SQL runner — read its config/code, never assume |
+| **Commands** | `Makefile` / `pyproject.toml` / `package.json`: create, upgrade, downgrade, status/check, offline `--sql`, backup; which commands are safe vs. forbidden (`reset`, `db push`, `create_all`, `seed`) |
+| **Targets & 3-Tier Authority** | (1) **Local / Disposable DB**: agent runs autonomously for verification; (2) **Develop (`develop`)**: agent runs **only when the user explicitly requests/approves it**; (3) **Staging & Production (`staging`, `production`)**: **strictly executed by DevOps** from the handoff packet, never by the agent |
+| **Data Scopes** | Tenant/environment/organization/owner columns that data backfills must filter by |
+| **Database Engine & Version** | PostgreSQL / MySQL / SQLite version — determines lock behavior, `CONCURRENTLY` index builds, and `NOT VALID` constraints |
 
-## Step 2 — Map the base rules
+## Step 2 — Enforce Base Rules (`M1`–`M14`)
 
-Read `references/base-rules.md`, `references/patterns.md`, `references/tooling-by-stack.md`. For each rule M1–M14: adopted, adapted, or "not adopted" with a reason. M1, M2, M3, M5, M9, M10 are never "not adopted".
+Read [references/base-rules.md](references/base-rules.md), [references/patterns.md](references/patterns.md), and [references/tooling-by-stack.md](references/tooling-by-stack.md). All rules **M1–M14** are **mandatory compliance** — translate each rule into the workspace's exact migration runner syntax, commands, and target environments.
 
 ## Step 3 — Propose
 
-- **Runner and targets** on one page: commands with cwd, which are safe, which are forbidden for delivery (reset/sync/seed), how the target is identified without secrets.
-- **Design rules** with the engine's real lock behavior and the safe patterns that apply.
-- **Verification recipe** on a disposable database.
-- **Delivery:** direct apply (who, where) vs handoff packet; states and evidence.
+Present on one screen:
+- **Runner, Commands & 3-Tier Target Authority**: exact commands with `cwd`, forbidden commands, and the 3-tier authority boundary (`Local/Disposable` vs `Develop on explicit user request` vs `Staging/Production by DevOps`).
+- **Safe Schema & Data Backfill Rules**: engine lock behavior, `Expand → Backfill → Contract`, and batched/scoped backfill patterns.
+- **Disposable-DB Verification Gates (`PASS` / `FAIL`)**: clean install, upgrade with seeded data, backfill invariants, downgrade/upgrade reversibility, and automated migration tests.
+- **DevOps Migration Handoff Packet**: mandatory summary of changes + reasons + step-by-step schema & data migration runbook for `develop`, `staging`, and `production`.
 
-## Step 4 — Gate (user confirms)
+## Step 4 — Gate (User Confirms)
 
-One AskUserQuestion round where possible: (1) runner, commands and forbidden commands, (2) targets and authority, (3) verification recipe, (4) delivery path, states and recovery.
+Confirm in one round: (1) runner, commands, and forbidden commands, (2) 3-tier target authority (`develop` on user request vs `staging`/`production` via DevOps handoff), (3) disposable-DB verification recipe, and (4) DevOps handoff packet structure.
 
-## Step 5 — Author
+## Step 5 — Author (Cohesive 3-File `references/` Layout)
 
-Read `~/.claude/skill-factory/core/authoring-guide.md`. Templates are suggested shapes; **Mandatory** content is fixed. Layout: always **flat** (`references/01–05`), scoped to the backend.
+Read [../../core/authoring-guide.md](../../core/authoring-guide.md). Generate a concise `SKILL.md` (< 120 lines) and 3 cohesive reference files under `references/`:
 
-| Output | Template | Kind | Why it exists |
+| Output File | Template | Kind | Purpose |
 |---|---|---|---|
-| `SKILL.md` | `templates/SKILL.md.tmpl` | **Mandatory** | The never-list and the delivery path on one screen |
-| `references/01-runner-and-targets.md` | `templates/01-runner-and-targets.md.tmpl` | **Mandatory** | Wrong runner or wrong target is the most expensive migration mistake |
-| `references/02-designing-a-migration.md` | `templates/02-designing-a-migration.md.tmpl` | **Mandatory** | Expand/backfill/contract, locks and existing data decide whether production survives |
-| `references/03-verification.md` | `templates/03-verification.md.tmpl` | **Mandatory** | Clean install + upgrade with data + rerun prove it before any shared target |
-| `references/04-applying-and-recovery.md` | `templates/04-applying-and-recovery.md.tmpl` | **Mandatory** | Authority, backup, order, postchecks, states |
-| `references/05-handoff-packet.md` | `templates/05-handoff-packet.md.tmpl` | Suggested (Mandatory when the coder may not apply to shared targets) | What DevOps needs to apply it safely |
-
-Writing rules: keep each template's purpose, give every rule its reason, real commands with cwd, never a secret value (reference the configuration instead), replace every `{{…}}`, delete every `<!-- GEN … -->`, English, < ~200 lines per file, custom block at the end.
+| `SKILL.md` | [templates/SKILL.md.tmpl](templates/SKILL.md.tmpl) | **Mandatory** | 3-tier environment authority table, Never-list, 5-step workflow, `M1`–`M14` index, `PASS` / `FAIL` CLI gates, and `<!-- {{profile_references}} -->` |
+| `references/01-runner-targets-and-workflow.md` | [templates/references/01-runner-targets-and-workflow.md.tmpl](templates/references/01-runner-targets-and-workflow.md.tmpl) | **Mandatory** | Runner setup, autogenerate hand-review, 3-tier target authority (`Local/Disposable`, `Develop` on user request, `Staging/Production` by DevOps), and revision rules (`M1`–`M3`, `M5`, `M13`) |
+| `references/02-safe-schema-and-backfill-patterns.md` | [templates/references/02-safe-schema-and-backfill-patterns.md.tmpl](templates/references/02-safe-schema-and-backfill-patterns.md.tmpl) | **Mandatory** | `Expand → Backfill → Contract` lifecycle, lock-aware DDL, online index/constraint patterns, and batched/scoped data backfills (`M4`, `M6`–`M8`, `M14`) |
+| `references/03-verification-states-and-handoff.md` | [templates/references/03-verification-states-and-handoff.md.tmpl](templates/references/03-verification-states-and-handoff.md.tmpl) | **Mandatory** | Disposable-DB verification (`PASS` / `FAIL`), migration states, DevOps Handoff Packet (Changes & Reasons + `develop`/`staging`/`production` schema & data runbook), and `BLOCKER` / `MAJOR` / `MINOR` review rubric (`M9`–`M12`) |
 
 ## Step 6 — Wire
 
-1. Pointer in `CLAUDE.md` / `AGENTS.md` (unless an equivalent exists):
-   ```markdown
-   ## Database migrations
-   Schema and data changes follow `.agents/skills/database-migrations/SKILL.md`.
-   ```
-2. Offer to link it from the coder and reviewer role files (P3).
+Add a pointer in `CLAUDE.md` / `AGENTS.md` (unless already present):
+```markdown
+## Database migrations
+Schema and data changes follow `.agents/skills/database-migrations/SKILL.md`.
+```
 
-## Step 7 — Trial run
+## Step 7 — Trial Run
 
-`~/.claude/skill-factory/core/trial-run.md`. Task ideas:
+Follow [../../core/trial-run.md](../../core/trial-run.md). Test prompts:
+- Add a `NOT NULL` column to a populated multi-tenant table and backfill existing rows.
+- User asks: *"Migrate this schema and data change to `develop`, and prepare the handoff for `staging` and `production`"* — verify that the agent checks explicit user authorization for `develop`, never runs against `staging`/`production`, and produces the complete DevOps handoff packet with changes, reasons, and per-environment commands.
 
-- Add a NOT NULL column to a large, busy table.
-- Rename a column used by the API and a worker.
-- Add a unique constraint where duplicates may already exist; backfill a column per tenant.
-- "Apply it to staging" without authority — does the agent produce a handoff packet instead?
+## Step 8 — Description & Step 9 — Verify, Record & Report
 
-Compare: expand/backfill/contract used, lock impact considered, verification on a disposable DB, forbidden commands avoided, correct state reported.
-
-## Step 8 — Description
-
-Per the authoring guide: workspace name; situations (new table/column/index, constraint, backfill, rename, "migrate the DB", deploy a schema change); team trigger words. Should not trigger for business-content releases or seed data edits.
-
-## Step 9 — Verify, record & report
-
-`checklist.md` + `~/.claude/skill-factory/core/checklist-common.md`; record provenance (`~/.claude/skill-factory/core/provenance.md`); report deviations, rules adapted/not adopted, trial results.
-
-## Update mode
-
-Existing `.agents/skills/database-migrations/` or a workspace migration skill: registered → sync (`~/.claude/skill-factory/core/sync-protocol.md`); not registered → adopt (P3, P5: keep runner facts, forbidden commands, states and packet format verbatim).
-
-## Changing this generator
-
-Follow `~/.claude/skill-factory/core/versioning.md` (work under `## Unreleased`, bump once per batch).
+Verify against [checklist.md](checklist.md) and [../../core/checklist-common.md](../../core/checklist-common.md), then record provenance ([../../core/provenance.md](../../core/provenance.md)).
 
 ## Resources
 
-- `references/base-rules.md` — M1–M14 with reasons
-- `references/patterns.md` — safe patterns for common changes
-- `references/tooling-by-stack.md` — runners, commands and engine lock notes
-- `templates/` — `SKILL.md.tmpl`, `01–05` (suggested shapes)
-- `checklist.md` — topic checks
+- [references/base-rules.md](references/base-rules.md) — Mandatory rules `M1`–`M14`
+- [references/patterns.md](references/patterns.md) — Safe patterns for common schema & data changes
+- [references/tooling-by-stack.md](references/tooling-by-stack.md) — Runners, commands, and engine lock notes
+- [templates/SKILL.md.tmpl](templates/SKILL.md.tmpl) & `templates/references/01..03.md.tmpl`
+- [checklist.md](checklist.md) — Topic verification checklist

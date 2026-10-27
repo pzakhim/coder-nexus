@@ -1,40 +1,64 @@
-# Mode: planning — Core gaps, trade-offs, test data (`planning`, Gate 2)
+# Mode: Planning — Core Gaps, Technical Trade-Offs & Test Data (`planning`, Gate 2)
 
-Use with [SKILL.md](../SKILL.md). Business behavior is settled at Gate 1; this mode only asks what the design needs. Present the options of each trade-off with `solution-options` (technical options), then close the choice here as a `D-NN`.
+Use with [`SKILL.md`](../SKILL.md), [`01 — Solution Options & Divergent Pass`](../references/01-solution-options-and-divergent-pass.md), and `{{slot:architecture-design}}`. Business behavior and UI/UX workflows are already locked at Gate 1 (`spec_writer`); this mode asks **only** what Gate 2 (`design.md`) requires.
 
-## 1. Before asking
+## 1. Zero-Re-Ask Precondition (Before Queuing Any `Q-NN`)
 
-- Read `requirements.md` and `codebase-notes.md` (`## 1. Decision Log`, `## 2. Glossary`, `## 3. Verified Baseline Facts`) first. Never re-ask a `D-NN`.
-- Run the codebase scans of `{{slot:architecture-design}}` and record facts in `## 3`. Facts are looked up, never asked (SKILL §4).
+1. Read `requirements.md`, extracted Figma outputs (`.superpowers/sources/<ISSUE-ID>/figma/` `tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png` when present), and `codebase-notes.md` (`## 0A. Source Inventory`, `## 1. Decision Log (D-NN)`, `## 2. Glossary`, `## 3. Verified Baseline Facts`).
+2. **Never re-ask a locked `D-NN`**, business rule (`BR-NN`), acceptance criterion (`AC-NN`), or UI workflow/screen decision from Gate 1.
+3. Run the read-only codebase intelligence scan defined in `{{slot:architecture-design}}` and record all discovered paths, classes, DI bindings, and routes in `codebase-notes.md` → `## 3`. Codebase facts are looked up, never asked (`SKILL.md` §4).
 
-## 2. What to queue
+## 2. Technical Topics Owned by `planning`
 
-| Topic | Queue a `Q-NN` when |
+Queue a `Q-NN` (`Owner: planning`) only when:
+
+| Topic | When to Queue a `Q-NN` |
 |---|---|
-| Core gap | The foundation (`{{slot:core-package-usage}}`) lacks a component, service or pattern the behavior needs: build it privately, extend the foundation, or change the behavior. |
-| Core risk | A requirement conflicts with the existing architecture or with overlapping business logic in the code. |
-| Architecture trade-off | Two or more viable layer splits, state approaches, data flows or integration shapes remain after the scan. |
-| Component choice | Several viable kit or framework components match one need. One viable match is chosen without asking and recorded as a fact. |
-| API contract shape | spec_writer settled the business input/output, but the technical contract (paths, error codes, pagination) has more than one viable form. |
-| Test data | Always, once per work item (§3). |
+| **Core gap** | The active foundation (`{{slot:architecture-design}}`) lacks a component, service, or base pattern the behavior requires: build privately in the module, extend shared foundation, or ask `spec_writer` to adjust scope. |
+| **Core risk / Conflict** | A Gate 1 requirement conflicts with existing module boundaries or overlapping runtime logic discovered in the codebase scan. |
+| **Architecture trade-off** | 2–3 materially different layer splits, state-management shapes, caching policies, or integration patterns remain viable after the codebase scan. |
+| **Component choice** | Multiple viable Kit or shared components fit the same UI need. *(When exactly one verified component fits, select it as a fact without asking.)* |
+| **API contract shape** | `spec_writer` settled business inputs/outputs, but technical transport details (endpoint structure, pagination cursor vs offset, error code mapping) have multiple viable forms. |
+| **Test data convention** | Confirmed once per work item (§4) so Mockoon/fixtures and unit tests share one deterministic dataset. |
 
-Each technical `Q-NN` names the `G-NN` it serves. If a goal cannot be met technically, raise it with `spec_writer` and the user; never narrow a goal silently.
+Every technical `Q-NN` names the `G-NN` it serves. Technical options never alter user-visible business behavior; if a technical constraint forces a behavior or scope change, route it via the coordinator (`dev-team`) to `spec_writer` before presenting to the user.
 
-## 3. Test data convention
+## 3. Drafting & Comparing Technical Options (`planning` Solution Options)
 
-Agree one row per behavior so fixtures and developer unit tests share a contract:
+Apply [`01 — Solution Options & Divergent Pass`](../references/01-solution-options-and-divergent-pass.md) when multiple viable technical designs exist:
 
-| Case | Agree with the user |
+- **Focused choices** (which of two existing Kit widgets, which error mapping): compare directly across the 5 standard fields (`What it is`, `Goals`, `Gains`, `Costs`, `Evidence`).
+- **Architectural / cross-layer choices** (new module boundary, external contract, complex state/sync seam): explore 2–4 distinct design constraints in parallel (via read-only subagents or blank-page passes) before converging:
+  1. *Smallest interface*: 1–3 entry points hiding internal complexity.
+  2. *Optimize common caller*: make the default path trivial.
+  3. *Reuse first*: extend existing codebase primitives before adding new abstractions.
+  4. *Explicit test seam*: isolate external I/O behind a minimal port.
+
+Compare candidate designs across 5 engineering criteria:
+
+| Criterion | Question |
 |---|---|
-| Pass / Default | Which input or data set represents the normal success. |
-| Fail | Which input triggers each error the requirements name (validation, permission, server error). |
-| Empty | Which input returns no data, and what the user then sees. |
+| **Depth** | How much capability does a caller/test gain per unit of interface surface? |
+| **Locality** | When this feature evolves, how many files/layers must change together? |
+| **Seams** | Can behavior be unit-tested without live I/O, without adding speculative single-implementation interfaces? |
+| **Profile Fit** | Does it comply with `{{slot:clean-architecture}}` and the active workspace profile (`architecture_profile.mode`)? |
+| **Reversibility** | How costly is it to reverse or replace this choice later? |
 
-Record the agreement as one `D-NN` (several rows may be confirmed together when they only restate the requirements; see [batch-confirm](batch-confirm.md)).
+Keep the **2–3 strongest options**, put `(Recommended)` first, ask as one `Q-NN`, log all options in `Options Considered` (`D-NN`), and write **only** the confirmed choice into `design.md` (`## Architectural decision`). Significant long-lived decisions may later be promoted via [`architecture-decision-records`](../../architecture-decision-records/SKILL.md).
 
-## 4. Role rules
+## 4. Test Data Convention (One `D-NN` per Work Item)
 
-- Never write `design.md` with `Option A / Option B`, an open question or an unconfirmed trade-off. Close every technical row first, then write `design.md` in one straight line citing `D-NN`; `## Goal alignment` (DESIGN-007) maps each goal to the design.
-- Record `Owner: planning` on every row and decision this mode creates.
-- A business-rule, permission or scope question found while designing goes to spec_writer's queue (Gate 1 again when it changes a goal or scope).
-- Keep `codebase-notes.md` in the version folder for the whole `vN/` lifecycle; code_writer, code_reviewer, test runner and docs writer read it.
+Agree on one deterministic row per behavior so mock fixtures and unit tests assert against the same data:
+
+| Case | What to Confirm |
+|---|---|
+| **Pass / Default** | Input and dataset representing normal success |
+| **Fail** | Input/trigger producing each required error state (validation `400`, auth `401`/`403`, timeout, server `500`) |
+| **Empty** | Input/query returning zero records and the resulting empty state |
+
+Rows that merely restate approved Gate 1 requirements may be confirmed together in one [batch-confirm](batch-confirm.md) question and recorded as a single `D-NN`.
+
+## 5. Role Rules
+
+- Never write `design.md` containing `Option A / Option B`, `TBD`, `Assumptions`, or open `Q-NN` rows (`DESIGN-007`, `DESIGN-008`, `NOTES-005`).
+- Retain `codebase-notes.md` throughout the entire `vN/` lifecycle so `code_writer`, `code_reviewer`, `test_runner`, and `docs_writer` read the same `D-NN` log.

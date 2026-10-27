@@ -1,6 +1,8 @@
-# 01 — Async sessions, transactions and the pool
+# 01 — Async Sessions, Transactions, and Connection Pool (`PG1`–`PG7`)
 
-Rules PG1–PG7 from [SKILL.md](../SKILL.md) with code. Names (`get_session`, `app/db/session.py`) are examples: use the workspace's own module and names, recorded in `codebase-notes.md`.
+> Topic: SQLAlchemy 2 `AsyncSession` per request, service-owned transactions, `lazy="raise"` and explicit eager loading, connection pool sizing, statement timeouts, parameterized SQL, and PgBouncer compatibility.
+
+Rules **PG1**–**PG7** from [SKILL.md](../SKILL.md) with Unsafe vs. Safe code examples. Module names (`get_session`, `app/db/session.py`) follow the workspace conventions recorded in `codebase-notes.md`.
 
 ## Engine and sessionmaker (once per process)
 

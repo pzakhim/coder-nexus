@@ -6,7 +6,7 @@ description: Flutter & Dart clean code standard (Effective Dart, very_good_analy
 # Flutter Clean Code Standard
 
 Goal: Dart & Flutter code that is readable on first pass, rebuild-efficient, and maintainable in one place.
-All check flags (`PASS` / `FAIL`) and review severities (`BLOCKER` / `MAJOR` / `MINOR`) follow `shared_contracts/flags_and_statuses.md` and `work-item-contract` (`references/handoff-and-status.md` §9). Foundation and profile-specific conventions are governed by `flutter-core-package-usage`.
+All check flags (`PASS` / `FAIL`) and review severities (`BLOCKER` / `MAJOR` / `MINOR`) follow `shared_contracts/flags_and_statuses.md` and `work-item-contract` (`references/handoff-and-status.md` §9). Foundation and profile-specific conventions are governed by the active workspace profile (`architecture_profile` in `.superpowers/setup.json`).
 
 ---
 
@@ -28,7 +28,7 @@ Rules written below govern design, architecture, and Flutter runtime behavior. *
 
 | Rule | Principle | Why | Reference |
 |---|---|---|---|
-| **C1** | **One concept, one place.** Reuse the workspace's established foundation/UI components (`flutter-core-package-usage`). No pass-through wrappers, compatibility aliases, duplicate helper widgets, or copy-pasted mappers. | Copies drift; bug fixes land in only one copy. | [01-structure-naming-and-types](references/01-structure-naming-and-types.md) |
+| **C1** | **One concept, one place.** Reuse the workspace's established foundation/UI components (`architecture_profile`). No pass-through wrappers, compatibility aliases, duplicate helper widgets, or copy-pasted mappers. | Copies drift; bug fixes land in only one copy. | [01-structure-naming-and-types](references/01-structure-naming-and-types.md) |
 | **C2** | **No dead code.** Remove unused widgets, state fields, dead imports, commented-out blocks, and orphan `TODO`s. | Dead code creates confusion and false assumptions during debugging. | [01-structure-naming-and-types](references/01-structure-naming-and-types.md) |
 | **C3** | **No debug leftovers.** No `print()`, `debugPrint()`, `debugger()`, or temporary inspection flags in committed code. | Leaks sensitive data into system logs and clutters console output. | [02-errors-lifecycle-and-logging](references/02-errors-lifecycle-and-logging.md) |
 | **C4** | **No swallowed errors.** Catch specific exceptions, map them to typed Failure/Result states at the repository boundary, and log via the workspace's structured logger. | Silent failures mask defects and leave the UI in broken or perpetual loading states. | [02-errors-lifecycle-and-logging](references/02-errors-lifecycle-and-logging.md) |
@@ -38,7 +38,7 @@ Rules written below govern design, architecture, and Flutter runtime behavior. *
 | **C8** | **Comments explain WHY.** Document architectural rationale and external constraints; never restate what Dart code self-evidently does. | Outdated "what" comments mislead; "why" comments explain trade-offs. | [01-structure-naming-and-types](references/01-structure-naming-and-types.md) |
 | **C9** | **Full sound null safety.** Avoid unchecked bang operators (`!`) and `dynamic`. Use null-aware operators (`?.`, `??`), guard clauses, or pattern matching. | Unchecked bang operators throw runtime `NullCheckError` in production. | [01-structure-naming-and-types](references/01-structure-naming-and-types.md) |
 | **C10** | **Scope discipline.** Modify only files within the approved phase task. Record out-of-scope legacy debt in `Concerns` instead of doing drive-by edits. | Drive-by modifications complicate reviews and trigger merge conflicts. | [03-self-check-and-review](references/03-self-check-and-review.md) |
-| **C11** | **Workspace contracts win.** Honor the approved `architecture_profile` (`flutter-core-package-usage`) for base screens, state holders, result types, DI, and UI components. | Competing architectural patterns splinter the codebase. | [01-structure-naming-and-types](references/01-structure-naming-and-types.md) |
+| **C11** | **Workspace contracts win.** Honor the approved `architecture_profile` for base screens, state holders, result types, DI, and UI components. | Competing architectural patterns splinter the codebase. | [01-structure-naming-and-types](references/01-structure-naming-and-types.md) |
 | **C12** | **Visible side effects.** Keep widget `build()` pure; trigger navigation, dialogs, and network requests inside Cubits/Blocs, listeners, or user event callbacks. | Side effects in `build()` execute repeatedly on every frame rebuild. | [02-errors-lifecycle-and-logging](references/02-errors-lifecycle-and-logging.md) |
 | **C13** | **Immutable state.** States emitted by state holders (Cubit/Bloc/Notifier) and domain value objects must be immutable; never mutate state fields in place. | In-place mutation prevents UI builders from detecting state transitions. | [01-structure-naming-and-types](references/01-structure-naming-and-types.md) |
 | **C14** | **Self-check before handoff.** Run `dart format`, `flutter analyze`, `dart_code_linter`, `rg`, and unit tests before `READY_FOR_REVIEW`. | An unrun check is `NOT_RUN`, never `PASS`. | [03-self-check-and-review](references/03-self-check-and-review.md) |
@@ -60,7 +60,7 @@ Rules written below govern design, architecture, and Flutter runtime behavior. *
 
 ## 4. Relationship with Other Skills
 
-- **Foundation & profile routing**: `{{slot:core-package-usage}}` (`imespro`, `external-structured`, `external-standard`).
+- **Foundation & profile routing**: `.superpowers/setup.json` (`architecture_profile`: `imespro`, `external-structured`, `external-standard`).
 - **Layer boundaries & placement**: `{{slot:clean-architecture}}`.
 - **Post-green refactoring**: `{{slot:code-simplification}}`.
 - **Security rules**: `{{slot:secure-coding-standards}}`.

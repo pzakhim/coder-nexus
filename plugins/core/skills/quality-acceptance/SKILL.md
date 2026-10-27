@@ -1,6 +1,6 @@
 ---
 name: quality-acceptance
-description: The Test Runner's process for proving a reviewed revision meets the approved acceptance criteria — test plan with two-way traceability, a safe test environment, execution on the exact reviewed revision, per-AC results with evidence rows, failure reports, re-tests and an honest feature verdict. Use once after the last phase is APPROVED and recorded (final_qa), or for a phase the plan marks for its own acceptance run, and as the base that workspace quality skills (planning, environment, acceptance, reporting, visual) specialise without weakening. Not for developer unit tests (see {{slot:unit-testing}}).
+description: "The Test Runner's process for proving a reviewed revision meets the approved acceptance criteria — test plan with two-way traceability, a safe test environment, execution on the exact reviewed revision, per-AC results with evidence rows, failure reports, re-tests and an honest feature verdict. Use once after the last phase is APPROVED (final_qa), after a bug fix, or on a standalone user test request (scenario), or for a phase the plan marks for its own acceptance run, and as the base that workspace quality skills (planning, environment, acceptance, reporting, visual) specialise without weakening. Not for developer unit tests (see {{slot:unit-testing}})."
 ---
 
 # Acceptance Testing
@@ -13,11 +13,11 @@ Answer one question: **does the reviewed revision do what the user approved, obs
 |---|---|
 | `requirements.md` → `## 1.` **Scope in** / **Scope out** (`brief.md` → `## Scope and contracts` for a phase-free item), `requirements.md` (`G-NN`, `BR-NN`, `AC-NN`, `## Workflows` `W-NN`, Given/When/Then) | What must be true, and what must not change |
 | `codebase-notes.md` Decision Log (`D-NN`), Glossary | Why, and the exact meaning of words |
-| `design.md` state matrix, approved `uiux.md` screens `S-NN` | States and the visual reference |
+| `design.md` state matrix, `requirements.md` screens `S-NN` & extracted Figma screen renders (`.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png` when present) | States and the visual reference |
 | `implementation-plan.md` → `## Global constraints`, `## Review focus` only | Extra cases the plan froze at Gate 3 |
 | `phases/phase-00-prepare.md`, the Code Review report (`APPROVED`, same tree) | Readiness, the revision to test |
 
-Formats (evidence row, statuses, hand-offs) live in `work-item-contract` → [plan-and-task-contract.md](../work-item-contract/references/plan-and-task-contract.md) and [handoff-and-status.md](../work-item-contract/references/handoff-and-status.md). This skill uses them; it does not redefine them.
+Formats (evidence row, statuses, hand-offs) live in `work-item-contract` (`references/plan-and-task-contract.md` §5) and `work-item-contract` (`references/handoff-and-status.md` §7). This skill uses them; it does not redefine them.
 
 - **Read-only toward code, tests and plan documents.** Never fix code, edit tests, update a reviewed visual baseline, adjust an expectation or write `plan-changes/`. A tester who fixes code is no longer independent.
 - **Huly is read-only**; source context comes from `codebase-notes.md`, never a new query.
@@ -72,7 +72,7 @@ Never write a result you did not observe in this run. For every claim: identify 
 ## Failures and the fix loop
 
 1. Report each failure to the coordinator for the Code Writer with reproduction, expected vs actual, evidence and the owning phase ([modes/reporting.md](modes/reporting.md#defect-report)).
-2. The fix is made under the phase that owns the AC, inside its Scope / Files, as a new revision that must pass Code Review again before re-test ([handoff-and-status.md](../work-item-contract/references/handoff-and-status.md) §2, Test Runner defect). Earlier evidence for affected cases is invalid.
+2. The fix is made under the phase that owns the AC, inside its Scope / Files, as a new revision that must pass Code Review again before re-test (`work-item-contract` (`references/handoff-and-status.md` §7), Test Runner defect). Earlier evidence for affected cases is invalid.
 3. Re-test the failed cases plus the regression cases touching the same area on that revision.
 4. When an expected result itself looks wrong, do not change it. A conflict with the plan is a `PLAN_CONFLICT` row in your report; a conflict in the approved spec (an impossible or contradictory AC) is a `SCOPE_CHANGE` row. You stay read-only: the coordinator writes `plan-changes/PCR-NN.md` from the row (`change-control`). The feature verdict stays `BLOCKED` until the re-approved revision is tested.
 5. The owning phase's 3-review-round cap counts these fixes; after it, the coordinator escalates. Neither agent may waive the failure.
@@ -84,7 +84,3 @@ Never write a result you did not observe in this run. For every claim: identify 
 - Fabricate data, services or "successful" responses; let a stub pass as the real provider.
 - Put secrets, tokens or personal data in evidence; print credentials.
 - Post results outside the work-item folder without the user's authorisation.
-
-## Sources
-
-[references/sources.md](references/sources.md).

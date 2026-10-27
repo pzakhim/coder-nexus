@@ -1,89 +1,59 @@
 ---
 name: secure-coding-standards
-description: Secure coding standards for a Backend (Python 3.12+, FastAPI, Pydantic v2, SQLAlchemy 2 async, PostgreSQL) service - validate input at trust boundaries with Pydantic schemas, authorize every operation per object in the service and filter every query by data scope (tenant, owner, environment) in the repository, no f-string SQL, shell or path injection, mass assignment blocked with extra="forbid", secrets as SecretStr from settings and never in source or logs, JWT and password hashing through the workspace's auth, SSRF-safe outbound httpx calls, bounded uploads, fail closed, pip-audit for dependencies, and which changes to flag for review - each unsafe pattern next to its safe counterpart, graded on the shared severity scale. Use while the Code Writer adds or changes an endpoint, dependency, schema, repository query, background job, outbound call, file upload, auth code, settings or a new package, during the self-check before READY_FOR_REVIEW, and when the Code Reviewer checks the security axis of a backend diff, even if nobody says "security".
+description: Secure coding standards for a Backend (Python 3.12+, FastAPI, Pydantic v2, SQLAlchemy 2 async, PostgreSQL) service — covering boundary input validation, object-level authorization, tenant/owner data-scope isolation, secrets and PII protection, cryptography, injection/SSRF/upload defenses, dependency auditing, deterministic PASS/FAIL gates, and BLOCKER/MAJOR/MINOR review grading.
 ---
 
-# Secure Coding Standards — Backend (FastAPI)
+# Secure Coding Standards — Backend (FastAPI · Pydantic v2 · SQLAlchemy 2 Async)
 
-Goal: code that is safe the first time it is written, so review finds confirmations, not rewrites. The workspace's real auth dependency, roles, scopes and secret store come from the approved `design.md` and `codebase-notes.md`; a workspace `.agents/skills/secure-coding-standards/` overrides this skill on specifics. Neither may relax a non-negotiable. Paths such as `app/`, `tests/unit/` and `alembic/versions/` are conventions the workspace may override.
+Use this skill when writing or reviewing backend code that touches endpoints, schemas, authentication, authorization, repository queries, settings/secrets, logging, background jobs, outbound HTTP calls, file uploads, or dependencies. Where each guard lives follows `{{slot:clean-architecture}}`.
 
-## Non-negotiables
+---
 
-1. Validate untrusted input at the boundary with a Pydantic schema; reject, never repair or guess (SC1). Reason: every injection and logic abuse starts with unchecked input.
-2. Authorize every operation on the server, per object, deny by default; client checks only shape the UI (SC2). Reason: a direct API call skips the client.
-3. Every query, cache key, file path, job and event carries its data scope explicitly; no default scope (SC3). Reason: one missing filter leaks another customer's data.
-4. No SQL, shell command, template or path built from input by string joining (SC4). Reason: injection turns data into code.
-5. No secret or personal data in code, commits, fixtures, URLs, logs or error bodies (SC6, SC8). Reason: a leaked secret cannot be un-leaked.
-6. Fail closed: an error in validation, authorization or a dependency denies; never default or fake data (SC13). Reason: attackers aim for the error path.
+## 1. Deterministic Security Gates (`PASS` / `FAIL`)
 
-Anything the design does not settle (who may see what, which scope applies) goes to Planning through `change-control`, never a guess in code.
+Run these checks on touched files before handoff (`READY_FOR_REVIEW`) and during Code Review. Each gate produces a binary **`PASS`** or **`FAIL`** status (`plugins/shared_contracts/flags_and_statuses.md` §1; mark `NOT_RUN` with an explicit reason only when a tool/network is unavailable—never `PASS` when unrun):
 
-## Rules
-
-| # | Rule | Where |
+| Check | Command | Gate Status |
 |---|---|---|
-| SC1 | Validate untrusted input at the trust boundary | [01](references/01-trust-boundaries-and-input.md) |
-| SC2 | Authorize every operation on the server, per object | [02](references/02-authorization-and-data-scope.md) |
-| SC3 | Isolate data scopes (single-tenant: owner/user scope still applies) | [02](references/02-authorization-and-data-scope.md) |
-| SC4 | No injection (SQL, shell, path, deserialization, eval) | [04](references/04-stack-risks.md) |
-| SC5 | Encode output; validate redirect targets | [04](references/04-stack-risks.md) |
-| SC6 | Keep secrets secret | [03](references/03-secrets-and-sensitive-data.md) |
-| SC7 | Use the workspace's authentication, never homemade | [02](references/02-authorization-and-data-scope.md) |
-| SC8 | No sensitive data in logs, caches or user errors | [03](references/03-secrets-and-sensitive-data.md) |
-| SC9 | Control outbound calls (allow-list, timeout, no redirects) | [04](references/04-stack-risks.md) |
-| SC10 | Handle files defensively | [04](references/04-stack-risks.md) |
-| SC11 | Dependencies with care | [05](references/05-dependencies.md) |
-| SC12 | Vetted cryptography and secure random | [03](references/03-secrets-and-sensitive-data.md) |
-| SC13 | Fail closed | [02](references/02-authorization-and-data-scope.md) |
-| SC14 | Flag security-relevant changes in the handoff | [06](references/06-review-triggers.md) |
+| **Static Security Linter (`flake8-bandit`)** | `uv run ruff check --select S app/ tests/` | `PASS` / `FAIL` |
+| **Injection & Unsafe Deserialization Audit (`rg`)** | `rg -n 'text\(f"|execute\(f"|shell=True|yaml\.load\(|pickle\.loads?\(|eval\(|exec\(' app/` (expect 0 matches) | `PASS` / `FAIL` |
+| **Mass Assignment Audit (`rg`)** | `rg -n '\*\*\w+\.(model_dump|dict)\(\)' app/` (expect 0 matches) | `PASS` / `FAIL` |
+| **CORS / Debug / TLS Bypass Audit (`rg`)** | `rg -n 'allow_origins=\["\*"\]|debug=True|verify=False|follow_redirects=True' app/` (expect 0 matches) | `PASS` / `FAIL` |
+| **Sensitive Logging Audit (`rg`)** | `rg -n -i '(logger|logging)\.\w+\(.*(token|password|secret|authorization)' app/` (expect 0 matches) | `PASS` / `FAIL` |
+| **Lockfile & Dependency Advisory Audit** | `uv lock --check && uv run pip-audit` | `PASS` / `FAIL` |
 
-SC1, SC2, SC3, SC4, SC6 and SC13 have no exceptions.
+---
 
-## Security model (baseline)
+## 2. Core Security Rules (`SC1`–`SC14` — Mandatory Compliance)
 
-| Item | Backend baseline |
+All 14 rules are **mandatory compliance** (`SC1`, `SC2`, `SC3`, `SC4`, `SC6`, and `SC13` have zero exceptions). During Code Review, findings are graded on the unified 3-tier scale (`BLOCKER` / `MAJOR` / `MINOR` — see [03-runtime-risks-deps-and-review.md](references/03-runtime-risks-deps-and-review.md)):
+
+| ID | Rule | FastAPI / Pydantic / SQLAlchemy Contract | Reference |
+|---|---|---|---|
+| **SC1** | **Validate Untrusted Input at the Boundary** | Validate all request bodies, query/path params, webhooks, and queue payloads with Pydantic v2 schemas (`ConfigDict(extra="forbid")`); separate `*Create`/`*Update` from `*Read`; bound list/page limits (`Query(ge=1, le=MAX_PAGE_SIZE)`); reject invalid input instead of repairing | [01 — Input, Auth & Data Scope](references/01-input-auth-and-data-scope.md) |
+| **SC2** | **Authorize Every Operation per Object** | Authenticate on the router (`CurrentUserDep`), but enforce object-level and capability-level authorization inside the Service (`app/services/`) against the loaded record; never scatter `if user.role == "admin"` in routers | [01 — Input, Auth & Data Scope](references/01-input-auth-and-data-scope.md) |
+| **SC3** | **Isolate Data Scopes Explicitly** | Pass `tenant_id` / `owner_id` / environment scope explicitly from `CurrentUser` → Service → Repository and filter every `select`, `update`, `delete`, cache key, and background job; never call unscoped `session.get(Model, id)` on scoped tables | [01 — Input, Auth & Data Scope](references/01-input-auth-and-data-scope.md) |
+| **SC4** | **Prevent Injection (`SQL`, `Shell`, `Path`, `YAML`)** | Use SQLAlchemy ORM expressions or bound parameters (`text("... :id")`), allow-list dicts for dynamic `ORDER BY` columns, argument lists without `shell=True`, `Path.resolve().is_relative_to(BASE)`, and `yaml.safe_load` | [03 — Runtime Risks, Deps & Review](references/03-runtime-risks-deps-and-review.md) |
+| **SC5** | **Encode Output & Validate Redirects** | Declare `response_model=` on every route; sanitize untrusted HTML with `nh3`; validate `RedirectResponse` targets against an explicit host/path allow-list | [01 — Input, Auth & Data Scope](references/01-input-auth-and-data-scope.md), [03 — Runtime Risks, Deps & Review](references/03-runtime-risks-deps-and-review.md) |
+| **SC6** | **Keep Secrets Secret** | Load secrets only via `Settings(BaseSettings)` fields typed `SecretStr` from env / git-ignored `.env`; never commit secrets in code, fixtures, or Alembic migrations; rotate any exposed secret immediately | [02 — Secrets, Data & Crypto](references/02-secrets-data-and-crypto.md) |
+| **SC7** | **Use Verified Authentication** | Decode JWTs with pinned `algorithms=[settings.jwt_algorithm]`, `audience`, `issuer`, and `options={"require": ["exp", "sub"]}`; hash passwords with Argon2/bcrypt (`pwdlib`) and verify a dummy hash for unknown users | [01 — Input, Auth & Data Scope](references/01-input-auth-and-data-scope.md) |
+| **SC8** | **Redact Sensitive Data & PII from Logs & Errors** | Log `request_id`, `actor_id`, `tenant_id`, and status codes—never tokens, passwords, `Authorization` headers, or PII; return generic 500 error bodies with `request_id` (never `str(exc)` or tracebacks) | [02 — Secrets, Data & Crypto](references/02-secrets-data-and-crypto.md) |
+| **SC9** | **Guard Outbound Calls (`SSRF` & `TLS`)** | Validate user-influenced URLs against scheme (`https`), host allow-lists, and global IP checks; set explicit `timeout=`, `follow_redirects=False`, and keep TLS `verify=True` on `httpx.AsyncClient` | [03 — Runtime Risks, Deps & Review](references/03-runtime-risks-deps-and-review.md) |
+| **SC10** | **Handle File Uploads Defensively** | Enforce byte-size caps (`read(MAX_BYTES + 1)`), sniff content types by magic bytes, generate UUID filenames, and store outside publicly served paths | [03 — Runtime Risks, Deps & Review](references/03-runtime-risks-deps-and-review.md) |
+| **SC11** | **Vet Dependencies & Lock Supply Chain** | Require design approval before changing `pyproject.toml`; keep `uv.lock` synchronized (`uv lock --check`) and audit advisories with `uv run pip-audit` | [03 — Runtime Risks, Deps & Review](references/03-runtime-risks-deps-and-review.md) |
+| **SC12** | **Use Vetted Cryptography & CSPRNG** | Generate tokens/nonces with `secrets.token_urlsafe(32)`, compare digests with `hmac.compare_digest`, and encrypt with vetted `cryptography` (Fernet / AES-GCM) | [02 — Secrets, Data & Crypto](references/02-secrets-data-and-crypto.md) |
+| **SC13** | **Fail Closed** | Any exception in validation, auth, or upstream dependencies denies the request (`401`/`403`/`404`/`503`)—never catch and return `[]` or permissive fallback data | [01 — Input, Auth & Data Scope](references/01-input-auth-and-data-scope.md), [03 — Runtime Risks, Deps & Review](references/03-runtime-risks-deps-and-review.md) |
+| **SC14** | **Flag Security-Sensitive Changes in Handoff** | List every security touchpoint and its protecting guard in the Code Writer handoff (`work-item-contract`) | [03 — Runtime Risks, Deps & Review](references/03-runtime-risks-deps-and-review.md) |
+
+---
+
+## 3. Reference Guides
+
+Load only the reference file needed for the current task:
+
+| Reference | Topics Covered |
 |---|---|
-| Authentication | The workspace's auth dependency on the router (`Depends(get_current_actor)` or its real name); tokens validated with pinned algorithms, audience, issuer, `exp` |
-| Authorization | Object- and function-level checks in the service / use case with an explicit `actor`; role strings in routers are forbidden |
-| Data scopes | Tenant / owner / environment filter inside every repository `select`, `update`, `delete`; listed per scope in the design |
-| Secrets | `pydantic-settings` `BaseSettings` fields typed `SecretStr`, from environment or the untracked `.env` |
-
-Where each guard lives follows `{{slot:clean-architecture}}`; this skill only says the guard must exist and how it is written safely.
-
-## Which file to read
-
-| Doing | Read |
-|---|---|
-| Adding an endpoint, schema, webhook, consumer or provider call | [01-trust-boundaries-and-input](references/01-trust-boundaries-and-input.md) |
-| Permission checks, scoped queries, auth and tokens | [02-authorization-and-data-scope](references/02-authorization-and-data-scope.md) |
-| Settings, logging, error handlers, hashing, random tokens | [03-secrets-and-sensitive-data](references/03-secrets-and-sensitive-data.md) |
-| SQL, shell, paths, YAML/pickle, outbound URLs, uploads, CORS | [04-stack-risks](references/04-stack-risks.md) |
-| Adding or upgrading a package | [05-dependencies](references/05-dependencies.md) |
-| Handing off, or reviewing, a security-relevant change | [06-review-triggers](references/06-review-triggers.md) |
-
-## Code Writer
-
-1. Before editing, read the task's `Consumes`, the design's auth and scope decisions, and the rows of [04](references/04-stack-risks.md) that apply to the files in scope.
-2. Write the guard with the code it protects, plus a test that a forbidden actor or wrong scope is refused (`{{slot:unit-testing}}`): another tenant's id → 404 (or 403 per the contract), no token → 401, missing capability → 403.
-3. Self-check: run the gates in [04 § Gates](references/04-stack-risks.md#gates), walk the checklist in [06](references/06-review-triggers.md) over the diff, fix every hit inside scope, and list SC14 items in the handoff.
-
-## Code Reviewer
-
-Run the [06 checklist](references/06-review-triggers.md#reviewer-checklist) on the phase diff after `bug-hunt`, as the security axis of `{{slot:code-review}}`. The reviewer never edits code. Grade on [handoff-and-status §9](../work-item-contract/references/handoff-and-status.md); do not invent another scale:
-
-| Finding | Grade |
-|---|---|
-| Authorization or scope bypass, injection, authentication bypass, secret in source/bundle/log, fail-open on a normal path | `BLOCKER` defect |
-| Exploitable only on a realistic edge path; personal data in logs or errors; user-influenced outbound call or upload without its guard; unvalidated input that corrupts stored data | `MAJOR` defect |
-| Defense-in-depth gap with no traced path (missing timeout on an internal call, verbose error without sensitive data) | `MINOR` defect |
-| A non-negotiable or SC rule broken with no traced exploit (role string in a router while the service also checks, input schema without `extra="forbid"` and no server-owned field) | `P1` rule violation, rule ID first (`SC2: role check in router`) |
-
-Every defect carries a `given → when → then` exploit scenario and `CONFIRMED` or `PLAUSIBLE`. A secret in source or a bundle is always `BLOCKER CONFIRMED`: the exposure is the failure. Verdict impact is §9's.
-
-## Relationship with other skills
-
-- Where guards and validation live: `{{slot:clean-architecture}}`. API error shapes and status codes: `api-contract-design`.
-- Finding what slipped through: `{{slot:bug-hunt}}` (security dimension) and `{{slot:code-review}}`. Never simplify a guard away: `{{slot:code-simplification}}`, `{{slot:clean-code}}`.
-- Evidence rows and `NOT_RUN`: `evidence-standard`. Release 3.2.0 has no separate security role; the Code Reviewer runs this checklist.
-
-Sources: [references/sources.md](references/sources.md).
+| [01 — Input, Authentication, Authorization & Data Scope](references/01-input-auth-and-data-scope.md) | Trust boundaries, Pydantic `extra="forbid"` input/output separation (`SC1`, `SC5`), router auth vs. service per-object authorization (`SC2`), tenant/owner/env repository scope isolation (`SC3`), JWT/Argon2 auth (`SC7`), and fail-closed rules (`SC13`) |
+| [02 — Secrets, Sensitive Data & Cryptography](references/02-secrets-data-and-crypto.md) | `SecretStr` settings & `.env` hygiene (`SC6`), PII/log/error redaction (`SC8`), and `secrets` / `hmac.compare_digest` / vetted cryptography (`SC12`) |
+| [03 — Runtime Risks, Dependencies & Review Rubric](references/03-runtime-risks-deps-and-review.md) | Unsafe-vs-safe patterns for SQL/shell/path/YAML injection (`SC4`), SSRF (`SC9`), file uploads (`SC10`), CORS/debug (`SC13`), `pip-audit` (`SC11`), `SC14` handoff triggers, and `BLOCKER` / `MAJOR` / `MINOR` review rubric |
+<!-- {{profile_references}} -->

@@ -1,50 +1,56 @@
 ---
 name: bug-hunt
-description: How {{project_name}} finds real defects in a fixed code revision - scope and callers, cold pass, seven dimensions, adversarial disproof with given/when/then scenarios, effort, severity and report. Use for the Code Writer's quick self-check before handoff and the Reviewer's first pass on {{dirs}}.
+description: How {{project_name}} finds real defects in a fixed code revision - scope and callers, cold pass, seven defect dimensions, adversarial disproof with given/when/then scenarios, effort, unified BLOCKER/MAJOR/MINOR severity, and report. Use for the Code Writer's quick self-check before handoff and the Reviewer's bug-hunt pass on {{dirs}}.
 ---
 
 # Bug Hunt — {{project_name}}
 
 <!-- GEN: Why: coder and reviewer must ask the same single question and follow the same loop, or reports fill with style remarks instead of defects. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
-<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
 
 **One question:** with which input or state does this change produce a wrong result, a crash, a hang, a leak, {{project_risks}} or a security hole?
 
-Not here: {{out_of_scope}} <!-- GEN: e.g. architecture/clean-code compliance → review rubric; complexity → code-simplification -->.
+Not here: {{out_of_scope}}.
 
-## The loop
+## 1. Read-Only CLI Verification Gates (`PASS` / `FAIL` / `NOT_RUN`)
 
-1. Fix the revision and read callers ([01]({{ref_01}})).
-2. Cold pass through the seven dimensions; write candidates ([01]({{ref_01}})).
-3. Try to disprove each one; keep only those with a given/when/then scenario ([02]({{ref_02}})).
-4. Rank, cap and report ([03]({{ref_03}})); apply the verdict rules ([04]({{ref_04}})).
+| Check | Command | Gate |
+|---|---|---|
+| **Caller & Symbol Search** | `{{caller_search_cmd}}` | Read-only trace |
+| **Static Analysis / Typecheck** | `{{typecheck_cmd}}` | `PASS` / `FAIL` |
+| **Focused Test Execution** | `{{test_cmd}}` | `PASS` / `FAIL` |
 
-## Effort
+## 2. The Hunt Loop
 
-<!-- GEN: Workspace deep triggers from Step 3. -->
+1. **Fix the scope & read callers:** Record `BASE_REVISION..REVIEW_REVISION`, read each changed hunk in its full enclosing unit, and inspect all callers of changed public symbols ([01 — Scope, Dimensions & Patterns]({{ref_01}})).
+2. **Cold pass through 7 dimensions:** Walk the code before reading specs/designs; write candidates as `file:line — hypothesis` ([01 — Scope, Dimensions & Patterns]({{ref_01}})).
+3. **Adversarial disproof:** Trace the real execution path from entry point to line; keep only candidates with a concrete `given → when → then` scenario and read-only evidence ([02 — Verify & Disprove]({{ref_02}})).
+4. **Rank, cap & report:** Grade with `BLOCKER` / `MAJOR` / `MINOR` and `CONFIRMED` / `PLAUSIBLE`; end with the `bug-hunt:` summary line ([03 — Severity, Verdict & Report]({{ref_03}})).
+5. **Apply verdict & role duties:** Enforce verdict impact (`APPROVED` / `REQUEST_CHANGES` / `BLOCKED`) and role boundaries ([03 — Severity, Verdict & Report]({{ref_03}})).
+
+## 3. Effort & Triggers
+
 | Effort | When | Dimensions | Cap |
 |---|---|---|---|
 | `quick` | {{quick_when}} | 1–4 on changed hunks | 5 |
-| `standard` | {{standard_when}} | 1–7 | 10 |
-| `deep` | {{deep_when}} | 1–7 + callers one level further | none |
+| `standard` | {{standard_when}} | 1–7 on changed code + direct callers | 10 |
+| `deep` | {{deep_when}} | 1–7 + callers one level further | No cap |
 
-## Which file to read
+## 4. Mandatory Rules (`H1`–`H14`)
 
-<!-- GEN: Flat: references/01–05. Branched: shared/01–04, be/05, fe/05 with a "Working in" column. Remove rows for files merged away. -->
-| Doing | Read |
+| ID | Rule | Reference |
+|---|---|---|
+| **H1–H5** | Single defect question, fixed revision, whole context & callers, cold pass first, 7 dimensions | [01 — Scope, Dimensions & Patterns]({{ref_01}}) |
+| **H6–H8** | Disprove every candidate (read-only), concrete `given → when → then` scenario, `CONFIRMED`/`PLAUSIBLE` | [02 — Verify & Disprove]({{ref_02}}) |
+| **H9–H14** | Unified `BLOCKER`/`MAJOR`/`MINOR`, effort caps, report row & `bug-hunt:` line, verdict impact, roles, `NOTE` cleanups | [03 — Severity, Verdict & Report]({{ref_03}}) |
+
+## 5. Reference Guides
+
+| Guide | Topic |
 |---|---|
-| Scope, callers, dimensions | `{{ref_01}}` |
-| Verifying a candidate | `{{ref_02}}` |
-| Severity and report row | `{{ref_03}}` |
-| What the findings do to the verdict | `{{ref_04}}` |
-| This workspace's bug patterns | `{{ref_05}}` |
-
-## Relationship with other skills
-
-<!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md. -->
-- Self-check step of {{incremental_link}} runs this at `quick`.
-- Missing tests for confirmed findings follow {{unit_test_link}}.
-- Cleanups → `NOTE` for {{code_simplification_link}}.
+| [01 — Scope, Dimensions & Patterns]({{ref_01}}) | Fixed revision, caller tracing, cold pass, 7 defect dimensions, and stack/project bug patterns |
+| [02 — Verify & Disprove]({{ref_02}}) | Adversarial disproof steps, `given → when → then` scenarios, read-only CLI checks, and typical disproofs |
+| [03 — Severity, Verdict & Report]({{ref_03}}) | Effort caps, `BLOCKER`/`MAJOR`/`MINOR` calibration, finding table, verdict impact, and role duties |
+<!-- {{profile_references}} -->
 
 <!-- custom:start -->
 <!-- custom:end -->

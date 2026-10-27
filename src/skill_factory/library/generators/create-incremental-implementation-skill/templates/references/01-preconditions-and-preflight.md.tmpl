@@ -1,0 +1,48 @@
+# 01 — Preconditions & Pre-flight
+
+<!-- GEN: Why: starting a phase that is not ready, or on a plan whose interfaces no longer match the code, produces work that has to be redone. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+<!-- GEN: Rules I1, I2, I3, I14, I15 with the workspace's real plan format (references/discovery-and-checks.md §1). -->
+
+## 1. Where the plan lives
+
+| Artifact | Path |
+|---|---|
+| {{artifact}} | `{{path}}` |
+
+Phase file: `{{phase_pattern}}` · Task format: `{{task_format}}`
+
+## 2. Before writing any code
+
+Stop with `{{blocked_status}}` if any item is missing:
+
+- [ ] Approved: {{gates}} <!-- GEN: user approvals only -->
+- [ ] {{prep_phase_rule}} <!-- GEN: e.g. "PHASE-00 ticked [x] PREPARED / COMPLETED"; delete if no preparation phase -->
+- [ ] Every phase in `{{dependency_notation}}` has passed
+- [ ] The current branch is the one the plan or decision record names ({{branch_rule}})
+- [ ] Each task names its files, reused components/contracts, a check command and its expected result
+- [ ] {{validator_rule}} <!-- GEN: e.g. a dossier validator command; delete if none -->
+
+A missing item is a **planning gap**: report it to {{planner_role}} through {{plan_change_process}} and stop. Do not fill it in yourself.
+
+## 3. Sources of truth
+
+- Requirements and acceptance criteria: `{{requirements_source}}`
+- Contracts (API, data): `{{contract_source}}`
+- Never re-query external systems for data the plan already recorded, and never invent business records, services or fallbacks.
+
+## 4. Pre-flight before task 1
+
+1. Read `{{global_constraints_section}}` and `{{review_focus_section}}`: constraints bind every task; review focus names inputs the reviewer will try, so plan tests or guards for them now.
+2. Build the Consumes / Produces table: one row per edge between tasks, or between a task and existing code. Open the existing symbol and compare the **real** signature.
+
+| Consumer task | Consumes (as the plan states it) | Producer (task or existing `path:symbol`) | Produces (real signature) | Finding |
+|---|---|---|---|---|
+| {{task}} | {{consumes}} | {{producer}} | {{produces}} | OK / Mismatch → {{plan_change_id}} |
+
+3. Any mismatch, missing producer, task contradicting a global constraint, or check that cannot work → raise a plan change before coding and return `{{blocked_status}}`.
+
+A phase whose tasks share nothing gets the single line `Pre-flight: no shared interfaces`. A clean table is still written down.
+
+<!-- custom:start -->
+<!-- custom:end -->

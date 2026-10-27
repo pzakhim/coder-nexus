@@ -1,32 +1,60 @@
 ---
 name: huly-task-intake
-description: Connect to Huly, list unfinished tasks, and extract real descriptions and acceptance criteria for development.
+description: "Set up or verify the Huly workspace connection (coder-nexus setup huly), list open tasks, and ingest Huly issue details, parent/sub-issues, comments, and downloaded attachments (.superpowers/sources/<ISSUE-ID>/) once into codebase-notes.md so no downstream agent or department re-queries Huly or re-asks the user."
 ---
 
-# Huly Task Runner
+# Huly Task Intake & Setup
 
-Use the Coder Nexus MCP Hub to read the developer's Huly workspace. Huly is read-only. A feature request can also originate from the user without a Huly ticket.
+Use the Coder Nexus CLI and MCP Hub to connect to and read the developer's Huly workspace. Huly is strictly **read-only**. A work item can also start from a direct user request without a Huly ticket.
 
-## When to use
+## Reference Guides
 
-Activate when the user asks to list Huly work, inspect a task, extract its acceptance criteria, or begin a feature linked to Huly.
+| Guide | Topic |
+|---|---|
+| [01 — Huly Workspace Setup & Auth](references/01-huly-setup.md) | Driving `coder-nexus setup huly --json --project "${workspaceFolder}"`, `.env` credential safety, login options, and exit codes |
+| [02 — Parent & Sub-Issues Traceability](references/02-parent-and-sub-issues.md) | Parent coverage check (`NO CHILD`), scoping open/closed children, Parent-Ticket branch vs Sub-Ticket phase commits, and one-time recording in `codebase-notes.md` |
 
-## Workflow
+## When to Use
 
-1. Check whether the Client workspace has a usable Huly session or credentials in `${workspaceFolder}/.env`. Never print or copy secret values into reports or the Hub repository. If configuration is missing or authentication fails, switch to the `huly-setup` skill (or ask the developer to run `coder-nexus setup huly` in the Client workspace).
-2. Call `huly_get_my_tasks` with `workspace_path: "${workspaceFolder}"` when a task must be selected. It returns only the open tasks assigned to the logged-in user. Pass `include_all: true` only when the user asks for the whole workspace. Show only the tasks actually returned, including their real IDs, titles, status, priority and assignee. If the tool returns `status: error`, show that error and its actionable hint.
-3. When the user names a task (an ID like `APP-123`, or a Huly issue link pasted from the browser — pass it as-is), call `huly_get_task_detail` with it and the Client workspace path. The issue does not have to be assigned to the user. If the tool says a bare number matches several issues, ask which full ID they mean. Present its description, acceptance criteria, source links and design references if present. Distinguish a criterion in the ticket from a proposed interpretation or open question. Show the assignee by `assignee_name` when present. If `acceptance_criteria_source` is `none`, the ticket has no explicit criteria: say so and ask the user; do not turn description prose into criteria.
-4. **Ticket state and stack:** report `status` / `status_category`. For built, QA, released or canceled tickets, say that the job type must be confirmed (change / bug fix / verification / docs). Flag any part whose stack has no installed pack (e.g. .NET) as `BLOCKED — out of plugin scope`.
-5. **Parent / sub-issues:** if the result has `sub_issues`, show them as a short list (ID, title, status, AC count, closed flag). If it has `parent`, show the parent as context. Then apply [parent and sub-issues](references/parent-and-sub-issues.md), starting with its parent coverage check: a parent goes to one spec with the children as requirement sources and planning input; a child is scoped to itself with the parent as context.
-6. **Sources beyond the ticket**: the ticket is rarely the full requirement. Call `huly_get_task_detail` with `download: true` before drafting requirements. Then:
-   - read `comments` (author, time, text) for decisions and AC changes;
-   - open every `sources` item: `READ` documents carry their text; `DOWNLOADED` files (PDF screen specs, images, attachments) are saved under `.superpowers/sources/<ISSUE-ID>/` (Git-ignored, local only, never commit or copy them into work-item docs), so open them and read them (view PDFs and images directly). In requirements cite them by title and Huly origin, not by local path;
-   - `UNREACHABLE` (for example a PO document this account cannot open) and `EXTERNAL` links: tell the user exactly which ones, and ask them to attach or paste the content or confirm going ahead without it. Never summarize a source you could not open.
-   Hand the result to `spec_writer` for the source inventory (`READ` / `UNREACHABLE` / `NOT_PROVIDED`) and goal framing.
-7. Pass verified task facts to `spec_writer`. If the ticket omits an actor, contract, exception, scope boundary or AC, ask the user; record the answer as `USER_CONFIRMED` or mark the dependent item `BLOCKED`. Do not manufacture a task or claim an approval.
+Activate when:
+1. The user asks to set up, connect, log in to, or troubleshoot Huly (follow [01 — Huly Workspace Setup & Auth](references/01-huly-setup.md)).
+2. `spec_writer` (in **`dev-team`**) needs to list open Huly tasks, inspect a ticket, download its attachments, or extract its acceptance criteria for Gate 1.
 
-## Golden rules
+## Workflow (One-Read Huly Protocol)
 
-- **Read-Only:** Never create, update, close or delete Huly tasks.
-- **Zero Mock Data:** Never fabricate credentials, task rows, business values or a fallback response when authentication or network access fails.
-- **Credential boundary:** Personal Huly credentials belong only in the developer's Client environment, never in the Hub repository.
+1. **Step 1 — Connection & Auth Preflight ([01 — Huly Setup](references/01-huly-setup.md))**:
+   - Check whether `${workspaceFolder}/.env` has a working Huly session. Never print or copy secret values into chat, reports, or `codebase-notes.md`.
+   - If configuration is missing or authentication fails (`needs_input` or `verify_failed`), run [01 — Huly Workspace Setup & Auth](references/01-huly-setup.md) (`coder-nexus setup huly --json --project "${workspaceFolder}"`).
+
+2. **Step 2 — Listing Open Tasks (`huly_get_my_tasks`)**:
+   - When the user wants to pick a task from their queue, call `huly_get_my_tasks(workspace_path="${workspaceFolder}")`. Pass `include_all: true` only when the user explicitly asks for the entire workspace.
+   - Present only the tasks actually returned (ID, title, status, priority, `assignee_name`). If the tool returns `status: error`, surface the exact message and hint.
+
+3. **Step 3 — Single-Read Task Detail & Attachment Download (`huly_get_task_detail` with `download: true`)**:
+   - When the user provides a task ID (e.g., `APP-123`) or a pasted Huly browser URL (pass it as-is), call `huly_get_task_detail` with `download: true` and `workspace_path: "${workspaceFolder}"`.
+   - If a bare number matches multiple issues, ask the user which full ID they mean via `ask_question`.
+   - Distinguish explicit ticket criteria from proposed interpretations. If `acceptance_criteria_source` is `none`, state that the ticket has no explicit criteria and queue `Q-NN` for the user — never convert description prose silently into `AC-NN`.
+
+4. **Step 4 — Ticket State, Job Type & Stack Scope Check**:
+   - Report `status` and `status_category`. For built, QA, released, or canceled tickets, confirm the job type (`change` / `bugfix` / `verification` / `documentation`) per [`work-item-contract`](../work-item-contract/SKILL.md).
+   - Flag any part whose stack has no installed pack in this workspace as `BLOCKED — out of plugin scope`.
+
+5. **Step 5 — Parent & Sub-Issues Coverage ([02 — Parent & Sub-Issues](references/02-parent-and-sub-issues.md))**:
+   - If the response includes `sub_issues` or `parent`, apply [02 — Parent & Sub-Issues Traceability](references/02-parent-and-sub-issues.md): run the **Parent coverage check** (`| Parent part | Covered by | Status |`), ask once about any `NO CHILD` parts (`D-NN`), and record both the **Parent-Ticket ID** (used by `git-preflight` for branch naming) and **Sub-Ticket IDs** (used for phase commit checkpoints).
+
+6. **Step 6 — Deep Source Inspection (`comments` & `.superpowers/sources/<ISSUE-ID>/`)**:
+   - Read all `comments` (author, timestamp, text) for requirement refinements or scope decisions.
+   - Inspect every entry in `sources`:
+     - `READ` documents include their text directly.
+     - `DOWNLOADED` files (PDF screen specs, images, attachments, visual assets) are saved under `.superpowers/sources/<ISSUE-ID>/` (Git-ignored, local only; never commit or copy raw files into `vN/`). Open and read/view every downloaded PDF and image directly; cite them in `requirements.md` by title and Huly origin, not local path.
+     - `UNREACHABLE` or `EXTERNAL` links: report the exact titles/URLs to the user and ask via `ask_question` whether they will attach/paste the content or confirm proceeding without it (`D-NN`). Never guess or summarize an unread source.
+
+7. **Step 7 — Consolidate Once in `codebase-notes.md` (Zero Re-Query / Zero Re-Ask Across Departments)**:
+   - Record the **Source Inventory** (`READ` / `DOWNLOADED` / `UNREACHABLE` / `EXTERNAL`) and the **Huly Parent / Sub-Issues Table** in `codebase-notes.md` (`## 3. Verified Baseline Facts & Cross-Agent Notes`).
+   - Once recorded by `spec_writer`, neither `planning`, `code_writer`, `code_reviewer`, nor `test_runner` (in `dev-team`) ever re-queries Huly or re-asks the user for ticket facts.
+
+## Golden Rules
+
+- **Strictly Read-Only:** Never create, update, close, or delete Huly tasks.
+- **Zero Fabrication:** Never invent credentials, task rows, acceptance criteria, or fallback data when authentication or network access fails (`BLOCKED`).
+- **Credential Isolation:** Huly credentials live only in `${workspaceFolder}/.env` (untracked), never in work-item docs or the Hub repository.

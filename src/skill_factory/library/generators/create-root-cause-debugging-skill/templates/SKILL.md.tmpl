@@ -1,43 +1,80 @@
 ---
 name: root-cause-debugging
-description: How the Code Writer of {{project_name}} fixes a failing check or a confirmed defect - reproduce, read the real error, isolate, one hypothesis at a time, root-cause fix at the right layer with a regression test, never green-wash, stop and escalate on time. Use whenever a test, build or analyzer is red, or a bug must be fixed, in {{dirs}}.
+description: Root-cause debugging standard for {{project_name}} ({{stack_summary}}) - how the Code Writer or Bug Fixer resolves a known failure (red check triaged as CODE_WRONG, CONFIRMED review/bug-hunt finding, or reported defect) - deterministic CLI reproduction, reading the first real error, testing 3-5 ranked falsifiable hypotheses one at a time, fixing the root cause at the owning layer with a Red-to-Green regression test, never green-washing, separating environment blockers (BLOCKED) from code defects, 3-attempt time-box, and structured debug reporting. Use whenever a check fails or a defect must be fixed in {{dirs}}, before changing any code.
 ---
 
-# Root Cause Debugging — {{project_name}}
+# Root-Cause Debugging — {{project_name}}
 
-<!-- GEN: Why: this skill is read under pressure, so the loop and the never-list must fit on one screen. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
-<!-- GEN: Description: follow ~/.claude/skill-factory/core/authoring-guide.md "Description" — workspace name, concrete situations, the team's own trigger words (their language allowed), an "even if" clause; check it against the trial prompts (Step 8). -->
+<!-- GEN: Why: the agent must see the diagnostic CLI gates, the 6-step scientific loop, the Never Green-Wash rules, and mandatory rules D1–D14 on one screen before touching code under failure pressure. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
 
-## The loop
+Answer one question: **why does this fail, and what is the smallest change at the owning layer that makes it impossible?** A fix without a known cause moves the bug instead of removing it.
 
-1. **Reproduce** with one command that fails reliably; read the whole first error ([01]({{ref_01}})).
-2. **Isolate** — what changed since green, smallest failing case, bisect ([02]({{ref_02}})).
-3. **Hypothesize** one cause at a time; check it; log it ([02]({{ref_02}})).
-4. **Fix the root cause** at the right layer, smallest change in scope; **regression test** first ([03]({{ref_03}})).
-5. **Stop** when it is the environment, when attempts run out, or when the fix changes a contract ([04]({{ref_04}})).
-6. **Report** cause, fix, test, evidence, what was ruled out ([06]({{ref_06}})).
+All CLI gates (`PASS` / `FAIL`, with `NOT_RUN` / `BLOCKED` / `UNVERIFIED` and `CODE_WRONG` / `PLAN_WRONG` / `NEEDS_CONTEXT`) and review severities (`BLOCKER` / `MAJOR` / `MINOR`) follow `shared_contracts/flags_and_statuses.md` and `work-item-contract` (`references/handoff-and-status.md` §9).
 
-## Never
+---
 
-- Edit, skip or weaken a test to make it pass.
-- Add fake fallbacks, broad catches, sleeps or retries to hide a failure.
-- Loosen types/assertions or disable lint/gates.
-- Change code to work around a broken environment, or touch a stack you did not start.
-- Leave debug output behind.
+## 1. CLI Diagnostic & Verification Gates (`PASS` / `FAIL`)
 
-## Rules
+Every verification check below is **binary (`exit 0` = `PASS`, `exit != 0` = `FAIL`)**:
 
-<!-- GEN: One row per rule from references/base-rules.md as adopted/adapted. Why = one clause in the workspace's terms. -->
-| # | Rule | Why |
+| Gate | Command | Purpose |
 |---|---|---|
-| {{id}} | {{rule}} | {{why}} |
+| **1. Focused Reproduction** | `{{reproduce_cmd}}` | Reproduce the failure deterministically (`exit != 0` on red, `exit 0` on green) (**D1**, **D8**) |
+| **2. Verbose Stack / Locals** | `{{verbose_cmd}}` | Read the full first traceback and local variables without opening an interactive prompt (**D2**) |
+| **3. Leftover Debug Sweep** | `{{debug_cleanup_cmd}}` | Prove zero `[DEBUG-xxxx]` tags, debug prints, or breakpoints remain before hand-off (**D11**) |
+| **4. Static & Suite Verification** | `{{verify_suite_cmd}}` | Verify linter, type checker, and affected test suite pass after the fix (**D7**, **D8**) |
 
-## Relationship with other skills
+---
 
-<!-- GEN: Per ~/.claude/skill-factory/core/coder-skill-family.md; link existing siblings or write "not set up in this workspace". -->
-- Unknown defects are found by {{bug_hunt_link}}; this skill fixes known ones.
-- Regression tests follow {{unit_testing_link}}; placement of the fix follows {{clean_architecture_link}}.
-- Out-of-scope fixes go back to the gate per {{incremental_link}}.
+## 2. The 6-Step Debugging Loop
+
+1. **Reproduce (`D1`–`D3`):** Run one non-interactive CLI command that fails reliably with the reported symptom; read the **first** real error down to the first frame in workspace code ([01]({{ref_01}})).
+2. **Minimize & Isolate (`D4`, `D13`):** Strip non-essential inputs, diff against the last green revision, trace callers (`rg -n` / code intelligence), or bisect in a disposable worktree ([01]({{ref_01}}), [02]({{ref_02}})).
+3. **Hypothesize (`D5`, `D6`):** Write 3–5 ranked falsifiable hypotheses (`H1`..`H3`), test one variable at a time, and trace the bad value backwards to its origin ([02]({{ref_02}})).
+4. **Fix & Regression Test (`D7`–`D9`, `D11`):** Turn the minimal case into a Red-to-Green regression test (`{{unit_testing_link}}`), apply the smallest fix at the owning layer (`{{clean_architecture_link}}`), and remove all `[DEBUG-xxxx]` logs ([03]({{ref_03}})).
+5. **Stop & Escalate (`D10`, `D12`):** Report environment failures as `BLOCKED`, missing context as `NEEDS_CONTEXT`, stop after **3 failed fix attempts**, and route contract/schema/scope changes to `change-control` ([03]({{ref_03}})).
+6. **Report (`D14`):** Record Symptom, Triage, Reproduction, Root cause, Fix, Regression Red/Green rows, Ruled-out hypotheses, and Debug-tag cleanup proof ([03]({{ref_03}})).
+
+---
+
+## 3. Core Debugging Rules (Mandatory Compliance)
+
+| Rule | Principle | Why | Reference |
+|---|---|---|---|
+| **D1** | **Reproduce first.** One fast, deterministic, non-interactive command that fails with the reported symptom. Cannot reproduce → `NEEDS_CONTEXT`. | A fix you cannot see fail and pass is a guess. | [01-reproduce-read-and-tools]({{ref_01}}) |
+| **D2** | **Read the first real error.** Inspect the root exception in chained tracebacks and the first frame in workspace code; redact secrets (`<REDACTED>`). | Fixing the outer wrapper frame wastes time on the wrong line. | [01-reproduce-read-and-tools]({{ref_01}}) |
+| **D3** | **One failure at a time, first one first.** Stop at the first failure and resolve it before inspecting downstream cascades. | Parallel fixes hide which change resolved what. | [01-reproduce-read-and-tools]({{ref_01}}) |
+| **D4** | **Minimize and isolate.** Cut inputs/steps to the smallest failing case; diff since last green; run `git bisect` only in a disposable worktree. | The minimal failing case becomes the permanent regression test. | [02-isolate-and-hypothesize]({{ref_02}}) |
+| **D5** | **3–5 ranked falsifiable hypotheses, one variable per probe.** Log `H1`..`H3` with prediction, probe, and `CONFIRMED` / `RULED OUT`. | Multiple simultaneous edits make results ambiguous. | [02-isolate-and-hypothesize]({{ref_02}}) |
+| **D6** | **Fix the root cause, not the symptom.** Trace the bad value backwards caller-by-caller to its source and check the diff for sibling bugs. | Symptom patches move the bug and leave siblings intact. | [02-isolate-and-hypothesize]({{ref_02}}) |
+| **D7** | **Smallest fix at the owning layer, inside task scope.** Place the fix per `{{clean_architecture_link}}`; no unrelated refactoring. | Wrong-layer fixes break again and bloat review. | [03-fix-escalate-and-report]({{ref_03}}) |
+| **D8** | **Red-to-Green regression test.** Prove the test fails for the reported reason without the fix and passes with the fix (`{{unit_testing_link}}`). | Without a regression test, the defect returns silently. | [03-fix-escalate-and-report]({{ref_03}}) |
+| **D9** | **Never green-wash.** No skipped/weakened tests, swallowed errors, fake fallbacks, loosened types, arbitrary sleeps/retries, or lint suppressions. | Green-washing hides the bug and removes the safety net. | [03-fix-escalate-and-report]({{ref_03}}) |
+| **D10** | **Environment vs. code.** Unreachable DB/service, missing env var, unapplied migration/codegen, or stale lockfile → `BLOCKED`, never a code workaround. | Code workarounds for broken environments break everyone else. | [03-fix-escalate-and-report]({{ref_03}}) |
+| **D11** | **Remove temporary instrumentation.** Tag temporary logs `[DEBUG-xxxx]` and prove zero leftovers with `rg -n` and the linter (`{{clean_code_link}}` `C3`). | Leftover debug logs leak data and clutter output. | [02-isolate-and-hypothesize]({{ref_02}}) |
+| **D12** | **Time-box (3 attempts) and escalate.** Stop after 3 failed fix attempts (`BLOCKED`); route contract/schema/dependency/scope changes to `change-control`. | Endless attempts burn context and violate approval gates. | [03-fix-escalate-and-report]({{ref_03}}) |
+| **D13** | **Use non-interactive tracing tools.** Use code intelligence / `rg -n` for caller and impact tracing (`EXTEND` vs `INIT`); never run interactive debuggers that hang CLI shells. | Static/CLI tracing is fast, repeatable, and non-blocking. | [01-reproduce-read-and-tools]({{ref_01}}) |
+| **D14** | **Report the root-cause analysis.** Include the structured Debug Report block and Red/Green evidence rows in the hand-off. | Reviewers verify causal reasoning, not just the diff. | [03-fix-escalate-and-report]({{ref_03}}) |
+
+---
+
+## 4. Reference Guides
+
+| Topic | Reference |
+|---|---|
+| `EXTEND` vs `INIT` rule, reproduction hierarchy, reading tracebacks, untrusted log redaction, and CLI/tracing commands | [01 — Reproduce, Read & Tools]({{ref_01}}) |
+| Diff/layer isolation, 3–5 ranked falsifiable hypotheses, tagged `[DEBUG-xxxx]` cleanup, and Symptom → First Moves → Cause matrix | [02 — Isolate & Hypothesize]({{ref_02}}) |
+| Red-to-Green regression fix, Never Green-Wash table, Environment (`BLOCKED`) vs Code, 3-attempt time-box, `change-control`, Debug Report, and `BLOCKER`/`MAJOR`/`MINOR` review grading | [03 — Fix, Escalate & Report]({{ref_03}}) |
+<!-- {{profile_references}} -->
+
+---
+
+## 5. Relationship with Other Skills
+
+- **Cold defect hunting vs. known failure fixing**: `{{bug_hunt_link}}` finds unknown defects; this skill fixes known failures.
+- **Regression test authoring**: `{{unit_testing_link}}` and `{{verification_link}}`.
+- **Layer ownership & clean craft**: `{{clean_architecture_link}}`, `{{clean_code_link}}`, and `{{secure_coding_link}}`.
+- **Task loop & gate escalation**: `incremental-implementation` and `change-control`.
 
 <!-- custom:start -->
 <!-- custom:end -->

@@ -1,0 +1,45 @@
+# 01 — Impact Map and Tracing Recipes (`CX1`, `CX2`)
+
+<!-- GEN: Why: each impact category has its own hiding place in this repository, and repeatable tracing recipes find the same callers every time, whoever runs them. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+
+## 1. Impact Map (`CX2`)
+
+<!-- GEN: Rule CX2. Include the 6 impact categories (UI screens/flows, APIs & consumers, Data/tables/migrations/reports, Jobs/events/integrations, Permissions & data scopes, Documentation/analytics) with real workspace folders and commands. -->
+
+Check every impact category below when existing behavior changes. Record the exact command executed and its output before claiming any category has no hits.
+
+| Category | Look in (real paths) | Tracing command | Notes |
+|---|---|---|---|
+{{impact_rows}}
+
+- **Categories absent in this workspace:** {{absent_categories}}
+- **External consumers outside this repository:** {{external_consumers}} <!-- GEN: e.g. mobile app versions in production, partner webhooks, external reporting pipelines; ask the user when unknown -->
+
+## 2. Repeatable Tracing Recipes (`CX1`)
+
+<!-- GEN: Rule CX1. Provide concrete, runnable rg and dependency-graph commands with working directory for each common starting point. -->
+
+For every recipe step, record: **command run**, **working directory (`cwd`)**, and **matching `file:symbol` hits**.
+
+### 2.1 Entity Field or Model Attribute Changes
+
+{{recipe_field}}
+
+### 2.2 API Endpoint, Route, or Payload Schema Changes
+
+{{recipe_api}}
+
+### 2.3 Business Rule or Calculation Changes (`BR-NN`)
+
+{{recipe_rule}}
+
+### 2.4 Shared UI or Domain Component Changes
+
+{{recipe_component}}
+
+### 2.5 Permission, Role, or Data Scope Changes
+
+{{recipe_permission}}
+
+<!-- custom:start -->
+<!-- custom:end -->

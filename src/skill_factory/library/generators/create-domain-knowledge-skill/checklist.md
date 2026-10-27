@@ -1,14 +1,12 @@
 # Checklist — domain-knowledge
 
-Run this and `~/.claude/skill-factory/core/checklist-common.md`.
+Run this alongside [../../core/checklist-common.md](../../core/checklist-common.md).
 
-- [ ] Every rule DK1–DK9 is adopted, adapted, or "not adopted" with a reason; DK5, DK8 and DK9 are adopted
-- [ ] Every fact carries `VERIFIED` (with path), `CONFIRMED` or `OPEN`; nothing inferred is labelled as fact
-- [ ] Glossary terms come from the workspace (labels, entities, documents); synonyms to avoid are listed where they exist, and the skill says `gate-review` checks them
-- [ ] "New and fuzzy words" uses a real overloaded word of the workspace and says where to check a claim against code
-- [ ] Entity cards list status values and transitions with trigger and enforcement location
-- [ ] The roles × scopes matrix was shown to and confirmed by the user; a workspace without roles or scopes says so in one line
-- [ ] Business rules have `file:symbol` locations and sources; IDs do not collide with work-item `BR-NN`
-- [ ] No category is invented for a workspace that does not have it; no domain words are carried over from the generator's examples
-- [ ] No personal data, secrets or volatile values copied
-- [ ] Upkeep owner and trigger are stated
+- [ ] All rules `DK1`–`DK9` are enforced as mandatory compliance (workspaces without RBAC roles or data scopes document a one-line `N/A for this workspace` entry in `03-roles-scopes-and-upkeep.md`)
+- [ ] Every fact carries `VERIFIED` (with `file:symbol` or path), `CONFIRMED`, or `OPEN`; zero inferred facts are written as verified or confirmed (`DK5`)
+- [ ] Glossary terms come from the workspace (labels, entities, documents); banned synonyms (`"Avoid saying"`) are listed and checked by `gate-review` spec mode and CLI `rg` gates (`DK1`)
+- [ ] Challenging overloaded/fuzzy words (`DK9`) uses a real overloaded word from the workspace, maps questions to `Q-NN` and decisions to `D-NN`, and states where to verify behavior claims against code
+- [ ] Entity cards (`DK2`) and the business-rule catalog (`DK4`) in `02-entities-lifecycles-and-rules.md` list status values, allowed/forbidden transitions, triggers, and `file:symbol` enforcement locations
+- [ ] The `Role × Scope × Action` matrix (`DK3`) in `03-roles-scopes-and-upkeep.md` was shown to and confirmed by the user (or states `N/A for this workspace` in one line)
+- [ ] Volatile facts are linked rather than copied (`DK6`), same-work-item upkeep owner/trigger is stated (`DK7`), and zero personal data (PII) or secrets appear anywhere (`DK8`)
+- [ ] Deterministic CLI checks use strictly `PASS` / `FAIL` and review criteria use strictly `BLOCKER` / `MAJOR` / `MINOR`

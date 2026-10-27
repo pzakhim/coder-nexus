@@ -2,10 +2,11 @@
 
 Run this and `~/.claude/skill-factory/core/checklist-common.md`.
 
-- [ ] Every rule H1–H14 is adopted, adapted to the workspace vocabulary, or "not adopted" with a reason; H1, H2, H6, H7, H8, H13 are adopted
-- [ ] Project patterns derived from the workspace's risk areas, each with a real path; applicable stack patterns only
-- [ ] Effort triggers name the workspace's risky areas for `deep`
-- [ ] Severity and verdict mapping use the workspace's finding levels, verdict words and report location
-- [ ] Read-only commands and caller search are real and do not modify code
-- [ ] Reviewer is read-only; coder self-check is `quick` and fixes CONFIRMED findings with the missing test
-- [ ] The self bug-hunt step of incremental-implementation (if present) links here at `quick`
+- [ ] Every rule `H1`–`H14` is adopted and adapted to the workspace's stack, commands, and report location (zero `"not adopted"` waivers)
+- [ ] Generated skill uses the cohesive 3-reference layout (`01-scope-dimensions-and-patterns.md`, `02-verify-and-disprove.md`, `03-severity-verdict-and-report.md`)
+- [ ] Project and stack patterns are derived from the workspace's architecture and risk areas, each naming real paths and checks
+- [ ] Effort triggers name the workspace's high-risk areas for `deep`
+- [ ] Severity uses the unified `BLOCKER` / `MAJOR` / `MINOR` scale with `CONFIRMED` / `PLAUSIBLE` confidence (zero `P0`–`P3` remnants)
+- [ ] Read-only verification commands and caller search (`rg`, analyzer, focused test runner) are real, report binary `PASS` / `FAIL` (or `NOT_RUN`), and never modify code
+- [ ] Reviewer is strictly read-only; Code Writer self-check runs at `quick` and fixes `CONFIRMED` findings with a regression test first
+- [ ] The self bug-hunt step of `incremental-implementation` (if present) links here at `quick`

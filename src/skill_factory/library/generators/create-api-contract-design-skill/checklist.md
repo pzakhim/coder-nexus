@@ -1,15 +1,13 @@
 # Checklist — api-contract-design
 
-Run this and `~/.claude/skill-factory/core/checklist-common.md`.
+Run this checklist alongside [../../core/checklist-common.md](../../core/checklist-common.md):
 
-- [ ] Every rule AP1–AP9 is adopted, adapted, or "not adopted" with a reason; AP1, AP6 and AP9 are adopted
-- [ ] The source of truth for the contract is named and real
-- [ ] Naming, response and error shapes come from real endpoints; drift is listed
-- [ ] Every endpoint example states roles, scope and the denied response
-- [ ] The compatibility table gives a compatible path for every breaking change and links the version rules
-- [ ] Prefer adding over modifying, Hyrum's Law and the One-Version Rule are stated in 04
-- [ ] The error envelope is defined once; endpoints reference it
-- [ ] Retried mutations: key source, atomic claim, payload-mismatch error, in-flight answer, timeout as unknown outcome and retention are stated, or "no retried mutations" in one line
-- [ ] Clients and mocks are named with real paths, or stated as absent
-- [ ] No real tokens, keys or personal data in examples
-- [ ] Branched layout: shared conventions in `shared/`, enforcement in `be/`, consumption in `fe/`
+- [ ] All mandatory rules **AP1–AP9** are enforced (zero `"not adopted"` carve-outs)
+- [ ] Contract source of truth (`design.md` API section + generated `openapi.json` snapshot) is explicit and never hand-edited
+- [ ] Route conventions, separate input/output schemas (`extra="forbid"` on inputs), and the single centralized error envelope are defined with concrete examples
+- [ ] Bounded pagination (`limit` max cap + deterministic tie-breaker sort) and allow-listed filter/sort fields are specified
+- [ ] Every endpoint rule enforces explicit authentication declarations (`security` in OpenAPI), RBAC, and anti-IDOR data-scope isolation (`404` when an object belongs to another tenant/scope)
+- [ ] Retried mutations define atomic `Idempotency-Key` claiming, payload-mismatch rejection (`409` / `422`), in-flight duplicate handling, and timeout-as-unknown-outcome rules
+- [ ] Additive vs. breaking classification table, Hyrum's Law, One-Version Rule, and the breaking-change `D-NN` transition protocol are included
+- [ ] CLI verification gates use binary **`PASS` / `FAIL`** flags and review findings use **`BLOCKER` / `MAJOR` / `MINOR`** (`shared_contracts/flags_and_statuses.md`)
+- [ ] Cohesive 3-file `references/` layout (`01-conventions-schemas-and-idempotency.md`, `02-auth-scopes-and-compatibility.md`, `03-snapshot-handshake-and-review.md`) with zero hardcoded `be_dir` / `fe_dir`

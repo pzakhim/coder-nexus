@@ -1,0 +1,76 @@
+# 02 — Edge Cases & Writing Rules
+
+<!-- GEN: Why: defects cluster in recurring domain edge cases, vague wording, synonym drift, and unclassified v2+ changes; this guide defines mandatory edge-case checks and exact writing rules for BR-NN, AC-NN, bug specs, and deltas. Kind: Mandatory — keep the purpose, adapt the structure (core/authoring-guide.md). -->
+<!-- GEN: Rules RS3, RS4, RS5, RS7, RS10 (Mandatory Compliance). Use real examples rewritten from approved workspace specs and confirmed at Step 4. -->
+
+## 1. Mandatory Domain Edge Cases (`RS3`)
+
+<!-- GEN: Include only the catalog categories from references/edge-case-catalog.md that exist in this workspace, each with a real workspace example. Check every category during specification or record "not applicable" with a reason. -->
+
+| Category | What to Check in `requirements.md` | Real Example in {{project_name}} |
+|---|---|---|
+| {{edge_category}} | {{edge_check}} | {{edge_example}} |
+{{edge_case_rows}}
+
+- **Categories not applicable in this workspace:** {{dropped_categories}}
+
+## 2. Verbatim Glossary Terms (`RS5`)
+
+- Goals (`G-NN`), business rules (`BR-NN`), acceptance criteria (`AC-NN`), and scenarios must use the glossary terms of {{domain_knowledge_link}} **verbatim**.
+- Using a synonym (including any term listed under `"Avoid saying"` in `domain-knowledge`) is a specification defect (`BLOCKER` or `MAJOR` in Gate 1 review).
+- When a work item introduces a new business concept, add the term to `domain-knowledge` first (marked `OPEN` until confirmed by the user).
+
+## 3. Observable `G-NN`, `BR-NN`, and `AC-NN` Writing Rules (`RS4`)
+
+### Goals & Measurable Success Signals (`G-NN`)
+- Every `G-NN` success signal states **who observes what** and the **exact threshold, state, or event** that proves it.
+- **Compliant example:** {{success_signal_good_example}}
+- **Non-compliant (unmeasurable):** {{success_signal_bad_example}}
+
+### Business Rules (`BR-NN`)
+- **Format:** {{br_format}} — states the invariant using verbatim glossary terms and cites the `G-NN` and `D-NN` it enforces.
+- **Workspace example:** {{br_example}}
+
+### Acceptance Criteria (`AC-NN`)
+- **Format:** {{ac_format}}
+- One observable behavior per `AC-NN`, verifiable by QA through the UI or API contract.
+- Zero internal implementation details (internal class names, private helpers, database table names) unless the requirement is explicitly an external API/schema contract.
+- Every `AC-NN` traces to its `BR-NN` and `G-NN` as required by the `requirements.md` template.
+- **Compliant example:** {{ac_good_example}}
+- **Non-compliant (vague / implementation-coupled):** {{ac_bad_example}}
+
+## 4. Banned Vague-Word Replacement Table (`RS4`)
+
+<!-- GEN: List vague words found in this workspace's past specs and review comments (in both languages when bilingual), paired with concrete observable replacements. -->
+
+| Banned Vague Word / Phrase | Write Instead (Observable State, Threshold, or Event) |
+|---|---|
+| {{vague_word}} | {{concrete_replacement}} |
+{{vague_word_rows}}
+
+Any vague word that cannot be pinned down from existing sources becomes an `OPEN` `Q-NN` in `codebase-notes.md` — never guess a threshold or leave the vague word in `requirements.md`.
+
+## 5. Delta Rules for `v2+` Change Jobs (`RS10`)
+
+For any change to existing built behavior (`v2+`), classify every affected `BR-NN` and `AC-NN` against the baseline code revision:
+
+| Delta Classification | Meaning Against Baseline Code | Required Specification & Impact Entry |
+|---|---|---|
+| `ADDED` | Net-new behavior that does not exist in baseline code | Full rule/AC in `requirements.md`; row in `change-impact.md` → `"Behavior delta"` |
+| `MODIFIED` | Existing built behavior whose rule, inputs, or outputs change | Full updated wording in `requirements.md`; one-line diff summary in `change-impact.md` → `"Behavior delta"` |
+| `REMOVED` | Existing built behavior that is retired | Omitted from active `requirements.md`; reason + **migration note** (effect on existing data, users, and clients) in `change-impact.md` → `"Behavior delta"` |
+
+- In `change-impact.md`, `"Behavior delta"` uses `ADDED` / `MODIFIED` / `REMOVED`, and `"AC delta"` uses `Add` / `Change` / `Remove` (unaffected = `Keep`), with every row tracing to a behavior row. See {{change_impact_link}}.
+
+## 6. Bug Specification Format (`RS7`)
+
+Every bugfix specification must record:
+1. **Environment found:** `DEV` / `STG` / `PROD`
+2. **Exact reproduction steps:** minimal deterministic sequence
+3. **Expected vs actual behavior:** observable state or response diff
+4. **Affected users, roles, and data scope:** who and which records are impacted
+5. **Regression scope:** adjacent flows that must remain unchanged
+{{bug_extra_fields}}
+
+<!-- custom:start -->
+<!-- custom:end -->

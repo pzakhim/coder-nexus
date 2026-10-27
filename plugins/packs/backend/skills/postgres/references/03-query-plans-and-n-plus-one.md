@@ -1,6 +1,8 @@
-# 03 — Query plans and N+1 detection
+# 03 — Query Plans (`EXPLAIN ANALYZE`) and N+1 Detection (`PG10`)
 
-A slow query is a defect like any other: the method is `root-cause-debugging` (reproduce, read the real evidence, one hypothesis at a time, regression check). This file adds the PostgreSQL tools.
+> Topic: Reproducing slow queries on dev/test DBs, interpreting `EXPLAIN (ANALYZE, BUFFERS)`, verifying index improvements, and guarding list endpoints with deterministic statement-count tests.
+
+A slow query is a defect investigated with `{{slot:root-cause-debugging}}` (reproduce, inspect real plan evidence, test one hypothesis at a time, and lock with a regression check).
 
 ## EXPLAIN ANALYZE workflow
 

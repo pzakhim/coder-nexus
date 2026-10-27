@@ -1,25 +1,33 @@
-# External providers: sandboxes and stubs
+# External Providers: Sandboxes and Labelled Stubs
 
-## Order of preference
+Orientation for `references/02-test-data-accounts-and-stubs.md` (`E7`).
 
-1. **Provider sandbox / test mode** (payment test keys, ERP test instance, LLM with a test project).
-2. **Stub at the network edge** — a mock server the app calls instead of the provider (configured by URL/env), so application code is unchanged.
-3. **Not testable here** → the affected cases are `BLOCKED` (never fabricated success).
+## 1. Order of Preference
 
-## Stub tools
+1. **Provider sandbox / test mode** (test API keys, dedicated sandbox tenant, non-billable test project).
+2. **Stub at the network edge** — an HTTP/RPC mock server that the application calls via configuration/env URL override, keeping application source code untouched.
+3. **Unavailable without sandbox or stub** → mark affected test cases **`BLOCKED`** (never fabricate a `PASS`).
 
-| Tool | Fits | Notes |
+## 2. Network-Edge Stub Options
+
+| Category / Tool | Best Fit | Notes |
 |---|---|---|
-| Mockoon (CLI) | HTTP APIs, quick JSON scenarios | Environment file versioned with the work item; `mockoon-cli start --data <file>` |
-| WireMock | HTTP APIs with request matching and faults | Supports delays/timeouts for failure cases |
-| Prism | OpenAPI-described providers | Mocks from the spec |
-| MSW | Frontend-only mocking in the browser | Only for UI cases that do not need the real backend |
-| Workspace-specific fake server | Whatever the workspace already has | Prefer it |
+| **Workspace fake/mock server** | Existing mock service in the repo | Always prefer the workspace's existing fake server first |
+| **Mockoon (CLI)** | HTTP/REST JSON APIs | Version the environment file with the work item; `mockoon-cli start --data <file>` |
+| **WireMock** | HTTP APIs needing request matching and fault injection | Supports deterministic delays, timeouts, and status overrides |
+| **Prism** | OpenAPI-specified external services | Serves contract-validated responses directly from the OpenAPI spec |
+| **Browser/Client network interceptor** | Client-only UI state tests | Use only when testing isolated UI states that do not claim backend integration |
 
-## Scenarios a stub must offer
+## 3. Mandatory Stub Scenarios
 
-Success · validation error · auth error · server error · timeout/slow response · malformed response — as the plan requires.
+Provide deterministic scenarios as required by the test plan:
+- **Success (`2xx`)**
+- **Validation / client error (`4xx`)**
+- **Authentication / permission failure (`401` / `403`)**
+- **Upstream server error (`5xx`)**
+- **Timeout / slow response**
+- **Malformed payload**
 
-## Labelling
+## 4. Mandatory Labelling (`stubbed: <provider>`)
 
-Every result produced against a stub carries `stubbed: <provider>` in the evidence. A stubbed PASS proves the application's handling, not the provider integration; say which cases still need the real provider.
+Every test result executed against a stub must carry `stubbed: <provider>` in the environment record and test report. A stubbed `PASS` proves the application's contract handling, not live provider integration; explicitly list which cases still require verification against the real provider sandbox.

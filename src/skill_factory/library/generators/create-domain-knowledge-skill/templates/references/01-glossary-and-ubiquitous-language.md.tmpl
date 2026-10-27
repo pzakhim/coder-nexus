@@ -1,0 +1,33 @@
+# 01 — Glossary & Ubiquitous Language
+
+<!-- GEN: Why: specs, plans, tests, and code must use one canonical name per business concept (DK1) and challenge fuzzy or overloaded words immediately into Q-NN -> D-NN decisions (DK9). Kind: Mandatory — keep the purpose, adapt the structure. -->
+<!-- GEN: Populate terms from localization files, domain models, and approved docs; preserve existing workspace glossary entries verbatim. -->
+
+## 1. Ubiquitous Language Glossary (`DK1`, `DK5`)
+
+Every domain noun is defined once below and used verbatim across `requirements.md`, business rules, acceptance criteria, test cases, and code identifiers.
+
+| Term ({{team_language}}) | Code Name(s) | One-Line Meaning | Avoid Saying (Banned Synonyms) | Fact Label (`VERIFIED` / `CONFIRMED` / `OPEN`) |
+|---|---|---|---|---|
+{{glossary_rows}}
+<!-- GEN: Example row: | Đơn hàng | `Order`, `order_id` | Customer purchase request for catalog items | "phiếu mua", "bill" | `VERIFIED` (`<src>/orders/domain/order.ext:Order`) | -->
+
+### Enforcement of `"Avoid saying"` (`DK1`)
+- Words listed under **Avoid Saying** are machine-checkable banned synonyms.
+- Both `gate-review` spec mode and the banned-synonym CLI gate (`PASS` / `FAIL`) flag any occurrence of an **Avoid Saying** term inside goals, business rules (`BR-NN`), acceptance criteria (`AC-NN`), or test scenarios as a `MAJOR` finding.
+
+## 2. Challenging Overloaded and Fuzzy Words (`DK9`)
+
+When a user prompt, tracker ticket, or stakeholder statement introduces a word that is missing from the table above, carries multiple meanings in the organization, or appears under **Avoid Saying**:
+
+1. **Turn overloaded words into a explicit choice (`Q-NN` → `D-NN`)**:
+   - Name the exact candidate glossary terms from Section 1 and ask which one applies — one question at a time, recommendation first.
+   - Workspace example: "{{fuzzy_word_example}}"
+   <!-- GEN: Use a real overloaded word discovered in this workspace (e.g. distinguishing two roles or two document types). -->
+   - Record the user's answer as a decision (`D-NN`) and add or update the glossary row in the **same work item** (`DK7`) with label `CONFIRMED` or `VERIFIED`.
+2. **Verify behavioral claims against code (`VERIFIED` vs claim)**:
+   - When a prompt or ticket states how existing domain logic behaves, compare the claim against the entity cards and business-rule locations ({{code_check_hint}}).
+   - If the code contradicts the claim, raise an explicit question (`Q-NN`) quoting both the user's statement and the `file:symbol` evidence instead of silently trusting either side (`BLOCKER` if left unresolved).
+
+<!-- custom:start -->
+<!-- custom:end -->
