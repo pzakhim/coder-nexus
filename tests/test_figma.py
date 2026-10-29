@@ -7,7 +7,14 @@ from pathlib import Path
 import httpx
 import pytest
 
-from coder_nexus.figma import fetch_async, load_figma_token, parse_figma_url
+from coder_nexus.figma import (
+    build_spec_dict,
+    extract_icon_nodes,
+    fetch_async,
+    infer_canonical_pattern,
+    load_figma_token,
+    parse_figma_url,
+)
 from coder_nexus.huly.client import _fetch_figma_source
 from coder_nexus.huly.models import HulySource
 
@@ -101,6 +108,7 @@ def test_fetch_success_writes_png_json_summary(tmp_path: Path):
     assert spec["screens"][0]["image_path"] == res.png_path
     assert spec["screens"][0]["bounds"] == {"x": 0, "y": 0, "width": 390, "height": 844}
     assert spec["screens"][0]["components"][0]["component_name"] == "Button/Primary"
+    assert spec["screens"][0]["components"][0]["pattern_hint"] == "button"
     # Framelink-style tree referencing DTCG tokens by name
     tree = spec["screens"][0]["tree"]
     assert tree["id"] == NODE and tree["tokens"]["fill"] == "{color.unlinked.background-ffffff}"
@@ -114,6 +122,7 @@ def test_fetch_success_writes_png_json_summary(tmp_path: Path):
         "name": "Button/Primary",
         "componentSet": "Button",
         "properties": {"Variant": "Primary"},
+        "patternHint": "button",
     }
     # DTCG tokens.json verification
     tokens = json.loads(Path(res.tokens_path).read_text())
@@ -124,7 +133,12 @@ def test_fetch_success_writes_png_json_summary(tmp_path: Path):
     assert tokens["typography"]["button"]["label-m"]["$value"]["fontFamily"] == "Inter"
     assert tokens["$extensions"]["com.figma"]["componentSets"]["cs1"]["name"] == "Button"
     assert spec["design_tokens"]["component_catalog"] == [
-        {"component_id": "c1", "component_name": "Button/Primary", "instances_count": 1}
+        {
+            "component_id": "c1",
+            "component_name": "Button/Primary",
+            "pattern_hint": "button",
+            "instances_count": 1,
+        }
     ]
     summary = Path(res.summary_path).read_text()
     assert summary.index("Receive goods  _(Inter 700 22px)_") < summary.index("Submit  _(Inter 600 16px, #0055AA)_")
@@ -310,3 +324,240 @@ def test_task_detail_hook_marks_figma_source(tmp_path: Path, monkeypatch):
     fresh: list[HulySource] = []
     asyncio.run(_fetch_figma_source(fresh, URL, tmp_path / "f2", str(tmp_path)))
     assert fresh[0].kind == "figma" and fresh[0].status == "UNREACHABLE" and "404" in fresh[0].note
+
+
+@pytest.mark.parametrize(
+    "node_name,comp_name,set_name,expected",
+    [
+        ("Top Header", "AppBar/Default", "", "appbar"),
+        ("Main Tabs", "BottomNav", "", "bottomnav"),
+        ("Filter Sheet", "BottomSheet/Common", "", "bottomsheet"),
+        ("Confirm Delete", "Modal/Dialog", "", "dialog"),
+        ("Order Date", "DatePicker/Range", "", "datepicker"),
+        ("Search SKU", "SearchBar", "", "search"),
+        ("Warehouse Select", "Dropdown/Single", "", "dropdown"),
+        ("Quantity Input", "TextField/Outlined", "", "formfield"),
+        ("Save CTA", "Button/Primary", "Button", "button"),
+        ("Status", "StatusPill", "Badge", "badge"),
+        ("Filter Tag", "FilterChip", "", "chip"),
+        ("Empty List", "NoData/Illustration", "", "nodata"),
+        ("Skeleton Row", "ListViewShimmer", "", "loading"),
+        ("Warning Notice", "Banner/Warning", "", "banner"),
+        ("Order Summary", "Card/Elevated", "", "card"),
+        ("Order Row", "ListItem", "", "list"),
+        ("Custom Barcode Gauge", "Gauge/Radial", "", "custom"),
+    ],
+)
+def test_infer_canonical_pattern(node_name, comp_name, set_name, expected):
+    assert infer_canonical_pattern(node_name, comp_name, set_name) == expected
+
+
+def test_repeating_children_deduplication_and_advanced_layout_semantics():
+    root_id = "3000:1"
+    payload = {
+        "name": "iMES Warehouse",
+        "lastModified": "2026-10-29T08:00:00Z",
+        "nodes": {
+            root_id: {
+                "document": {
+                    "id": root_id,
+                    "name": "Stock List Screen",
+                    "type": "FRAME",
+                    "layoutMode": "VERTICAL",
+                    "overflowDirection": "VERTICAL_SCROLLING",
+                    "minWidth": 360,
+                    "maxWidth": 768,
+                    "absoluteBoundingBox": {"x": 0, "y": 0, "width": 390, "height": 844},
+                    "children": [
+                        {
+                            "id": "3000:2",
+                            "name": "Sticky Header",
+                            "type": "FRAME",
+                            "layoutMode": "HORIZONTAL",
+                            "scrollBehavior": "STICKY_SCROLLING",
+                            "absoluteBoundingBox": {"x": 0, "y": 0, "width": 390, "height": 56},
+                            "children": [
+                                {
+                                    "id": "3000:3",
+                                    "name": "Header Title",
+                                    "type": "TEXT",
+                                    "characters": "Warehouse Inventory Very Long Title",
+                                    "maxLines": 1,
+                                    "style": {
+                                        "fontFamily": "Inter",
+                                        "fontWeight": 700,
+                                        "fontSize": 18,
+                                        "textTruncation": "ENDING",
+                                        "textAutoResize": "TRUNCATE",
+                                        "textAlignHorizontal": "CENTER",
+                                    },
+                                    "absoluteBoundingBox": {"x": 16, "y": 16, "width": 300, "height": 24},
+                                }
+                            ],
+                        },
+                        {
+                            "id": "3000:10",
+                            "name": "Item Row 1",
+                            "type": "INSTANCE",
+                            "componentId": "comp_row",
+                            "absoluteBoundingBox": {"x": 0, "y": 60, "width": 390, "height": 64},
+                            "children": [
+                                {"id": "3000:11", "name": "SKU", "type": "TEXT", "characters": "SKU-001", "style": {"fontFamily": "Inter", "fontSize": 14}, "absoluteBoundingBox": {"x": 16, "y": 70, "width": 100, "height": 20}},
+                                {"id": "3000:12", "name": "Qty", "type": "TEXT", "characters": "120 pcs", "style": {"fontFamily": "Inter", "fontSize": 14}, "absoluteBoundingBox": {"x": 280, "y": 70, "width": 80, "height": 20}},
+                            ],
+                        },
+                        {
+                            "id": "3000:20",
+                            "name": "Item Row 2",
+                            "type": "INSTANCE",
+                            "componentId": "comp_row",
+                            "absoluteBoundingBox": {"x": 0, "y": 130, "width": 390, "height": 64},
+                            "children": [
+                                {"id": "3000:21", "name": "SKU", "type": "TEXT", "characters": "SKU-002", "style": {"fontFamily": "Inter", "fontSize": 14}, "absoluteBoundingBox": {"x": 16, "y": 140, "width": 100, "height": 20}},
+                                {"id": "3000:22", "name": "Qty", "type": "TEXT", "characters": "85 pcs", "style": {"fontFamily": "Inter", "fontSize": 14}, "absoluteBoundingBox": {"x": 280, "y": 140, "width": 80, "height": 20}},
+                            ],
+                        },
+                        {
+                            "id": "3000:30",
+                            "name": "Item Row 3",
+                            "type": "INSTANCE",
+                            "componentId": "comp_row",
+                            "absoluteBoundingBox": {"x": 0, "y": 200, "width": 390, "height": 64},
+                            "children": [
+                                {"id": "3000:31", "name": "SKU", "type": "TEXT", "characters": "SKU-003", "style": {"fontFamily": "Inter", "fontSize": 14}, "absoluteBoundingBox": {"x": 16, "y": 210, "width": 100, "height": 20}},
+                                {"id": "3000:32", "name": "Qty", "type": "TEXT", "characters": "40 pcs", "style": {"fontFamily": "Inter", "fontSize": 14}, "absoluteBoundingBox": {"x": 280, "y": 210, "width": 80, "height": 20}},
+                            ],
+                        },
+                        {
+                            "id": "3000:40",
+                            "name": "Floating Scan Button",
+                            "type": "INSTANCE",
+                            "componentId": "comp_fab",
+                            "layoutPositioning": "ABSOLUTE",
+                            "scrollBehavior": "FIXED_WHEN_SCROLLING",
+                            "constraints": {"horizontal": "MAX", "vertical": "MAX"},
+                            "absoluteBoundingBox": {"x": 318, "y": 760, "width": 56, "height": 56},
+                        },
+                    ],
+                },
+                "components": {
+                    "comp_row": {"name": "InventoryListItem"},
+                    "comp_fab": {"name": "FAB/ScanButton"},
+                },
+            }
+        },
+    }
+
+    spec = build_spec_dict(payload, root_id, "https://www.figma.com/design/KEY/File?node-id=3000-1", file_key="KEY")
+    screen = spec["screens"][0]
+    tree = screen["tree"]
+
+    # 1. Screen root scrollDirection & minMax bounds
+    assert tree["layout"]["scrollDirection"] == "vertical"
+    assert tree["layout"]["minMax"] == {"minWidth": 360, "maxWidth": 768}
+
+    # 2. Sticky header + textMeta (maxLines, truncation, autoResize, align)
+    header_node = tree["children"][0]
+    assert header_node["layout"]["scrollBehavior"] == "sticky"
+    title_node = header_node["children"][0]
+    assert title_node["textMeta"] == {
+        "maxLines": 1,
+        "truncation": "ellipsis",
+        "autoResize": "truncate",
+        "align": "center",
+    }
+
+    # 3. Repeating children deduplication: 3 consecutive comp_row items -> 1 representative with repeatCount=3
+    assert len(tree["children"]) == 3  # Sticky Header, deduplicated Item Row 1 (x3), Floating Scan Button
+    row_rep = tree["children"][1]
+    assert row_rep["id"] == "3000:10"
+    assert row_rep["repeatCount"] == 3
+    assert row_rep["repeatedSamples"] == ["SKU-002 | 85 pcs", "SKU-003 | 40 pcs"]
+    assert row_rep["component"]["patternHint"] == "list"
+
+    # Full texts_reading_order and components list still preserve all 3 rows
+    all_texts = [t["text"] for t in screen["texts_reading_order"]]
+    assert "SKU-001" in all_texts and "SKU-002" in all_texts and "SKU-003" in all_texts
+    assert len(screen["components"]) == 4
+
+    # 4. Absolute positioning & fixed scroll behavior on FAB
+    fab_node = tree["children"][2]
+    assert fab_node["layout"]["positioning"] == "absolute"
+    assert fab_node["layout"]["constraints"] == {"horizontal": "max", "vertical": "max"}
+    assert fab_node["layout"]["scrollBehavior"] == "fixed"
+    assert fab_node["component"]["patternHint"] == "button"
+
+
+def test_export_icons_writes_svgs_without_leaking_token(tmp_path: Path):
+    icon_id = "4000:99"
+    svg_url = "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/barcode-icon.svg"
+    svg_bytes = b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>'
+
+    icon_payload = {
+        "name": "iMES Mobile",
+        "lastModified": "2026-10-29T08:00:00Z",
+        "nodes": {
+            NODE: {
+                "document": {
+                    "id": NODE,
+                    "name": "Scan Screen",
+                    "type": "FRAME",
+                    "absoluteBoundingBox": {"x": 0, "y": 0, "width": 390, "height": 844},
+                    "children": [
+                        {
+                            "id": icon_id,
+                            "name": "ic_barcode_scan",
+                            "type": "FRAME",
+                            "absoluteBoundingBox": {"x": 20, "y": 20, "width": 24, "height": 24},
+                            "children": [
+                                {"id": "4000:100", "name": "Vector", "type": "VECTOR"},
+                            ],
+                        }
+                    ],
+                },
+            }
+        },
+    }
+
+    assert extract_icon_nodes(icon_payload["nodes"][NODE]["document"]) == [
+        {"id": icon_id, "name": "ic_barcode_scan"}
+    ]
+
+    seen: list[httpx.Request] = []
+
+    def icon_handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        if request.url.path == f"/v1/files/{KEY}/nodes":
+            return httpx.Response(200, json=icon_payload)
+        if request.url.path == f"/v1/images/{KEY}":
+            if request.url.params.get("format") == "svg":
+                assert request.url.params["ids"] == icon_id
+                return httpx.Response(200, json={"err": None, "images": {icon_id: svg_url}})
+            return httpx.Response(200, json={"err": None, "images": {NODE: IMG_URL}})
+        if str(request.url) == IMG_URL:
+            return httpx.Response(200, content=PNG)
+        if str(request.url) == svg_url:
+            return httpx.Response(200, content=svg_bytes)
+        return httpx.Response(404)
+
+    res = asyncio.run(
+        fetch_async(
+            URL,
+            tmp_path,
+            "figd_test",
+            export_icons=True,
+            transport=httpx.MockTransport(icon_handler),
+        )
+    )
+    assert res.status == "READ"
+    assert len(res.icon_svg_paths) == 1
+    svg_file = Path(res.icon_svg_paths[0])
+    assert svg_file.exists() and svg_file.parent.name == "icons"
+    assert svg_file.name == "4000-99-ic_barcode_scan.svg"
+    assert svg_file.read_bytes() == svg_bytes
+
+    spec = json.loads(Path(res.spec_path).read_text())
+    assert spec["icon_svg_paths"] == res.icon_svg_paths
+
+    # Verify token isolation: X-Figma-Token never sent to S3 render/SVG hosts
+    assert all(("x-figma-token" in r.headers) == (r.url.host == "api.figma.com") for r in seen)
