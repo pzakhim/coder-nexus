@@ -15,8 +15,9 @@ import httpx
 from pydantic import BaseModel, Field
 
 from ..huly.auth import parse_env_file
+from . import summary as _summary
 from .summary import build_spec_and_tokens, extract_screen_nodes, render_summary
-from .tokens import merge_and_save_tokens
+from .tokens import merge_and_save_tokens, slugify_segment
 
 API_BASE = "https://api.figma.com"
 TOKEN_KEY = "FIGMA_TOKEN"
@@ -43,6 +44,7 @@ class FigmaFetchResult(BaseModel):
     name: Optional[str] = Field(default=None, description="Frame name, when read")
     png_path: Optional[str] = None
     screen_images: list[str] = Field(default_factory=list, description="Per-screen rendered image paths (S01..SNN)")
+    icon_svg_paths: list[str] = Field(default_factory=list, description="Exported SVG icon file paths when export_icons=True")
     json_path: Optional[str] = None
     tokens_path: Optional[str] = Field(default=None, description="File-level W3C DTCG design tokens (tokens.json)")
     spec_path: Optional[str] = Field(default=None, description="Framelink-style normalized spec JSON (<node>.spec.json)")
@@ -86,6 +88,7 @@ async def fetch_async(
     token: Optional[str],
     *,
     image_format: str = "png",
+    export_icons: bool = False,
     timeout: float = 30.0,
     transport: Optional[httpx.AsyncBaseTransport] = None,
 ) -> FigmaFetchResult:
@@ -176,6 +179,34 @@ async def fetch_async(
             elif result.png_path:
                 result.screen_images = [result.png_path]
 
+            if export_icons:
+                extract_icon_nodes = getattr(_summary, "extract_icon_nodes", None)
+                icon_nodes = extract_icon_nodes(root_doc) if extract_icon_nodes else []
+                icon_ids = [n["id"] for n in icon_nodes if n.get("id")]
+                if icon_ids:
+                    svg_res = await http.get(
+                        f"{API_BASE}/v1/images/{ref.file_key}",
+                        params={"ids": ",".join(icon_ids), "format": "svg"},
+                        headers=headers,
+                    )
+                    if svg_res.status_code == 200:
+                        svg_map = svg_res.json().get("images") or {}
+                        icons_dir = out / "icons"
+                        for icon_node in icon_nodes:
+                            iid = icon_node.get("id")
+                            if not iid:
+                                continue
+                            svg_url = svg_map.get(iid)
+                            if not svg_url:
+                                continue
+                            dl_res = await http.get(svg_url)  # pre-signed render URL: no token
+                            if dl_res.status_code == 200 and dl_res.content:
+                                icons_dir.mkdir(parents=True, exist_ok=True)
+                                svg_filename = f"{node_file_stem(iid)}-{slugify_segment(icon_node.get('name', 'icon'))}.svg"
+                                svg_path = icons_dir / svg_filename
+                                svg_path.write_bytes(dl_res.content)
+                                result.icon_svg_paths.append(str(svg_path))
+
             spec_data, token_registry = build_spec_and_tokens(
                 payload,
                 ref.node_id,
@@ -184,6 +215,8 @@ async def fetch_async(
                 root_image_path=result.png_path,
                 screen_image_paths=screen_image_paths,
             )
+            if result.icon_svg_paths:
+                spec_data["icon_svg_paths"] = result.icon_svg_paths
             tokens_path = out / "tokens.json"
             merge_and_save_tokens(tokens_path, token_registry)
             result.tokens_path = str(tokens_path)

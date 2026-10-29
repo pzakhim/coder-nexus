@@ -16,25 +16,28 @@ When a work item has `FIGMA_PROVIDED` visual sources in `.superpowers/sources/<I
    - **`dimension`**: Token entries (`{dimension.radius.*}`, `{dimension.spacing.*}`) derived from frame corner radii and auto-layout item spacing / padding.
    - **`$extensions.com.figma.components` & `componentSets`**: Catalog of reusable Figma components and variant sets referenced across frames.
 2. **Layer 2 — Frame-Level Normalized `<stem>.spec.json` & Per-Screen `<stem>-SNN.png`**:
-   - **`screens[]`**: Each screen (`S-01`, `S-02`...) provides `id`, `name`, `node_id`, `bounds` (`width`, `height`), `image_path` (`<stem>-SNN.png`), `sections[]`, `components[]`, `texts_reading_order[]`, `interactions[]`, and the recursive Framelink-style **`tree`**.
-   - **`screens[i].tree`**: Normalized hierarchy where each node carries `layout` (`mode: row | column | stack | none`, `gap`, `padding`, `align`), `fills` / `strokes` referencing `{color.*}`, `text` + `text_style` referencing `{typography.*}`, `corner_radius` referencing `{dimension.radius.*}`, and `component_ref` (`INSTANCE` / `COMPONENT`) with `variant_properties`.
+   - **`screens[]`**: Each screen (`S01`, `S02`...) provides `suggested_id`, `name`, `node_id`, `bounds` (`width`, `height`), `image_path` (`<stem>-SNN.png`), `sections[]`, `components[]` (with `pattern_hint`), `texts_reading_order[]`, `interactions[]`, and the recursive Framelink-style **`tree`**.
+   - **`screens[i].tree`**: Normalized hierarchy where each node carries `layout` (`mode: row | column | none`, `positioning`, `constraints`, `scrollDirection`, `scrollBehavior`, `minMax`, `gap`, `padding`, `alignItems`, `justifyContent`, `sizing`), `tokens` referencing `{color.*}`, `{typography.*}`, and `{dimension.*}`, `textMeta` (`maxLines`, `truncation`, `autoResize`, `align`), `component` (`INSTANCE` / `COMPONENT` metadata + `patternHint`), and `repeatCount` + `repeatedSamples` on deduplicated list/table runs.
+   - **`design_tokens.component_catalog` & `icon_svg_paths`**: Catalog of frame-level components with `pattern_hint`, plus exported `.svg` icon paths in `.superpowers/sources/<ISSUE-ID>/figma/icons/*.svg` when fetched with `--export-icons`.
    - **Mandatory Visual Cross-Check**: Open every `<stem>-SNN.png` via `view_file` while reading `screens[i].tree` so visual hierarchy, density, and overlay states match the structural tree.
 
 ---
 
-## 2. Auditing Tokens Against the Active Workspace Profile (`K2`, `K4`)
+## 2. Auditing Tokens, `patternHint`, `repeatCount`, & Icons Against the Active Profile (`K2`, `K4`, `K5`)
 
-Compare the tokens and components in `tokens.json` and `<stem>.spec.json` against the active profile contract (`ui-kit-mapping-contracts.md` injected in `SKILL.md`):
+Compare the tokens, pattern hints, list runs, and icons in `tokens.json` and `<stem>.spec.json` against the active profile contract (`<!-- {{profile_references}} -->` injected in `SKILL.md`):
 
-| `architecture_profile.mode` | Visual Foundation Source | Token & Component Audit Rule |
-|---|---|---|
-| `imespro` | Shared company UI kit package (`app_ui_kit`) resolved in `.dart_tool/package_config.json` | Map `{color.*}` $\to$ `AppColor.*`, `{typography.*}` $\to$ `Jakarta` (`Text12`–`Text34`), and `components[]` $\to$ `package:app_ui_kit/app_ui_kit.dart` widgets per `../app-ui-kit/guidance/GUIDE.md` |
-| `external-structured` | Client's own theme/color classes and shared widgets under `lib/shared/` or `lib/core/` | Map `{color.*}` and `{typography.*}` to the Client's theme tokens (`AppColors`, `ThemeExtension`) and `components[]` to `lib/shared/widgets/` |
-| `external-standard` | Standard Flutter Material 3 / Cupertino `ThemeData` & `ColorScheme` | Map `{color.*}` $\to$ `Theme.of(context).colorScheme`, `{typography.*}` $\to$ `Theme.of(context).textTheme`, and `components[]` $\to$ standard Material 3 / Cupertino widgets |
-
-- **Token Mismatch Handling**: If `tokens.json` introduces a color hex, font size/weight, or radius that does not exist in the codebase's Design System tokens:
-  - Do **not** hardcode raw `Color(0xFF...)` or `TextStyle(fontSize: ...)` in feature screens.
-  - Queue a `Q-NN` (`Owner: planning`) asking the user whether to snap to the nearest existing Design System token (`KIT_OVERRIDE (D-NN)`, Recommended) or register a new semantic token (`D-NN`).
+1. **Direct Widget Matching via `patternHint` / `pattern_hint` (`K4`, `K5`)**:
+   - Every `INSTANCE`/`COMPONENT` node in `screens[i].tree` (`component.patternHint`), `screens[i].components` (`pattern_hint`), and `design_tokens.component_catalog` (`pattern_hint`) provides a canonical UI pattern classification (`appbar`, `button`, `formfield`, `search`, `dropdown`, `datepicker`, `dialog`, `bottomsheet`, `bottomnav`, `badge`, `nodata`, `loading`, `list`, `card`, `chip`, `banner`, or `custom`).
+   - Match `patternHint` directly against the active profile's Canonical UI Pattern table (`<!-- {{profile_references}} -->`) to select the profile's standard widget.
+   - When `patternHint == "custom"` or has no profile widget match in the active profile contract or `lib/shared/`, assign `C-NN` (`C-01`, `C-02`...) and record `CORE_GAP (D-NN)` in `design.md` (`## UI/UX mapping`, rule `DESIGN-008`).
+2. **Dynamic List & Pagination Mapping via `repeatCount` + `repeatedSamples` (`K1`, `K4`)**:
+   - When a node in `screens[i].tree` carries `"repeatCount": N` ($\ge 3$) and `"repeatedSamples": [...]`, map the parent/item structure to the profile's dynamic list or pagination widget (`list` pattern) rather than static `Column` children. Use `repeatedSamples` to verify item variant fields (badges, subtitles, trailing actions) across rows.
+3. **Exported SVG Icon Mapping via `icon_svg_paths` (`--export-icons`)**:
+   - Check the active profile's built-in icon catalog first. When a Figma `ICON` node is not already in the profile's icon set, map its exported `.svg` file from `icon_svg_paths` (`.superpowers/sources/<ISSUE-ID>/figma/icons/*.svg`, generated via `coder-nexus figma fetch ... --export-icons`) to the project's SVG icon asset pipeline.
+4. **Token Audit & Mismatch Handling (`{color.*}`, `{typography.*}`, `{dimension.*}`)**:
+   - Map DTCG tokens to the active profile's semantic color, typography, and spacing/radius tokens defined in `<!-- {{profile_references}} -->` (never hardcode raw `Color(0xFF...)` or `TextStyle(fontSize: ...)` literals in feature screens).
+   - If `tokens.json` introduces an unlinked token (`{color.unlinked.*}`, `{typography.unlinked.*}`) or off-scale value absent from the profile's Design System tokens, queue a `Q-NN` (`Owner: planning`) asking the user whether to snap to the nearest existing Design System token (`KIT_OVERRIDE (D-NN)`, Recommended) or register a new semantic token (`D-NN`).
 
 ---
 

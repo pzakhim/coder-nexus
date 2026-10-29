@@ -21,6 +21,7 @@ def add_figma_parser(subparsers) -> None:
     p_fetch.add_argument("--workspace-path", help="Path to client project workspace containing .env")
     p_fetch.add_argument("--out", help="Output folder (default: <workspace>/.superpowers/sources/figma/)")
     p_fetch.add_argument("--format", dest="image_format", choices=["png", "jpg"], default="png", help="Rendered image format (default: png)")
+    p_fetch.add_argument("--export-icons", action="store_true", help="Also export detected pure-vector icon nodes as .svg files under <out>/icons/")
     p_fetch.add_argument("--json", action="store_true", help="Print the result as JSON")
 
 
@@ -37,12 +38,21 @@ def cmd_figma(args: argparse.Namespace) -> int:
         out,
         load_figma_token(str(workspace)),
         image_format=getattr(args, "image_format", "png"),
+        export_icons=getattr(args, "export_icons", False),
     )
     if args.json:
         print(json.dumps(result.model_dump(), indent=2, ensure_ascii=False))
     elif result.status == "READ":
         print(f"✅ READ {result.name or result.node_id}")
-        for path in (result.png_path, *[p for p in result.screen_images if p != result.png_path], result.tokens_path, result.spec_path, result.json_path, result.summary_path):
+        for path in (
+            result.png_path,
+            *[p for p in result.screen_images if p != result.png_path],
+            *result.icon_svg_paths,
+            result.tokens_path,
+            result.spec_path,
+            result.json_path,
+            result.summary_path,
+        ):
             if path:
                 print(f"   {path}")
         if result.note:

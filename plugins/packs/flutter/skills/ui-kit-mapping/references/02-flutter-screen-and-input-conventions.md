@@ -6,15 +6,23 @@ Rules **K2**, **K4**, **K5**, and **K6**.
 
 ---
 
-## 1. Translating Figma `layout` Tree & Screen Anatomy to Flutter (`K6`)
+## 1. Translating Figma `layout` Tree, `textMeta`, & Screen Anatomy to Flutter (`K6`)
 
-Each node in `<stem>.spec.json` → `screens[i].tree` includes a normalized `layout` object (`mode: "row" | "column" | "stack" | "none"`, `gap`, `padding`, `align`, `sizing`):
+Each node in `<stem>.spec.json` → `screens[i].tree` includes a normalized `layout` object (`mode: "row" | "column" | "none"`, `gap`, `padding`, `alignItems`, `justifyContent`, `sizing`, `positioning`, `constraints`, `scrollDirection`, `scrollBehavior`, `minMax`), `repeatCount`, and `textMeta` on `TEXT` nodes:
+
+| `<stem>.spec.json` Property | Flutter Layout / Widget Idiom |
+|---|---|
+| `layout.positioning == "absolute"` + `layout.constraints` (`horizontal`, `vertical`) | `Stack` + `Positioned` / `Align` for floating badges, overlays, or pinned floating action buttons |
+| `layout.scrollBehavior == "fixed" \| "sticky"` | Pinned `AppBar`, `Scaffold.bottomNavigationBar` / sticky bottom `SafeArea` CTA bar, or `SliverPersistentHeader` |
+| `layout.scrollDirection` (`"vertical" \| "horizontal" \| "both"`) + `repeatCount >= 3` | `ListView.builder` / profile's paginated list widget (`list` pattern in `<!-- {{profile_references}} -->`) / `SingleChildScrollView` |
+| `layout.minMax` (`minWidth`, `maxWidth`, `minHeight`, `maxHeight`) | `ConstrainedBox(constraints: BoxConstraints(...))` or responsive `LayoutBuilder` breakpoints |
+| `textMeta.maxLines` + `textMeta.truncation == "ellipsis"` | `Text(..., maxLines: N, overflow: TextOverflow.ellipsis)` (combined with `Expanded` / `Flexible` in `Row`s) |
 
 - **Top-Level Screen Scaffold**:
-  - Map the top header section to the profile's AppBar widget → scrollable body (`SingleChildScrollView` / `ListView` / profile paging list) → sticky bottom action bar (`SafeArea` bottom bar) or inline content CTA → bottom navigation only on top-level shell screens.
+  - Map the top header section to the profile's AppBar widget → scrollable body (`SingleChildScrollView` / `ListView.builder` / profile paging list) → sticky bottom action bar (`SafeArea` bottom bar) or inline content CTA → bottom navigation only on top-level shell screens.
 - **Auto-Layout (`mode: "row" | "column"`)**:
   - Map `mode: "column"` to `Column` / `ListView` and `mode: "row"` to `Row` / `Wrap`, translating `gap` into `SizedBox(height/width: ...)` or list separator spacing and `padding` into `EdgeInsets`.
-  - When a child node has `sizing.horizontal: "FILL"` or `sizing.vertical: "FILL"`, wrap appropriately in `Expanded` or `Flexible` and guard text nodes with `maxLines` + `TextOverflow.ellipsis` to prevent `RenderFlex overflowed` errors.
+  - When a child node has `sizing.horizontal: "fill"` or `sizing.vertical: "fill"`, wrap appropriately in `Expanded` or `Flexible` and guard text nodes with `maxLines` + `TextOverflow.ellipsis` (`textMeta`) to prevent `RenderFlex overflowed` errors.
 - **Tablet & Web Adaptive Layouts**:
   - Inspect `screens[i].bounds` (`width` × `height`).
   - Never stretch a single-column mobile form (`~375–430` width) across a tablet (`>= 768` width) or desktop (`>= 1024` width) viewport without constraints or a 2-column split (master list + detail pane, or scan input pane + live tally pane).

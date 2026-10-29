@@ -10,6 +10,7 @@ SCREEN_CONTAINER_TYPES = {"SECTION", "CANVAS", "GROUP"}
 SCREEN_NODE_TYPES = {"FRAME", "COMPONENT", "COMPONENT_SET"}
 VECTOR_LEAF_TYPES = {"VECTOR", "BOOLEAN_OPERATION", "STAR", "LINE", "ELLIPSE", "REGULAR_POLYGON"}
 MAX_FRAMES, MAX_TEXTS, MAX_ROWS = 80, 300, 40
+MAX_ICONS = 30
 
 PRIMARY_ALIGN_MAP = {
     "MIN": "flex-start",
@@ -157,6 +158,155 @@ def _is_pure_vector_group(node: dict) -> bool:
     )
 
 
+def _match_pattern_text(text: str) -> Optional[str]:
+    if not text:
+        return None
+    if any(k in text for k in ("appbar", "app_bar", "app-bar", "topbar", "top_bar", "top-bar", "header")) or (
+        "navbar" in text and "bottom" not in text
+    ):
+        return "appbar"
+    if any(k in text for k in ("bottomnav", "bottom_nav", "bottom-nav", "navigationbar", "tabbar", "bottom bar")) or (
+        "navbar" in text and "bottom" in text
+    ):
+        return "bottomnav"
+    if any(k in text for k in ("bottomsheet", "bottom_sheet", "bottom-sheet", "actionsheet", "action_sheet")):
+        return "bottomsheet"
+    if any(k in text for k in ("dialog", "modal", "alert", "popup")):
+        return "dialog"
+    if any(k in text for k in ("datepicker", "date_picker", "date-picker", "daterange", "calendar")):
+        return "datepicker"
+    if "search" in text:
+        return "search"
+    if any(k in text for k in ("dropdown", "select", "combobox", "picker")):
+        return "dropdown"
+    if any(k in text for k in ("textfield", "text_field", "text-field", "formfield", "input", "password", "textarea")):
+        return "formfield"
+    if any(k in text for k in ("button", "btn", "cta", "fab", "iconbutton")):
+        return "button"
+    if any(k in text for k in ("chip", "filterchip")):
+        return "chip"
+    if any(k in text for k in ("badge", "statuspill", "status_pill", "pill", "tag")):
+        return "badge"
+    if any(k in text for k in ("nodata", "no_data", "no-data", "emptystate", "empty_state", "empty-state")):
+        return "nodata"
+    if any(k in text for k in ("loading", "spinner", "shimmer", "skeleton", "progress")):
+        return "loading"
+    if any(k in text for k in ("banner", "toast", "snackbar", "callout", "notice")):
+        return "banner"
+    if any(k in text for k in ("card", "tile", "panel")):
+        return "card"
+    if any(k in text for k in ("list", "listitem", "list_item", "list-item", "rowitem", "table")):
+        return "list"
+    return None
+
+
+def infer_canonical_pattern(node_name: str, component_name: str = "", component_set_name: str = "") -> str:
+    """Deterministically classify a Figma component/instance into a canonical AIF UI pattern name."""
+    comp_text = f"{component_set_name or ''} {component_name or ''}".lower().strip()
+    matched = _match_pattern_text(comp_text)
+    if matched:
+        return matched
+    full_text = f"{comp_text} {node_name or ''}".lower().strip()
+    return _match_pattern_text(full_text) or "custom"
+
+
+def extract_icon_nodes(root: dict) -> list[dict[str, str]]:
+    """Walk visible nodes in `root` to find icon nodes suitable for SVG export."""
+    icons: list[dict[str, str]] = []
+    seen_ids: set[str] = set()
+
+    def _visit(node: dict, depth: int) -> None:
+        if len(icons) >= MAX_ICONS or node.get("visible") is False:
+            return
+        ntype = node.get("type")
+        is_candidate = (
+            ntype in ("FRAME", "GROUP", "COMPONENT", "INSTANCE") and _is_pure_vector_group(node)
+        ) or (ntype in VECTOR_LEAF_TYPES and depth == 1)
+        if is_candidate:
+            b = _box(node)
+            size_ok = True
+            if b is not None:
+                w = b.get("width", 0) or 0
+                h = b.get("height", 0) or 0
+                size_ok = (0 < w <= 128) and (0 < h <= 128)
+            if size_ok:
+                nid = node.get("id")
+                if nid is not None:
+                    sid = str(nid)
+                    if sid not in seen_ids:
+                        seen_ids.add(sid)
+                        icons.append({"id": sid, "name": str(node.get("name") or "icon")})
+                return
+        for child in node.get("children") or []:
+            if len(icons) >= MAX_ICONS:
+                break
+            _visit(child, depth + 1)
+
+    _visit(root, 0)
+    return icons
+
+
+def _child_signature(c: dict[str, Any]) -> Optional[tuple[Any, ...]]:
+    ctype = c.get("type")
+    if ctype not in ("INSTANCE", "COMPONENT", "FRAME", "GROUP"):
+        return None
+    if c.get("component"):
+        return ("COMP", c["component"].get("id") or c["component"].get("name"))
+    if ctype in ("FRAME", "GROUP") and c.get("children"):
+        return (
+            "CONTAINER",
+            ctype,
+            tuple(sub.get("type") for sub in c["children"]),
+            tuple((sub.get("component") or {}).get("name") for sub in c["children"]),
+        )
+    return None
+
+
+def _collect_normalized_texts(node: dict[str, Any]) -> list[str]:
+    texts: list[str] = []
+    txt = node.get("text")
+    if isinstance(txt, str) and txt.strip():
+        texts.append(txt.strip())
+    for child in node.get("children") or []:
+        texts.extend(_collect_normalized_texts(child))
+    return texts
+
+
+def _deduplicate_repeating_children(children: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Collapse contiguous runs of >= 3 structurally identical sibling items into a representative with `repeatCount`."""
+    if len(children) < 3:
+        return children
+
+    result: list[dict[str, Any]] = []
+    i = 0
+    n = len(children)
+    while i < n:
+        sig = _child_signature(children[i])
+        if sig is None:
+            result.append(children[i])
+            i += 1
+            continue
+        j = i + 1
+        while j < n and _child_signature(children[j]) == sig:
+            j += 1
+        run = children[i:j]
+        if len(run) >= 3:
+            rep = dict(run[0])
+            rep["repeatCount"] = len(run)
+            samples: list[str] = []
+            for sib in run[1:6]:
+                joined = " | ".join(_collect_normalized_texts(sib))
+                if joined:
+                    samples.append(joined)
+            if samples:
+                rep["repeatedSamples"] = samples
+            result.append(rep)
+        else:
+            result.extend(run)
+        i = j
+    return result
+
+
 def _normalize_node_tree(
     node: dict,
     registry: TokenRegistry,
@@ -239,7 +389,7 @@ def _normalize_node_tree(
             tokens_ref["shadow"] = f"{{{sh_path}}}"
             break
 
-    # Text content & typography token
+    # Text content, typography token & text overflow/alignment metadata
     if kind == "TEXT":
         chars = (node.get("characters") or "").strip()
         out["text"] = chars
@@ -248,12 +398,48 @@ def _normalize_node_tree(
         typo_path = registry.register_typography(tstyle, style_id=text_style_id)
         if typo_path:
             tokens_ref["textStyle"] = f"{{{typo_path}}}"
+        text_meta: dict[str, Any] = {}
+        max_lines = node.get("maxLines") or tstyle.get("maxLines")
+        if isinstance(max_lines, int) and not isinstance(max_lines, bool) and max_lines > 0:
+            text_meta["maxLines"] = max_lines
+        if tstyle.get("textTruncation") == "ENDING" or node.get("textTruncation") == "ENDING":
+            text_meta["truncation"] = "ellipsis"
+        if tstyle.get("textAutoResize") in ("WIDTH_AND_HEIGHT", "HEIGHT", "NONE", "TRUNCATE"):
+            text_meta["autoResize"] = str(tstyle["textAutoResize"]).lower()
+        if tstyle.get("textAlignHorizontal") in ("CENTER", "RIGHT", "JUSTIFIED"):
+            text_meta["align"] = str(tstyle["textAlignHorizontal"]).lower()
+        if text_meta:
+            out["textMeta"] = text_meta
 
-    # Auto-layout (Framelink flex vocabulary)
+    # Auto-layout & advanced layout semantics (Framelink flex vocabulary)
     raw_mode = node.get("layoutMode")
     sizing_h = SIZING_MAP.get(str(node.get("layoutSizingHorizontal") or ""), None)
     sizing_v = SIZING_MAP.get(str(node.get("layoutSizingVertical") or ""), None)
-    if raw_mode in ("HORIZONTAL", "VERTICAL") or is_screen_root or sizing_h or sizing_v:
+    is_abs = node.get("layoutPositioning") == "ABSOLUTE"
+    overflow_dir = node.get("overflowDirection")
+    has_scroll_dir = overflow_dir in (
+        "HORIZONTAL_SCROLLING",
+        "VERTICAL_SCROLLING",
+        "HORIZONTAL_AND_VERTICAL_SCROLLING",
+    )
+    scroll_beh = node.get("scrollBehavior")
+    has_scroll_beh = scroll_beh in ("FIXED_WHEN_SCROLLING", "STICKY_SCROLLING")
+    min_max = {
+        k: round(node[k])
+        for k in ("minWidth", "maxWidth", "minHeight", "maxHeight")
+        if isinstance(node.get(k), (int, float)) and not isinstance(node.get(k), bool) and node[k] > 0
+    }
+
+    if (
+        raw_mode in ("HORIZONTAL", "VERTICAL")
+        or is_screen_root
+        or sizing_h
+        or sizing_v
+        or is_abs
+        or has_scroll_dir
+        or has_scroll_beh
+        or min_max
+    ):
         mode = "row" if raw_mode == "HORIZONTAL" else ("column" if raw_mode == "VERTICAL" else "none")
         layout_info: dict[str, Any] = {"mode": mode}
         if raw_mode in ("HORIZONTAL", "VERTICAL"):
@@ -286,6 +472,24 @@ def _normalize_node_tree(
             }
         if node.get("clipsContent") is True:
             layout_info["clipsContent"] = True
+        if is_abs:
+            layout_info["positioning"] = "absolute"
+            constraints = node.get("constraints")
+            if isinstance(constraints, dict) and ("horizontal" in constraints or "vertical" in constraints):
+                layout_info["constraints"] = {
+                    "horizontal": str(constraints.get("horizontal", "MIN")).lower(),
+                    "vertical": str(constraints.get("vertical", "MIN")).lower(),
+                }
+        if has_scroll_dir:
+            layout_info["scrollDirection"] = {
+                "HORIZONTAL_SCROLLING": "horizontal",
+                "VERTICAL_SCROLLING": "vertical",
+                "HORIZONTAL_AND_VERTICAL_SCROLLING": "both",
+            }[overflow_dir]
+        if has_scroll_beh:
+            layout_info["scrollBehavior"] = "fixed" if scroll_beh == "FIXED_WHEN_SCROLLING" else "sticky"
+        if min_max:
+            layout_info["minMax"] = min_max
         out["layout"] = layout_info
 
     # Component / Instance metadata
@@ -308,6 +512,11 @@ def _normalize_node_tree(
             comp_info["componentSet"] = set_meta["name"]
         if props:
             comp_info["properties"] = props
+        comp_info["patternHint"] = infer_canonical_pattern(
+            node.get("name", ""),
+            comp_name,
+            set_meta.get("name", ""),
+        )
         out["component"] = comp_info
 
     if tokens_ref:
@@ -321,10 +530,11 @@ def _normalize_node_tree(
     if out["type"] not in ("ICON", *VECTOR_LEAF_TYPES):
         vis_children = [c for c in (node.get("children") or []) if c.get("visible") is not False]
         if vis_children:
-            out["children"] = [
+            normalized_children = [
                 _normalize_node_tree(c, registry, components_map, component_sets_map, is_screen_root=False)
                 for c in vis_children
             ]
+            out["children"] = _deduplicate_repeating_children(normalized_children)
 
     return out
 
@@ -379,6 +589,8 @@ def _extract_screen_spec(
             comp_id = str(node.get("componentId") or "")
             comp_meta = components_map.get(comp_id, {})
             comp_name = comp_meta.get("name") or node.get("name", "?")
+            set_id = comp_meta.get("componentSetId")
+            set_meta = component_sets_map.get(str(set_id or ""), {})
             raw_props = node.get("componentProperties") or {}
             variant_props = {
                 k: (v.get("value") if isinstance(v, dict) else v)
@@ -394,6 +606,11 @@ def _extract_screen_spec(
                 "layer_name": node.get("name", "?"),
                 "component_id": comp_id or None,
                 "component_name": comp_name,
+                "pattern_hint": infer_canonical_pattern(
+                    node.get("name", ""),
+                    comp_name,
+                    set_meta.get("name", ""),
+                ),
                 "size": _size(node),
                 "variant_properties": variant_props,
                 "texts": inner_texts,
@@ -569,7 +786,19 @@ def build_spec_and_tokens(
                 for (lmode, isp, pt, pr, pb, pl), count in spacing_counter.most_common()
             ],
             "component_catalog": [
-                {"component_id": cid or None, "component_name": cname, "instances_count": count}
+                {
+                    "component_id": cid or None,
+                    "component_name": cname,
+                    "pattern_hint": infer_canonical_pattern(
+                        cname,
+                        cname,
+                        component_sets_map.get(
+                            str(components_map.get(cid, {}).get("componentSetId") or ""),
+                            {},
+                        ).get("name", ""),
+                    ),
+                    "instances_count": count,
+                }
                 for (cid, cname), count in comp_catalog_counter.most_common()
             ],
         },

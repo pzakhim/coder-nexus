@@ -21,11 +21,19 @@ Located at `.superpowers/sources/<ISSUE-ID>/figma/tokens.json` (merged across al
 
 ### Layer 2: Frame-Level `<stem>.spec.json` (Framelink-Normalized Tree)
 Located at `.superpowers/sources/<ISSUE-ID>/figma/<stem>.spec.json`:
-- **`screens[]`**: Ordered list of screens (`S01`, `S02`...) with `image_path` (`<stem>-S01.png`), `bounds`, `sections`, `components`, `texts_reading_order`, `interactions`, and **`tree`**.
+- **`screens[]`**: Ordered list of screens (`S01`, `S02`...) with `image_path` (`<stem>-S01.png`), `bounds`, `sections`, `components` (including `pattern_hint`), `texts_reading_order`, `interactions`, and **`tree`**.
+- **`design_tokens.component_catalog`**: Frame-level summary of reusable components with `pattern_hint`.
+- **`icon_svg_paths`**: Mapping of exported pure-vector `ICON` node IDs to `.superpowers/sources/<ISSUE-ID>/figma/icons/*.svg` when `coder-nexus figma fetch ... --export-icons` is used.
 - **`screens[i].tree`**: Recursive, noise-free UI hierarchy (hidden nodes removed, pure vector icon subtrees collapsed to `"type": "ICON"`):
-  - **`layout`**: Flex-normalized layout (`mode`: `"row" | "column" | "none"`, `justifyContent`, `alignItems`, `sizing`: `{"horizontal": "fixed"|"hug"|"fill", "vertical": "fixed"|"hug"|"fill"}`, `gap`, `padding`, `wrap`, `clipsContent`).
+  - **`layout`**: Flex-normalized and responsive layout semantics:
+    - Base flex: `mode` (`"row" | "column" | "none"`), `justifyContent`, `alignItems`, `sizing` (`{"horizontal": "fixed"|"hug"|"fill", "vertical": "fixed"|"hug"|"fill"}`), `gap`, `padding`, `wrap`, `clipsContent`.
+    - Positioning & constraints: `layout.positioning: "absolute"` + `layout.constraints` (`horizontal`, `vertical`) for floating/overlay elements.
+    - Scroll semantics: `layout.scrollDirection` (`"vertical" | "horizontal" | "both"`) and `layout.scrollBehavior` (`"fixed" | "sticky"`) for scrollable regions vs. pinned headers/bottom bars.
+    - Responsive bounds: `layout.minMax` (`minWidth`, `maxWidth`, `minHeight`, `maxHeight`) for responsive sizing bounds.
+  - **`textMeta`**: Present on `TEXT` nodes with `maxLines`, `truncation: "ellipsis"`, `autoResize`, and `align`.
   - **`tokens`**: Every visual property references `tokens.json` by DTCG token name (`"fill": "{color.primary.brand-500}"`, `"textStyle": "{typography.button.label-m}"`, `"radius": "{dimension.radius.8px}"`, `"gap": "{dimension.spacing.12px}"`).
-  - **`component`**: Component ID, name, `componentSet`, and variant `properties` (for `INSTANCE` / `COMPONENT` nodes).
+  - **`component` & `patternHint`**: Component ID, name, `componentSet`, variant `properties`, and deterministic `patternHint` (`appbar`, `button`, `formfield`, `search`, `dropdown`, `datepicker`, `dialog`, `bottomsheet`, `bottomnav`, `badge`, `nodata`, `loading`, `list`, `card`, `chip`, `banner`, or `custom`) for `INSTANCE` / `COMPONENT` nodes.
+  - **`repeatCount` & `repeatedSamples`**: Contiguous runs of $\ge 3$ structurally identical children in `screens[i].tree` are collapsed into the first child with `"repeatCount": N` and `"repeatedSamples": [...]`, while `screens[i].texts_reading_order` and `screens[i].components` retain 100% of items.
   - **`navigateTo`**: Prototype destination node ID when an interaction is attached.
 
 ---
@@ -40,6 +48,6 @@ When `planning` starts Stage 1 (`design.md` at Gate 2), it reads `requirements.m
 2. **Clean Architecture & Screen Lifecycle Check (`screens[*].tree` + `## Workflows`)**:
    - Verify each `S-NN` (`NEW` or `CHANGED`) maps cleanly to the project's presentation/state/routing architecture (screen base / page class, state holder, route arguments, and back-navigation lifecycle across multi-screen `W-NN` flows).
 3. **Component Mapping & New Widget Detection (`C-NN` / `Core gap`) (`DESIGN-008`)**:
-   - Inspect both `screens[*].components` (Figma `INSTANCE`s) and custom-drawn `FRAME`/`GROUP` subtrees in `screens[*].tree`:
-     - **Existing UI Kit / Shared Widget Fits**: Map in `design.md` $\to$ `## UI/UX mapping` with `Status: MAPPED` (or `KIT_OVERRIDE (D-NN)` after user confirmation when kit styling differs slightly from Figma).
-     - **New Widget Required (`C-NN` / `Core gap`)**: When no existing widget in the project's UI kit or shared library satisfies the Figma component/subtree, assign `C01`, `C02`..., record `CORE_GAP (D-NN)` in `design.md` (`## UI/UX mapping`), get user approval at **Gate 2**, and create an explicit widget-build task in `implementation-plan.md` at **Gate 3**.
+   - Inspect `screens[*].components` (`pattern_hint`), `design_tokens.component_catalog` (`pattern_hint`), `screens[*].tree` (`component.patternHint`, `repeatCount`/`repeatedSamples`, and custom-drawn `FRAME`/`GROUP` subtrees), and `icon_svg_paths`:
+     - **Existing UI Kit / Shared Widget Fits**: Match `patternHint` (`appbar`, `button`, `formfield`, `list`, etc.) against the workspace profile's widget catalog and map in `design.md` $\to$ `## UI/UX mapping` with `Status: MAPPED` (or `KIT_OVERRIDE (D-NN)` after user confirmation when kit styling differs slightly from Figma).
+     - **New Widget Required (`C-NN` / `Core gap`)**: When `patternHint == "custom"` or no existing widget in the project's UI kit or shared library satisfies the Figma component/subtree, assign `C01`, `C02`..., record `CORE_GAP (D-NN)` in `design.md` (`## UI/UX mapping`), get user approval at **Gate 2**, and create an explicit widget-build task in `implementation-plan.md` at **Gate 3**.

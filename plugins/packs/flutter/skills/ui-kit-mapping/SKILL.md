@@ -11,11 +11,11 @@ Bridge the Client's real Flutter visual foundation with extracted Figma specific
 
 1. **Audit Figma `tokens.json`, `<stem>.spec.json` & Existing `lib/` Screens** ([01-design-source-and-kit-extraction.md](references/01-design-source-and-kit-extraction.md)):
    - Read the Gate 1 approved `requirements.md` (`## Screens & Visual Sources` `S-NN` and `## Workflows` `W-NN`) and `codebase-notes.md` (`## 3. Verified Baseline Facts & Cross-Agent Notes`).
-   - When `Visual Source Mode` is `FIGMA_PROVIDED`, inspect `.superpowers/sources/<ISSUE-ID>/figma/tokens.json` (W3C DTCG `$type: color | typography | dimension`), `<stem>.spec.json` (`screens[i].tree`, `components`, `workflows_hint`), and open each `<stem>-SNN.png` render (`view_file`).
-   - Compare every DTCG token (`{color.*}`, `{typography.*}`, `{dimension.*}`) and component instance against the active workspace profile contract (`<!-- {{profile_references}} -->`).
+   - When `Visual Source Mode` is `FIGMA_PROVIDED`, inspect `.superpowers/sources/<ISSUE-ID>/figma/tokens.json` (W3C DTCG `$type: color | typography | dimension`), `<stem>.spec.json` (`screens[i].tree`, `components` with `pattern_hint`, `design_tokens.component_catalog`, `repeatCount`/`repeatedSamples`, `icon_svg_paths`, `workflows_hint`), and open each `<stem>-SNN.png` render (`view_file`).
+   - Match every DTCG token (`{color.*}`, `{typography.*}`, `{dimension.*}`), canonical UI pattern hint (`component.patternHint` / `pattern_hint`), and exported icon SVG (`icon_svg_paths`) against the active workspace profile contract (`<!-- {{profile_references}} -->`).
    - For `CHANGED` screens or `CODEBASE_ONLY` minor adjustments, inspect the target Dart screen in `lib/` and `lib/l10n/*.arb` first so modifications preserve the existing screen shell.
 2. **Enforce Flutter Layout, Viewport & Hardware Scanner Conventions** ([02-flutter-screen-and-input-conventions.md](references/02-flutter-screen-and-input-conventions.md)):
-   - Verify mobile vs. tablet/desktop responsive layout from the Figma screen `bounds` (`width` × `height`), numeric keyboard input (`TextInputType.number`), and hardware barcode/RFID scanner focus rules (`FocusNode` + `onFieldSubmitted`).
+   - Translate advanced `<stem>.spec.json` layout & text semantics (`layout.positioning`, `layout.scrollBehavior`, `layout.scrollDirection` + `repeatCount >= 3`, `layout.minMax`, and `textMeta.maxLines` / `truncation`) into idiomatic Flutter widgets, and verify mobile vs. tablet/desktop responsive layout from `bounds` (`width` × `height`), numeric keyboard input (`TextInputType.number`), and hardware barcode/RFID scanner focus rules (`FocusNode` + `onFieldSubmitted`).
 3. **Map to Flutter Widgets & Surface `Core gap`s at Gate 2 (`planning`)** ([03-widget-mapping-and-design-handoff.md](references/03-widget-mapping-and-design-handoff.md)):
    - Map every non-`EXISTING` `S-NN` screen, reused UI pattern, and new component (`C-NN`) in `design.md` (`## UI/UX mapping`, rule `DESIGN-008`) using the active workspace profile contract (`<!-- {{profile_references}} -->`).
    - When multiple kit widgets fit or a kit widget's fixed styling differs from the Figma render, **ask the user (`Q-NN` → `D-NN`)** before overriding style or building a custom widget.
@@ -42,7 +42,7 @@ Bridge the Client's real Flutter visual foundation with extracted Figma specific
 
 | Gate | Command / Tool | Pass Criteria (`PASS` / `FAIL`) |
 |---|---|---|
-| **Figma Extraction** | `coder-nexus figma fetch <url> --project "${workspaceFolder}"` (or `huly_get_task_detail(..., download=True)`) | `PASS` when `tokens.json`, `<stem>.spec.json`, `<stem>.summary.md`, and per-screen `<stem>-SNN.png` renders are written under `.superpowers/sources/<ISSUE-ID>/figma/` |
+| **Figma Extraction** | `coder-nexus figma fetch "<url>" --workspace-path "${workspaceFolder}" [--export-icons]` (or `huly_get_task_detail(..., download=True)`) | `PASS` when `tokens.json`, `<stem>.spec.json`, `<stem>.summary.md`, and per-screen `<stem>-SNN.png` renders (plus `icons/*.svg` when `--export-icons` is set) are written under `.superpowers/sources/<ISSUE-ID>/figma/` |
 | **Technical Design Mapping** | `validate_proposal_spec` (`DESIGN-008`) | `PASS` when `design.md` `## UI/UX mapping` maps every non-`EXISTING` `S-NN` and every `C-NN` to concrete Flutter classes |
 
 ## 4. Reference Guides

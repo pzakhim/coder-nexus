@@ -12,12 +12,14 @@ When a Huly ticket (`huly_get_task_detail(..., download=True)`) or user prompt c
 1. Huly intake automatically fetches every Figma link in the ticket description and comments into `.superpowers/sources/<ISSUE-ID>/figma/`.
 2. For user-pasted Figma links not yet downloaded, run:
    ```sh
-   coder-nexus figma fetch "<figma-url>" --workspace-path "${workspaceFolder}" --format png
+   coder-nexus figma fetch "<figma-url>" --workspace-path "${workspaceFolder}" --format png [--export-icons]
    ```
+   - Passing `--export-icons` batch-exports pure-vector `ICON` subtrees to `.superpowers/sources/<ISSUE-ID>/figma/icons/*.svg` and records their paths in `icon_svg_paths`.
 3. For each fetched link (`<stem>` = node ID with `-`), verify the generated files in `.superpowers/sources/<ISSUE-ID>/figma/`:
    - `tokens.json`: File-level W3C DTCG design tokens (`color`, `typography`, `dimension.radius`, `dimension.spacing`, `shadow`, and `$extensions.com.figma.{components,componentSets}`).
-   - `<stem>.spec.json`: Framelink-normalized specification containing `screens[]` (`suggested_id` `S01..SNN`, `image_path`, `bounds`, `layout`, `sections`, `components`, `texts_reading_order`, `interactions`, and recursive `tree` referencing tokens by `{token.path}`).
+   - `<stem>.spec.json`: Framelink-normalized specification containing `screens[]` (`suggested_id` `S01..SNN`, `image_path`, `bounds`, `layout`, `sections`, `components` with `pattern_hint`, `texts_reading_order`, `interactions`, and recursive `tree` referencing tokens by `{token.path}` with `patternHint`, `repeatCount`/`repeatedSamples`, and advanced `layout`/`textMeta`), `design_tokens.component_catalog` (with `pattern_hint`), and `icon_svg_paths` (when `--export-icons` is enabled).
    - `<stem>.png` and `<stem>-S01.png`, `<stem>-S02.png`...: High-resolution rendered images for the root frame/section and each individual screen.
+   - `icons/*.svg` (optional, when `--export-icons` is used): Exported SVG assets for pure-vector `ICON` subtrees, indexed in `icon_svg_paths`.
    - `<stem>.summary.md`: Human-readable Markdown overview.
    - `<stem>.json`: Raw Figma REST API payload (ground truth).
 
@@ -58,7 +60,12 @@ Combine the PO's flow description in Huly with the screen order (`S01` $\to$ `S0
 | W-01 | G-01 | 1. Select receipt (`S01`) → 2. Scan item & confirm quantity (`S02`) | `AC-01`, `AC-02` |
 ```
 
-### C. Cross-Checking Huly vs. Figma (`FI-5`)
+### C. Accelerating Gate 1 Control & List Identification (`patternHint` & `repeatCount`)
+When reading `screens[]` in `<stem>.spec.json` to populate `Key Sections & Controls` and behavioral scenarios:
+- **Canonical UI Pattern Hinting (`patternHint` / `pattern_hint`)**: Every `INSTANCE`/`COMPONENT` node in `screens[*].tree` (`component.patternHint`), `screens[*].components` (`pattern_hint`), and `design_tokens.component_catalog` (`pattern_hint`) carries a deterministic pattern classification (`appbar`, `button`, `formfield`, `search`, `dropdown`, `datepicker`, `dialog`, `bottomsheet`, `bottomnav`, `badge`, `nodata`, `loading`, `list`, `card`, `chip`, `banner`, or `custom`) to accelerate Gate 1 control identification.
+- **Repeating List/Table Deduplication (`repeatCount` & `repeatedSamples`)**: Contiguous runs of $\ge 3$ structurally identical children in `screens[*].tree` are collapsed into the first child with `"repeatCount": N` and `"repeatedSamples": [...]` (sample text/variant payloads from the collapsed siblings), while `screens[*].texts_reading_order` and `screens[*].components` retain 100% of items. `spec_writer` uses `repeatCount` + `repeatedSamples` to recognize dynamic or paginated lists and tables at Gate 1 without drowning in repetitive JSON nodes.
+
+### D. Cross-Checking Huly vs. Figma (`FI-5`)
 Before closing Stage `1B` / `1C`, compare the Huly description/acceptance criteria against `screens[*].texts_reading_order`, `screens[*].components`, and `screens[*].interactions`:
 - **Missing fields or buttons**: Huly mentions a field/action absent from the Figma screen (or vice versa) $\to$ queue `Q-NN` (`OPEN`) in `codebase-notes.md`.
 - **Missing visual states**: Every `NEW` or `CHANGED` screen requires clear expectations for all 4 visual states (`Default / Content`, `Loading`, `Empty`, `Error`) in `requirements.md` (`## 4. Behavioral Scenarios & Visual States`). If Figma only shows the happy-path `Default` state, confirm whether standard kit `Loading`/`Empty`/`Error` states apply (`Q-NN` $\to$ `D-NN`).

@@ -10,18 +10,18 @@ Convert PO-supplied Figma links and Huly ticket flows into structured Gate 1 req
 ## 1. End-to-End Intake & Handoff Workflow
 
 1. **Fetch & Classify Visual Source (`spec_writer` at Stage `1A` / `1A-UX`)** ([01-screen-and-workflow-extraction.md](references/01-screen-and-workflow-extraction.md)):
-   - Run `huly_get_task_detail(..., download=True)` or `coder-nexus figma fetch "<url>" --workspace-path "${workspaceFolder}"` to populate `.superpowers/sources/<ISSUE-ID>/figma/`.
+   - Run `huly_get_task_detail(..., download=True)` or `coder-nexus figma fetch "<url>" --workspace-path "${workspaceFolder}" [--export-icons]` to populate `.superpowers/sources/<ISSUE-ID>/figma/`.
    - Classify the work item into one of three visual intake modes:
-     - **`FIGMA_PROVIDED` (`READ`)**: PO supplied Figma link(s); extractor wrote `tokens.json` (W3C DTCG), `<stem>.spec.json` (Framelink-style normalized tree), `<stem>.summary.md`, and per-screen images (`<stem>-S01.png`, `<stem>-S02.png`...).
+     - **`FIGMA_PROVIDED` (`READ`)**: PO supplied Figma link(s); extractor wrote `tokens.json` (W3C DTCG), `<stem>.spec.json` (Framelink-style normalized tree with `patternHint`, list deduplication `repeatCount`/`repeatedSamples`, and advanced `layout`/`textMeta`), `<stem>.summary.md`, per-screen images (`<stem>-S01.png`, `<stem>-S02.png`...), and optional SVG icons (`icons/*.svg` in `icon_svg_paths` when `--export-icons` is passed).
      - **`CODEBASE_ONLY` (No Figma — Small Edge-Case Adjustment)**: PO provided no Figma link because the change is a minor adjustment or edge case on an existing screen. Inspect the existing screen in the codebase (`S01` as `CHANGED`), confirm the minimal adjustment with the user (`Q-NN` $\to$ `D-NN`), and proceed without inventing new screens.
      - **`NO_UI_IMPACT`**: Work item changes nothing user-visible. Record `No UI impact` in `requirements.md` (`## 1. Scope & Alignment`).
    - If a Figma link is present in the ticket/request but returns `NOT_PROVIDED` (missing `FIGMA_TOKEN`) or `UNREACHABLE` (`401`/`403`/`404` or whole-file link without `node-id`), stop and ask the user — never guess screen contents.
 2. **Extract Screens (`S-NN`) & Reconstruct Workflows (`W-NN`) at Gate 1 (`spec_writer`)** ([01-screen-and-workflow-extraction.md](references/01-screen-and-workflow-extraction.md)):
-   - View every rendered screen image (`<stem>-S01.png`...) with `view_file` alongside `screens[]` in `<stem>.spec.json`.
+   - View every rendered screen image (`<stem>-S01.png`...) with `view_file` alongside `screens[]` in `<stem>.spec.json` (using `patternHint` / `pattern_hint` to identify controls and `repeatCount` + `repeatedSamples` to recognize dynamic/paginated lists or tables without drowning in repetitive JSON nodes).
    - Populate `## Screens & Visual Sources` (`S01`, `S02`... with `NEW` | `CHANGED` | `EXISTING`, dimensions, Figma node ID, and rendered image path) and `## Workflows` (`W-01`, `W-02`... linking `G-NN`, ordered `S-NN` steps, and `AC-NN` scenarios) in `requirements.md` (`REQ-006`).
    - Cross-check Huly business rules against Figma screens (`texts_reading_order`, `components`, `interactions`). Queue any mismatch or missing state (`Default`, `Loading`, `Empty`, `Error`) as an `OPEN` `Q-NN` in `codebase-notes.md`.
 3. **Hand Off `tokens.json` & `<stem>.spec.json` to Gate 2 (`planning`)** ([02-design-tokens-and-gap-handoff.md](references/02-design-tokens-and-gap-handoff.md)):
-   - At Gate 2, `planning` inspects file-level `tokens.json` (W3C DTCG `$type` / `$value` tokens and `$extensions.com.figma.components` / `componentSets`) and per-screen `screens[*].tree` in `<stem>.spec.json` via `{{slot:ui-kit-mapping}}`.
+   - At Gate 2, `planning` inspects file-level `tokens.json` (W3C DTCG `$type` / `$value` tokens and `$extensions.com.figma.components` / `componentSets`), `design_tokens.component_catalog`, and per-screen `screens[*].tree` (`patternHint`, `repeatCount`, `layout`, `textMeta`, and `icon_svg_paths`) in `<stem>.spec.json` via `{{slot:ui-kit-mapping}}`.
    - `planning` verifies Clean Architecture alignment, checks token conformance (flagging `{color.unlinked.*}` or `{typography.unlinked.*}` deviations), maps every non-`EXISTING` `S-NN` and UI component in `design.md` (`## UI/UX mapping`, rule `DESIGN-008`), and surfaces any new widget (`C-NN` / `Core gap`) as a `Q-NN` $\to$ `D-NN` for user approval at Gate 2.
 
 ## 2. Mandatory Rules (`FI-1`–`FI-8`)
@@ -41,7 +41,7 @@ Convert PO-supplied Figma links and Huly ticket flows into structured Gate 1 req
 
 | Gate | Command / Tool | Pass Criteria (`PASS` / `FAIL`) |
 |---|---|---|
-| **Figma Extraction** | `coder-nexus figma fetch "<url>" --workspace-path "${workspaceFolder}" [--format png\|jpg]` | `PASS` when status is `READ` and `tokens.json`, `<stem>.spec.json`, `<stem>.summary.md`, and screen `.png`/`.jpg` files are saved |
+| **Figma Extraction** | `coder-nexus figma fetch "<url>" --workspace-path "${workspaceFolder}" [--format png\|jpg] [--export-icons]` | `PASS` when status is `READ` and `tokens.json`, `<stem>.spec.json`, `<stem>.summary.md`, screen `.png`/`.jpg` files (plus `icons/*.svg` when `--export-icons` is set) are saved |
 | **Gate 1 Spec Validation** | `validate_proposal_spec` (`REQ-001`..`REQ-006`) | `PASS` when `requirements.md` has `0` open `Q-NN`, all `G-NN` confirmed, and every `W-NN` in `## Workflows` links goals, `S-NN` screens, and `AC-NN` |
 | **Gate 2 Mapping Validation** | `validate_proposal_spec` (`DESIGN-008`) | `PASS` when `design.md` `## UI/UX mapping` maps every non-`EXISTING` `S-NN` from `requirements.md` and every `C-NN` new component |
 
