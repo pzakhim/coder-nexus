@@ -53,8 +53,8 @@ Job-type question for a ticket that is not new:
 |---|---|---|---|
 | Gate 1 (spec & screens/workflows) | `requirements.md` + `codebase-notes.md` (or `brief.md` for small phase-free items); `change-impact.md` for `v2+` | Spec Writer (`dev-team`) | `validate_proposal_spec` (`REQ-001..006`, `NOTES-000..005`, `IMPACT-001..003`) |
 | Gate 2 (design) | `design.md` — required for `feature`, optional otherwise | Planning (`dev-team`) | `validate_proposal_spec` (`DESIGN-007`, `DESIGN-008`) |
-| Gate 3 (plan) | `implementation-plan.md` and **all linked** `phases/*.md` — required for `feature` | Planning (`dev-team`) | `validate_plan_slices` (`PLAN-V-010`) |
-| After build & QA | `reviews/`, `evidence/`, final concise visual `as-built.md` (once after `test_runner` `ACCEPTED`) or `verification.md` (findings/docs) | Code Reviewer, Test Runner, Docs Writer | none; the coordinator checks provenance |
+| Gate 3 (plan & E2E test plan) | `implementation-plan.md`, **all linked** `phases/*.md`, and `test-plan.md` (`E2E-01..E2E-N`) — required for `feature` | Planning (`dev-team`) | `validate_plan_slices` (`PLAN-V-010`) |
+| After build & QA | `reviews/`, `evidence/` (with `test_runner` <-> `bug_fixer` <-> `planning` Fail-Fast loop on `test-plan.md`), final concise visual `as-built.md` (once after `test_runner` `ACCEPTED`) or `verification.md` (findings/docs) | Code Reviewer, Test Runner, Bug Fixer, Docs Writer | none; the coordinator checks provenance |
 
 Before any gate: `0 OPEN` `Q-NN` in `codebase-notes.md`, and no `Option A / Option B`, `Open Questions`, `Assumptions`, or `TBD` in `requirements.md` or `design.md`. Validators prove structure only; only the user approves.
 
@@ -67,7 +67,7 @@ Render only the files the Type needs; resolve every placeholder from real source
 | [requirements](templates/requirements.md.tpl), [codebase-notes](templates/codebase-notes.md.tpl), [brief](templates/brief.md.tpl) | Gate 1 |
 | [change-impact](templates/change-impact.md.tpl) (`v2+`: ADDED / MODIFIED / REMOVED behavior) | Gate 1 |
 | design template of `{{slot:architecture-design}}` | Gate 2 |
-| [implementation-plan](templates/implementation-plan.md.tpl), [phase](templates/phase.md.tpl) | Gate 3 |
+| [implementation-plan](templates/implementation-plan.md.tpl), [phase](templates/phase.md.tpl), [e2e-test-plan](templates/e2e-test-plan.md.tpl) (`vN/test-plan.md` `E2E-01..E2E-N`) | Gate 3 |
 | [as-built](templates/as-built.md.tpl) (concise visual summary with Mermaid Flow Diagram, Delivered Code Map, and Evidence Ledger) | Final closure (written once by `docs_writer` after `test_runner` returns `ACCEPTED`, or for `documentation` items) |
 | [bug-brief](templates/bug-brief.md.tpl), [fixing-plan](templates/fixing-plan.md.tpl) (L2), [escalation-report](templates/escalation-report.md.tpl) (L3), [diagnosis](templates/diagnosis.md.tpl) (investigation) | none: debug items ([debug-item-contract](references/debug-item-contract.md)) |
 | [test-scenario](templates/test-scenario.md.tpl) (optional), [test-plan](templates/test-plan.md.tpl), [test-run-report](templates/test-run-report.md.tpl) | none: test runs ([test-run-contract](references/test-run-contract.md)) |
@@ -86,10 +86,11 @@ Shared by every role across all departments. Reason: work that serves no confirm
 | Agent | Department(s) | Writes | Returns |
 |---|---|---|---|
 | Spec Writer | `dev-team` | `requirements.md`, `codebase-notes.md`, `change-impact.md` (`brief.md` for phase-free items); runs `git-preflight` (`BRANCH_READY`) | `READY_FOR_PLANNING` (`dev-team` starts at `planning` when Gate 1 is already approved), findings-only `READY_FOR_VERIFICATION`, or `BLOCKED` |
-| Planning | `dev-team` | `codebase-notes.md` (`D-NN`), `design.md` (Gate 2), `implementation-plan.md` + `phases/*.md` (Gate 3), `## Plan change log` and `PCR-NN` answers | `READY_FOR_BUILD`, `SKIPPED`, or `BLOCKED`; `AMENDED` or `ESCALATED` for a change request |
+| Planning | `dev-team` | `codebase-notes.md` (`D-NN`), `design.md` (Gate 2), `implementation-plan.md` + `phases/*.md` + `test-plan.md` (`E2E-01..E2E-N`, Gate 3), `## Plan change log` and `PCR-NN` answers (including `L3` escalations from `bug_fixer` in `final_qa`) | `READY_FOR_BUILD`, `SKIPPED`, or `BLOCKED`; `AMENDED` or `ESCALATED` for a change request |
 | Code Writer | `dev-team` | Assigned Client runtime and test files; task ticks; `writer-handoff.md` | `READY_FOR_REVIEW` with full diff scope (optional Concerns), `BLOCKED`, or `NEEDS_CONTEXT` |
 | Code Reviewer | `dev-team`, `bug-squad` (L2) | `vN/reviews/` report (or `.superpowers/debug/<bug-slug>/reviews/` for L2 bugs) | `APPROVED`, `CHANGES_REQUESTED`, or `BLOCKED` |
-| Test Runner | `dev-team`, `bug-squad`, `feature-testing` | `vN/evidence/` report (or debug / test-run evidence report) | Per-AC `PASS`, `FAIL`, `BLOCKED`, or `NOT_RUN`; feature `ACCEPTED`, `CHANGES_REQUESTED`, or `BLOCKED`; bug `VERIFIED_FIXED` or `STILL_BROKEN` |
+| Test Runner | `dev-team`, `bug-squad`, `feature-testing` | Scenario ticks `- [x] **E2E-i**` in `vN/test-plan.md`; `vN/evidence/` report (or debug / test-run evidence report) | Per-AC / per-E2E `PASS`, `FAIL`, `BLOCKED`, or `NOT_RUN`; feature `ACCEPTED`, `CHANGES_REQUESTED` (`FAILED_AT: E2E-i` Fail-Fast), or `BLOCKED`; bug `VERIFIED_FIXED` or `STILL_BROKEN` |
+| Bug Fixer | `dev-team` (`final_qa` Mode C), `bug-squad`, `debug-investigation` | In `dev-team` `final_qa`: `L1`/`L2` root-cause code fix + regression test + `writer-handoff.md`, or `L3` `plan-changes/PCR-NN.md` to `planning`; in `bug-squad` / `debug-investigation`: `.superpowers/debug/<bug-slug>/` artifacts and `L1`/`L2` fix | `READY_FOR_TEST` (`L1`), `READY_FOR_REVIEW` (`L2`), `ESCALATED` (`L3` `PCR-NN.md` or `escalation-report.md`), `TRIAGED`, `DIAGNOSED`, `NOT_REPRODUCED`, or `BLOCKED` |
 | Docs Writer | `dev-team` | Assigned reader-facing docs; final concise visual `vN/as-built.md` **once** after `test_runner` returns `ACCEPTED` (or directly for a `documentation` item) | `READY_FOR_REVIEW` for reader docs; `RECORDED` (or `BLOCKED`) for the final `as-built.md` record |
 
 Only Spec Writer and Planning write `codebase-notes.md`; everyone else reads it. The coordinator alone changes item status, checks that `as-built.md` matches the evidence, and, after a UI item is verified, updates `.superpowers/ux/screen-catalog.md` (`NEW` → `EXISTING`, approved design revision, current screenshot).

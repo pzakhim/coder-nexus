@@ -89,6 +89,7 @@
     "core/skills/work-item-contract/templates/change-impact.md.tpl",
     "core/skills/work-item-contract/templates/implementation-plan.md.tpl",
     "core/skills/work-item-contract/templates/phase.md.tpl",
+    "core/skills/work-item-contract/templates/e2e-test-plan.md.tpl",
     "core/skills/work-item-contract/templates/as-built.md.tpl",
     "packs/backend/rules/backend_clean_architecture_rules.md",
     "packs/backend/skills/api-contract-design/SKILL.md",

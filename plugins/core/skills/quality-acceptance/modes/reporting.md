@@ -41,15 +41,15 @@ Case table: Case ID | AC ID | Layer | Severity (BLOCKER|MAJOR|MINOR) | Status | 
 
 Copy the fields from [environment.md](environment.md#environment-record). Accounts appear by role name only.
 
-## Defect report
+## Defect report (`FAIL-FAST` handoff to `bug_fixer` ↔ `planning`)
 
-One block per failure, sent to the coordinator for the Code Writer:
+One block per failure (`FAILED_AT: E2E-i`), sent to the coordinator for **`bug_fixer`** (which fixes `L1`/`L2` root causes in production code or raises `plan-changes/PCR-NN.md` to **`planning`** when the failure is an `L3` architectural/design/plan flaw):
 
 ```
-DEF-NN  case TC-NN  covers AC-NN  owning phase PHASE-NN  severity BLOCKER|MAJOR|MINOR  CONFIRMED|PLAUSIBLE
-Revision:   <rev>   Environment: <record link>   Role: <role name>
+DEF-NN  scenario E2E-i / case TC-NN  covers AC-NN  owning phase PHASE-NN  severity BLOCKER|MAJOR|MINOR  CONFIRMED|PLAUSIBLE
+Revision:   <rev>   Environment: <record link>   Role: <role name>   Failed at: E2E-i (FAIL-FAST)
 Reproduce:  <minimal steps or request, from a clean state>
-Expected:   <from the plan, unchanged>
+Expected:   <from test-plan.md / requirements.md, unchanged>
 Actual:     <observed>
 Evidence:   <files and evidence rows>
 Area:       <suspected screen / endpoint / module, if obvious — never a code fix>
@@ -57,11 +57,11 @@ Area:       <suspected screen / endpoint / module, if obvious — never a code f
 
 Severity and confidence follow the defect scale in `work-item-contract` (`references/handoff-and-status.md` §9). For a test defect, `CONFIRMED` means reproduced; `PLAUSIBLE` means seen once or dependent on something not visible, with what would confirm it.
 
-Defect status: `open` → `fixed-awaiting-retest` (new reviewed revision) → `verified` (re-test `PASS`), or `wont-fix` only with the user's recorded `D-NN`.
+Defect status: `open` → `fixed-awaiting-retest` (new revision from `bug_fixer`, reviewed by `code_reviewer` when `L2`/`L3`) → `verified` (full `E2E-01..E2E-N` re-test `PASS`), or `wont-fix` only with the user's recorded `D-NN`.
 
 ## Hand-off
 
-- To the coordinator: verdict, counts, report path, defect list, plan and spec conflict rows, open questions. The coordinator routes defects to the Code Writer under the owning phase, writes `PCR-NN` from conflict rows, and takes the verdict to the user.
+- To the coordinator: verdict (`ACCEPTED`, `CHANGES_REQUESTED` with `FAILED_AT: E2E-i`, or `BLOCKED`), counts, report path, defect list, plan and spec conflict rows, open questions. On `CHANGES_REQUESTED`, the coordinator immediately invokes **`bug_fixer`** (Mode C: `L1` → `READY_FOR_TEST` → `test_runner`; `L2` → `READY_FOR_REVIEW` → `code_reviewer` → `test_runner`; `L3` → `PCR-NN.md` (`ESCALATED`) → **`planning`**) and then re-runs `test_runner` from `E2E-01` through `E2E-N`.
 - To Docs Writer (via the coordinator): in `final_qa` when the verdict is `ACCEPTED`, the Coordinator dispatches `docs_writer` once with the report path to record `vN/as-built.md` (`RECORDED`).
 - Never post results to Huly, chat or email; never present the run as finished while any case lacks a result.
 

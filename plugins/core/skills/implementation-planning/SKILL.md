@@ -5,7 +5,7 @@ description: "Converts approved versioned requirements and architecture design i
 
 # Implementation Planning & Task Breakdown
 
-Guides the **Tech Lead (`planning`)** in converting an approved `requirements.md` (Gate 1), `codebase-notes.md`, and `design.md` (Gate 2, authored via `{{slot:architecture-design}}`) into an executable `implementation-plan.md` and sequential phase files (`phases/phase-NN-*.md`) in `.superpowers/work-items/<slug>/vN/` (or `docs/features/<module>/<feature>/vN/`).
+Guides the **Tech Lead (`planning`)** in converting an approved `requirements.md` (Gate 1), `codebase-notes.md`, and `design.md` (Gate 2, authored via `{{slot:architecture-design}}`) into an executable `implementation-plan.md`, sequential phase files (`phases/phase-NN-*.md`), and the Master E2E Test Plan (`test-plan.md`, `E2E-01..E2E-N`) in `.superpowers/work-items/<slug>/vN/` (or `docs/features/<module>/<feature>/vN/`).
 
 ## 1. Input Verification & Readiness Gate
 
@@ -30,20 +30,20 @@ Before formulating tasks, confirm all three inputs ([`01-readiness-and-phase-sli
 4. **Task-by-Task Re-Grounding Loop & Commit Checkpoints**:
    - Structure tasks for the anti-bulk coding loop (`incremental-implementation`): after each task check (`MATCH` / `CODE_WRONG` / `PLAN_WRONG`), `code_writer` returns to `phases/phase-NN-*.md` on `MATCH` to tick `- [x]` and re-reads the phase plan before starting the next task ([`02-task-structure-and-regrounding.md`](references/02-task-structure-and-regrounding.md) §5).
    - Record the `git-preflight` branch decision (`D-NN`) and phase commit checkpoints in `implementation-plan.md` → `## Checkpoints and shared files`.
-5. **100% `AC-NN`, `G-NN` & UI/UX Traceability + Review DoD**:
+5. **100% `AC-NN`, `G-NN` & UI/UX Traceability + Review DoD + Master E2E Test Plan (`test-plan.md`)**:
    - Map every `AC-NN` in `implementation-plan.md` → `## AC coverage` (`PLAN-V-006-AC-COVERAGE`), mirror the mapped IDs into each phase file's `- **AC IDs**:` bullet (`PLAN-V-006-AC-MISMATCH`), ensure every `G-NN` reaches at least one phase (`PLAN-V-010`), and cover all mapped `S-NN` / `C-NN` items ([`03-ac-coverage-and-review-dod.md`](references/03-ac-coverage-and-review-dod.md) §1).
-   - Define the Developer Review DoD (0-error static analysis, unit/state tests via `{{slot:unit-testing}}`, and 4-state screen visual verification via `{{slot:visual-quality}}`) distinct from `test_runner`'s independent QA suite ([`03-ac-coverage-and-review-dod.md`](references/03-ac-coverage-and-review-dod.md) §2).
+   - Define the Developer Review DoD (0-error static analysis, unit/state tests via `{{slot:unit-testing}}`, and 4-state screen visual verification via `{{slot:visual-quality}}`) for `code_writer` / `code_reviewer`, **AND author `.superpowers/work-items/<slug>/vN/test-plan.md`** (`work-item-contract` → `templates/e2e-test-plan.md.tpl`) defining ordered end-to-end scenarios (`- [ ] **E2E-01**` .. `- [ ] **E2E-N**`) covering 100% of `AC-NN` for `test_runner`'s Fail-Fast loop with `bug_fixer` and `planning` ([`03-ac-coverage-and-review-dod.md`](references/03-ac-coverage-and-review-dod.md) §2).
 6. **Pre-Gate 3 Verification (`gate-review` `modes/plan.md`)**:
-   - Run the 5-item author self-check, then execute `gate-review` (`modes/plan.md`) in strict 3-pass order: Pass 1 (`validate_plan_slices(plan_path="...")` = `PASS`), Pass 2 (Plan Checklist `P1`–`P5`, `BLOCKER` / `MAJOR` / `MINOR`), and Pass 3 (Fresh Cold-Reader Subagent Check playing `code_writer`), presenting Gate 3 only with `0 OPEN Q-NN` ([`03-ac-coverage-and-review-dod.md`](references/03-ac-coverage-and-review-dod.md) §3).
+   - Run the 5-item author self-check, then execute `gate-review` (`modes/plan.md`) in strict 3-pass order: Pass 1 (`validate_plan_slices(plan_path="...")` = `PASS`), Pass 2 (Plan Checklist `P1`–`P5`, `BLOCKER` / `MAJOR` / `MINOR`), and Pass 3 (Fresh Cold-Reader Subagent Check playing `code_writer`), presenting Gate 3 (`implementation-plan.md`, `phases/`, and `test-plan.md`) only with `0 OPEN Q-NN` ([`03-ac-coverage-and-review-dod.md`](references/03-ac-coverage-and-review-dod.md) §3).
 
 ## 3. Gate 3 Approval Protocol & Post-Gate Change Control
 
-Present `implementation-plan.md` and linked `phases/` to the user via `ask_question`:
-1. **`[Approve Plan & Proceed to Build]`**: Freeze specs and plan (`APPROVED_FOR_BUILD`) and return `READY_FOR_BUILD` naming `PHASE-00` (if `[EXECUTE]`) or `PHASE-01` (if `PHASE-00` is `[INFO_NOTE]` with an accepted readiness tick).
-2. **`[Refine Technical Decisions]`**: Update task order, fixtures, or Review DoD in `implementation-plan.md` / `phases/`, re-validate, and re-present Gate 3.
+Present `implementation-plan.md`, linked `phases/`, and `test-plan.md` (`E2E-01..E2E-N`) to the user via `ask_question`:
+1. **`[Approve Plan & Proceed to Build]`**: Freeze specs, plan, and E2E test plan (`APPROVED_FOR_BUILD`) and return `READY_FOR_BUILD` naming `PHASE-00` (if `[EXECUTE]`) or `PHASE-01` (if `PHASE-00` is `[INFO_NOTE]` with an accepted readiness tick).
+2. **`[Refine Technical Decisions]`**: Update task order, fixtures, Review DoD, or `E2E-NN` scenarios in `implementation-plan.md` / `phases/` / `test-plan.md`, re-validate, and re-present Gate 3.
 3. **`[Modify Business Scope / Requirements]`**: Halt and route back to `spec_writer` (Gate 1) before replanning.
 
-After Gate 3, the plan changes only through `change-control`: `planning` amends `TASK_DETAIL` items and logs a row in `## Plan change log`; any frozen item (`work-item-contract` → `references/plan-and-task-contract.md` §4) is escalated to Gate 2 (`DESIGN_CHANGE`) or Gate 1 (`SCOPE_CHANGE`).
+After Gate 3, the plan and `test-plan.md` change only through `change-control` (including `L3` `PCR-NN.md` escalations raised by `bug_fixer` when an `E2E-i` scenario fails during `final_qa`): `planning` amends `TASK_DETAIL` items and logs a row in `## Plan change log`; any frozen item (`work-item-contract` → `references/plan-and-task-contract.md` §4) is escalated to Gate 2 (`DESIGN_CHANGE`) or Gate 1 (`SCOPE_CHANGE`).
 
 ## Reference Guides
 
