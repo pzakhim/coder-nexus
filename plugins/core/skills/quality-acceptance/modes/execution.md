@@ -35,17 +35,19 @@ Store files under `vN/evidence/<phase-id>/<revision>/` with predictable names (`
 
 Rows from a stubbed provider add `stubbed: <provider>` in Key output. Redact tokens, cookies, passwords and personal data before saving any file; use test data only so screenshots stay clean.
 
-## Expected vs observed triage
+## Expected vs observed triage (`FAIL-FAST` loop: `test_runner` ↔ `bug_fixer` ↔ `planning`)
+
+Execute `E2E-01` → `E2E-02` → ... → `E2E-N` in `vN/test-plan.md` sequentially, one scenario at a time. Never edit, weaken, or skip any scenario in `test-plan.md`.
 
 | Observation | Result | Next |
 |---|---|---|
-| Matches the expected result | `PASS` | Next case |
-| Differs from the expected result | `FAIL` | Rerun once to rule out flakiness, then write a defect ([reporting.md](reporting.md#defect-report)) |
-| Different outcomes on two runs | `FAIL`, labelled flaky with both outcomes | Defect; never `PASS` |
-| Tool, service, account, provider or reference missing | `BLOCKED` | Record owner and evidence |
+| Matches the expected result | `PASS` | Tick `- [x] **E2E-i**` with fresh evidence in `vN/test-plan.md` and proceed to `E2E-(i+1)` |
+| Differs from the expected result | `FAIL` | Rerun once to rule out flakiness; if still `FAIL`, **STOP IMMEDIATELY (`FAIL-FAST`)**, write the defect (`FAILED_AT: E2E-i`, [reporting.md](reporting.md#defect-report)), and return `CHANGES_REQUESTED` so the coordinator invokes **`bug_fixer`** (`L1`/`L2` fix or `L3` `PCR-NN.md` escalation to **`planning`**) |
+| Different outcomes on two runs | `FAIL`, labelled flaky with both outcomes | **STOP IMMEDIATELY (`FAIL-FAST`)**, report defect (`FAILED_AT: E2E-i`) for `bug_fixer`; never `PASS` |
+| Tool, service, account, provider or reference missing | `BLOCKED` | Record owner and evidence, stop and return `BLOCKED` |
 | State could not be produced, case skipped with a reason | `NOT_RUN` | Record why |
-| Expected result looks wrong against another spec | Keep the result as observed | Question to the coordinator; never edit the expectation |
+| Expected result looks wrong against another spec | Keep the result as observed | Question / `PLAN_CONFLICT` or `SCOPE_CHANGE` row to the coordinator for `planning`; never edit the expectation |
 
-## Re-test
+## Re-test (End-to-End from `E2E-01` to `E2E-N`)
 
-After a fix revision passes review again: rebuild the environment record for the new revision, rerun the failed cases and every regression case touching the same area, and mark earlier evidence for those cases as superseded (keep it visible).
+After `bug_fixer` (and `planning` if `L3`, plus `code_reviewer` if `L2` or `L3`) commits a fix on a new revision: rebuild the environment record for the new revision, mark earlier evidence as superseded, and **re-run all scenarios in `vN/test-plan.md` sequentially from start to finish (`E2E-01` → `E2E-N`)** until 100% pass end-to-end.

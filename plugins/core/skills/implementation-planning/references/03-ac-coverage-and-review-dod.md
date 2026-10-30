@@ -48,9 +48,13 @@ Populate `## Test and visual strategy` in `implementation-plan.md` and `Verifica
    - `code_writer` verifies the 4 mandatory visual states (**Default**, **Loading**, **Empty**, **Error**) and captures baseline/runtime visual evidence per `{{slot:visual-quality}}`.
    - `code_reviewer` inspects the rendered visual evidence against `design.md`, extracted Figma screen renders (`.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png` when present), and the active profile's design-system guidance before approving the phase.
 
-### Strict Boundary: Developer Review DoD vs Independent QA (`test_runner`)
-- **`planning` owns Developer Review DoD**: Specifies the static analysis checks, developer unit/state tests, and phase visual checks that `code_writer` must pass before `code_reviewer` approves a phase.
-- **`test_runner` owns Independent QA Acceptance Testing**: After all phases pass code review (`ALL_PHASES_REVIEWED`), `test_runner` independently designs and runs E2E/acceptance verification directly from `requirements.md` and BDD scenarios. `planning` never dictates or limits `test_runner`'s independent QA test cases.
+### Master E2E Test Plan (`test-plan.md` at Gate 3) & Fail-Fast Loop (`test_runner` ↔ `bug_fixer` ↔ `planning`)
+- **Developer Review DoD (`code_writer` & `code_reviewer`)**: Specifies the static analysis checks, developer unit/state tests (`{{slot:unit-testing}}`), and phase visual checks (`{{slot:visual-quality}}`) that `code_writer` must pass before `code_reviewer` approves each phase.
+- **Master E2E Test Plan (`vN/test-plan.md` at Gate 3)**: Alongside `implementation-plan.md` and `phases/`, `planning` authors `.superpowers/work-items/<slug>/vN/test-plan.md` from `work-item-contract` → `templates/e2e-test-plan.md.tpl`, defining sequential end-to-end scenarios (`- [ ] **E2E-01**` .. `- [ ] **E2E-N**`) covering 100% of `AC-NN` (Happy path, Negative/Validation, Permissions/Role, 4 Visual States / Data persistence, Out-of-Scope guards, and Workflow continuity `W-NN`) using the stack's verification ladder (`{{slot:verification}}` & `{{slot:visual-quality}}`).
+- **Fail-Fast Scenario Loop & Anti-Test-Tampering Contract**:
+  - Once approved at Gate 3, `E2E-01..E2E-N` in `test-plan.md` are frozen; neither `test_runner` nor `bug_fixer` may weaken, alter, or skip any scenario to force a pass.
+  - In Phase 4 (`final_qa`), `test_runner` executes `E2E-01..E2E-N` sequentially one scenario at a time, ticking `- [x] **E2E-i**` on `PASS`.
+  - On any `E2E-i` `FAIL`, `test_runner` stops immediately (`FAIL-FAST`, `CHANGES_REQUESTED` with `FAILED_AT: E2E-i`) and the Coordinator invokes **`bug_fixer`** (Mode C): `L1` localized fixes return `READY_FOR_TEST` directly to `test_runner`; `L2` multi-file fixes go through `code_reviewer` (`APPROVED`) then `test_runner`; `L3` architectural/design/plan flaws raise `plan-changes/PCR-NN.md` (`ESCALATED`) to **`planning`** (`change-control`) before applying the fix and re-running `E2E-01..E2E-N` from start to finish.
 
 ---
 

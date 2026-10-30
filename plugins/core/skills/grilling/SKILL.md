@@ -33,9 +33,13 @@ Act as a rigorous Technical BA (`spec_writer`) or Solution Architect / Tech Lead
 - Cover every dimension of the active mode until `0 OPEN` rows remain in `## 0. Question Queue` and the stop test (§5) passes.
 - `requirements.md` and `design.md` must read as **one straight locked-in line**: zero `Option A / Option B`, `Open Questions`, `Assumptions`, or `TBD` (`REQ-003`, `NOTES-005`). Rejected options live **only** in the `Options Considered` column of `## 1. Decision Log (D-NN)`.
 
-### Law 4 — One Question at a Time (`câu i/N`)
-- Each `ask_question` call carries **exactly one question**: the top `OPEN` row (§2.2), prefixed with its progress (`Q-07 · câu 3/9 · Workflow`), `(Recommended)` option first, followed by 1–2 concrete alternatives with concise trade-offs. Only exception: one [batch-confirm](modes/batch-confirm.md) call.
-- State the question so it stands alone, plus one line explaining why the choice matters.
+### Law 4 — One Question at a Time (`câu i/N`) with Visual Flow Explanation & Per-Question Lock
+- Before calling `ask_question` for the active `OPEN` row `Q-i`, **always output a structured explanation in the chat message (`content`) dedicated solely to `Q-i`**:
+  1. **Why `Q-i` exists**: the current baseline in sources/code vs. the gap, conflict, or trade-off.
+  2. **Visual Flow (Mermaid / ASCII diagram)**: illustrate the flow and how the candidate options branch so the user can see the impact immediately.
+  3. **Options & Trade-Off Analysis**: walk through `(Recommended)` and the alternatives.
+- Then call `ask_question` with **exactly one question (`len(questions) == 1`)**: the top `OPEN` row (§2.2), prefixed with its progress (`Q-07 · câu 3/9 · Workflow`), `(Recommended)` option first, followed by 1–2 concrete alternatives with concise trade-offs, plus `"Need to discuss / clarify this question further before deciding"` (`"Cần phân tích / thảo luận làm rõ thêm câu này trước khi chốt"`). Only exception: one [batch-confirm](modes/batch-confirm.md) call for low-risk assumptions after all real open questions are locked.
+- **Strictly Forbidden**: Calling `ask_question` with `content: None` (a bare popup without explanation/flow), or chaining `ask_question(Q-01)` → `ask_question(Q-02)` back-to-back in a tool loop without first discussing, locking `Q-01 -> CLOSED -> D-NN` in `codebase-notes.md`, updating the draft, and pruning downstream `Q-NN` rows.
 
 ## 2. Queue Order, Sufficiency & Cross-Department Continuity
 

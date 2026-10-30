@@ -1,7 +1,7 @@
 # Mode: plan
-> Topic: Turning approved acceptance criteria and workflows into a traceable test plan graded by BLOCKER/MAJOR/MINOR severity.
+> Topic: Auditing the Gate 3 approved `vN/test-plan.md` (`E2E-01..E2E-N`) against approved acceptance criteria and workflows (or authoring `vN/test-plan.md` for phase-free items) graded by BLOCKER/MAJOR/MINOR severity.
 
-Turn the approved specs into a test plan before touching the environment. Write it to `vN/evidence/test-plan.md` (one plan per work-item version; later phases add cases, never rewrite earlier ones).
+Verify the Gate 3 approved `vN/test-plan.md` (`- [ ] **E2E-01**` .. `- [ ] **E2E-N**` authored by `planning` from `work-item-contract` → `templates/e2e-test-plan.md.tpl`) against `requirements.md`, `codebase-notes.md`, and `design.md` before touching the environment (if a legacy or phase-free item lacks `vN/test-plan.md`, author it from `templates/e2e-test-plan.md.tpl`). Never weaken, drop, or rewrite approved `E2E-01..E2E-N` scenarios.
 
 ## 1. Testability check
 

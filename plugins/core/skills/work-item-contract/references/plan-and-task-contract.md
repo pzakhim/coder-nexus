@@ -69,7 +69,7 @@ Never edit the check, the test or the **Expected** line to make the output match
 | Frozen (change only through the gate that approved it) | Amendable by Planning alone (`TASK_DETAIL`) |
 |---|---|
 | Goals `G-NN`, the AC → phase mapping, the phase list and each phase's outcome | The file list of a task, inside the same component |
-| `## Global constraints`, `## Review focus` | A broken check command (same intent, same Expected meaning) |
+| `## Global constraints`, `## Review focus`, and the `E2E-01..E2E-N` scenarios in `test-plan.md` | A broken check command (same intent, same Expected meaning) |
 | | A task's Acceptance Criteria or Expected brought into line with an unchanged approved source (the row cites the source) |
 | Every `D-NN` in `codebase-notes.md` | Task order inside a phase, when no **Consumes** edge breaks |
 | The approved `design.md` | Splitting one task into several with the same combined outcome |

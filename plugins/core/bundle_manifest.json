@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "plugin_version": "3.3.1",
+  "plugin_version": "3.3.2",
   "hub_version": "0.1.0",
   "source_revision_policy": "resolved_at_install",
   "public_skills": [
@@ -89,6 +89,7 @@
     "core/skills/work-item-contract/templates/change-impact.md.tpl",
     "core/skills/work-item-contract/templates/implementation-plan.md.tpl",
     "core/skills/work-item-contract/templates/phase.md.tpl",
+    "core/skills/work-item-contract/templates/e2e-test-plan.md.tpl",
     "core/skills/work-item-contract/templates/as-built.md.tpl",
     "packs/backend/rules/backend_clean_architecture_rules.md",
     "packs/backend/skills/api-contract-design/SKILL.md",

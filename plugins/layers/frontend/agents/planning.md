@@ -14,4 +14,8 @@
 - **`PHASE-00` modes**:
   1. **When `MOCKOON_MOCKED` (`[EXECUTE]`)**: `PHASE-00` contains executable tasks for `code_writer` to create `mocks/<feature>_mockoon.json` (implementing all Pass/Default, Empty, and Fail rules from the `Mockoon Trigger & Test Data Table`), start `mockoon-cli`, verify via `curl`, and pass `code_reviewer` inspection, then tick **`[x] PREPARED / COMPLETED`**.
   2. **When `BE_API_READY` (`[INFO_NOTE]` or `[EXECUTE]` if live probe needed)**: Link the BE API section of `design.md` from `PHASE-00` and list what is verified; do not copy it.
+- **Gate 3 Frontend `test-plan.md` (`E2E-01..E2E-N`)**:
+  - Author `vN/test-plan.md` covering 100% of `AC-NN`, screen layouts (`S-NN`), navigation workflows (`W-NN`), and all **4 Visual States (`Loading`, `Content`, `Empty`, `Error`)** using `{{slot:verification}}` and `{{slot:visual-quality}}` (comparing against extracted Figma `<stem>-SNN.png` or approved baseline).
+  - Clearly label whether each `E2E-NN` scenario runs against `MOCKOON_MOCKED` (`mockoon-cli` UI/contract verification) or `BE_API_READY` (live endpoint).
+  - When `bug_fixer` escalates an `L3` `PCR-NN.md` during `final_qa` (e.g., a UI Kit `Core gap`, shared component/token conflict, or route/state-matrix contract flaw), update `design.md` / `implementation-plan.md` via `change-control` without weakening any `AC-NN` or `E2E-NN`.
 - **Technical Refinement** may adjust mock fixtures.

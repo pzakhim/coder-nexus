@@ -7,12 +7,13 @@ description: "Coordinate the 6 Coder Nexus delivery agent profiles (Spec Writer,
 
 Act as the **Lead Coordinator** for one Client work item (`.superpowers/work-items/<slug>/vN/`). Read the user's request and supplied files such as `spec.md` or `<feature>_spec.md`; a Huly task is optional and read-only. Inspect the actual Client workspace and work-item configuration before assigning work.
 
-Coordinate the **6 specialized delivery agent profiles** in `agents/`:
+Coordinate the **7 specialized agent profiles** in `agents/`:
 - **Spec Writer** (`spec_writer` — Technical BA: Gate 1 intake from Huly + Figma / codebase sources into `requirements.md` and `codebase-notes.md`)
-- **Planning** (`planning` — Tech Lead: Gate 2 `design.md` and Gate 3 `implementation-plan.md` + `phases/`)
+- **Planning** (`planning` — Tech Lead: Gate 2 `design.md`, Gate 3 `implementation-plan.md` + `phases/` + `test-plan.md` `E2E-01..E2E-N`, and post-Gate 3 `L3` `PCR-NN` change control)
 - **Code Writer** (`code_writer` — Senior Engineer: single-instance sequential phase implementation)
-- **Code Reviewer** (`code_reviewer` — Independent Senior Reviewer: per-phase read-only verification)
-- **Test Runner** (`test_runner` — Independent QA Engineer: `final_qa` E2E verification)
+- **Code Reviewer** (`code_reviewer` — Independent Senior Reviewer: per-phase and `L2`/`L3` fix read-only verification)
+- **Test Runner** (`test_runner` — Independent QA Engineer: sequential `E2E-01..E2E-N` `final_qa` verification with Fail-Fast & zero test-case tampering)
+- **Bug Fixer** (`bug_fixer` — In-Flight E2E QA & Defect Specialist: resolves `FAILED_AT: E2E-i` defects in `final_qa` via `L1`/`L2` root-cause fixes or `L3` `PCR-NN` escalation to `planning`)
 - **Docs Writer** (`docs_writer` — Technical Writer: single final closure run producing visual `as-built.md`)
 
 Operate with strict role boundaries, human-in-the-loop approval gates, and revision-bound evidence. Never impersonate subagent roles, fake test results, or self-approve gates. Invoke only the plugin agents above; never `define_subagent` a substitute. If an agent fails to start, stop as `BLOCKED — agent <name> failed: <error>` and report to the user.
@@ -63,12 +64,12 @@ Upon Gate 1 approval (via Path A or Path B), call **Planning** (Tech Lead) for G
    - Slice the feature into **`PHASE-00` (`phases/phase-00-prepare.md`)** followed by **sequential vertical behavior phases** (`phases/phase-01-<behavior>.md`, `phase-02-<behavior>.md`...), where each phase is a self-contained sub-feature and its verified output feeds the next phase.
    - Within each phase, break work into an **ordered list of sequential single-writer micro-tasks** (`- [ ] **Task X.Y**`) without parallel/sequential track tags or join points.
    - Define **Review Acceptance Criteria (DoD for Code Review)**: Explicitly specify required developer unit tests (UseCases, Mappers, state holders) and zero-error static analysis.
-   - **Strict Boundary**: `planning` defines *technical architecture and review criteria*; `planning` does NOT dictate QA user-acceptance test cases (QA test design belongs independently to `test_runner`).
-4. **Step 2D — Gate 3 (User Negotiation & Plan Freeze)**:
+   - **Master E2E Test Plan (`test-plan.md` at Gate 3)**: Author `.superpowers/work-items/<slug>/vN/test-plan.md` (`work-item-contract` → `templates/e2e-test-plan.md.tpl`) defining ordered end-to-end scenarios (`- [ ] **E2E-01**` .. `- [ ] **E2E-N**`) covering 100% of `AC-NN` (Happy, Negative/Edge, Out-of-Scope, State/Workflow continuity) and locking in the Fail-Fast Scenario Loop (`test_runner` ↔ `bug_fixer` ↔ `planning`) and Strict Anti-Test-Tampering Rule.
+4. **Step 2D — Gate 3 (User Negotiation & Plan + E2E Test Plan Freeze)**:
    - Before presenting: run 3-pass `gate-review` (`modes/plan.md`: `validate_plan_slices`, plan checklist, and cold-reader check), with `0 OPEN Q-NN`.
-   - Present `implementation-plan.md` and all linked phase files via `ask_question` with 3 clear options:
-     1. `[Approve Plan & Proceed to Build]`: Record `APPROVED_FOR_BUILD` (specs and plan frozen); `planning` returns `READY_FOR_BUILD` naming the first executable phase, and you assign one `code_writer`.
-     2. `[Refine Technical Decisions]`: Adjust task order, mock approach, or scaffolding directly in `planning`.
+   - Present `implementation-plan.md`, all linked phase files, and `test-plan.md` (`E2E-01..E2E-N`) via `ask_question` with 3 clear options:
+     1. `[Approve Plan & Proceed to Build]`: Record `APPROVED_FOR_BUILD` (specs, plan, and `test-plan.md` frozen); `planning` returns `READY_FOR_BUILD` naming the first executable phase, and you assign one `code_writer`.
+     2. `[Refine Technical Decisions]`: Adjust task order, mock approach, scaffolding, or `E2E-NN` scenarios directly in `planning`.
      3. `[Modify Business Scope / Requirements]`: Route back to `spec_writer` to revise requirements before replanning.
 
 ---
@@ -103,21 +104,28 @@ Formats and status words: `work-item-contract` → `references/handoff-and-statu
 | `BLOCKED` (environment, approval, external dependency, branch) | Resolve it or ask the user; never let a role work around it. |
 | `BLOCKED` naming a `PCR-NN`, or a `PLAN_CONFLICT` / `SCOPE_CHANGE` row in a review or test report | For a report row, write `plan-changes/PCR-NN.md` from it (`code_reviewer` and `test_runner` stay read-only). Send the request to `planning` (`change-control`). `code_writer` waits. `AMENDED` → re-assign the phase from the first affected task and list the new `## Plan change log` rows at the next phase checkpoint. `ESCALATED` → ask the user at once with the `Q-NN`; Gate 2 (`DESIGN_CHANGE`) or Gate 1 via `spec_writer` (`SCOPE_CHANGE`) re-approves before work resumes. |
 | `CHANGES_REQUESTED` (review) | Back to `code_writer`. **Cap: 3 review rounds on the same phase**; after the third, escalate: a plan cause goes to `planning` as a `PCR-NN`, anything else to the user with both positions. Nobody waives a finding. |
-| `FAIL` / `CHANGES_REQUESTED` (`test_runner`) | Each failing case goes to `code_writer` under the phase that owns its AC (`## AC coverage`), with its evidence; the fix goes through `code_reviewer` again (new revision, `APPROVED`), then `test_runner` re-tests affected cases. The owning phase's 3-round cap counts (`handoff-and-status.md` §2). |
+| `FAIL` / `CHANGES_REQUESTED` (`test_runner`, `FAILED_AT: E2E-i`) | `test_runner` stops immediately on the first failing scenario (`FAIL-FAST`, zero test-case tampering in `test-plan.md`). Invoke **`bug_fixer`** (Mode C) with the defect report (`FAILED_AT: E2E-i`, steps, expected vs actual, evidence, owning phase from `## AC coverage`):<br>• **`L1` localized bug** (1–2 files inside owning phase Scope / Files, 0 stack L3 floors hit): `bug_fixer` writes a Red-to-Green regression test, fixes production code, and returns `READY_FOR_TEST` → re-invoke `test_runner` to re-run `E2E-01..E2E-N` from start to finish.<br>• **`L2` multi-file / cross-layer bug** (0 stack L3 floors hit): `bug_fixer` fixes production code with a regression test and returns `READY_FOR_REVIEW` → `code_reviewer` (`APPROVED`, counting toward the owning phase's 3-round cap) → `test_runner` re-runs `E2E-01..E2E-N` from start to finish.<br>• **`L3` architectural / design / plan flaw**: `bug_fixer` writes `plan-changes/PCR-NN.md` and returns `ESCALATED` → invoke **`planning`** (`change-control`) to amend `implementation-plan.md` (`TASK_DETAIL` → `AMENDED`) or escalate to Gate 2 / Gate 1 (`DESIGN_CHANGE` / `SCOPE_CHANGE`), then apply the fix, pass `code_reviewer`, and re-run `test_runner` from `E2E-01` to `E2E-N`. |
 | A third `PCR-NN` on the same task | To the user, whatever its class. |
 
-Verification path per revision: `Code Writer evidence (READY_FOR_REVIEW) → Code Reviewer re-runs & verifies (APPROVED) → Coordinator User Checkpoint → after the last phase is APPROVED, Test Runner runs quality-acceptance (final_qa) on the approved revision → upon ACCEPTED, Docs Writer runs once to write the final visual as-built.md (RECORDED).` `NOT_RUN`, `BLOCKED` and `UNVERIFIED` never become `PASS`, `APPROVED` or `ACCEPTED` at any step.
+Verification path per revision: `Code Writer evidence (READY_FOR_REVIEW) → Code Reviewer re-runs & verifies (APPROVED) → Coordinator User Checkpoint → after the last phase is APPROVED, Test Runner executes test-plan.md (E2E-01..E2E-N, Fail-Fast <-> Bug Fixer <-> Planning) on the approved revision → upon 100% pass (ACCEPTED), Docs Writer runs once to write the final visual as-built.md (RECORDED).` `NOT_RUN`, `BLOCKED` and `UNVERIFIED` never become `PASS`, `APPROVED` or `ACCEPTED` at any step.
 
 ---
 
-## Phase 4 — Final Feature E2E QA Verification (`test_runner`)
+## Phase 4 — Final Feature E2E QA & Fail-Fast Bug Resolution Loop (`test_runner` ↔ `bug_fixer` ↔ `planning`)
 
-Once all implementation phases in `implementation-plan.md` are completed and `APPROVED` by `code_reviewer`, call **`test_runner` (`final_qa`)** on the final `APPROVED` revision for a comprehensive End-to-End QA pass across the fully integrated feature (a phase explicitly marked by the plan for an intermediate acceptance run gets an extra run after that phase is `APPROVED`). It follows `quality-acceptance`; check before accepting its report:
+Once all implementation phases in `implementation-plan.md` are completed and `APPROVED` by `code_reviewer`, call **`test_runner` (`final_qa`)** on the final `APPROVED` revision to execute the Gate 3 approved `vN/test-plan.md` (`E2E-01..E2E-N`) end-to-end (a phase explicitly marked by the plan for an intermediate acceptance run gets an extra run after that phase is `APPROVED`). Follow `quality-acceptance` and enforce:
 
-- **Independence**: the test-case matrix comes from `requirements.md` (BDD scenarios, AC table, `## Screens & Visual Sources`, `## Workflows`, `## 1.` **Scope in** / **Scope out**; `brief.md` for a phase-free item), `design.md` state matrix and any extracted Figma screen renders (`.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png`), never from plan tasks; developer unit tests are not re-run as acceptance; an Out-of-Scope mutation fails verification.
-- **Evidence**: rows under `.superpowers/work-items/<slug>/vN/evidence/final_qa/<revision>/` (stack targets from `{{slot:verification}}`), all 4 visual states for UI items, and the per-AC table defined in `quality-acceptance` → "Per-AC results".
-- UI/contract checks and live integration checks are reported separately, with data provenance and contract/code revisions. Approved fixtures may pass their UI/contract checks; required live ACs stay `BLOCKED` or `NOT_RUN` until checked on the real endpoint. Never close a handshake using fixtures.
-- **Verdict**: `ACCEPTED` only when every applicable AC is `PASS`. On `CHANGES_REQUESTED` (any `FAIL`), route each failure to `code_writer` under its owning phase as in **Routing**: `code_writer` → `code_reviewer` (`APPROVED`) → `test_runner` re-tests affected cases on the new revision (no `docs_writer` in between). On `BLOCKED`, resolve the blocker first.
+- **Source of Truth & Anti-Test-Tampering**: `test_runner` executes `E2E-01` → `E2E-02` → ... → `E2E-N` from `vN/test-plan.md` verified against `requirements.md` (BDD scenarios, AC table, `## Screens & Visual Sources` `S-NN`, `## Workflows` `W-NN`, `## 1.` **Scope in** / **Scope out**), `codebase-notes.md` (`D-NN`, Glossary), `design.md` state matrix, and extracted Figma screen renders (`.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png` when present). Both `test_runner` and `bug_fixer` are **100% forbidden** from altering, weakening, or skipping any `E2E-01..E2E-N` scenario in `test-plan.md`. Developer unit tests are not counted as acceptance; an Out-of-Scope mutation fails verification.
+- **Evidence**: As each `E2E-i` passes, `test_runner` ticks `- [x] **E2E-i**` in `test-plan.md` and writes evidence rows under `.superpowers/work-items/<slug>/vN/evidence/final_qa/<revision>/` (stack targets from `{{slot:verification}}` & `{{slot:visual-quality}}`), covering all 4 visual states for UI items and the per-AC table defined in `quality-acceptance` → "Per-AC results".
+- **Fixture vs. Live Split**: UI/contract checks and live integration checks are reported separately, with data provenance and contract/code revisions. Approved fixtures may pass their UI/contract checks; required live ACs stay `BLOCKED` or `NOT_RUN` until checked on the real endpoint. Never close a handshake using fixtures.
+- **Fail-Fast Scenario Loop (`test_runner` ↔ `bug_fixer` ↔ `planning`)**:
+  1. If any `E2E-i` fails, `test_runner` **stops immediately (`FAIL-FAST`)**, writes `evidence/final_qa/<revision>/acceptance-report.md` (`FAILED_AT: E2E-i`), and returns `CHANGES_REQUESTED`.
+  2. Immediately invoke **`bug_fixer`** (Mode C — In-Flight E2E QA Bug Resolution) with the defect report:
+     - **`L1` localized implementation bug** (1–2 files inside owning phase Scope / Files, 0 stack L3 floors hit): `bug_fixer` writes a failing Red-to-Green regression test, fixes production code, runs verification + self `{{slot:bug-hunt}}` (`quick`), commits the new revision, and returns `READY_FOR_TEST` → routes directly back to `test_runner`.
+     - **`L2` multi-file / cross-layer bug** (0 stack L3 floors hit): `bug_fixer` fixes production code with a regression test and returns `READY_FOR_REVIEW` → `code_reviewer` (`APPROVED`) → `test_runner`.
+     - **`L3` architectural / design / plan flaw (`PLAN_WRONG` / `DESIGN_CHANGE` / `SCOPE_CHANGE` or stack L3 floor hit)**: `bug_fixer` writes `plan-changes/PCR-NN.md` and returns `ESCALATED` → invoke **`planning`** (`change-control`) to amend `design.md` / `implementation-plan.md` (with user re-approval if a frozen Gate 1/2 item changes), apply the fix, pass `code_reviewer`, and return to `test_runner`.
+  3. Re-invoke **`test_runner`** to re-verify **`E2E-01` through `E2E-N` from start to finish** on the new revision (no `docs_writer` in between).
+  4. Repeat this `test_runner` ↔ `bug_fixer` (↔ `planning`) loop until **100% of `E2E-01..E2E-N` pass from start to finish** (`ACCEPTED`). On `BLOCKED`, resolve the named blocker first.
 
 ---
 
