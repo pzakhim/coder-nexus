@@ -19,12 +19,14 @@ Construct one row for every pair of tasks (within a phase or across phases) that
 - Any consumer task ordered before its producer task (within a phase or in an earlier phase) is **`BLOCKER`**.
 - Any task whose internal instructions contradict themselves (e.g., test vs implementation signature, creating a file a later task assumes already existed) is **`BLOCKER`**.
 
-### P2. Complete `AC-NN`, `BR-NN`, and `NEW COMPONENT` Delivery
+### P2. Complete `AC-NN`, `BR-NN`, `NEW COMPONENT` Delivery & Phase `Scope in` / `Scope out` Boundaries
 - Every `AC-NN` mapped to a phase must have both a task that builds the behavior and a decisive check that would fail without it. Listing an `AC-NN` ID in the phase header without a building task and check is **`BLOCKER`**.
 - Every behavioral `BR-NN`, every `NEW COMPONENT` (`C-NN`) in `design.md` → `## UI/UX mapping`, and every divergence rule (`D-NN`) must be implemented by an explicit task (**`BLOCKER`** if missing).
+- Every feature phase (`PHASE-01`+) must include `## Objective, approach & scope` with explicit **Why (Objective)**, **In-phase execution architecture & approach**, **Scope in**, **Scope out** (naming the owning `PHASE-NN` or `Out of work item`), **Cross-phase conflict & boundary check**, and **In-phase unit test plan** (**`BLOCKER`** if missing or if two phases have overlapping `Scope in` deliverables).
 
-### P3. Plan Proportion & Anti-Pattern Check
+### P3. Plan Proportion, Anti-Pattern & Mandatory In-Phase Unit Test Check
 - A plan more than ~3× the combined length of `requirements.md` + `design.md`, or tasks that paste full function bodies instead of concise direction + `Produces` signatures, is **`MAJOR`**.
+- Every task that creates or modifies executable logic must include its developer unit test file in `Scope / Files` and run named unit tests (`Happy/Pass`, `Negative/Fail`, `Edge/Empty`) in `Acceptance Criteria`. Any phase that omits unit tests, defers unit tests to a later phase, or creates a standalone test-only task at the end of a phase is **`BLOCKER`**.
 - Any task that instructs `code_writer` to write something `code_reviewer` would reject — a tautological test, duplicated logic, or a hardcoded fallback masking errors — is **`BLOCKER`**.
 
 ### P4. Global Constraints & Value Alignment

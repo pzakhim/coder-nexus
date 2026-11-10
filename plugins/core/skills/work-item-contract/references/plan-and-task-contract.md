@@ -25,29 +25,43 @@ The single home of the **format** of `implementation-plan.md` and `phases/phase-
 
 Any other text, or an unticked box, means `PHASE-01` may not start. The Code Writer ticks it before its `PHASE-00` hand-off; the Code Reviewer only confirms the tick against the evidence and never edits plan documents.
 
+### Phase header & scope contract (`phases/phase-NN-*.md` → `## Objective, approach & scope`)
+
+Every feature phase file (`PHASE-01`+) opens with `## Objective, approach & scope` above `## Tasks`, agreed with the user during the interactive phase-by-phase planning loop before the next phase is planned:
+
+| Bullet | Holds | Rule |
+|---|---|---|
+| **Why (Objective)** | The business and technical problem this phase solves (`AC-NN`, `G-NN`, `D-NN`) | Ties the phase to a user/test-observable outcome |
+| **In-phase execution architecture & approach** | 3–6 bullets on the execution flow, components/layers wired in this phase, and rejected alternatives from `D-NN` (or `NONE`) | Locked with the user before writing tasks; never invent unapproved alternatives |
+| **Scope in (Included in this phase)** | Concrete deliverables, behaviors, source files (`[+]`, `[M]`), and developer unit tests delivered in this phase | Defines the exact positive boundary of the phase |
+| **Scope out (Excluded from this phase — anti-overlap)** | Adjacent behaviors, screens, endpoints, or edge flows explicitly NOT built in this phase, each naming its owning `PHASE-NN` (or `Out of work item`) | Prevents scope creep and eliminates overlap between phases |
+| **Cross-phase conflict & boundary check** | Symbols/state consumed from earlier phases (`PHASE-1..i-1`), symbols/state produced for later phases (`PHASE-(i+1)..N`), and how shared files avoid conflicting edits | Verified with the user before moving from `PHASE-i` to `PHASE-(i+1)` |
+| **In-phase unit test plan (Mandatory)** | Unit test file path(s) and named test cases covering **Happy/Pass**, **Negative/Fail**, and **Edge/Empty** per the agreed test-data contract | Every feature phase must include its own unit tests; never defer unit tests to a later phase |
+
 ## 2. Task fields (`phases/phase-NN-*.md` → `## Tasks`)
 
 ```markdown
 - [ ] **Task X.Y**: <actionable title>
-  - **Scope / Files**: `path/one`, `path/two` (create / modify)
+  - **Scope / Files**: `path/to/source`, `path/to/test` (create / modify)
   - **Reused Components**: entries from the design's reuse mapping, or `none`
   - **Consumes**: exact signatures from earlier tasks or existing code, or `none`
   - **Produces**: public symbols later tasks consume (name, parameters, return type), or `none`
-  - **Acceptance Criteria**: `<exact check command>` (cwd: `<directory>`)
-  - **Expected**: <the observable result of that check>
+  - **Acceptance Criteria**: `<exact analyzer + named unit test command>` (cwd: `<directory>`)
+  - **Expected**: <the observable result of that check, including named unit tests passing>
 ```
 
 | Field | Rule | Reason |
 |---|---|---|
-| Scope / Files | Every file the task creates or modifies; nothing outside it is edited | Edits outside the list are unreviewed scope |
+| Scope / Files | Every source file and unit test file the task creates or modifies; nothing outside `Scope in` is edited | Edits outside the list are unreviewed scope; co-locating unit tests prevents untested tasks |
 | Reused Components | Spelled as in `design.md`'s reuse mapping (`{{slot:architecture-design}}` where the stack defines one) | The Code Writer must not choose a different foundation locally |
 | Consumes | Character-for-character equal to an earlier **Produces** line or to a symbol that exists in the code | The Code Writer sees one task at a time and must not guess a neighbour's names |
 | Produces | Only symbols a later task or phase consumes | Anything else is an internal detail, not a contract |
-| Acceptance Criteria | One runnable check (the stack's analyzer on the touched path, a named test, a request against a running target) plus its cwd. The heading word stays "Acceptance Criteria" | A check without a cwd cannot be re-run identically by the reviewer |
-| Expected | What the check prints or shows when the task is right: exit code, test count or name, the exact error text a negative case must produce, the response status, the file that must exist | Without a stated result, "it ran" is mistaken for "it passed" |
+| Acceptance Criteria | One runnable check (the stack's analyzer on the touched path plus the task's named unit tests covering Pass/Happy, Negative/Fail, and Edge/Empty) plus its cwd. The heading word stays "Acceptance Criteria" | A check without a cwd or without unit tests cannot prove the task's behavior |
+| Expected | What the check prints or shows when the task is right: exit code, named unit test count passed (`N passed`), the exact error text a negative case must produce, the response status, the file that must exist | Without a stated result, "it ran" is mistaken for "it passed" |
 
-Rules for **Expected**:
+Rules for **Unit Tests & Expected**:
 
+- **Mandatory in-task unit tests**: Every task that creates or modifies executable logic (models/mappers, use cases/services, state holders/nodes, controllers/widgets) MUST include its developer unit test file in `Scope / Files` and run its named unit tests (covering **Happy/Pass**, **Negative/Fail**, and **Edge/Empty**) in `Acceptance Criteria`. Never create a standalone "write unit tests" task at the end of a phase or a separate testing phase.
 - It must be able to fail. "No errors" is valid only for a check that reports errors; "works" is never valid.
 - For a test-first task (`{{slot:unit-testing}}`), state both runs: the red run and the reason it fails, then the green run.
 - It comes from the approved documents (`AC-NN`, `BR-NN`, `D-NN`, design), never from what the current code happens to output.

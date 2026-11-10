@@ -72,13 +72,37 @@ Each feature phase (`PHASE-01`, `PHASE-02`...) delivers **one user-observable or
 - **Walking Skeleton in `PHASE-01`**: `PHASE-01` is thin but complete from API (or Mockoon HTTP server) to pixels/output, scheduled through the highest-risk integration (`02-task-structure-and-regrounding.md` §3).
 - **No Placeholder Code**: Every phase file lists **only** the files that behavior needs. Never create empty classes, unused models, or dead DI registrations for later phases; shared pieces belong to the first phase that needs them and are extended by later phases.
 - **UI-Only Phases Are Valid**: A phase that adds a layout refinement or new screen state without new Domain/Data work is a valid vertical slice.
+- **Mandatory In-Phase Unit Tests**: Every feature phase (`PHASE-01`+) must include its own developer unit tests (covering **Happy/Pass**, **Negative/Fail**, and **Edge/Empty** per the agreed test-data contract) inside the tasks that build the logic. Never create a horizontal "unit testing phase" at the end.
 
-### Phase File Contract (`validate_plan_slices` `PLAN-V-007`..`009`)
-Every phase file under `phases/phase-NN-<behavior-slug>.md` is authored from `work-item-contract` → `templates/phase.md.tpl` and enforced by `validate_plan_slices`:
+### Interactive Phase-by-Phase Planning with the User (`ask_question`)
+
+`planning` must **never** write all phase files autonomously in a single silent pass. Instead, collaborate with the user in two explicit steps:
+
+1. **Step A — Master Phase Slicing Direction (`ask_question` Before Detailed Phase Planning)**:
+   - Present the proposed **Master Phase Roadmap** in chat:
+     - How many phases (`PHASE-00` + `PHASE-01..NN`), ordered from walking skeleton / highest risk to extensions.
+     - A summary table mapping each `PHASE-NN` to its `AC-NN` / `G-NN`, preliminary `Scope in` vs `Scope out`, and potential cross-phase conflicts (shared files, shared models/state, dependency order).
+   - Call `ask_question` (with `(Recommended)` first) to ask the user how they want to slice and sequence the plan. Record the confirmed phase strategy as a `D-NN` in `codebase-notes.md`.
+2. **Step B — Phase-by-Phase Interactive Planning Loop (`Plan PHASE-01` → User Check → `Plan PHASE-02` → ...)**:
+   - Plan one phase at a time (`i = 1..N`). For each `PHASE-i`:
+     1. **Report `PHASE-i` Execution Architecture, Scope & Conflicts in Chat**:
+        - **Why (Objective) & Vertical Behavior Slice**: Business/technical purpose (`AC-NN`, `G-NN`, `D-NN`) and observable `Input → Output`.
+        - **In-Phase Execution Architecture & Approach**: Exact components, classes, data/state flow, `[+]`/`[M]` files, and `Consumes` ↔ `Produces` contracts inside `PHASE-i`.
+        - **Explicit `Scope in` vs `Scope out` (Anti-Overlap)**:
+          - **Scope in**: What `PHASE-i` builds and tests.
+          - **Scope out**: What `PHASE-i` explicitly does **not** touch, naming the exact owning `PHASE-k` (or `Out of work item`) to prevent phase overlap or scope drift.
+        - **Cross-Phase Conflict Analysis**: Check `PHASE-i` against already-planned `PHASE-1..i-1` and upcoming `PHASE-(i+1)..N` (shared file edits, interface handoffs, state transitions) so no two phases collide or duplicate work.
+        - **Ordered Tasks & Mandatory In-Phase Unit Tests**: Summarize the sequential tasks (`Task i.1`, `Task i.2`...) and the concrete unit test files + named test cases (`Happy/Pass`, `Negative/Fail`, `Edge/Empty`) built inside `PHASE-i`.
+     2. **Confirm `PHASE-i` with the User (`ask_question`)**: Ask the user to approve or refine `PHASE-i`'s execution architecture, `Scope in / Scope out`, conflict handling, and unit tests.
+     3. **Lock `phases/phase-0i-*.md` & Advance**: Once confirmed, write `phases/phase-0i-<behavior-slug>.md`. **Only after finishing the plan for `PHASE-i` do you move on to planning `PHASE-(i+1)` with the user.**
+
+### Phase File Contract (`validate_plan_slices` `PLAN-V-007`..`009` & Scope Contract)
+Every phase file under `phases/phase-NN-<behavior-slug>.md` is authored from `work-item-contract` → `templates/phase.md.tpl` and enforced by `validate_plan_slices` and `gate-review`:
 - Relative link under `phases/` that resolves to an existing file (`PLAN-V-007-NO-PHASES`, `PLAN-V-007-TRAVERSAL`, `PLAN-V-007-MISSING`).
 - Header metadata: `Document type: PHASE` and `Version: vN` matching `implementation-plan.md` (`PLAN-V-008-VERSION`), with zero unfilled `{{...}}` placeholders (`PLAN-V-008-PLACEHOLDER`).
 - Unique `Phase ID: PHASE-NN` (`PLAN-V-008-ID`), `Execution Mode` (`[EXECUTE]` or `[INFO_NOTE]`), and `Readiness / Completion Tick`.
 - Mandatory metadata bullets (`PLAN-V-008-METADATA`): `Behavior`, `AC IDs` (`NONE (readiness phase)` for `PHASE-00`), `Goals`, `Depends on` (must reference only earlier declared phases or `NONE`; `PLAN-V-009-DEPENDENCY`), `READY when`, `Files`, `Owner`, `Verification`, `UI impact`, and `Visual target/states`.
+- Mandatory `## Objective, approach & scope` section (`work-item-contract` → `references/plan-and-task-contract.md` §1): `Why (Objective)`, `In-phase execution architecture & approach`, `Scope in (Included in this phase)`, `Scope out (Excluded from this phase — anti-overlap)` (citing owning `PHASE-NN`), `Cross-phase conflict & boundary check`, and `In-phase unit test plan (Mandatory)`.
 - Mandatory body headings (`PLAN-V-008-SECTION`): `## Tasks`, `## Code direction`, `## Design system source`, `## Done when`, and `## Risks`.
 
 ---
