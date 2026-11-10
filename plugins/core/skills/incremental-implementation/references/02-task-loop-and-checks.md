@@ -14,7 +14,7 @@ Execute tasks strictly top to bottom. **Never implement two tasks in one pass.**
 | **B. Code in Scope** | Edit **only** files listed in `Scope / Files`. Apply `{{slot:clean-architecture}}`, `{{slot:clean-code}}`, and `{{slot:secure-coding-standards}}`. Write the failing unit test first where `{{slot:unit-testing}}` requires it | Editing files outside `Scope / Files` introduces unreviewed design drift |
 | **C. Run Check** | Run the task's `Acceptance Criteria` command in its specified working directory (`cwd`) and read the complete output | Only an executed command whose output you inspected counts as evidence (`evidence-standard`) |
 | **D. Triage** | Compare the actual command output against the task's `Expected` result using the Triage Matrix (§2) | Silent deviation from `Expected` bypasses the approved plan |
-| **E. Tick & Re-read** | Record `- [x]` on the task in the phase file using the exact Tick Line Format (§3), then re-read the phase file before starting the next task | The phase-file tick is the persistent ledger across sessions |
+| **E. Tick & Re-read (or Stop at `[REVIEW_CHECKPOINT]`)** | Record `- [x]` on the task in the phase file using the exact Tick Line Format (§3), then re-read the phase file. **If the next unticked item is a `- [ ] **[REVIEW_CHECKPOINT: ...]**` line, stop immediately** and execute the Checkpoint Hand-off ([03 — Phase End & Hand-off](03-phase-end-and-handoff.md)) so `code_reviewer` reviews the UI/feature unit that just materialized before you code any task after the checkpoint | Prevents cascading UI/architectural rework across subsequent tasks in the phase |
 
 ---
 

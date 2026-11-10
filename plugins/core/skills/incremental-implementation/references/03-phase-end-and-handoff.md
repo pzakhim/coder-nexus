@@ -4,9 +4,9 @@
 
 ---
 
-## 1. Five Mandatory Phase-End Gates (`I7`–`I12`)
+## 1. Five Mandatory Checkpoint / Phase-End Gates (`I7`–`I12`)
 
-When every task in the phase file is ticked (`- [x]`), run these 5 gates in order before handing off:
+When every task up to an unticked **`[REVIEW_CHECKPOINT: ...]`** line (or every task in the phase file) is ticked (`- [x]`), run these 5 gates in order before handing off (`READY_FOR_REVIEW`). When `code_reviewer` returns `APPROVED` on a mid-phase `[REVIEW_CHECKPOINT]`, tick `- [x]` on that checkpoint line in the phase file and resume at the next unticked task:
 
 | # | Gate | Skill / Slot | Mandatory Action |
 |---|---|---|---|
