@@ -60,23 +60,31 @@ Populate `## Test and visual strategy` in `implementation-plan.md` and `Verifica
 
 ## 3. Pre-Gate 3 Self-Check, 3-Pass `gate-review` & Gate 3 Freeze Protocol
 
-### Step 1 — 5-Item Author Self-Check
+### Step 1 — 7-Item Author Self-Check
 Before running `gate-review`, inspect `implementation-plan.md` and all `phases/phase-NN-*.md` files:
 1. Every `AC-NN` in `requirements.md` is mapped in `## AC coverage`, listed in the target phase's `- **AC IDs**:` bullet, and backed by a building task + falsifiable check.
-2. Every task's **Consumes** line matches an earlier **Produces** line (or existing codebase symbol) character for character.
-3. Every `## Review focus` line names its owning task, and that task includes the verification check (or the section states `None found after checking every AC and BR`).
-4. No task contains vague placeholders (`TBD`) or transcribed function bodies.
-5. Phase order starts with `PHASE-00`, schedules highest risk first in `PHASE-01`, places prefactor tasks before new behavior inside a phase, and orders **Expand** before **Contract**.
+2. Every feature phase (`PHASE-01`+) was interactively reviewed and confirmed with the user one by one before moving to the next phase, and opens with `## Objective, approach & scope` containing `Why (Objective)`, `In-phase execution architecture & approach`, `Scope in`, `Scope out` (naming the owning `PHASE-NN`), `Cross-phase conflict & boundary check`, and `In-phase unit test plan`.
+3. Zero scope overlap across phases: no behavior or deliverable in `PHASE-i`'s `Scope in` duplicates another phase's `Scope in`, and shared-file edits across phases are explicitly sequenced in `## Checkpoints and shared files` and `Cross-phase conflict & boundary check`.
+4. Every logic-building task includes its developer unit test file in `Scope / Files` and runs named unit tests (`Happy/Pass`, `Negative/Fail`, `Edge/Empty`) in `Acceptance Criteria` + `Expected` (no standalone test-only tasks or deferred test phases).
+5. Every task's **Consumes** line matches an earlier **Produces** line (or existing codebase symbol) character for character.
+6. Every `## Review focus` line names its owning task, and that task includes the verification check (or the section states `None found after checking every AC and BR`).
+7. No task contains vague placeholders (`TBD`) or transcribed function bodies, and phase order starts with `PHASE-00`, schedules highest risk first in `PHASE-01`, places prefactor tasks before new behavior inside a phase, and orders **Expand** before **Contract**.
 
 ### Step 2 — Mandatory 3-Pass `gate-review` (`modes/plan.md`)
 Execute `gate-review` (`modes/plan.md`) in strict sequential order:
 1. **Pass 1 — Deterministic Validator (`PASS` / `FAIL`)**: Run `validate_plan_slices(plan_path="...")` and resolve every `PLAN-V-001` through `PLAN-V-010` error until the tool returns `PASS`. (If the validator cannot run, report `NOT_RUN`, never `PASS`.)
-2. **Pass 2 — Plan Checklist (`P1`–`P5`, `BLOCKER` / `MAJOR` / `MINOR`)**: Audit Interface Pre-Flight (`Produces` ↔ `Consumes`), complete `AC-NN` / `BR-NN` / `C-NN` delivery, plan proportion, global constraint value alignment, and falsifiable task checks. Fix all `BLOCKER` and `MAJOR` findings inline; queue any issue requiring a user decision as an `OPEN` `Q-NN` in `codebase-notes.md`.
+2. **Pass 2 — Plan Checklist (`P1`–`P5`, `BLOCKER` / `MAJOR` / `MINOR`)**: Audit Interface Pre-Flight (`Produces` ↔ `Consumes`), complete `AC-NN` / `BR-NN` / `C-NN` delivery, explicit `Scope in` / `Scope out` anti-overlap boundaries, mandatory in-phase unit tests, plan proportion, global constraint value alignment, and falsifiable task checks. Fix all `BLOCKER` and `MAJOR` findings inline; queue any issue requiring a user decision as an `OPEN` `Q-NN` in `codebase-notes.md`.
 3. **Pass 3 — Fresh Cold-Reader Subagent Check (Reader Plays `code_writer`)**: Spawn one fresh read-only subagent using the exact prompt in `gate-review` → `modes/plan.md` (`P6`). Triage every returned question (`Answered already`, `Minor — Agent's call` fixed inline, or `User's call — OPEN Q-NN` asked via `grilling` one question at a time and closed into `D-NN`).
 - Present Gate 3 to the user **only when `0 OPEN Q-NN` remain**.
 
-### Step 3 — Gate 3 User Negotiation (`ask_question`) & Post-Gate 3 Change Control
-Present `implementation-plan.md` and linked `phases/` to the user via `ask_question` (opening with the `G-NN` goal recap and `gate-review` summary) with three response paths:
+### Step 3 — Gate 3 Master Plan Report & User Negotiation (`ask_question`)
+When presenting Gate 3 (`implementation-plan.md`, linked `phases/`, and `test-plan.md`) to the user, output a structured **Gate 3 Master Plan Report** in chat before calling `ask_question`:
+1. **Goal Recap & Overall Planning Strategy**: Confirmed `G-NN` goals, slicing direction (`D-NN`), and `gate-review` Pass 1–3 summary.
+2. **Phase-by-Phase Breakdown Table**:
+   ` | Phase ID | Why & Behavior (`AC-NN`) | Execution Architecture | Scope In | Scope Out (→ Owning Phase) | In-Phase Unit Tests | Cross-Phase Conflict Check | `
+3. **Master E2E Test Plan Summary (`test-plan.md`)**: Overview of `E2E-01..E2E-N` scenarios.
+
+Then call `ask_question` with three response paths:
 1. **`[Approve Plan & Proceed to Build]`**: User approves Gate 3 $\implies$ specs, design, and plan are frozen (`APPROVED_FOR_BUILD`). `planning` updates `Status: APPROVED` with the user's approval reference and returns `READY_FOR_BUILD` naming `PHASE-00` (when `PHASE-00` is `[EXECUTE]`) or `PHASE-01` (when `PHASE-00` is `[INFO_NOTE]` and already carries an accepted `[x] PREPARED (INFO_READY)` or `[x] PREPARED (NO_EXTERNAL_API)` tick).
 2. **`[Refine Technical Decisions]`**: User requests adjustments to task order, Mockoon rules, or Review DoD $\implies$ `planning` updates `implementation-plan.md` / `phases/`, re-runs `validate_plan_slices`, and re-presents Gate 3 without routing back to `spec_writer`.
 3. **`[Modify Business Scope / Requirements]`**: User alters business rules, goals, or ACs $\implies$ `planning` halts and routes back to `spec_writer` (Gate 1) so specs and plan never drift apart.

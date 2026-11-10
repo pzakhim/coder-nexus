@@ -29,17 +29,21 @@ Up to five input classes or failure modes that `requirements.md` implies but no 
 
 ---
 
-## 2. Ordered Single-Writer Task Breakdown (`## Tasks`)
+## 2. Ordered Single-Writer Task Breakdown & Mandatory In-Phase Unit Tests (`## Tasks`)
 
-Inside each phase file (`phases/phase-NN-*.md`), break `## Tasks` into an ordered list of discrete micro-tasks executed sequentially from top to bottom by a **single `code_writer`** (e.g., Domain $\to$ Data $\to$ State $\to$ Screen/Components & Route/DI $\to$ Developer Unit Tests):
+Inside each phase file (`phases/phase-NN-*.md`), break `## Tasks` into an ordered list of discrete micro-tasks executed sequentially from top to bottom by a **single `code_writer`** (e.g., Domain + Unit Tests $\to$ Data + Unit Tests $\to$ State + Unit Tests $\to$ Screen/Components, Route/DI & Widget/Integration Tests):
 - **Never** split tasks into `[PARALLEL]` / `[SEQUENTIAL]` tracks or `Join points`.
+- **Mandatory In-Task Unit Tests (Never Defer Unit Testing)**:
+  - Every task that creates or modifies executable logic (models/mappers, use cases/services, state holders/nodes, controllers/widgets) **MUST** include its corresponding unit test file in **Scope / Files** and execute named unit test cases covering **Happy/Pass**, **Negative/Fail**, and **Edge/Empty** (matching the agreed test-data contract in `design.md`) inside that task's **Acceptance Criteria** and **Expected**.
+  - **Strictly Forbidden**: Creating a standalone task that only contains test files at the end of a phase, or deferring unit tests to a later phase.
+- **Strict `Scope in` / `Scope out` Enforcement**: Every file in a task's **Scope / Files** must belong to the phase's `Scope in` list and must never touch items listed in the phase's `Scope out`.
 - Every task (`- [ ] **Task X.Y**: <Actionable Title>`) MUST include the 6 mandatory task fields defined in `work-item-contract` → `references/plan-and-task-contract.md` §2 (do not restate or vary the field names):
-  1. **Scope / Files**: Every file the task creates or modifies; edits outside this list are out-of-scope.
+  1. **Scope / Files**: Every source file and unit test file the task creates or modifies; edits outside this list are out-of-scope.
   2. **Reused Components**: Exact entries from `design.md`'s reuse/foundation mapping table, or `none`.
   3. **Consumes**: Exact signatures from earlier tasks or existing code (character-for-character match with an earlier **Produces** line), or `none`.
   4. **Produces**: Public symbols (name, parameters, return type) that later tasks or phases consume, or `none`.
-  5. **Acceptance Criteria**: One runnable check command and its explicit `cwd` (`<exact check command>` (cwd: `<directory>`)).
-  6. **Expected**: Falsifiable observable output sourced from approved documents (exit code, test name/count, exact error text, HTTP status, or generated artifact path — never *"works"* or unverified current output).
+  5. **Acceptance Criteria**: One runnable check command (running static analysis + the task's named unit tests) and its explicit `cwd` (`<exact check command>` (cwd: `<directory>`)).
+  6. **Expected**: Falsifiable observable output sourced from approved documents (exit code, named unit test count passed `N passed`, exact error text, HTTP status, or generated artifact path — never *"works"* or unverified current output).
 
 ---
 
