@@ -14,6 +14,9 @@
 - **`PHASE-00` modes**:
   1. **When `MOCKOON_MOCKED` (`[EXECUTE]`)**: `PHASE-00` contains executable tasks for `code_writer` to create `mocks/<feature>_mockoon.json` (implementing all Pass/Default, Empty, and Fail rules from the `Mockoon Trigger & Test Data Table`), start `mockoon-cli`, verify via `curl`, and pass `code_reviewer` inspection, then tick **`[x] PREPARED / COMPLETED`**.
   2. **When `BE_API_READY` (`[INFO_NOTE]` or `[EXECUTE]` if live probe needed)**: Link the BE API section of `design.md` from `PHASE-00` and list what is verified; do not copy it.
+- **Context-Driven UI/UX `[REVIEW_CHECKPOINT]` Placement Inside Feature Phases**:
+  - When planning each Frontend phase interactively with the user, evaluate where inside the phase a **Screen (`S-NN`), custom Component (`C-NN`), or UI/UX modification** actually materializes on the UI (whether after a single task or after 2–3 tasks that wire state + widget + screen together) and needs immediate visual/code review before subsequent tasks build on top of it.
+  - Place `- [ ] **[REVIEW_CHECKPOINT: <Screen / Component / Feature unit>]**` right after that task in `phases/phase-NN-*.md` (never by a rigid task-count formula) and confirm it with the user when locking the phase plan.
 - **Gate 3 Frontend `test-plan.md` (`E2E-01..E2E-N`)**:
   - Author `vN/test-plan.md` covering 100% of `AC-NN`, screen layouts (`S-NN`), navigation workflows (`W-NN`), and all **4 Visual States (`Loading`, `Content`, `Empty`, `Error`)** using `{{slot:verification}}` and `{{slot:visual-quality}}` (comparing against extracted Figma `<stem>-SNN.png` or approved baseline).
   - Clearly label whether each `E2E-NN` scenario runs against `MOCKOON_MOCKED` (`mockoon-cli` UI/contract verification) or `BE_API_READY` (live endpoint).

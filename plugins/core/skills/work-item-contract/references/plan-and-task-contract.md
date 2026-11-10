@@ -37,8 +37,9 @@ Every feature phase file (`PHASE-01`+) opens with `## Objective, approach & scop
 | **Scope out (Excluded from this phase — anti-overlap)** | Adjacent behaviors, screens, endpoints, or edge flows explicitly NOT built in this phase, each naming its owning `PHASE-NN` (or `Out of work item`) | Prevents scope creep and eliminates overlap between phases |
 | **Cross-phase conflict & boundary check** | Symbols/state consumed from earlier phases (`PHASE-1..i-1`), symbols/state produced for later phases (`PHASE-(i+1)..N`), and how shared files avoid conflicting edits | Verified with the user before moving from `PHASE-i` to `PHASE-(i+1)` |
 | **In-phase unit test plan (Mandatory)** | Unit test file path(s) and named test cases covering **Happy/Pass**, **Negative/Fail**, and **Edge/Empty** per the agreed test-data contract | Every feature phase must include its own unit tests; never defer unit tests to a later phase |
+| **In-phase review checkpoints (`[REVIEW_CHECKPOINT]`)** | Context-driven mid-phase review flags placed right after the task(s) where a screen, component, or sub-feature materializes on UI (or `End-of-phase review only` when no mid-phase checkpoint is needed) | Decided by `planning` and confirmed with the user per phase — never tied to a fixed task number |
 
-## 2. Task fields (`phases/phase-NN-*.md` → `## Tasks`)
+## 2. Task fields & `[REVIEW_CHECKPOINT]` markers (`phases/phase-NN-*.md` → `## Tasks`)
 
 ```markdown
 - [ ] **Task X.Y**: <actionable title>
@@ -48,7 +49,11 @@ Every feature phase file (`PHASE-01`+) opens with `## Objective, approach & scop
   - **Produces**: public symbols later tasks consume (name, parameters, return type), or `none`
   - **Acceptance Criteria**: `<exact analyzer + named unit test command>` (cwd: `<directory>`)
   - **Expected**: <the observable result of that check, including named unit tests passing>
+- [ ] **`[REVIEW_CHECKPOINT: <Screen / Component / Feature unit>]`**: <what materialized on UI / behavior and what Code Reviewer must verify before the next task starts>
 ```
+
+- **Context-Driven `[REVIEW_CHECKPOINT]` Placement**: There is no rigid rule that every Nth task must be reviewed. Instead, when `planning` designs a phase (especially for Frontend / UI / UX), `planning` evaluates at which point a **Screen (`S-NN`), Component (`C-NN`), UI adjustment, or sub-feature** has materialized enough (whether after 1 task or after 2–3 tasks that wire data + state + UI together) that reviewing how it renders and behaves on UI right away will prevent cascading rework on subsequent tasks. `planning` places `- [ ] **[REVIEW_CHECKPOINT: ...]**` at that exact boundary and confirms it with the user during the phase planning loop.
+- **Stopping at `[REVIEW_CHECKPOINT]`**: When `code_writer` finishes the task immediately preceding an unticked `[REVIEW_CHECKPOINT: ...]` line, `code_writer` stops coding further tasks, runs verification and visual checks (`{{slot:visual-quality}}` when UI is involved) on the completed unit, commits the revision, writes `writer-handoff.md` naming the checkpoint, and returns `READY_FOR_REVIEW`. Once `code_reviewer` returns `APPROVED` for that checkpoint, the checkpoint line is ticked `- [x]` and `code_writer` resumes at the next task in the phase.
 
 | Field | Rule | Reason |
 |---|---|---|

@@ -44,18 +44,18 @@ Before using a skill listed above, check `.agents/skills/` in the workspace. If 
 
 ## Process (pointers, not restated)
 
-- **Phase execution**: `incremental-implementation` — preconditions, pre-flight Consumes/Produces check, the task loop with Expected triage (`MATCH` / `CODE_WRONG` / `PLAN_WRONG`), phase-end checks and hand-off. Formats: `work-item-contract` (`plan-and-task-contract.md`, `handoff-and-status.md`).
+- **Phase & checkpoint execution**: `incremental-implementation` — preconditions, pre-flight Consumes/Produces check, the task loop with Expected triage (`MATCH` / `CODE_WRONG` / `PLAN_WRONG`), stopping at any unticked **`[REVIEW_CHECKPOINT: ...]`** line placed in `## Tasks` (or at phase end) to run verification/visual checks and hand off for review before continuing to subsequent tasks. Formats: `work-item-contract` (`plan-and-task-contract.md`, `handoff-and-status.md`).
 - **Tests**: `{{slot:unit-testing}}` (test-first: failing test before new behavior); test data comes from the Pass/Default, Fail and Empty rows agreed in `design.md`.
 - **Code quality and safety**: `{{slot:clean-architecture}}`, `{{slot:clean-code}}`, `{{slot:secure-coding-standards}}`; `{{slot:code-simplification}}` only for a named smell on green checks.
 - **Failures**: `CODE_WRONG` → `{{slot:root-cause-debugging}}`; `PLAN_WRONG`, a mapped component that does not fit, a missing consumed symbol or code that contradicts a `D-NN` → `change-control` (write `plan-changes/PCR-NN.md`, return `BLOCKED`, wait).
-- **Phase end**: `{{slot:verification}}`, then `{{slot:bug-hunt}}` at `quick` on your own diff, then `evidence-standard` before claiming anything.
+- **Checkpoint or Phase end**: `{{slot:verification}}` (and `{{slot:visual-quality}}` when UI materialized at the checkpoint/phase), then `{{slot:bug-hunt}}` at `quick` on your own diff, then `evidence-standard` before claiming anything.
 - **Review findings**: `review-resolution`; every fix is a new revision that invalidates affected review and test evidence. After 3 review rounds on the same phase the coordinator escalates.
 
 ## Outputs and statuses
 
-Commit the phase, then write the hand-off to `vN/evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md` (never a `+dirty` revision) in the shape of `handoff-and-status.md` §1–2: phase ID, approved document revisions, AC IDs, `BASE_REVISION..REVIEW_REVISION`, changed files and test paths, one evidence row per task check and phase check, both `{{slot:bug-hunt}}` (`quick` depth) and `{{slot:code-simplification}}` self-check results, open `PCR-NN`, and the explicit staged/unstaged/untracked scope. Return exactly one of:
+Commit the completed tasks (up to the active `[REVIEW_CHECKPOINT]` or phase end), then write the hand-off to `vN/evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md` (never a `+dirty` revision) in the shape of `handoff-and-status.md` §1–2: phase ID (and checkpoint name if stopping at a mid-phase `[REVIEW_CHECKPOINT]`), approved document revisions, AC IDs, `BASE_REVISION..REVIEW_REVISION`, changed files and test paths, one evidence row per task check and checkpoint/phase check, both `{{slot:bug-hunt}}` (`quick` depth) and `{{slot:code-simplification}}` self-check results, open `PCR-NN`, and the explicit staged/unstaged/untracked scope. Return exactly one of:
 
-- `READY_FOR_REVIEW` — every task ticked on `MATCH`, phase checks run; optional **Concerns** list.
+- `READY_FOR_REVIEW` — every task up to the active `[REVIEW_CHECKPOINT]` (or phase end) ticked on `MATCH`, checkpoint/phase checks run; optional **Concerns** list. When resuming after `code_reviewer` returns `APPROVED` on a mid-phase `[REVIEW_CHECKPOINT]`, tick `- [x]` on that `[REVIEW_CHECKPOINT]` line and continue with the next unticked task in the phase.
 - `BLOCKED` — names the blocker (`PCR-NN`, environment, approval, branch mismatch).
 - `NEEDS_CONTEXT` — what was tried (files read, commands run) and exactly what is needed.
 

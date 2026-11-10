@@ -44,6 +44,9 @@ Inside each phase file (`phases/phase-NN-*.md`), break `## Tasks` into an ordere
   4. **Produces**: Public symbols (name, parameters, return type) that later tasks or phases consume, or `none`.
   5. **Acceptance Criteria**: One runnable check command (running static analysis + the task's named unit tests) and its explicit `cwd` (`<exact check command>` (cwd: `<directory>`)).
   6. **Expected**: Falsifiable observable output sourced from approved documents (exit code, named unit test count passed `N passed`, exact error text, HTTP status, or generated artifact path — never *"works"* or unverified current output).
+- **Context-Driven `[REVIEW_CHECKPOINT]` Placement Inside `## Tasks` (Especially for FE / UI / UX)**:
+  - Do **not** follow a rigid task-count formula for review. Instead, evaluate where inside the phase a **Screen (`S-NN`), custom Component (`C-NN`), UI modification, or self-contained sub-feature** actually materializes on UI (whether after a single UI task or after 2–3 tasks that wire state + widget + screen together) and warrants an immediate visual/code review before subsequent tasks build on top of it.
+  - Place `- [ ] **[REVIEW_CHECKPOINT: <Screen / Component / Feature unit>]**: <what materialized on UI and what must be reviewed now>` right after that task in `## Tasks`, and confirm the checkpoint placement with the user during the interactive phase planning loop.
 
 ---
 

@@ -12,9 +12,9 @@ One Code Writer executes one approved phase, tasks strictly in order, and proves
 ## 1. Execution Flow & Canonical Statuses
 
 1. **Before coding ([01 — Preconditions & Pre-flight](references/01-preconditions-and-preflight.md)):** Verify Gate 1–3 approvals, `PHASE-00` readiness, and the active Git branch; build the **Consumes / Produces Pre-flight Table** against real code signatures before Task 1.
-2. **Per-task loop ([02 — Task Loop & Checks](references/02-task-loop-and-checks.md)):** Execute tasks top to bottom (**A. Read & Ground → B. Code in Scope → C. Run Check → D. Triage → E. Tick & Re-read**). Never code two tasks in one pass.
-3. **Phase end ([03 — Phase End & Hand-off](references/03-phase-end-and-handoff.md)):** Run full phase verification (`{{slot:verification}}`), UI checks (`{{slot:visual-quality}}`), self bug-hunt (`{{slot:bug-hunt}}`), and named-smell simplification (`{{slot:code-simplification}}`).
-4. **Hand-off ([03 — Phase End & Hand-off](references/03-phase-end-and-handoff.md)):** Commit the phase, re-run phase checks on the committed `REVIEW_REVISION`, and write `evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md`.
+2. **Per-task loop & `[REVIEW_CHECKPOINT]` stops ([02 — Task Loop & Checks](references/02-task-loop-and-checks.md)):** Execute tasks top to bottom (**A. Read & Ground → B. Code in Scope → C. Run Check → D. Triage → E. Tick & Re-read**). Never code two tasks in one pass. Whenever you reach an unticked **`[REVIEW_CHECKPOINT: ...]`** line in `## Tasks`, stop coding further tasks, run verification/visual checks on the unit that just materialized, commit, and hand off `READY_FOR_REVIEW` before continuing past that checkpoint.
+3. **Checkpoint / Phase end ([03 — Phase End & Hand-off](references/03-phase-end-and-handoff.md)):** Run verification (`{{slot:verification}}`), UI checks (`{{slot:visual-quality}}` when UI materialized at the checkpoint/phase), self bug-hunt (`{{slot:bug-hunt}}`), and named-smell simplification (`{{slot:code-simplification}}`).
+4. **Hand-off ([03 — Phase End & Hand-off](references/03-phase-end-and-handoff.md)):** Commit the completed scope, re-run checks on the committed `REVIEW_REVISION`, and write `evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md`.
 
 | Category | Canonical Flags ([`handoff-and-status.md`](../work-item-contract/references/handoff-and-status.md)) |
 |---|---|

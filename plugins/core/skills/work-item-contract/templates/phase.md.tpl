@@ -41,11 +41,13 @@
 - **In-phase unit test plan (Mandatory)**:
   - Test file(s): `{{UnitTestFilePaths}}`
   - Named test cases (`Happy/Pass`, `Negative/Fail`, `Edge/Empty`): {{NamedUnitTestsCoveringPassFailEmpty}}
+- **In-phase review checkpoints (`[REVIEW_CHECKPOINT]` — context-driven, not fixed by task count)**:
+  - {{WhenAScreenComponentOrSubFeatureMaterializesOnUiOrNeedsMidPhaseReviewPlaceCheckpointHereOrEndOfPhaseOnly}}
 
 ## Tasks
 
 {{OrderedTasksWithFilesReusedComponentsConsumesProducesAcceptanceCriteriaAndExpected}}
-<!-- Format for each ordered task:
+<!-- Format for each ordered task and optional mid-phase [REVIEW_CHECKPOINT]:
 - [ ] **Task X.Y**: <Task Title>
   - **Scope / Files**: `path/to/source_file`, `path/to/unit_test_file`
   - **Reused Components**: entries from the design's Core usage / Client Core Mapping table
@@ -53,11 +55,14 @@
   - **Produces**: public symbols later tasks consume, or none
   - **Acceptance Criteria**: exact check command and its cwd running both static analysis and the task's named unit tests (Pass/Happy, Negative/Fail, Edge/Empty)
   - **Expected**: the observable result of that check (exit code, named unit test count passed, exact error text, response status)
+- [ ] **`[REVIEW_CHECKPOINT: <Screen / Component / Feature unit name>]`** (optional, placed by `planning` + user right after the task(s) where a screen, component, or sub-feature materializes on UI and should be reviewed before coding subsequent tasks):
+  - **Review target**: <what UI screen/component/behavior just materialized and what `code_reviewer` + visual check must verify right now>
 Execution Rule:
 1. A single `code_writer` executes tasks strictly in order from top to bottom.
 2. Every logic-building task MUST include its developer unit tests (Happy/Pass, Negative/Fail, Edge/Empty) in the same task; never defer unit tests to a standalone test-only task or a later phase.
 3. After each task: run Acceptance Criteria -> compare with Expected (MATCH / CODE_WRONG / PLAN_WRONG) -> on MATCH return to this file, tick `- [x]` -> re-read plan and next task specs before writing next task code.
-4. PLAN_WRONG: stop and raise a plan change request (change-control); never edit the check or Expected.
+4. When `code_writer` reaches an unticked `[REVIEW_CHECKPOINT: ...]` line, it stops immediately, runs verification/visual checks for the completed unit, commits, and hands off `READY_FOR_REVIEW` so `code_reviewer` audits that unit before `code_writer` continues to the next task in the phase.
+5. PLAN_WRONG: stop and raise a plan change request (change-control); never edit the check or Expected.
 Field rules: work-item-contract references/plan-and-task-contract.md.
 -->
 

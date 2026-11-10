@@ -92,8 +92,8 @@ Each feature phase (`PHASE-01`, `PHASE-02`...) delivers **one user-observable or
           - **Scope in**: What `PHASE-i` builds and tests.
           - **Scope out**: What `PHASE-i` explicitly does **not** touch, naming the exact owning `PHASE-k` (or `Out of work item`) to prevent phase overlap or scope drift.
         - **Cross-Phase Conflict Analysis**: Check `PHASE-i` against already-planned `PHASE-1..i-1` and upcoming `PHASE-(i+1)..N` (shared file edits, interface handoffs, state transitions) so no two phases collide or duplicate work.
-        - **Ordered Tasks & Mandatory In-Phase Unit Tests**: Summarize the sequential tasks (`Task i.1`, `Task i.2`...) and the concrete unit test files + named test cases (`Happy/Pass`, `Negative/Fail`, `Edge/Empty`) built inside `PHASE-i`.
-     2. **Confirm `PHASE-i` with the User (`ask_question`)**: Ask the user to approve or refine `PHASE-i`'s execution architecture, `Scope in / Scope out`, conflict handling, and unit tests.
+        - **Ordered Tasks, Mandatory In-Phase Unit Tests & Context-Driven `[REVIEW_CHECKPOINT]`**: Summarize the sequential tasks (`Task i.1`, `Task i.2`...), the concrete unit test files + named test cases (`Happy/Pass`, `Negative/Fail`, `Edge/Empty`) built inside `PHASE-i`, and where `planning` places any **`[REVIEW_CHECKPOINT: <Screen / Component / Feature unit>]`** flag inside `## Tasks` (placed right after the task(s) where a screen, component, or sub-feature materializes on UI and warrants review before continuing — never tied to a fixed task number).
+     2. **Confirm `PHASE-i` with the User (`ask_question`)**: Ask the user to approve or refine `PHASE-i`'s execution architecture, `Scope in / Scope out`, conflict handling, unit tests, and `[REVIEW_CHECKPOINT]` placement.
      3. **Lock `phases/phase-0i-*.md` & Advance**: Once confirmed, write `phases/phase-0i-<behavior-slug>.md`. **Only after finishing the plan for `PHASE-i` do you move on to planning `PHASE-(i+1)` with the user.**
 
 ### Phase File Contract (`validate_plan_slices` `PLAN-V-007`..`009` & Scope Contract)
