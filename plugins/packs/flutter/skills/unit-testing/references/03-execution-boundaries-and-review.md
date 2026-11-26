@@ -37,9 +37,9 @@ Always state what unit tests proved and what remains for downstream verification
 
 | Concern | Proven By | Owner |
 |---|---|---|
-| Domain entities/validators, UseCase orchestration, Model/Mapper serialization, DataSource status mapping, Cubit/Bloc state transitions | **Developer Unit Tests** (`test/`, this skill) | Code Writer |
-| Widget rendering, responsive layout, theme tokens, touch targets, visual states against `requirements.md` (`S-NN`), `design.md` (`## UI/UX mapping`), and Figma reference renders (`<stem>-SNN.png`) | **Visual & Widget Verification** (`{{slot:visual-quality}}`) | Code Writer (self-check) & Test Runner |
-| Live backend API contract compatibility, navigation flows, platform plugins (camera, biometrics, secure storage) on emulator/device | **Integration & Acceptance Verification** (`{{slot:verification}}`, `quality-acceptance`) | Test Runner |
+| Domain entities/validators, UseCase orchestration, Model/Mapper serialization, DataSource status mapping, Cubit/Bloc state transitions | **Developer Unit & Widget Tests** (`test/modules/<feature>/`, mandatory per task) | Code Writer |
+| Widget rendering, responsive layout, theme tokens, touch targets, 4 visual states against `design.md` (`## UI/UX mapping`) and Figma (`figma/<stem>-SNN.png`) or HTML sitemap (`sitemap/screens/<id>_<code>.png`) via multimodal `read_file` | **Visual & Golden Verification** (`{{slot:visual-quality}}`) | Code Writer (capture), Code Reviewer (`read_file` visual gate), Test Runner (no `--update-goldens` + independent live capture) |
+| End-to-end navigation flows, API contract compatibility (`FE_MOCKOON` / `BE_LIVE`), and platform runtime checks | **Hybrid E2E Acceptance** (`{{slot:verification}}`, `quality-acceptance`): optional local `integration_test/<feature>_e2e_test.dart` (authored by Code Writer when in Gate 3 plan) + independent live `E2E-01..N` (`browser` subagent / `chrome-devtools` MCP / simulator) | Code Writer (authors optional `integration_test/`), Test Runner (executes `integration_test/` + live `E2E-01..N`, strictly read-only) |
 
 Example hand-off boundary note:
 > `Unit: 12 passed (OrderModel, GetOrdersUseCase, OrderListCubit). Not covered by unit tests: OrderListScreen responsive layout and pull-to-refresh gesture — covered by visual-quality and integration verification.`

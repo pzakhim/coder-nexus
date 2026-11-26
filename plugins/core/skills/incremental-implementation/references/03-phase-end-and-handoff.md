@@ -11,7 +11,7 @@ When every task up to an unticked **`[REVIEW_CHECKPOINT: ...]`** line (or every 
 | # | Gate | Skill / Slot | Mandatory Action |
 |---|---|---|---|
 | **1** | **Full Phase Suite (`I7`)** | `{{slot:verification}}` | Run the stack's full phase checks (formatter check, static analyzer, type checker, unit tests, architecture validator, and build as applicable). Task checks are narrow; the phase suite verifies cross-task interactions |
-| **2** | **Visual Verification (`I8`)** | `{{slot:visual-quality}}` | For UI-impacting phases, run runtime visual verification across the approved targets and states |
+| **2** | **Visual Verification (`I8`)** | `{{slot:visual-quality}}` | For every UI phase end and mid-phase `[REVIEW_CHECKPOINT]`, run runtime visual verification across approved targets/states, save captured `.png` files under `evidence/<phase-id>/<REVIEW_REVISION>/visual/`, and list them in `Visual Artifacts:` for `code_reviewer`'s multimodal `read_file` comparison |
 | **3** | **Self Bug-Hunt (`I9`)** | `{{slot:bug-hunt}}` | Run a `quick`-effort bug hunt on the phase diff; grade findings per [handoff-and-status.md](../../work-item-contract/references/handoff-and-status.md) §9. Fix every `CONFIRMED` defect with a reproducing test first (`{{slot:unit-testing}}`) and re-run affected checks; carry `PLAUSIBLE` items under `Concerns` |
 | **4** | **Targeted Simplicity Pass (`I12`)** | `{{slot:code-simplification}}` | Inspect changed code only; apply simplification **only** when a named smell (from its 4-lens catalog or `{{slot:clean-code}}`) is present. Re-run affected checks afterward and record the §9 `simplify:` line |
 | **5** | **Evidence Audit (`I10`)** | [`evidence-standard`](../../evidence-standard/SKILL.md) | Verify every claim has a complete evidence row on the committed revision (`NOT_RUN`, `BLOCKED`, and `UNVERIFIED` are never `PASS`) |
@@ -22,8 +22,8 @@ When every task up to an unticked **`[REVIEW_CHECKPOINT: ...]`** line (or every 
 
 ## 2. Revision-Bound Hand-off (`I13`)
 
-1. **Commit first:** Stage and commit the phase's in-scope files (`git-preflight`), then re-run the phase verification checks on that clean commit so `REVIEW_REVISION` is a committed Git SHA (never `+dirty`).
-2. **Write the hand-off artifact:** Create `evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md` using the common header in [handoff-and-status.md](../../work-item-contract/references/handoff-and-status.md) §1 plus these fields:
+1. **Commit first:** Stage only explicit in-scope paths (`git add -- <paths>`, never `git add .`) and commit the phase/checkpoint (`git-preflight` M10), then re-run the phase verification checks on that clean commit so `REVIEW_REVISION` is a committed Git SHA (never `+dirty`). In `/swarm` mode, if running in `workspace:"share"`, merge/land commits and `.superpowers/` hand-off updates onto the shared branch before waking `@code-reviewer`.
+2. **Write the hand-off artifact:** Create `evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md` using the common header in [handoff-and-status.md](../../work-item-contract/references/handoff-and-status.md) §1 plus these fields (include the mandatory **`Visual Artifacts:`** table for every UI phase end and mid-phase `[REVIEW_CHECKPOINT]`, or write `Visual Artifacts: UI: N/A` for non-UI phases):
 
 ```markdown
 Status: READY_FOR_REVIEW | BLOCKED | NEEDS_CONTEXT
@@ -35,6 +35,10 @@ Evidence:
 | Claim | Command (+cwd) | Revision | Exit Code | Key Output | Result |
 |---|---|---|---|---|---|
 | <task or phase check> | `<cmd>` (cwd `<dir>`) | `<review-sha>` | 0 | <summary> | PASS |
+Visual Artifacts: (mandatory for UI phases & UI [REVIEW_CHECKPOINT]; write "UI: N/A" if non-UI)
+| Screen (`S-NN`) | State | Viewport / Target | Captured `.png` Path | Reference Source (Figma or HTML Sitemap) |
+|---|---|---|---|---|
+| `S-01` | Default | `1440x900` web / iOS sim | `evidence/<phase-id>/<REVIEW_REVISION>/visual/S-01-default.png` | `figma/<stem>-S01.png` OR `sitemap/screens/<id>_<code>.png` |
 bug-hunt: <handoff-and-status §9 bug-hunt summary line; CONFIRMED fixed with tests, PLAUSIBLE carried as Concerns>
 simplify: <handoff-and-status §9 simplify summary line; skipped findings carried as Concerns>
 PCR raised: <PCR-NN - class - answer (AMENDED / ESCALATED / open)> | none

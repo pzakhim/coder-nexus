@@ -176,3 +176,57 @@ def test_mention_followed_by_text_keeps_a_space():
         {"type": "text", "text": ", ok"},
     ]}]}
     assert parse_markup(doc).text == "@Hưng Lê Quốc à đây @Van Ty xem nhé, ok"
+
+
+def test_huly_download_limit_is_150mb_and_oversized_html_guides_manual_drop(client, tmp_path, monkeypatch):
+    assert mod.MAX_DOWNLOAD_BYTES == 150 * 1024 * 1024
+    monkeypatch.setattr(mod, "MAX_DOWNLOAD_BYTES", 64)
+
+    # Oversized by metadata size_bytes (pre-download skip)
+    ROWS["attachment:class:Attachment"].append(
+        {"_id": "a-big", "attachedTo": "i-parent", "file": "blob-big", "name": "Master_Sitemap.html",
+         "type": "text/html", "size": 200}
+    )
+    try:
+        d = asyncio.run(client.get_task_detail("IMES-10", download_dir=str(tmp_path)))
+        big = next(s for s in d.sources if s.title == "Master_Sitemap.html")
+        assert big.status == "UNREACHABLE"
+        assert "auto-download limit" in (big.note or "")
+        assert str(tmp_path / "Master_Sitemap.html") in (big.note or "")
+        assert "coder-nexus sitemap extract" in (big.note or "")
+    finally:
+        ROWS["attachment:class:Attachment"].pop()
+
+
+def test_huly_download_auto_extracts_interactive_sitemap_small_and_master(client, tmp_path, monkeypatch):
+    from .test_sitemap import _build_sample_sitemap_html
+
+    sitemap_bytes = _build_sample_sitemap_html().encode("utf-8")
+    ROWS["attachment:class:Attachment"].append(
+        {"_id": "a-sm", "attachedTo": "i-parent", "file": "blob-sm", "name": "Huong_Dan_Sitemap.html",
+         "type": "text/html", "size": len(sitemap_bytes)}
+    )
+    BLOBS["blob-sm"] = sitemap_bytes
+    try:
+        # 1) Small sitemap (4 <= 15 screens): full extraction with PNGs & specs
+        small_dir = tmp_path / "small"
+        d_small = asyncio.run(client.get_task_detail("IMES-10", download_dir=str(small_dir)))
+        sm = next(s for s in d_small.sources if s.title == "Huong_Dan_Sitemap.html")
+        assert sm.kind == "sitemap" and sm.status == "READ"
+        assert sm.local_path == str(small_dir / "sitemap" / "index.md")
+        assert (small_dir / "sitemap" / "screens" / "H01_M-01.png").is_file()
+        assert "STAGE_1" in (sm.text or "")
+
+        # 2) Master sitemap (4 > threshold 2): index-only extraction with filter CLI hint
+        import coder_nexus.sitemap as sm_pkg
+        monkeypatch.setattr(sm_pkg, "AUTO_EXTRACT_ALL_MAX_SCREENS", 2)
+        master_dir = tmp_path / "master"
+        d_master = asyncio.run(client.get_task_detail("IMES-10", download_dir=str(master_dir)))
+        sm_m = next(s for s in d_master.sources if s.title == "Huong_Dan_Sitemap.html")
+        assert sm_m.kind == "sitemap" and sm_m.status == "READ"
+        assert (master_dir / "sitemap" / "index.md").is_file()
+        assert not (master_dir / "sitemap" / "screens").exists()
+        assert "coder-nexus sitemap extract" in (sm_m.note or "")
+    finally:
+        ROWS["attachment:class:Attachment"].pop()
+        BLOBS.pop("blob-sm", None)

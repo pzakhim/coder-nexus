@@ -1,10 +1,10 @@
 # Mode: Spec — Gate 1 Pre-Gate Verification (`spec_writer` in `dev-team`)
 
-Reviews `requirements.md` (or `brief.md`) and `codebase-notes.md`, alongside extracted Figma outputs (`.superpowers/sources/<ISSUE-ID>/figma/` `tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png`) when the item has UI impact. Pass 1 (`validate_proposal_spec` = `PASS`) must be clean before starting Pass 2. Findings use `GR-S-NN`.
+Reviews `requirements.md` (or `brief.md`) and `codebase-notes.md`, alongside extracted visual outputs (`.superpowers/sources/<ISSUE-ID>/figma/` `tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png` for `FIGMA_PROVIDED`, or `.superpowers/sources/<ISSUE-ID>/sitemap/screens/*.png` and `sitemap/*.spec.json` for `HTML_SITEMAP_PROVIDED`) when the item has UI impact. Pass 1 (`validate_proposal_spec` = `PASS`) must be clean before starting Pass 2. Findings use `GR-S-NN`.
 
 When present in `.agents/skills/`, also load:
 - `.agents/skills/domain-knowledge/` — glossary, entities, roles, and data scopes (for `S2`).
-- `.agents/skills/requirements-specification/` — mandatory edge cases (`references/02-edge-cases-and-writing-rules.md`) and workspace Gate 1 review questions (`references/03-gate-review-and-verification.md`) for `S5`.
+- `.agents/skills/requirements-specification/` — mandatory edge cases (`references/02-edge-cases-and-writing-rules.md`) and workspace Gate 1 checklist (`references/03-gate-review-and-verification.md`) for `S5`.
 
 ---
 
@@ -53,10 +53,12 @@ For each `grilling` queue group (`SKILL.md` §2.2 groups 1–6; group 7 is `N/A`
 | 5 | Observable states (4 visual states for UI), lifecycle | | |
 | 6 | Negative, boundary, and edge cases | | |
 
-### S5. Requirement-Quality Questions (~30 Spec-Text Checks)
-Write concise questions testing **what the spec text states** (never runtime test steps starting with *Verify/Test/Click*):
-- Tag each question `[Gap]`, `[Ambiguity]`, or `[Conflict]` with the `G-NN` / `BR-NN` / `AC-NN` / `W-NN` it checks.
-- Any question answered *"no"* becomes a `BLOCKER` (if two developers would build different behavior) or `MAJOR` finding.
+### S5. High-Signal Spec Precision & Testability Check
+Audit the spec directly for real `[Gap]`, `[Ambiguity]`, or `[Conflict]` defects (do **not** generate boilerplate question lists):
+1. **Testable observables & boundaries**: Every `BR-NN` and `AC-NN` states concrete inputs, triggers, boundary values, and observable outputs/messages so two builders cannot diverge (`BLOCKER` if underspecified).
+2. **Visual & state completeness (UI items)**: Every non-`EXISTING` `S-NN` matches its `FIGMA_PROVIDED` (`<stem>-SNN.png`) or `HTML_SITEMAP_PROVIDED` (`sitemap/screens/*.png`, `*.spec.json`) source, and covers all 4 mandatory visual states (`Default / Content`, `Loading`, `Empty`, `Error`) (`BLOCKER` if missing or contradictory).
+3. **Zero technical leakage**: `requirements.md` stays in pure business/UX vocabulary (no class names, endpoints, storage keys, or framework widgets; any unverified technical hints from HTML sitemaps are isolated in `codebase-notes.md` → `## 3`) (`MAJOR`).
+4. **Workspace domain checks**: Include any mandatory edge-case checks from `.agents/skills/requirements-specification/` when present (`BLOCKER` / `MAJOR` by impact).
 
 ### S6. Scenario Classes per Goal (`primary`, `alternate`, `exception`, `recovery`)
 Verify each `G-NN` (and each UI `W-NN`) covers:
@@ -73,7 +75,7 @@ Identify the single failure that would upset the user most (data loss, wrong cal
 
 ## S8. Pass 3 — Cold-Reader Subagent Check (Reader Plays `planning`)
 
-After Pass 1 (`PASS`) and Pass 2 (`0 BLOCKER`, `0 MAJOR`), spawn one fresh read-only subagent with this exact prompt:
+After Pass 1 (`PASS`) and Pass 2 (`0 BLOCKER`, `0 MAJOR`), spawn one fresh read-only cold-reader via **`invoke_subagent`** (standard mode) or **`swarm{action:"add", name:"cold-reader", brief:...}`** without `fork` (`/swarm` mode; self-read only as explicit degraded fallback if the host cannot spawn subagents — see [`SKILL.md` §5](../SKILL.md#5-pass-3--fresh-cold-reader-subagent-check)) with this exact prompt:
 
 ```text
 You are the Planning agent (Tech Lead) of this team. You have been handed the

@@ -4,17 +4,17 @@
 
 ---
 
-## 1. The Per-Task Loop (`A` → `E` — `I4`, `I5`, `I6`)
+## 1. The Per-Task / Atomic-Unit Loop (`A` → `E` — `I4`, `I5`, `I6`)
 
-Execute tasks strictly top to bottom. **Never implement two tasks in one pass.**
+Execute tasks in strict top-to-bottom order. **Tightly coupled sub-tasks inside the same file or atomic compile unit** (for example, a model + mapper + its unit test, or tightly coupled state + widget edits that only compile together) may be implemented together before running their checks, triaging, and ticking each covered task individually. **Never bulk-code unrelated tasks** across a phase or cross a `[REVIEW_CHECKPOINT]` boundary without verifying and ticking first.
 
 | Step | Action | Why It Matters |
 |---|---|---|
-| **A. Read & Ground** | Re-open the phase file; select the first unticked task; confirm all earlier tasks are ticked (`- [x]`); note `Scope / Files`, `Reused Components`, `Consumes`, `Produces`, `Acceptance Criteria` (command + cwd), and `Expected` | Memory drifts across tasks; re-reading reloads exact paths and contracts |
-| **B. Code in Scope** | Edit **only** files listed in `Scope / Files`. Apply `{{slot:clean-architecture}}`, `{{slot:clean-code}}`, and `{{slot:secure-coding-standards}}`. Write the failing unit test first where `{{slot:unit-testing}}` requires it | Editing files outside `Scope / Files` introduces unreviewed design drift |
-| **C. Run Check** | Run the task's `Acceptance Criteria` command in its specified working directory (`cwd`) and read the complete output | Only an executed command whose output you inspected counts as evidence (`evidence-standard`) |
-| **D. Triage** | Compare the actual command output against the task's `Expected` result using the Triage Matrix (§2) | Silent deviation from `Expected` bypasses the approved plan |
-| **E. Tick & Re-read (or Stop at `[REVIEW_CHECKPOINT]`)** | Record `- [x]` on the task in the phase file using the exact Tick Line Format (§3), then re-read the phase file. **If the next unticked item is a `- [ ] **[REVIEW_CHECKPOINT: ...]**` line, stop immediately** and execute the Checkpoint Hand-off ([03 — Phase End & Hand-off](03-phase-end-and-handoff.md)) so `code_reviewer` reviews the UI/feature unit that just materialized before you code any task after the checkpoint | Prevents cascading UI/architectural rework across subsequent tasks in the phase |
+| **A. Read & Ground** | Re-open the phase file; select the first unticked task (or tightly coupled same-file/unit group); confirm all earlier tasks are ticked (`- [x]`); note `Scope / Files`, `Reused Components`, `Consumes`, `Produces`, `Acceptance Criteria` (command + cwd), and `Expected` | Memory drifts across tasks; re-reading reloads exact paths and contracts |
+| **B. Code in Scope** | Edit **only** files listed in `Scope / Files` (plus optional local `integration_test/` files when scheduled by the Gate 3 plan for Hybrid E2E). Apply `{{slot:clean-architecture}}`, `{{slot:clean-code}}`, and `{{slot:secure-coding-standards}}` (routine same-module internal widget/helper extraction to stay within `build()` ≤ 50 / file ≤ 300 lines requires no `PCR-NN`). Write the failing unit test first where `{{slot:unit-testing}}` requires it | Editing files outside `Scope / Files` introduces unreviewed design drift |
+| **C. Run Check** | Run each active task's `Acceptance Criteria` command in its specified working directory (`cwd`) and read the complete output | Only an executed command whose output you inspected counts as evidence (`evidence-standard`) |
+| **D. Triage** | Compare the actual command output against each task's `Expected` result using the Triage Matrix (§2) | Silent deviation from `Expected` bypasses the approved plan |
+| **E. Tick & Re-read (or Stop at `[REVIEW_CHECKPOINT]`)** | Record `- [x]` on each verified task in the phase file using the exact Tick Line Format (§3), then re-read the phase file. **If the next unticked item is a `- [ ] **[REVIEW_CHECKPOINT: ...]**` line, stop immediately** and execute the Checkpoint Hand-off ([03 — Phase End & Hand-off](03-phase-end-and-handoff.md)) so `code_reviewer` reviews the UI/feature unit that just materialized before you code any task after the checkpoint | Prevents cascading UI/architectural rework across subsequent tasks in the phase |
 
 ---
 
@@ -44,8 +44,8 @@ When a task achieves `MATCH`, update its checkbox line in the phase file using t
 
 ## 4. Seven Hard Rules for Every Task (`I5`, `I14`)
 
-1. **No bulk coding, no context drift:** One task → one check → one tick → re-read.
-2. **No bypassing mapped components:** If a component mapped in `design.md` does not fit, classify as `PLAN_WRONG` (`PCR-NN`)—never invent a local substitute widget or service.
+1. **No unverified bulk coding, no context drift:** Verify and tick every task (or tightly coupled same-file/unit group) before moving to unrelated tasks or crossing a `[REVIEW_CHECKPOINT]`.
+2. **No bypassing mapped components:** If a component mapped in `design.md` does not fit, classify as `PLAN_WRONG` (`PCR-NN`)—never invent a local substitute widget or service. (Routine internal widget/helper extraction inside the same module to keep `build()` ≤ 50 and files ≤ 300 lines does not require a `PCR-NN`; cross-module or shared-API splits do.)
 3. **No dependency construction in entry points:** Screens, route handlers, and controllers receive dependencies through the approved DI wiring (`{{slot:clean-architecture}}`).
 4. **Never weaken tests:** Never delete assertions, loosen expected values, or add `skip` annotations to turn a failing check green (`{{slot:unit-testing}}`).
 5. **No fake success (`I14`):** Never fabricate business data, mock fallbacks in production code, or silent empty defaults to hide a missing dependency or parse failure.

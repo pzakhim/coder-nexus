@@ -721,13 +721,83 @@ def test_figma_intake_screens_and_workflows_validation_without_design_uiux(tmp_p
     res_ok = spec_validator.validate_proposal(proposal_path=str(req_path))
     assert not any(r.startswith("REQ-006") for r in _violation_ids(res_ok))
 
-    # 3. design.md must map S-02 (NEW) in ## UI/UX mapping even without design-uiux/
+    # 3. design.md against an unapproved requirements.md (PENDING_REVIEW or DRAFT) fails DESIGN-008-UIUX-NOT-APPROVED
     design_path = tmp_path / "design.md"
     head = "> **Document type**: DESIGN\n> **Feature**: a/b\n> **Version**: v1\n> **Status**: PENDING_REVIEW\n"
+    mapping = "\n## UI/UX mapping\n\n| Screen / component | Kind | Destination | Kit | Phase |\n|---|---|---|---|---|\n| S-02 | NEW | WorkOrderListScreen /work-orders | AppScaffold, AppDataTable | PHASE-01 |\n"
+    design_path.write_text(head + mapping, encoding="utf-8")
+
+    res_pending = spec_validator.validate_proposal(proposal_content=head + mapping, proposal_path=str(design_path))
+    assert "DESIGN-008-UIUX-NOT-APPROVED" in _violation_ids(res_pending)
+    assert any("requirements.md" in v["message"] for v in res_pending["violations"] if v["rule_id"] == "DESIGN-008-UIUX-NOT-APPROVED")
+
+    req_path.write_text(req_complete.replace("> **Status**: PENDING_REVIEW", "> **Status**: DRAFT"), encoding="utf-8")
+    res_draft = spec_validator.validate_proposal(proposal_content=head + mapping, proposal_path=str(design_path))
+    assert "DESIGN-008-UIUX-NOT-APPROVED" in _violation_ids(res_draft)
+
+    # 4. Once requirements.md is APPROVED at Gate 1, design.md must map S-02 (NEW) in ## UI/UX mapping
+    req_approved = req_complete.replace("> **Status**: PENDING_REVIEW", "> **Status**: APPROVED")
+    req_path.write_text(req_approved, encoding="utf-8")
     design_path.write_text(head, encoding="utf-8")
     res_design_missing = spec_validator.validate_proposal(proposal_content=head, proposal_path=str(design_path))
+    assert "DESIGN-008-UIUX-NOT-APPROVED" not in _violation_ids(res_design_missing)
     assert "DESIGN-008-NO-MAPPING" in _violation_ids(res_design_missing)
 
-    mapping = "\n## UI/UX mapping\n\n| Screen / component | Kind | Destination | Kit | Phase |\n|---|---|---|---|---|\n| S-02 | NEW | WorkOrderListScreen /work-orders | AppScaffold, AppDataTable | PHASE-01 |\n"
     res_design_ok = spec_validator.validate_proposal(proposal_content=head + mapping, proposal_path=str(design_path))
     assert not any(r.startswith("DESIGN-008") for r in _violation_ids(res_design_ok))
+
+
+def test_design_008_validates_gate2_core_gap_components_and_req_backward_compat(tmp_path):
+    """DESIGN-008 collects C-NN from Gate 2 design.md (Core gap) as well as requirements.md (backward compat)."""
+    req_path = tmp_path / "requirements.md"
+    (tmp_path / "codebase-notes.md").write_text(SPEC_WRITER_CODEBASE_NOTES, encoding="utf-8")
+    req_approved = (
+        SPEC_WRITER_REQUIREMENTS
+        .replace("> **Status**: PENDING_REVIEW", "> **Status**: APPROVED")
+        .replace(
+            "## 1. Scope",
+            "## Screens & Visual Sources\n\n| Screen ID | Screen Name | Status | Visual Source | Notes |\n|---|---|---|---|---|\n| S-02 | Work Order List | NEW | Figma 1150:10051 | 1440x900 |\n\n## Workflows\n\n| Workflow | Goal | Steps → screens | Scenarios / AC |\n|---|---|---|---|\n| W-01 | G-01 | 1. View list (`S-02`) | `AC-01` |\n\n## 1. Scope",
+            1,
+        )
+    )
+    req_path.write_text(req_approved, encoding="utf-8")
+    design_path = tmp_path / "design.md"
+    head = "> **Document type**: DESIGN\n> **Feature**: a/b\n> **Version**: v1\n> **Status**: PENDING_REVIEW\n"
+
+    # 1. Gate 2 design.md declares C-01 in ## Foundation reuse (Core gap) but omits it from ## UI/UX mapping -> FAIL
+    design_unmapped_c = (
+        head
+        + "\n## Foundation reuse\n\n| Need | Core API reused | Or Client location (Core gap + reason) |\n|---|---|---|\n| Gantt timeline | — | Core gap `C-01`: `lib/modules/wo/presentation/widgets/gantt_bar.dart` |\n"
+        + "\n## UI/UX mapping\n\n| Screen / component | Kind | Destination | Kit | Phase |\n|---|---|---|---|---|\n| S-02 | NEW | WorkOrderListScreen /work-orders | AppScaffold (uses C-01) | PHASE-01 |\n"
+    )
+    design_path.write_text(design_unmapped_c, encoding="utf-8")
+    res_unmapped = spec_validator.validate_proposal(proposal_content=design_unmapped_c, proposal_path=str(design_path))
+    unmapped_msgs = [v["message"] for v in res_unmapped["violations"] if v["rule_id"] == "DESIGN-008-UNMAPPED"]
+    assert unmapped_msgs and "C-01" in unmapped_msgs[0]
+
+    # 2. Blank / placeholder C-01 row in ## UI/UX mapping still fails DESIGN-008-UNMAPPED
+    design_blank_c = design_unmapped_c + "| C-01 | NEW COMPONENT | — | — | — |\n"
+    res_blank = spec_validator.validate_proposal(proposal_content=design_blank_c, proposal_path=str(design_path))
+    assert "DESIGN-008-UNMAPPED" in _violation_ids(res_blank)
+
+    # 3. Complete C-01 mapping row passes DESIGN-008
+    design_complete_c = (
+        design_unmapped_c
+        + "| C-01 | NEW COMPONENT | lib/modules/wo/presentation/widgets/gantt_bar.dart | CORE_GAP (D-02) | PHASE-02 |\n"
+    )
+    res_complete = spec_validator.validate_proposal(proposal_content=design_complete_c, proposal_path=str(design_path))
+    assert not any(r.startswith("DESIGN-008") for r in _violation_ids(res_complete))
+
+    # 4. Backward compat: C-02 mentioned in requirements.md is still required in design.md ## UI/UX mapping
+    req_path.write_text(req_approved.replace("1440x900", "1440x900 (C-02)"), encoding="utf-8")
+    res_req_c = spec_validator.validate_proposal(proposal_content=design_complete_c, proposal_path=str(design_path))
+    unmapped_c2 = [v["message"] for v in res_req_c["violations"] if v["rule_id"] == "DESIGN-008-UNMAPPED"]
+    assert unmapped_c2 and "C-02" in unmapped_c2[0]
+
+
+def test_design_002_accepts_uiux_mapping_section_heading():
+    """Renamed '## UI/UX mapping' template heading satisfies DESIGN-002 alongside legacy '## UI design system'."""
+    renamed = SPEC_WRITER_DESIGN.replace("## UI design system", "## UI/UX mapping")
+    res = spec_validator.validate_proposal(proposal_content=renamed)
+    assert res["valid"] is True
+    assert "DESIGN-002" not in _violation_ids(res)

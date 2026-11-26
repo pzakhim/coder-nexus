@@ -44,9 +44,18 @@ test/
         │   └── repositories/
         │       └── order_repository_impl_test.dart
         └── presentation/
-            └── cubit/
-                └── order_list_cubit_test.dart
+            ├── cubit/
+            │   └── order_list_cubit_test.dart
+            └── screens/
+                └── order_list_screen_golden_test.dart  # When golden_screenshot is approved
+integration_test/                            # Optional Hybrid E2E (Gate 3 plan / user request)
+└── orders_e2e_test.dart                     # Authored by code_writer; executed by test_runner
 ```
+
+### Optional Local `integration_test/` (Hybrid E2E)
+- Unit and widget tests under `test/modules/<feature>/` remain **mandatory per task** and never touch live I/O (`U4`).
+- When the Gate 3 plan (`test-plan.md` / `implementation-plan.md`) or the user explicitly schedules persistent local E2E regression tests, **`code_writer`** authors `integration_test/<feature>_e2e_test.dart` (using `IntegrationTestWidgetsFlutterBinding.ensureInitialized()` + `flutter_test`) targeting key end-to-end user flows (`E2E-01..N`).
+- **`test_runner`** remains strictly read-only: it executes existing `integration_test/<feature>_e2e_test.dart` via `flutter test integration_test/<feature>_e2e_test.dart` alongside live `E2E-01..N` verification, and never creates or edits test files.
 
 ---
 

@@ -1,8 +1,13 @@
 ---
 skills:
   - {{slot:visual-quality}}
+  - {{slot:ui-kit-mapping}}
 ---
 ## Frontend rules
+
+### Frontend Visual & UI Kit Audit (Mandatory on UI Phases & `[REVIEW_CHECKPOINT]`)
+- Enforce `design.md` **`## UI/UX mapping`** via `{{slot:ui-kit-mapping}}`: confirm mapped UI Kit / design-system components are reused (no unauthorized raw primitive substitutions) and custom `C-NN` components / `Core gap` items match the approved token and node specifications.
+- On **every UI phase end AND mid-phase `[REVIEW_CHECKPOINT]`**, verify `writer-handoff.md` (`Visual Artifacts:`) lists revision-bound 4-state `.png`s (`Loading`, `Content`, `Empty`, `Error`), load captured `.png`s side-by-side against extracted **Figma (`figma/<stem>-SNN.png`, `tokens.json`, `<stem>.spec.json`) OR HTML sitemap (`sitemap/screens/<id>_<code>.png`, `sitemap/*.spec.json`)** via parallel multimodal **`read_file`** (`{{slot:visual-quality}}`), and record findings in **`## Visual Comparison`**.
 
 ### API Mock Isolation (`PHASE-00` & `PHASE-01+`)
 - **When reviewing `PHASE-00` (`[EXECUTE]` — Mockoon preparation phase)**:

@@ -44,25 +44,26 @@ For each AC, consider each category and write a case or a one-line reason it doe
 | Level | Proves | Use for |
 |---|---|---|
 | Service / API acceptance | Rules, permissions, status codes, persisted data, side effects through the real interface and real auth | Business rules, role denials, idempotency, error codes |
-| UI end-to-end | What the user sees and does on the running app | Flows, the four states, role-driven visibility |
-| Visual | Fidelity to the approved `S-NN` screens (`design.md` & extracted Figma screen renders when present) | UI items with an approved design ({{slot:visual-quality}}) |
+| Local `integration_test/` (Hybrid E2E, optional) | Automated multi-step in-app regression when authored by `code_writer` under Gate 3 plan (`test_runner` runs read-only) | Repeatable regression flows alongside live `E2E-01..E2E-N` |
+| Live UI end-to-end | What the user sees and does on the running app (via Antigravity builtin `browser` subagent / `chrome-devtools` MCP for web, or native simulator/emulator) | Flows, the four states, role-driven visibility |
+| Visual | Fidelity to the approved `S-NN` screens (`design.md` & extracted **Figma** `figma/<stem>-SNN.png` **or HTML sitemap** `sitemap/screens/*.png` renders, inspected via multimodal `read_file`) | UI items with an approved design (`{{slot:visual-quality}}`) |
 | Manual | What cannot be automated now | Only with a written reason and step-by-step evidence |
 
-Developer unit tests belong to the Code Writer ({{slot:unit-testing}}); cite them, never count them as acceptance. Reason: each case at the most expensive level makes the run slow and flaky; each case at too cheap a level proves nothing the user sees.
+Developer unit tests belong to the Code Writer (`{{slot:unit-testing}}`); cite them, never count them as acceptance. Reason: each case at the most expensive level makes the run slow and flaky; each case at too cheap a level proves nothing the user sees.
 
-## 5. Case format
+## 5. Scenario format (`E2E-NN`)
 
-Every case has: ID, AC ID, layer (unit|widget|integration|api|visual|manual), severity BLOCKER|MAJOR|MINOR, precondition, steps, expected result, and pass/fail rule.
+Every scenario in `vN/test-plan.md` has: ID (`E2E-NN`), `AC-NN`, layer (`integration|api|ui|visual|manual`), severity (`BLOCKER|MAJOR|MINOR`), precondition, steps, expected result, and pass/fail rule.
 
 ```
-TC-NN  covers <AC-NN | BR-NN | W-NN#step | RF-n | guard | regression>  severity BLOCKER|MAJOR|MINOR  level api|ui|visual|manual
+E2E-NN  covers <AC-NN | BR-NN | W-NN#step | RF-n | guard | regression>  severity BLOCKER|MAJOR|MINOR  level integration|api|ui|visual|manual
 Given:  <data and state, with its source (seed, fixture, approved record)>
 When:   <action, as which role, on which target>
 Then:   <observable result: state / message / persisted value / status code>
-Check:  <command or tool action, cwd> — from {{slot:verification}} or {{slot:visual-quality}}
+Check:  <command or live browser/simulator action, cwd> — from {{slot:verification}} or {{slot:visual-quality}}
 ```
 
-Grade severity by business and security impact (shared_contracts/flags_and_statuses.md): BLOCKER for critical flows, permissions/data scopes, and data integrity; MAJOR for validation, state transitions, and shared-component regression; MINOR for rare edge cases or cosmetic details. Execute BLOCKER cases first.
+Grade severity by business and security impact (`shared_contracts/flags_and_statuses.md`): `BLOCKER` for critical flows, permissions/data scopes, and data integrity; `MAJOR` for validation, state transitions, and shared-component regression; `MINOR` for rare edge cases or cosmetic details. Severity governs defect/verdict impact, **not** execution reordering: order `E2E-01..E2E-N` at Gate 3 by workflow dependency and risk, and execute them in strict sequential **`E2E-01` → `E2E-N` Fail-Fast** order ([execution.md](execution.md)).
 
 ## 6. Plan table and gaps
 

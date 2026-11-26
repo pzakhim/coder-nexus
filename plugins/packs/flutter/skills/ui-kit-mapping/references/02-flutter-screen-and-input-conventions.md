@@ -31,9 +31,9 @@ Each node in `<stem>.spec.json` → `screens[i].tree` includes a normalized `lay
 
 ---
 
-## 2. Viewport & Orientation Resolution from Figma `bounds` (`K2`, `K6`)
+## 2. Viewport & Orientation Resolution from Figma `bounds` or HTML Sitemap `viewport` (`K2`, `K6`)
 
-Determine target platforms, viewport dimensions, and orientations from `screens[i].bounds` in `<stem>.spec.json` and the Huly ticket context:
+Determine target platforms, viewport dimensions, and orientations from `screens[i].bounds` in `<stem>.spec.json` (`FIGMA_PROVIDED`), `viewport` in `sitemap/screens/<id>_<code>.spec.json` (`HTML_SITEMAP_PROVIDED`), and the task requirements:
 
 | Figma Screen `bounds` (`width` × `height`) | Inferred Target Viewport & Orientation | Flutter Layout Requirement |
 |---|---|---|

@@ -11,8 +11,8 @@ Answer one question before asking the user to approve a gate: **would the next a
 
 | Mode | Gate | Reviewed Document(s) | Approved Inputs Read Beside It | Owning Role | Cold Reader Plays |
 |---|---|---|---|---|---|
-| [modes/spec.md](modes/spec.md) | Gate 1 | `requirements.md` (or `brief.md`), `codebase-notes.md` | `Source Inventory`, extracted Figma outputs (`.superpowers/sources/<ISSUE-ID>/figma/` when present) | `spec_writer` | `planning` |
-| [modes/design.md](modes/design.md) | Gate 2 | `design.md` | Approved `requirements.md`, `codebase-notes.md`, extracted Figma outputs (when present) | `planning` | `code_writer` |
+| [modes/spec.md](modes/spec.md) | Gate 1 | `requirements.md` (or `brief.md`), `codebase-notes.md` | `Source Inventory`, extracted visual outputs (`.superpowers/sources/<ISSUE-ID>/figma/` for `FIGMA_PROVIDED` or `.superpowers/sources/<ISSUE-ID>/sitemap/screens/*.png` & `sitemap/*.spec.json` for `HTML_SITEMAP_PROVIDED`, when present) | `spec_writer` | `planning` |
+| [modes/design.md](modes/design.md) | Gate 2 | `design.md` | Approved `requirements.md`, `codebase-notes.md`, extracted visual outputs (`figma/` or `sitemap/screens/*.png` & `sitemap/*.spec.json`, when present) | `planning` | `code_writer` |
 | [modes/plan.md](modes/plan.md) | Gate 3 | `implementation-plan.md` and all linked `phases/*.md` | Approved `requirements.md`, `design.md`, `codebase-notes.md` | `planning` | `code_writer` |
 
 Load only the mode file for the current gate. Run the 3 passes in strict order: **Pass 1 (Validators) → Pass 2 (Mode Checklist) → Pass 3 (Cold-Reader Check)**.
@@ -70,10 +70,11 @@ Walk the mode file (`modes/{spec,design,plan}.md`) top to bottom. When the works
 
 Once Pass 1 is `PASS` and Pass 2 has `0 BLOCKER` / `0 MAJOR`:
 
-1. **Spawn one fresh read-only subagent** using the exact prompt in the mode file (`modes/{spec,design,plan}.md`).
-   - Pass **only** the gate document paths and already-approved upstream documents. Never pass chat history, working notes, or summaries.
+1. **Spawn one fresh read-only cold-reader** using the exact prompt in the mode file (`modes/{spec,design,plan}.md`):
+   - **Standard mode**: invoke Antigravity's **`invoke_subagent`** tool with the mode prompt and **only** the gate document paths and already-approved upstream documents. Never pass chat history, working notes, or author summaries.
+   - **`/swarm` mode**: spawn a fresh read-only helper via **`swarm{action:"add", name:"cold-reader", brief:"<mode prompt + file paths>"}`** with `workspace:"inherit"` and **no `fork`** (so it starts with zero author context); integrate its report and remove it with `swarm{action:"kill", name:"cold-reader"}` once sorted.
    - The cold reader reports at most **10 ranked questions** where it would otherwise have to guess and a wrong guess would alter its work (or replies `nothing important left`).
-   - *(If no subagent tool is available, read the documents from the top using the same prompt and state in the gate presentation that the cold read was self-executed.)*
+   - **Explicit degraded fallback**: Only when the host runtime cannot spawn a subagent or swarm helper, read the documents fresh from the top using the exact mode prompt and explicitly state in the gate presentation that Pass 3 ran as a `self-read fallback` (not an independent cold reader).
 2. **Sort every reported question into one of 3 piles**:
 
 | Pile | Condition | Required Action |

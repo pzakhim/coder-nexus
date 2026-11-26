@@ -1,6 +1,6 @@
 ---
 name: grilling
-description: "Unified Socratic questioning and solution-options protocol (Q-NN -> D-NN) for spec_writer (Gate 1) and planning (Gate 2). Drafts first, queues every inference or multi-option trade-off as Q-NN in codebase-notes.md, builds 2-3 materially different options with (Recommended) first when real alternatives exist, asks one question at a time ('câu i/N') via ask_question, enforces zero-re-ask continuity from Gate 1 to Gate 2, and stops only at 0 OPEN Q-NN."
+description: "Unified Socratic questioning and solution-options protocol (Q-NN -> D-NN) for spec_writer (Gate 1) and planning (Gate 2). Drafts first, queues every inference or multi-option trade-off as Q-NN in codebase-notes.md, enforces the strict 2-Channel Contract (full analysis and trade-off tables in session chat; 1 short decision line with (Recommended)-prefixed options in ask_question), maintains zero-re-ask continuity from Gate 1 to Gate 2, and stops only at 0 OPEN Q-NN."
 ---
 
 # Grilling & Solution Options — Questions to Decisions (`Q-NN` → `D-NN`)
@@ -30,21 +30,24 @@ Act as a rigorous Technical BA (`spec_writer`) or Solution Architect / Tech Lead
 - The only exception is a minor builder-level call allowed by [`gate-review`](../gate-review/SKILL.md) Pass 3 (Cold-Reader Check — never from its never-minor list), recorded visibly for the gate.
 
 ### Law 3 — Grill Until 0 Doubts; Straight-Line Documents
-- Cover every dimension of the active mode until `0 OPEN` rows remain in `## 0. Question Queue` and the stop test (§5) passes.
+- Cover every dimension of the active mode until `0 OPEN` rows remain in `## 0. Question Queue` and the stop test (`## 4.`) passes.
 - `requirements.md` and `design.md` must read as **one straight locked-in line**: zero `Option A / Option B`, `Open Questions`, `Assumptions`, or `TBD` (`REQ-003`, `NOTES-005`). Rejected options live **only** in the `Options Considered` column of `## 1. Decision Log (D-NN)`.
 
-### Law 4 — One Question at a Time (`câu i/N`) with Visual Flow Explanation & Per-Question Lock
-- Before calling `ask_question` for the active `OPEN` row `Q-i`, **always output a structured explanation in the chat message (`content`) dedicated solely to `Q-i`**:
-  1. **Why `Q-i` exists**: the current baseline in sources/code vs. the gap, conflict, or trade-off.
-  2. **Visual Flow (Mermaid / ASCII diagram)**: illustrate the flow and how the candidate options branch so the user can see the impact immediately.
-  3. **Options & Trade-Off Analysis**: walk through `(Recommended)` and the alternatives.
-- Then call `ask_question` with **exactly one question (`len(questions) == 1`)**: the top `OPEN` row (§2.2), prefixed with its progress (`Q-07 · câu 3/9 · Workflow`), `(Recommended)` option first, followed by 1–2 concrete alternatives with concise trade-offs, plus `"Need to discuss / clarify this question further before deciding"` (`"Cần phân tích / thảo luận làm rõ thêm câu này trước khi chốt"`). Only exception: one [batch-confirm](modes/batch-confirm.md) call for low-risk assumptions after all real open questions are locked.
-- **Strictly Forbidden**: Calling `ask_question` with `content: None` (a bare popup without explanation/flow), or chaining `ask_question(Q-01)` → `ask_question(Q-02)` back-to-back in a tool loop without first discussing, locking `Q-01 -> CLOSED -> D-NN` in `codebase-notes.md`, updating the draft, and pruning downstream `Q-NN` rows.
+### Law 4 — Strict 2-Channel Asking (`câu i/N`): Session Analysis + 1-Line `ask_question`
+Every `OPEN` row `Q-i` separates explanation from decision capture across two strict channels:
+- **Channel 1 — Session chat (`content`)**: Holds **all** analysis, context, read-back, why `Q-i` exists (sources/code baseline vs. gap, conflict, or trade-off), option trade-off tables / 5-field comparisons, batch-confirm tables, **conditional** diagrams (Mermaid or ASCII **only** when multi-step flows, branching logic, state transitions, or architecture need visual clarity — **never** unconditionally on trivial or single-fact questions), and the full question text.
+- **Channel 2 — `ask_question` tool**: Strictly **1 short decision line** referencing the session analysis above (e.g., `"[Q-07 · câu 3/9] Bạn muốn chọn phương án nào?"` / `"[Q-07 · 3/9] Which option should we take?"`) plus **2–4 concise, unnumbered option labels** (`len(questions) == 1` per turn; only exception for batching multiple rows: one [batch-confirm](modes/batch-confirm.md) call for low-risk defaults after higher-risk rows are locked).
+- **Native Antigravity `ask_question` Rules**:
+  - Put **`(Recommended)` as a prefix** on option 1 (e.g., `(Recommended) Keep draft on retry`), never as a suffix.
+  - **No manual numbering** (`1.`, `2.`) and **no manual `"Other"` / `"Need to discuss..."` option** — Antigravity's UI adds numbering and an `"Other"` free-text option automatically.
+  - Set **`is_multi_select: true`** when multiple selections genuinely apply (e.g., picking which `NO CHILD` parts or optional capabilities are in scope).
+  - Use **plain session chat text (not `ask_question`)** for trivial yes/no confirmations or open-ended inputs (pasted URLs, local file drop paths, raw domain explanations).
+- **Strictly Forbidden**: Calling `ask_question` with `content: None` (a bare popup without Channel 1 analysis), pasting multi-paragraph analysis / trade-off tables / numbered default lists inside `ask_question`, or chaining `ask_question(Q-01)` → `ask_question(Q-02)` back-to-back without first locking `Q-01 -> CLOSED -> D-NN` in `codebase-notes.md`, updating the draft, and pruning downstream `Q-NN` rows.
 
 ## 2. Queue Order, Sufficiency & Cross-Department Continuity
 
-### 2.1. Sufficiency Summary (Inside the Goal Question)
-The Goal Question (`requirements-elicitation`) states in three lines: **Enough for** (what read sources settle, cited), **Missing** (every `UNREACHABLE` / `NOT_PROVIDED` source only the user can supply), and **Next** (queued `Q-NN` count by topic).
+### 2.1. Sufficiency Summary (Inside Channel 1 of the Goal Question)
+The Goal Question session summary (`requirements-elicitation`) states in three lines: **Enough for** (what read sources settle, cited), **Missing** (every `UNREACHABLE` / `NOT_PROVIDED` source only the user can supply), and **Next** (queued `Q-NN` count by topic), followed by a 1-line `ask_question` confirmation.
 
 ### 2.2. Dependency Order of the Queue
 Ask in dependency order so earlier answers eliminate downstream questions:

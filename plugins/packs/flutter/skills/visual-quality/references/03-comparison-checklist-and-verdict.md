@@ -1,6 +1,6 @@
 # 10-Dimension Comparison Checklist, Deviation Grading, and Verdict
 
-> Topic: 10-dimension visual comparison rubric against extracted Figma per-screen `.png` renders and `design.md` (`## UI/UX mapping`), unified `BLOCKER` / `MAJOR` / `MINOR` deviation grading, and per-screen evidence reporting.
+> Topic: 10-dimension visual comparison rubric via parallel multimodal `read_file` against extracted Figma renders (`figma/<stem>-SNN.png`) or extracted HTML sitemap renders (`sitemap/screens/<id>_<code>.png`) and `design.md` (`## UI/UX mapping`), unified `BLOCKER` / `MAJOR` / `MINOR` deviation grading, and per-screen evidence reporting.
 
 Rules **V6**, **V7**, **V9**, **V10**, and **V12**.
 
@@ -8,7 +8,12 @@ Rules **V6**, **V7**, **V9**, **V10**, and **V12**.
 
 ## 1. Comparing Against the Approved Visual Reference (`V6`, `V7`)
 
-For each screen (`S-NN`) and each required state (`Loading`, `Content`, `Empty`, `Error`), open the approved visual reference (`.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png` + `design.md` `## UI/UX mapping`, or pre-change baseline for `CODEBASE_ONLY` minor adjustments) side-by-side with the captured Flutter `.png` screenshot at the target viewport and evaluate all **10 dimensions**:
+For each screen (`S-NN`) and each required state (`Loading`, `Content`, `Empty`, `Error`), load the approved visual reference AND the captured Flutter `.png` screenshot at the target viewport **side-by-side in parallel using Antigravity's multimodal `read_file` tool**:
+- **`FIGMA_PROVIDED`**: `.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png` (+ `tokens.json`, `<stem>.spec.json`, `design.md` `## UI/UX mapping`)
+- **`HTML_SITEMAP_PROVIDED`**: `.superpowers/sources/<ISSUE-ID>/sitemap/screens/<id>_<code>.png` (+ `sitemap/screens/<id>_<code>.spec.json`, `design.md` `## UI/UX mapping`)
+- **`CODEBASE_ONLY`**: Labeled pre-change baseline `.png` (+ `design.md` `## UI/UX mapping`)
+
+Evaluate all **10 dimensions**:
 
 | # | Dimension | What to Inspect | `BLOCKER` (`FAIL`) | `MAJOR` (`FAIL`) / `MINOR` |
 |---|---|---|---|---|
@@ -23,7 +28,7 @@ For each screen (`S-NN`) and each required state (`Loading`, `Content`, `Empty`,
 | **9** | **Copy & Localization** | Exact labels, placeholders, units, and error messages from `requirements.md` / `design.md` | Raw localization keys displayed (`order.title_key`) or copy that changes meaning | `MINOR`: minor punctuation nuance |
 | **10** | **Accessibility Basics** | Touch targets (`>= 48x48dp` Android / `>= 44x44pt` iOS), text contrast (`>= 4.5:1`), text-scale resilience | Unreadable contrast or untappable control (`< 36dp`) | `MAJOR`: touch target below `48x48dp` / `44x44pt` |
 
-- **Kit Styling & `D-NN` Precedence**: When an approved UI kit component's built-in styling differs cosmetically from a raw Figma frame (`KIT_OVERRIDE (D-NN)`), Kit styling wins — record the difference as `ACCEPTED (D-NN)` rather than `FAIL`.
+- **Kit Styling & `D-NN` Precedence**: When an approved UI kit component's built-in styling differs cosmetically from a raw Figma or HTML sitemap frame (`KIT_OVERRIDE (D-NN)`), Kit styling wins — record the difference as `ACCEPTED (D-NN)` rather than `FAIL`.
 
 ---
 
@@ -34,12 +39,12 @@ Record each visual deviation using the canonical format:
 <screen>/<state>@<viewport>: [<dimension>] expected <reference detail>, observed <actual detail> — BLOCKER | MAJOR | MINOR | ACCEPTED (D-NN) — <reason>
 ```
 
-Include the per-screen visual verification table in the review or verification report:
+Include the per-screen visual verification table in `## Visual Comparison` of the review report (`code_reviewer`) or in `acceptance-report.md` (`test_runner`):
 
 | Screen (`S-NN`) | State (`Loading` \| `Content` \| `Empty` \| `Error`) | Viewport & Orientation | Data Mode (`FE_MOCKOON` \| `BE_LIVE`) | Visual Reference | Screenshot Artifact Path | Deviations (`BLOCKER` / `MAJOR` / `MINOR` / `ACCEPTED`) | Result (`PASS` \| `FAIL` \| `BLOCKED` \| `NOT_RUN`) |
 |---|---|---|---|---|---|---|---|
 | `S-01` | `Loading` | `mobile (390x844, portrait)` | `FE_MOCKOON` | `design.md` (`S-01` Loading state) | `evidence/PHASE-01/<sha>/visual/S-01_loading.png` | `0` | `PASS` |
-| `S-01` | `Content` | `mobile (390x844, portrait)` | `FE_MOCKOON` | `.superpowers/sources/IMES-1235/figma/work-orders-S01.png` | `evidence/PHASE-01/<sha>/visual/S-01_content.png` | `0 (ACCEPTED D-02)` | `PASS` |
+| `S-01` | `Content` | `mobile (390x844, portrait)` | `FE_MOCKOON` | `.superpowers/sources/IMES-1235/figma/work-orders-S01.png` *(or `sitemap/screens/01_work_orders.png`)* | `evidence/PHASE-01/<sha>/visual/S-01_content.png` | `0 (ACCEPTED D-02)` | `PASS` |
 | `S-01` | `Empty` | `mobile (390x844, portrait)` | `FE_MOCKOON` | `design.md` (`S-01` Empty state) | `evidence/PHASE-01/<sha>/visual/S-01_empty.png` | `0` | `PASS` |
 | `S-01` | `Error` | `mobile (390x844, portrait)` | `FE_MOCKOON` | `design.md` (`S-01` Error state) | `evidence/PHASE-01/<sha>/visual/S-01_error.png` | `1 BLOCKER: retry button clipped` | `FAIL` |
 
@@ -47,10 +52,12 @@ Include the per-screen visual verification table in the review or verification r
 
 ## 3. Visual Gate Verdict & Revision Invalidation (`V10`, `V12`)
 
-- **`PASS`**: Every required screen, state (`Loading`, `Content`, `Empty`, `Error`), and viewport has been captured, opened, and visually inspected on `REVIEW_REVISION` with `0 BLOCKER` and `0` unaddressed `MAJOR` deviations.
-- **`FAIL`**: Any `BLOCKER` or `MAJOR` deviation, `RenderFlex overflowed`, missing state, or golden comparison failure → return `CHANGES_REQUESTED` to `incremental-implementation`.
-- **`BLOCKED`**: Required visual reference, target device/emulator, or data source is unavailable.
+- **`PASS`**: Every required screen, state (`Loading`, `Content`, `Empty`, `Error`), and viewport has been captured, loaded side-by-side via multimodal `read_file`, and visually verified on `REVIEW_REVISION` with `0 BLOCKER` and `0` unaddressed `MAJOR` deviations.
+- **`FAIL`**: Any `BLOCKER` or `MAJOR` deviation, `RenderFlex overflowed`, missing state, or golden comparison failure → return `CHANGES_REQUESTED`:
+  - **Per-phase / `[REVIEW_CHECKPOINT]` review (`code_reviewer`)**: return to `code_writer` (`incremental-implementation`).
+  - **`final_qa` acceptance (`test_runner`)**: route to **`bug_fixer` Mode C** (not `incremental-implementation`).
+- **`BLOCKED`**: Required visual reference, target device/emulator/browser, or data source is unavailable.
 - **`NOT_RUN`**: Required state or viewport was not attempted.
-- **`UNVERIFIED`**: Screenshot path cited without opening and inspecting the image (or claiming screen tracking from a screenshot alone without log evidence).
+- **`UNVERIFIED`**: Screenshot path cited without loading and inspecting the image via `read_file` (or claiming screen tracking from a screenshot alone without log evidence).
 - **`N/A`**: Phase has `UI Impact: No` with recorded reason.
 - **Revision Invalidation**: Any code, widget, asset, or theme fix creates a new revision and invalidates prior visual and golden evidence for the affected screens.

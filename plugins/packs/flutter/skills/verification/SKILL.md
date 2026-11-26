@@ -25,11 +25,11 @@ Run in order from the Client root holding `pubspec.yaml`. A later gate never rep
 | **G0** | Developer Tools Check | `coder-nexus setup tools --pack flutter --check` | `PHASE-00` & before first phase gate (`PASS` when `TOOLS: READY`) |
 | **G1** | Code Generation | `dart run build_runner build --delete-conflicting-outputs` | Phase adds or modifies generated models, routes, or DI annotations |
 | **G2** | Static Analysis | `flutter analyze` | Always on every task and phase end (`0 errors, 0 warnings`) |
-| **G3** | Code Metrics & Linter | `dart run dart_code_linter:metrics analyze lib` | Every phase end on touched modules (`0 violations`) |
+| **G3** | Code Metrics & Linter | `dart run dart_code_linter:metrics analyze lib` *(when configured)* | Every phase end on touched modules (`0 violations`) |
 | **G4** | Architecture Validators | MCP `validate_architecture_code` & `validate_module_architecture` | Every phase end on touched `lib/modules/<feature>/` files (`PASS`) |
-| **G5** | Unit & Widget Tests | `flutter test test/modules/<feature>/` | Always when module unit/cubit/widget tests exist (`{{slot:unit-testing}}`) |
+| **G5** | Unit, Widget & Optional `integration_test/` | `flutter test test/modules/<feature>/` (+ `flutter test integration_test/<feature>_e2e_test.dart` when present) | Always for unit/widget tests (`{{slot:unit-testing}}`); `integration_test/` runs when authored by `code_writer` per Gate 3 plan (Hybrid E2E) |
 | **G6** | Golden Screenshot Tests | `flutter test <golden_test_path>` (never `--update-goldens` in verification) | Screen phases where `golden_screenshot` baseline exists and is approved |
-| **G7** | Runtime Visual Check | `{{slot:visual-quality}}` on approved target & 4 states (`Loading`, `Content`, `Empty`, `Error`) | Every phase with `UI Impact: Yes` (`FE_MOCKOON` or `BE_LIVE` per `D-NN`) |
+| **G7** | Live E2E & Runtime Visual Check | `{{slot:visual-quality}}` live `E2E-01..N` (`browser` subagent / `chrome-devtools` MCP on Web; simulator/emulator on native) + 4 states (`Loading`, `Content`, `Empty`, `Error`) compared via multimodal `read_file` | Every phase with `UI Impact: Yes` (`FE_MOCKOON` or `BE_LIVE` per `D-NN`); independent capture required at `final_qa` |
 | **G8** | Target Flavor Build | `flutter build <target> --flavor <flavor> -t <entrypoint>` | Closing phase or when native/plugin/flavor config changes |
 
 ## 3. Canonical Gate Results & Role Verdicts
@@ -44,9 +44,9 @@ Run in order from the Client root holding `pubspec.yaml`. A later gate never rep
 | **`N/A`** | **Visual check (`G7`) only**: approved task/phase has `UI Impact: No` and records why | Never used to skip required analyzer or test gates. |
 
 - **Role Verdicts (`shared_contracts/flags_and_statuses.md` §4–§5)**:
-  - **Code Writer**: `READY_FOR_REVIEW` (all applicable `G0`–`G8` `PASS` on committed revision) or `BLOCKED`.
-  - **Code Reviewer**: Re-runs `G1`–`G6` and inspects `G7` visual/golden artifacts on `REVIEW_REVISION` → `APPROVED`, `CHANGES_REQUESTED`, or `BLOCKED`.
-  - **Test Runner**: Executes independent UI & Acceptance matrix (`G2`, `G5`–`G8`) on `REVIEW_REVISION` → `ACCEPTED`, `CHANGES_REQUESTED`, or `BLOCKED`.
+  - **Code Writer**: `READY_FOR_REVIEW` (all applicable `G0`–`G8` `PASS` on committed revision, including optional local `integration_test/` when in Gate 3 plan) or `BLOCKED`.
+  - **Code Reviewer**: Re-runs `G1`–`G6` and performs mandatory side-by-side `read_file` visual inspection (`G7`) on every UI phase end and `[REVIEW_CHECKPOINT]` → `APPROVED`, `CHANGES_REQUESTED`, or `BLOCKED`.
+  - **Test Runner**: Strictly read-only Hybrid E2E (`G2`, `G5`–`G8`): runs existing local `integration_test/` suites when present + executes independent live `E2E-01..N` capture into `vN/evidence/final_qa/<revision>/visual/` and writes `acceptance-report.md` → `ACCEPTED`, `CHANGES_REQUESTED` (`-> bug_fixer` Mode C), or `BLOCKED`.
 
 ## 4. Mandatory Rules (`V1`–`V8`)
 
@@ -56,9 +56,9 @@ Run in order from the Client root holding `pubspec.yaml`. A later gate never rep
 | **V2** | **Verify the exact `REVIEW_REVISION`** — `git status --short` must be clean (or explicitly scoped). Any code, test, asset, or pubspec edit invalidates prior evidence. |
 | **V3** | **Never bend a gate or update goldens in verification** — `--update-goldens` is baseline authoring for Code Writer + Reviewer visual sign-off, never a verification `PASS` command. |
 | **V4** | **Preserve API & data provenance** — Label `FE_MOCKOON` fixture checks separately from `BE_LIVE` integration; Mockoon success never closes live endpoint ACs (`api_handshake_protocol.md`). |
-| **V5** | **Inspect real images** — A saved file path alone is `UNVERIFIED`; open and inspect screenshots across all 4 states (`Loading`, `Content`, `Empty`, `Error`). |
+| **V5** | **Multimodal `read_file` side-by-side inspection** — A saved file path alone is `UNVERIFIED`; load reference (Figma or HTML sitemap) and captured screenshots in parallel via `read_file` across all 4 states (`Loading`, `Content`, `Empty`, `Error`). |
 | **V6** | **Never fabricate data or touch Huly** — Never invent business records, mock classes in `lib/`, or write to Huly. |
-| **V7** | **Read-only verification pass** — Never edit production code, tests, or dependencies during review or `test_runner` verification; return `FAIL` → `CHANGES_REQUESTED`. |
+| **V7** | **Read-only verification pass** — Never edit production code, tests (`test/` or `integration_test/`), or dependencies during review or `test_runner` verification; return `FAIL` → `CHANGES_REQUESTED`. |
 | **V8** | **Strict status vocabulary** — Use only `PASS` / `FAIL` / `BLOCKED` / `NOT_RUN` / `UNVERIFIED` (`N/A` for non-UI visual only) and `APPROVED` / `ACCEPTED` / `CHANGES_REQUESTED` / `BLOCKED`. |
 
 ## 5. Reference Guides
@@ -67,5 +67,5 @@ Run in order from the Client root holding `pubspec.yaml`. A later gate never rep
 |---|---|
 | Execution order, exit/output rules for `G0`–`G8`, data provenance (`FE_MOCKOON` vs `BE_LIVE`), and revision invalidation | [01-gates-and-check-contract.md](references/01-gates-and-check-contract.md) |
 | Planning `PHASE-00` readiness scan, vertical phase slicing, task/phase check conventions, and Review Definition of Done | [02-planning-readiness-and-phase-dod.md](references/02-planning-readiness-and-phase-dod.md) |
-| Test Runner UI/Acceptance matrix, 4-state runtime & golden verification rules, and copy-ready `verification_report.md` template | [03-visual-acceptance-and-report-template.md](references/03-visual-acceptance-and-report-template.md) |
+| Hybrid E2E execution (Live E2E + optional `integration_test/`), independent 4-state visual rules, and copy-ready `acceptance-report.md` template | [03-visual-acceptance-and-report-template.md](references/03-visual-acceptance-and-report-template.md) |
 <!-- {{profile_references}} -->

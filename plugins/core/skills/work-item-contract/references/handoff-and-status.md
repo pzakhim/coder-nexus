@@ -2,7 +2,8 @@
 
 The single home of what roles and departments hand each other, every status word they may return, the evidence row, the review and test report shapes, and where each record lives under `vN/`. Process and department skills (`dev-team`, `bug-squad`, `incremental-implementation`, `review-workflow`, `quality-acceptance`, `change-control`) use these formats; they do not redefine them.
 
-All hand-offs go through the host coordinator: an agent returns a status, and the coordinator assigns the next role. No agent starts another, approves for the user, or changes item status.
+- **Standard mode**: All hand-offs route through the host coordinator — an agent writes its artifact, returns a status, and the coordinator assigns the next role. No agent approves for the user or changes item status.
+- **Hybrid `/swarm` mode (Phase 3–5)**: During build, review, QA, and bug-fix execution (`Phase 3`–`Phase 5`), peer workers (`code-writer` ↔ `code-reviewer` ↔ `test-runner` ↔ `bug-fixer`) may hand off directly via **`@mention`** on the shared swarm board (still writing the exact `vN/` hand-off artifact first). **Gate approvals (`Gate 1`–`Gate 3`, phase User Checkpoints), `PCR-NN` / L3 escalations, `BLOCKED` stops, and final `ACCEPTED` / `RECORDED` closure always route to `@coordinator`** — only the coordinator asks the user, records approvals, or changes item status.
 
 ## 1. Common header (every hand-off)
 
@@ -14,7 +15,7 @@ A hand-off is a set of claims. The receiver re-checks what it relies on (`eviden
 
 | From → To | Status that triggers it | Carries, beyond the header | Lives at |
 |---|---|---|---|
-| Spec Writer → Planning (`dev-team` — **Zero-Re-Ask Handoff**) | `READY_FOR_PLANNING` + `BRANCH_READY` | Gate 1 user approval reference; `requirements.md` (including `## Screens & Visual Sources` `S-NN` and `## Workflows` `W-NN` when UI is in scope), `codebase-notes.md` (`0 OPEN Q-NN`), `change-impact.md` (`v2+`), and extracted Figma outputs (`.superpowers/sources/<ISSUE-ID>/figma/` `tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png`) or verified existing UI source; active item branch. **`planning` inherits every confirmed `G-NN`, `AC-NN`, `D-NN`, `S-NN`, and `W-NN` without re-asking the user** | `requirements.md`, `codebase-notes.md` |
+| Spec Writer → Planning (`dev-team` — **Zero-Re-Ask Handoff**) | `READY_FOR_PLANNING` + `BRANCH_READY` | Gate 1 user approval reference; `requirements.md` (including `## Screens & Visual Sources` `S-NN` and `## Workflows` `W-NN` when UI is in scope), `codebase-notes.md` (`0 OPEN Q-NN`), `change-impact.md` (`v2+`), and extracted visual outputs (`.superpowers/sources/<ISSUE-ID>/figma/` `tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png` for `FIGMA_PROVIDED`, or `.superpowers/sources/<ISSUE-ID>/sitemap/screens/*.png` and `sitemap/*.spec.json` for `HTML_SITEMAP_PROVIDED`) or verified existing UI source (`CODEBASE_ONLY`); active item branch. **`planning` inherits every confirmed `G-NN`, `AC-NN`, `D-NN`, `S-NN`, and `W-NN` without re-asking the user** | `requirements.md`, `codebase-notes.md` |
 | Planning → Code Writer | `READY_FOR_BUILD` naming the first phase (or `AMENDED` after a change request); the coordinator assigns one Code Writer | Gate 3 approval reference; plan and phase revisions; the one phase to build; last `## Plan change log` row | `implementation-plan.md`, `phases/` |
 | Code Writer → Code Reviewer | `READY_FOR_REVIEW` | `BASE_REVISION..REVIEW_REVISION` (committed per `git-preflight` phase commit format, never `+dirty`); tasks ticked up to the current **`[REVIEW_CHECKPOINT]`** or phase end (for `PHASE-00`, its accepted tick, [plan-and-task-contract](plan-and-task-contract.md) §1); the pre-flight table; one evidence row per task check and checkpoint/phase check; self `{{slot:bug-hunt}}` and `{{slot:code-simplification}}` results; Concerns; `PCR-NN` raised and their answers; from round 2 `## Review reply (round N)` | `evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md` |
 | Code Writer → Planning | `BLOCKED` naming a `PCR-NN` | The request shape of `change-control` (the Code Writer writes it) | `plan-changes/PCR-NN.md` |
@@ -22,13 +23,13 @@ A hand-off is a set of claims. The receiver re-checks what it relies on (`eviden
 | Code Reviewer → Code Writer | `CHANGES_REQUESTED` | Report path, finding IDs to address, round number | `reviews/review_<phase-id>_<REVIEW_REVISION>.md` |
 | Code Reviewer → coordinator | `APPROVED` | Report path; the exact approved `REVIEW_REVISION`. If approved at a mid-phase **`[REVIEW_CHECKPOINT]`**, coordinator re-assigns `code_writer` to tick `- [x]` on the checkpoint and continue the remaining tasks in the phase; if approved at **phase end**, coordinator runs the **User Checkpoint** before assigning the next phase (or assigns `test_runner` `final_qa` after the last phase) | `reviews/review_<phase-id>_<REVIEW_REVISION>.md` |
 | coordinator → Test Runner | Last phase `APPROVED` (`final_qa`), or a phase the plan marks for its own acceptance run | The approved `REVIEW_REVISION`; Gate 3 approved `test-plan.md` (`E2E-01..E2E-N`); scope from `requirements.md` → `## 1.` **Scope in** / **Scope out** (`brief.md` → `## Scope and contracts` for a phase-free item) | `test-plan.md` |
-| Test Runner → Bug Fixer (via coordinator — **Fail-Fast QA Loop**) | `CHANGES_REQUESTED` (`FAILED_AT: E2E-i`) | Stops immediately on the first failing `E2E-i` scenario without altering `test-plan.md`: steps, expected vs actual, evidence path, `AC-NN` and its owning phase, defect severity (`BLOCKER`/`MAJOR`/`MINOR`) | `evidence/final_qa/<revision>/` (or `evidence/<phase-id>/<revision>/` for a phase run) |
-| Bug Fixer (`final_qa` Mode C) → Test Runner (L1) or Code Reviewer (L2) or Planning (L3) | `READY_FOR_TEST` (`L1`), `READY_FOR_REVIEW` (`L2`), or `ESCALATED` (`L3` naming `PCR-NN.md`) | `L1` (1–2 file fix, 0 L3 floors hit, Red-to-Green regression test) goes directly to `test_runner`; `L2` (multi-file/cross-layer fix) goes to `code_reviewer` (`APPROVED`) then `test_runner`; `L3` (architectural/design/plan flaw or stack L3 floor hit) writes `plan-changes/PCR-NN.md` for `planning` (`change-control`). After any fix, `test_runner` re-runs `E2E-01..E2E-N` from start to finish | `evidence/<owning-phase-id>/<REVIEW_REVISION>/writer-handoff.md` or `plan-changes/PCR-NN.md` |
-| Test Runner → Docs Writer (via coordinator) | `ACCEPTED` | 100% of `E2E-01..E2E-N` in `test-plan.md` passed from start to finish; report path; per-AC results; limitations. Coordinator assigns `docs_writer` **once** for final closure | `evidence/final_qa/<revision>/` |
+| Test Runner → Bug Fixer (via coordinator, or direct `@bug-fixer` in `/swarm` — **Fail-Fast QA Loop**) | `CHANGES_REQUESTED` (`FAILED_AT: E2E-i`) | Stops immediately on the first failing `E2E-i` scenario without altering `test-plan.md`: steps, expected vs actual, evidence path, `AC-NN` and its owning phase, defect severity (`BLOCKER`/`MAJOR`/`MINOR`) | `evidence/final_qa/<revision>/acceptance-report.md` (or `evidence/<phase-id>/<revision>/acceptance-report.md` for a phase run) |
+| Bug Fixer (`final_qa` Mode C) → Test Runner (L1) or Code Reviewer (L2) or Planning (L3) | `READY_FOR_TEST` (`L1`), `READY_FOR_REVIEW` (`L2`), or `ESCALATED` (`L3` naming `PCR-NN.md`) | `L1` (1–2 file fix, 0 L3 floors hit, Red-to-Green regression test) goes directly to `test_runner` (max 3 rounds before mandatory L3); `L2` (multi-file/cross-layer fix) goes to `code_reviewer` (`APPROVED`) then `test_runner`; `L3` (architectural/design/plan flaw or stack L3 floor hit) writes `plan-changes/PCR-NN.md` for `planning` (`change-control`). After any fix, `test_runner` re-runs `E2E-01..E2E-N` from start to finish | `evidence/<owning-phase-id>/<REVIEW_REVISION>/writer-handoff.md` or `plan-changes/PCR-NN.md` |
+| Test Runner → Docs Writer (via coordinator) | `ACCEPTED` | 100% of `E2E-01..E2E-N` in `test-plan.md` passed from start to finish; report path; per-AC results; limitations. Coordinator assigns `docs_writer` **once** for final closure | `evidence/final_qa/<revision>/acceptance-report.md` |
 | Docs Writer → coordinator | `RECORDED` (or `BLOCKED`) | Final concise visual `as-built.md` ([template](../templates/as-built.md.tpl)) with Mermaid Flow Diagram, Delivered Code Map, and Phase/Review/QA Evidence Ledger | `as-built.md` |
 | Docs Writer → Code Reviewer | `READY_FOR_REVIEW` (reader docs) | The changed reader-facing documents and the claims they make | the documents themselves |
 
-A fix on any arrow creates a new revision. Review and test evidence for the touched code no longer counts; the chain restarts from the Code Reviewer.
+A fix on any arrow creates a new revision and invalidates prior review and test evidence for the touched code. During Phase 3 build and for **`L2`** / **`L3`** fixes, the chain restarts from `code_reviewer` (`APPROVED` required before `test_runner`). **Explicit `final_qa` `L1` exception**: a localized `L1` fix (1–2 files inside the owning phase's **Scope / Files**, 0 stack L3 floors hit, Red-to-Green regression test) routes **`bug_fixer` → `test_runner`** (`READY_FOR_TEST`) directly without restarting from `code_reviewer`, capped at **max 3 rounds** on the same failing scenario before mandatory `L3` escalation to `planning`.
 
 **Order after `APPROVED`.** Per phase: Code Reviewer `APPROVED` → coordinator User Checkpoint → next phase (no `Docs Writer` run between phases). The Test Runner runs `final_qa` once after the last phase is `APPROVED` (plus any phase the plan explicitly marks for its own acceptance run). Once Test Runner returns `ACCEPTED`, the coordinator assigns `Docs Writer` **once** to write the final visual `as-built.md` (`RECORDED`).
 
@@ -36,8 +37,8 @@ A fix on any arrow creates a new revision. Review and test evidence for the touc
 
 **Review round N.** The per-finding reply table (reply words in §3) goes into the new `writer-handoff.md` under `## Review reply (round N)`. The delta review covers previous `REVIEW_REVISION`..new `REVIEW_REVISION`; the header keeps the phase's `BASE_REVISION`.
 
-**Test Runner defect (`test_runner` ↔ `bug_fixer` ↔ `planning` Fail-Fast loop in `final_qa` or a phase run).** When `test_runner` stops immediately on a failing scenario (`FAILED_AT: E2E-i`, `CHANGES_REQUESTED`), the coordinator routes the defect to **`bug_fixer`** (Mode C) rather than altering `test-plan.md`. `bug_fixer` traces the root cause (`{{slot:root-cause-debugging}}`, `{{slot:bug-hunt}}`) under the phase that owns the failing `AC-NN` (`implementation-plan.md` → `## AC coverage`):
-- **`L1` localized implementation bug** (1–2 files inside the owning phase's **Scope / Files**, 0 stack L3 floors hit): `bug_fixer` writes a Red-to-Green regression test, fixes the code, records the `DEF-NN` reply in `evidence/<owning-phase-id>/<REVIEW_REVISION>/writer-handoff.md`, and returns `READY_FOR_TEST` directly to `test_runner`.
+**Test Runner defect (`test_runner` ↔ `bug_fixer` ↔ `planning` Fail-Fast loop in `final_qa` or a phase run).** When `test_runner` stops immediately on a failing scenario (`FAILED_AT: E2E-i`, `CHANGES_REQUESTED`), the coordinator (or `@bug-fixer` directly in Hybrid `/swarm` mode) routes the defect to **`bug_fixer`** (Mode C) rather than altering `test-plan.md`. `bug_fixer` traces the root cause (`{{slot:root-cause-debugging}}`, `{{slot:bug-hunt}}`) under the phase that owns the failing `AC-NN` (`implementation-plan.md` → `## AC coverage`):
+- **`L1` localized implementation bug** (1–2 files inside the owning phase's **Scope / Files**, 0 stack L3 floors hit): `bug_fixer` writes a Red-to-Green regression test, fixes the code, records the `DEF-NN` reply in `evidence/<owning-phase-id>/<REVIEW_REVISION>/writer-handoff.md`, and returns `READY_FOR_TEST` directly to `test_runner` (no `code_reviewer` restart; **max 3 rounds** before mandatory `L3` escalation to `planning`).
 - **`L2` multi-file / cross-layer bug** (within the module, 0 stack L3 floors hit): `bug_fixer` fixes the code with a regression test, records `writer-handoff.md`, and returns `READY_FOR_REVIEW` to `code_reviewer` (`APPROVED` required before `test_runner`). That phase's 3-review-round cap counts.
 - **`L3` architectural / design / plan flaw** (requires touching files outside the phase's **Scope / Files**, hits a stack L3 floor, or proves `design.md` / `implementation-plan.md` is flawed): `bug_fixer` writes `plan-changes/PCR-NN.md` (`change-control`) and returns `ESCALATED` so the coordinator invokes **`planning`** to amend `implementation-plan.md` (`TASK_DETAIL` → `AMENDED`) or escalate to Gate 2 / Gate 1 (`DESIGN_CHANGE` / `SCOPE_CHANGE`).
 After any fix (`L1`, `L2`, or `L3`), `test_runner` re-runs `E2E-01..E2E-N` in `test-plan.md` **from start to finish** until 100% pass.
@@ -81,13 +82,14 @@ One row per executed check, on the exact revision. Key output is the short excer
 
 1. Header: item, `vN`, phase, round `N` of 3, `BASE_REVISION` (the phase's, kept on every round), `REVIEW_REVISION` (and the previous one for a delta round), approved input revisions.
 2. Evidence: re-run checks as evidence rows.
-3. Findings: `| ID | Pass | Severity | Confidence | File:line | Problem | Failure scenario / evidence | Fix direction |`, IDs `RV-NN`; a finding the plan itself mandates carries the label `plan-mandated` in Problem.
-4. Plan conflicts: `PLAN_CONFLICT` rows (plan line, finding, evidence, options); the coordinator adds the `PCR-NN` it writes from them.
-5. Verdict with a one-line reason.
+3. **`## Visual Comparison`** *(mandatory for every UI phase end and UI `[REVIEW_CHECKPOINT]`; write `N/A — no UI impact` for non-UI phases)*: records the visual reference source (`FIGMA_PROVIDED` `<stem>-SNN.png`, `HTML_SITEMAP_PROVIDED` `sitemap/screens/<id>_<code>.png`, or `CODEBASE_ONLY` baseline), the revision-bound actual screenshots captured under `evidence/<phase-id>/<REVIEW_REVISION>/visual/` and independently inspected via multimodal `read_file`, and the 10-dimension visual verdict (`{{slot:visual-quality}}`).
+4. Findings: `| ID | Pass | Severity | Confidence | File:line | Problem | Failure scenario / evidence | Fix direction |`, IDs `RV-NN`; a finding the plan itself mandates carries the label `plan-mandated` in Problem.
+5. Plan conflicts: `PLAN_CONFLICT` rows (plan line, finding, evidence, options); the coordinator adds the `PCR-NN` it writes from them.
+6. Verdict with a one-line reason.
 
 Section order and pass content are defined in `review-workflow`.
 
-## 6. Test report (`evidence/final_qa/<revision>/`, or `evidence/<phase-id>/<revision>/` for a phase run)
+## 6. Test report (`evidence/final_qa/<revision>/acceptance-report.md`, or `evidence/<phase-id>/<revision>/acceptance-report.md` for a phase run)
 
 1. Verdict first: feature verdict with a one-line reason, counts, open defects.
 2. Header: item, `vN`, phase or `final_qa`, tested revision (the `APPROVED` `REVIEW_REVISION`), environment record, test plan reference.
@@ -96,7 +98,7 @@ Section order and pass content are defined in `review-workflow`.
 5. Defects with severity; re-test history.
 6. Limitations (stubbed providers, `NOT_RUN` reasons).
 
-The stack may name the report file through `{{slot:verification}}`; the content above is required either way. Execution detail and the exact report layout are in `quality-acceptance` (`modes/reporting.md`).
+The canonical filename for `dev-team` `final_qa` and phase acceptance runs is **`acceptance-report.md`** (distinct from standalone `bug-squad` `test-report.md` in [debug-item-contract](debug-item-contract.md) and `feature-testing` `test-run-report.md` in [test-run-contract](test-run-contract.md)). Execution detail and the exact report layout are in `quality-acceptance` (`modes/reporting.md`).
 
 ## 7. Where things live under `vN/`
 
@@ -107,7 +109,7 @@ The stack may name the report file through `{{slot:verification}}`; the content 
 | `plan-changes/PCR-NN.md` | Code Writer or Bug Fixer (`final_qa` L3) writes its request, or the coordinator writes it from a Reviewer / Test Runner `PLAN_CONFLICT` row; Planning writes the answer | One file per plan change request |
 | `evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md` | Code Writer (or Bug Fixer in `final_qa` Mode C) | Hand-off claims, evidence rows, review / `DEF-NN` replies |
 | `reviews/review_<phase-id>_<REVIEW_REVISION>.md` | Code Reviewer | Review report |
-| `evidence/final_qa/<revision>/`, `evidence/<phase-id>/<revision>/` | Test Runner | Acceptance test report, captured evidence, artifacts |
+| `evidence/final_qa/<revision>/acceptance-report.md`, `evidence/<phase-id>/<revision>/acceptance-report.md` | Test Runner | Acceptance test report, captured evidence, artifacts |
 | `as-built.md` / `verification.md` | Docs Writer (for `as-built.md`) / Test Runner (for `verification.md`) | Final concise visual as-built summary ([template](../templates/as-built.md.tpl)) written once after `ACCEPTED` QA / investigation findings |
 
 Never write run output into `.agents/` (synced configuration only).
@@ -124,7 +126,7 @@ Written **once** by `Docs Writer` from [`templates/as-built.md.tpl`](../template
 | Stage / Phase | Scope & `AC-NN` Covered | Approved Revision | Report / Evidence Path | Verdict |
 |---|---|---|---|---|
 | `PHASE-01` | `AC-01`, `AC-02` | `abc1234` | `reviews/review_PHASE-01_abc1234.md` | `APPROVED` |
-| `final_qa` | `AC-01`..`AC-04` | `def5678` | `evidence/final_qa/def5678/test-report.md` | `ACCEPTED` |
+| `final_qa` | `AC-01`..`AC-04` | `def5678` | `evidence/final_qa/def5678/acceptance-report.md` | `ACCEPTED` |
 
 5. **Deviations, Plan Changes & Known Limitations**: Approved `PCR-NN` items, runtime/fixture limits, and reader docs updated.
 

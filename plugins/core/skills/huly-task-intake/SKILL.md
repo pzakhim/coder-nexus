@@ -46,11 +46,12 @@ Activate when:
    - Read all `comments` (author, timestamp, text) for requirement refinements or scope decisions.
    - Inspect every entry in `sources`:
      - `READ` documents include their text directly.
+     - `READ` **`sitemap`** sources (auto-extracted interactive HTML sitemaps) save `index.md` / `index.json` (and per-screen `screens/*.png`, `*.spec.json`, `*.md` when ≤ 15 screens) under `.superpowers/sources/<ISSUE-ID>/sitemap/`. Never open raw multi-megabyte `.html` files directly — read `sitemap/index.md` first and run `coder-nexus sitemap extract "<raw-html>" --out "<sitemap-dir>" --stage ... | --screens ...` for in-scope screens per [`figma-intake`](../figma-intake/SKILL.md).
      - `DOWNLOADED` files (PDF screen specs, images, attachments, visual assets) are saved under `.superpowers/sources/<ISSUE-ID>/` (Git-ignored, local only; never commit or copy raw files into `vN/`). Open and read/view every downloaded PDF and image directly; cite them in `requirements.md` by title and Huly origin, not local path.
-     - `UNREACHABLE` or `EXTERNAL` links: report the exact titles/URLs to the user and ask via `ask_question` whether they will attach/paste the content or confirm proceeding without it (`D-NN`). Never guess or summarize an unread source.
+     - `UNREACHABLE` or `EXTERNAL` links (including oversized attachments exceeding the `150 MB` auto-download limit): report the exact titles, URLs, and any manual-drop destination path from `source.note` (`.superpowers/sources/<ISSUE-ID>/<filename>`) in session chat. Ask via **plain chat text** when requesting an open-ended local file path or pasted content, or use a 1-line `ask_question` (`(Recommended)` prefixed on option 1, no manual `"Other"`) to decide between waiting for the manual drop vs. proceeding without the source (`D-NN`). If the user places an interactive HTML sitemap manually, extract it with `coder-nexus sitemap extract`. Never guess or summarize an unread source.
 
 7. **Step 7 — Consolidate Once in `codebase-notes.md` (Zero Re-Query / Zero Re-Ask Across Departments)**:
-   - Record the **Source Inventory** (`READ` / `DOWNLOADED` / `UNREACHABLE` / `EXTERNAL`) and the **Huly Parent / Sub-Issues Table** in `codebase-notes.md` (`## 3. Verified Baseline Facts & Cross-Agent Notes`).
+   - Record the **Source Inventory** (`READ` / `UNREACHABLE` / `NOT_PROVIDED`, noting downloaded local paths and external links) in `codebase-notes.md` → **`## 0A. Source Inventory`**, and record the **Huly Parent / Sub-Issues Table** in `codebase-notes.md` → **`## 3. Verified Baseline Facts & Cross-Agent Notes`**.
    - Once recorded by `spec_writer`, neither `planning`, `code_writer`, `code_reviewer`, nor `test_runner` (in `dev-team`) ever re-queries Huly or re-asks the user for ticket facts.
 
 ## Golden Rules

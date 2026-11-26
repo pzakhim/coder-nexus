@@ -32,7 +32,7 @@ A workspace holds **one pack**. Installing the same pack again refreshes it. Ins
 | Path | Content |
 |---|---|
 | `.agents/agents/<role>.md` | Each of the 7 agent roles, followed by the rules of the installed pack |
-| `.agents/rules/<rule>.md` | Always-On constitutional guardrails for the installed pack (`clean_architecture_rules.md` or `backend_clean_architecture_rules.md`) |
+| `.agents/plugins/coder-nexus/rules/<rule>.md` | Always-On constitutional guardrails (`trigger: always_on`) for the installed pack (`clean_architecture_rules.md` or `backend_clean_architecture_rules.md`) |
 | `.agents/plugins/coder-nexus/skills/` | Shared skills plus the pack's `<stack>-*` skills (with active architecture profile references injected) |
 | `.agents/plugins/coder-nexus/mcp_config.json` | How the host starts the MCP server |
 | `.agents/stack.json` | The installed pack and the folders it owns |
@@ -119,7 +119,7 @@ For contributors. Plugin sources are split by responsibility and combined by `py
 | `plugins/core/agents/` | Stack-neutral role process (gates, handoffs, task loop) | `.agents/agents/<role>.md` |
 | `plugins/layers/<layer>/agents/` | Rules shared by a group of stacks (e.g. frontend) | Appended to each role |
 | `plugins/packs/<stack>/agents/` | Stack-specific rules | Appended for the installed pack |
-| `plugins/packs/<stack>/rules/` | Always-On constitutional guardrails for the stack | `.agents/rules/<rule>.md` |
+| `plugins/packs/<stack>/rules/` | Always-On constitutional guardrails (`trigger: always_on`) for the stack | `.agents/plugins/coder-nexus/rules/<rule>.md` |
 | `plugins/core/skills/` | Stack-neutral process and department skills (`dev-team`, `bug-squad`, `figma-intake`, …) | `skills/<name>/` |
 | `plugins/packs/<stack>/skills/<slot>/` | Stack knowledge for one slot (`clean-architecture`, `unit-testing`, …), plus `profiles/<profile>/` injected on workspace sync | `skills/<stack>-<slot>/` |
 

@@ -26,15 +26,19 @@ For every finding, write one line in your own words: what is wrong, under which 
 
 ## 3. Clarify before implementing any
 
-If any finding is unclear (you cannot restate it, or cannot tell which code or AC it means), **stop and implement nothing yet**. Send the questions for all unclear items at once through the coordinator, listing which items you did understand. Partial understanding produces fixes the next round rejects.
+If any finding is unclear (you cannot restate it, or cannot tell which code or AC it means), **stop and implement nothing yet**. Ask all clarification questions at once, listing which items you already understood:
+- **Standard mode:** send the questions through the coordinator (`send_message` / return status relay).
+- **Hybrid `/swarm` mode (Phase 3–5):** ask `@code-reviewer` directly on the shared message board for rapid peer clarification (do not tag `@coordinator` for routine technical clarifications; tag `@coordinator` only on `BLOCKED`, `PCR-NN` user gates, or 3-round escalation).
+
+Partial understanding produces fixes the next round rejects.
 
 ## 4. Decide per finding
 
 | Situation | Reply | Action |
 |---|---|---|
-| Verified defect inside the approved scope | `FIXED` | Fix it (step 5) |
+| Verified defect inside the approved scope (including routine same-module internal widget/helper extraction for LOC limits `build()` ≤ 50 / file ≤ 300) | `FIXED` | Fix it (step 5) |
 | Wrong for this code, or a preference with no failure | `DISPUTED` | Give technical evidence: traced path, command output, the guard that prevents it, the `D-NN` it would violate |
-| Fix needs to change a frozen item (goal, AC mapping, phase outcomes, Global constraints, Review focus, any `D-NN`), the file list, or a dependency | `RAISED` | `change-control`; do **not** fix silently |
+| Fix needs to change a frozen item (goal, AC mapping, phase outcomes, Global constraints, Review focus, any `D-NN`), cross-module/shared-API file split, or a dependency | `RAISED` | `change-control`; do **not** fix silently |
 | Cannot verify without missing access or information | `RAISED` | `NEEDS_CONTEXT` naming exactly what is needed |
 
 Reply words are defined in `work-item-contract` (`references/handoff-and-status.md` §9). `ESCALATED` is Planning's answer to a `PCR-NN`, never a reply to a finding.
@@ -50,7 +54,7 @@ Order: `CONFIRMED` `BLOCKER` first, then `CONFIRMED` `MAJOR`, then cheap in-scop
 3. Rerun the covering checks and record evidence rows (`evidence-standard`).
 4. Then the next finding. Batching several fixes makes a failed check ambiguous.
 
-After fixing findings, the author re-runs every affected task check, runs phase verification via `{{slot:verification}}`, runs `{{slot:bug-hunt}}` (`quick` depth) and `{{slot:code-simplification}}` self-check on the modified files, and creates a new commit checkpoint (`REVIEW_REVISION`) per `git-preflight` so every `PASS` row in `writer-handoff.md` carries the new revision SHA.
+After fixing findings, the author re-runs every affected task check, runs phase verification via `{{slot:verification}}` (plus `{{slot:visual-quality}}` re-capture if UI changed), runs `{{slot:bug-hunt}}` (`quick` depth) and `{{slot:code-simplification}}` self-check on the modified files, and creates a new commit checkpoint (`REVIEW_REVISION`) per `git-preflight` so every `PASS` row in `writer-handoff.md` carries the new revision SHA. In `/swarm` mode, if running in `workspace:"share"`, merge/land commits and `.superpowers/` updates onto the shared branch before waking `@code-reviewer`.
 
 ## 6. Reply per finding
 

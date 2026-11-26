@@ -401,11 +401,83 @@ def _finish_manifest(out: Path, plugins_dir: Path, path_map: dict[Path, Path], m
             resources.append(os.path.relpath(mapped, out))
     manifest["required_resources"] = resources
     manifest["packs"] = [pack["stack"] for pack in loaded]
+    plugin_meta_path = out / "plugin.json"
+    if plugin_meta_path.is_file() and manifest.get("plugin_version"):
+        plugin_meta = _read_json(plugin_meta_path)
+        plugin_meta["version"] = manifest["plugin_version"]
+        _write_json(plugin_meta_path, plugin_meta)
     _write_json(out / "bundle_manifest.json", manifest)
     _write_json(out / "installed_version.json", {
         "plugin_version": manifest.get("plugin_version", "UNKNOWN"),
         "packs": [pack["stack"] for pack in loaded],
     })
+
+
+HOOK_EVENTS_GROUPED = {"PreToolUse", "PostToolUse"}
+HOOK_EVENTS_FLAT = {"SessionStart", "PreInvocation", "PostInvocation", "Stop"}
+HOOK_SPEC_KEYS = {"enabled", *HOOK_EVENTS_GROUPED, *HOOK_EVENTS_FLAT}
+
+
+def _check_plugin_metadata(plugin_out: Path) -> list[str]:
+    """Validate built `plugin.json` and optional `hooks.json` against Antigravity contracts."""
+    problems: list[str] = []
+    plugin_json = plugin_out / "plugin.json"
+    if plugin_json.is_file():
+        meta = _read_json(plugin_json)
+        if not meta:
+            problems.append("plugin.json: invalid or empty JSON object")
+        else:
+            if "$schema" in meta:
+                problems.append("plugin.json: deprecated '$schema' field must be removed")
+            for field in ("name", "description", "version"):
+                if not isinstance(meta.get(field), str) or not meta[field].strip():
+                    problems.append(f"plugin.json: missing or empty '{field}'")
+
+    hooks_json = plugin_out / "hooks.json"
+    if hooks_json.is_file():
+        try:
+            hooks_data = json.loads(hooks_json.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            hooks_data = None
+        if not isinstance(hooks_data, dict):
+            problems.append("hooks.json: must be a JSON object mapping hook names to specs")
+        else:
+            for hook_name, spec in hooks_data.items():
+                if not isinstance(spec, dict):
+                    problems.append(f"hooks.json:{hook_name}: hook spec must be an object")
+                    continue
+                unknown_keys = sorted(set(spec) - HOOK_SPEC_KEYS)
+                if unknown_keys:
+                    problems.append(f"hooks.json:{hook_name}: unsupported event key(s) {unknown_keys}")
+                for event in HOOK_EVENTS_GROUPED:
+                    if event not in spec:
+                        continue
+                    groups = spec[event]
+                    if not isinstance(groups, list) or not groups:
+                        problems.append(f"hooks.json:{hook_name}.{event}: must be a non-empty list of matcher groups")
+                        continue
+                    for idx, group in enumerate(groups):
+                        if not isinstance(group, dict) or not isinstance(group.get("matcher"), str):
+                            problems.append(f"hooks.json:{hook_name}.{event}[{idx}]: missing string 'matcher'")
+                            continue
+                        handlers = group.get("hooks")
+                        if not isinstance(handlers, list) or not handlers:
+                            problems.append(f"hooks.json:{hook_name}.{event}[{idx}]: missing non-empty 'hooks' list")
+                            continue
+                        for h_idx, handler in enumerate(handlers):
+                            if not isinstance(handler, dict) or not isinstance(handler.get("command"), str) or not handler["command"].strip():
+                                problems.append(f"hooks.json:{hook_name}.{event}[{idx}].hooks[{h_idx}]: missing 'command'")
+                for event in HOOK_EVENTS_FLAT:
+                    if event not in spec:
+                        continue
+                    handlers = spec[event]
+                    if not isinstance(handlers, list) or not handlers:
+                        problems.append(f"hooks.json:{hook_name}.{event}: must be a non-empty list of handlers")
+                        continue
+                    for h_idx, handler in enumerate(handlers):
+                        if not isinstance(handler, dict) or not isinstance(handler.get("command"), str) or not handler["command"].strip():
+                            problems.append(f"hooks.json:{hook_name}.{event}[{h_idx}]: missing 'command'")
+    return problems
 
 
 def check_projection(plugin_out: Path, agents_dir: Path | None, known: set[str] | None = None,
@@ -444,11 +516,14 @@ def check_projection(plugin_out: Path, agents_dir: Path | None, known: set[str] 
             if found:
                 problems.append(f"{label}: mentions another stack ({', '.join(found)})")
         if document.suffix == ".md":
+            if document.parent == plugin_out / "rules" and text.startswith("---\n") and not FRONTMATTER_RE.match(text):
+                problems.append(f"{label}: unclosed YAML frontmatter")
             for target, _anchor in LINK_RE.findall(text):
                 if "://" in target or target.startswith(("/", "mailto:")):
                     continue
                 if not (document.parent / target).exists():
                     problems.append(f"{label}: broken link {target}")
+    problems.extend(_check_plugin_metadata(plugin_out))
     for skill_dir in _skill_dirs(plugin_out / "skills"):
         profiles_dir = skill_dir / "profiles"
         if not profiles_dir.is_dir():

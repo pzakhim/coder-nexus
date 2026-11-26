@@ -1,6 +1,6 @@
 # Screen (`S-NN`) & Workflow (`W-NN`) Extraction at Gate 1
 
-> Topic: Running `coder-nexus figma fetch`, classifying `FIGMA_PROVIDED` vs. `CODEBASE_ONLY` (edge-case adjustment) vs. `NO_UI_IMPACT`, reading `<stem>.spec.json` + per-screen `.png`/`.jpg` images, and authoring `## Screens & Visual Sources` and `## Workflows` in `requirements.md`.
+> Topic: Running `coder-nexus figma fetch`, classifying `FIGMA_PROVIDED` vs. `HTML_SITEMAP_PROVIDED` vs. `CODEBASE_ONLY` (edge-case adjustment) vs. `NO_UI_IMPACT`, reading `<stem>.spec.json` + per-screen `.png`/`.jpg` images via multimodal `read_file`, and authoring `## Screens & Visual Sources` and `## Workflows` in `requirements.md`.
 
 Rules **FI-1**, **FI-2**, **FI-3**, **FI-4**, and **FI-5**.
 
@@ -25,12 +25,13 @@ When a Huly ticket (`huly_get_task_detail(..., download=True)`) or user prompt c
 
 ---
 
-## 2. Three Visual Intake Modes (`FI-1`, `FI-3`)
+## 2. Four Visual Intake Modes (`FI-1`, `FI-3`, `FI-9`)
 
 | Mode | When It Applies | Mandatory `spec_writer` Action at Gate 1 |
 |---|---|---|
-| **`FIGMA_PROVIDED`** | One or more Figma links succeeded (`status: READ`). | Read `<stem>.spec.json` and view every `<stem>-SNN.png` via `view_file`. Extract all screens (`S-NN`) and workflows (`W-NN`) into `requirements.md`. |
-| **`CODEBASE_ONLY` (Minor Edge-Case Adjustment)** | PO provided no Figma link because the requirement is a small tweak, validation rule, or edge case on an existing screen. | Locate the existing screen in the codebase, list it as `S01` (`CHANGED`) in `requirements.md` with `Visual Source: CODEBASE_ONLY`, and confirm the exact scope with the user (`Q-NN` $\to$ `D-NN`). |
+| **`FIGMA_PROVIDED`** | One or more Figma links succeeded (`status: READ`). | Read `<stem>.spec.json` and inspect every `<stem>-SNN.png` via multimodal `read_file`. Extract all screens (`S-01`..`S-NN`) and workflows (`W-NN`) into `requirements.md`. |
+| **`HTML_SITEMAP_PROVIDED`** | PO supplied an interactive HTML sitemap (`status: READ`, auto-extracted or manually placed). | Follow [03-html-sitemap-intake.md](03-html-sitemap-intake.md): read `sitemap/index.md`, unpack only in-scope screens via `coder-nexus sitemap extract`, inspect every `sitemap/screens/<id>_<code>.png` via multimodal `read_file` alongside `*.spec.json` / `*.md`, and apply Delta Grilling. |
+| **`CODEBASE_ONLY` (Minor Edge-Case Adjustment)** | PO provided no Figma or HTML sitemap because the requirement is a small tweak, validation rule, or edge case on an existing screen. | Locate the existing screen in the codebase, list it as `S-01` (`CHANGED`) in `requirements.md` with `Visual Source: CODEBASE_ONLY` (+ codebase path), and confirm the exact scope with the user (`Q-NN` $\to$ `D-NN`). |
 | **`NO_UI_IMPACT`** | Purely non-visual, data, or background logic change. | Write `No UI impact` with the reason in `requirements.md` (`## 1. Scope & Alignment`) and omit `## Screens & Visual Sources` and `## Workflows`. |
 
 ---
@@ -38,30 +39,30 @@ When a Huly ticket (`huly_get_task_detail(..., download=True)`) or user prompt c
 ## 3. Authoring `## Screens & Visual Sources` & `## Workflows` in `requirements.md` (`FI-4`, `FI-5`)
 
 ### A. `## Screens & Visual Sources` Table
-Map each screen from `screens[]` in `<stem>.spec.json` (or the existing codebase screen for `CODEBASE_ONLY`):
+Map each screen from `screens[]` in `<stem>.spec.json` (normalizing `suggested_id` `S01..SNN` to canonical `S-01..S-NN`), `sitemap/screens/` (`HTML_SITEMAP_PROVIDED`), or the existing codebase screen (`CODEBASE_ONLY`), using the exact canonical 5-column schema from [`requirements.md.tpl`](../../work-item-contract/templates/requirements.md.tpl):
 
 ```markdown
 ## Screens & Visual Sources
 
-| Screen ID | Screen Name | Kind (`NEW` \| `CHANGED` \| `EXISTING`) | Viewport (`width×height`) | Visual Source (`<stem>.spec.json` / `.png` or Codebase Path) | Key Sections & Controls |
-|---|---|---|---|---|---|
-| S01 | 01 - Receipt List | CHANGED | 390×844 | `.superpowers/sources/<ID>/figma/2000-1-S01.png` (`node 2000:10`) | Header, Search input, Receipt list, Next button |
-| S02 | 02 - Scan Item | NEW | 390×844 | `.superpowers/sources/<ID>/figma/2000-1-S02.png` (`node 2000:20`) | Header, Barcode scan field, Item card, Confirm CTA |
+| Screen ID | Screen Name | Status (`NEW` \| `CHANGED` \| `EXISTING`) | Visual Source (`Figma` / `HTML Sitemap` `.spec.json` + `.png` \| `Codebase path`) | Notes |
+|---|---|---|---|---|
+| S-01 | 01 - Receipt List | CHANGED | `.superpowers/sources/<ID>/figma/2000-1-S01.png` (`2000-1.spec.json`, `node 2000:10`) | 390×844; Header, Search input, Receipt list, Next button |
+| S-02 | 02 - Scan Item | NEW | `.superpowers/sources/<ID>/figma/2000-1-S02.png` (`2000-1.spec.json`, `node 2000:20`) | 390×844; Header, Barcode scan field, Item card, Confirm CTA |
 ```
 
 ### B. `## Workflows` Table (`REQ-006`)
-Combine the PO's flow description in Huly with the screen order (`S01` $\to$ `S02`) and prototype `interactions[]` (`navigateTo` in `screens[*].tree`) from `<stem>.spec.json`:
+Combine the PO's flow description in Huly with the screen order (`S-01` $\to$ `S-02`) and prototype `interactions[]` (`navigateTo` in `screens[*].tree`) from `<stem>.spec.json`:
 
 ```markdown
 ## Workflows
 
 | Workflow | Goal | Steps → screens | Scenarios / AC |
 |---|---|---|---|
-| W-01 | G-01 | 1. Select receipt (`S01`) → 2. Scan item & confirm quantity (`S02`) | `AC-01`, `AC-02` |
+| W-01 | G-01 | 1. Select receipt (`S-01`) → 2. Scan item & confirm quantity (`S-02`) | `AC-01`, `AC-02` |
 ```
 
 ### C. Accelerating Gate 1 Control & List Identification (`patternHint` & `repeatCount`)
-When reading `screens[]` in `<stem>.spec.json` to populate `Key Sections & Controls` and behavioral scenarios:
+When reading `screens[]` in `<stem>.spec.json` to populate the `Notes` column (key sections & controls) and behavioral scenarios:
 - **Canonical UI Pattern Hinting (`patternHint` / `pattern_hint`)**: Every `INSTANCE`/`COMPONENT` node in `screens[*].tree` (`component.patternHint`), `screens[*].components` (`pattern_hint`), and `design_tokens.component_catalog` (`pattern_hint`) carries a deterministic pattern classification (`appbar`, `button`, `formfield`, `search`, `dropdown`, `datepicker`, `dialog`, `bottomsheet`, `bottomnav`, `badge`, `nodata`, `loading`, `list`, `card`, `chip`, `banner`, or `custom`) to accelerate Gate 1 control identification.
 - **Repeating List/Table Deduplication (`repeatCount` & `repeatedSamples`)**: Contiguous runs of $\ge 3$ structurally identical children in `screens[*].tree` are collapsed into the first child with `"repeatCount": N` and `"repeatedSamples": [...]` (sample text/variant payloads from the collapsed siblings), while `screens[*].texts_reading_order` and `screens[*].components` retain 100% of items. `spec_writer` uses `repeatCount` + `repeatedSamples` to recognize dynamic or paginated lists and tables at Gate 1 without drowning in repetitive JSON nodes.
 

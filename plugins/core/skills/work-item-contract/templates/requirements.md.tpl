@@ -43,7 +43,7 @@
 
 > Only for items with UI impact (`figma-intake`); delete this section for non-UI items. Every non-`EXISTING` `S-NN` screen appears in `## Workflows` (`validate_proposal_spec` rule `REQ-006`) and is mapped to code in `design.md` (`DESIGN-008`).
 
-| Screen ID | Screen Name | Status (`NEW` \| `CHANGED` \| `EXISTING`) | Visual Source (`Figma node` + `.spec.json` + `.png` \| `Codebase path`) | Notes |
+| Screen ID | Screen Name | Status (`NEW` \| `CHANGED` \| `EXISTING`) | Visual Source (`Figma` / `HTML Sitemap` `.spec.json` + `.png` \| `Codebase path`) | Notes |
 |---|---|---|---|---|
 | S-01 | {{ScreenName}} | {{ScreenStatus}} | {{FigmaNodeAndSpecAndImageOrCodebasePath}} | {{ViewportOrAdjustmentNotes}} |
 

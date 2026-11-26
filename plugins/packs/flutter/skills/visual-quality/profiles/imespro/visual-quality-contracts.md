@@ -8,7 +8,7 @@ This reference is auto-injected when `.superpowers/setup.json` sets `"architectu
 
 ## 1. Verifying `app_ui_kit` Component & Token Fidelity
 
-During runtime visual inspection (`01-references-matrix-and-capture.md`) and golden review (`02-golden-screenshot-workflow.md`), compare the rendered screen against `design.md` (`Core usage` and `## UI/UX mapping` tables), extracted Figma per-screen `.png` renders (`.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png`), and `../app-ui-kit/guidance/GUIDE.md`:
+During runtime visual inspection (`01-references-matrix-and-capture.md`) and golden review (`02-golden-screenshot-workflow.md`), compare the rendered screen side-by-side via multimodal `read_file` against `design.md` (`Core usage` and `## UI/UX mapping` tables), extracted Figma per-screen `.png` renders (`.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png`) OR extracted HTML sitemap renders (`.superpowers/sources/<ISSUE-ID>/sitemap/screens/<id>_<code>.png` + `*.spec.json`), and `../app-ui-kit/guidance/GUIDE.md`:
 
 | `app_ui_kit` Area | Visual Verification Check (`BLOCKER` on violation) |
 |---|---|

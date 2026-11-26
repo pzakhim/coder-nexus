@@ -25,8 +25,8 @@ from typing import Any, Callable, Optional
 
 import httpx
 
-from ..huly.auth import init_env_file, load_client_credentials, update_env_values
-from ..huly.client import HulyClient
+from ..huly.auth import clear_env_otp, init_env_file, load_client_credentials, load_env_otp, update_env_values
+from ..huly.client import HulyClient, HulyOtpRequiredError
 from ..huly.models import HulyCredentials
 
 DEFAULT_HULY_URL = "https://huly.app"
@@ -262,6 +262,7 @@ def run_setup_huly(
     url: Optional[str] = None,
     email: Optional[str] = None,
     password: Optional[str] = None,
+    otp: Optional[str] = None,
     reset: bool = False,
     as_json: bool = False,
     interactive: Optional[bool] = None,
@@ -291,8 +292,9 @@ def run_setup_huly(
         common["warning"] = warn
 
     # ---- 0. Already configured? -> verify only
-    explicit_input = any(v is not None for v in (url, email, password))
-    if all(state.values()) and not reset and not explicit_input:
+    env_otp = None if reset else load_env_otp(workspace_path)
+    explicit_input = any(v is not None for v in (url, email, password, otp))
+    if all(state.values()) and not reset and not explicit_input and not env_otp:
         out.say("\nℹ️  Huly is already configured in .env. Verifying with your open tasks...")
         client = HulyClient(credentials=creds)
         try:
@@ -307,7 +309,8 @@ def run_setup_huly(
 
     # ---- 1. URL
     out.say("\n— Step 1/2: Huly URL —")
-    if url is None and not interactive and url_set and not reset:
+    env_creds_ready = url_set and bool(creds.email) and bool(creds.password) and not reset
+    if url is None and url_set and not reset and (not interactive or env_creds_ready):
         url = creds.workspace_url
         out.say(f"   Using URL from .env: {url}")
     if url is None:
@@ -342,6 +345,11 @@ def run_setup_huly(
         email = creds.email
     if password is None and not reset and not url_changed and email == creds.email:
         password = creds.password
+    used_env_otp = False
+    if otp is None and env_otp and not reset and not url_changed and email == creds.email:
+        otp = env_otp
+        used_env_otp = True
+        out.say("   Using HULY_OTP from .env (will be cleared after login).")
     attempts = 0
     while True:
         attempts += 1
@@ -362,12 +370,42 @@ def run_setup_huly(
                 out.say("   Email and password are both required.")
                 continue
 
+        def _prompt_otp(prev_error: Optional[str]) -> str:
+            if prev_error:
+                out.say(f"   ❌ {prev_error}")
+            else:
+                out.say("   🔐 Two-factor authentication (Authenticator) is enabled.")
+            return input_fn("   Authenticator OTP (6 digits): ").strip()
+
         out.say(f"   Logging in as {email} ...")
         client = HulyClient(credentials=HulyCredentials(workspace_url=url, email=email, password=password))
         try:
-            asyncio.run(client.login(workspace_url=url, email=email, password=password))
+            asyncio.run(
+                client.login(
+                    workspace_url=url,
+                    email=email,
+                    password=password,
+                    otp=otp,
+                    otp_provider=_prompt_otp if interactive else None,
+                )
+            )
             asyncio.run(client._resolve_workspace_id())
             break
+        except (KeyboardInterrupt, EOFError):
+            out.say("\n   Aborted. The URL stays saved in .env; re-run to continue.")
+            return out.result(EXIT_ABORTED, "aborted", step="otp", workspace_url=url, **common)
+        except HulyOtpRequiredError as exc:
+            out.say(f"   🔐 {exc}")
+            return out.result(
+                EXIT_NEEDS_INPUT,
+                "needs_input",
+                step="otp",
+                needs=["otp"],
+                workspace_url=url,
+                email=email,
+                message=str(exc),
+                **common,
+            )
         except Exception as exc:  # noqa: BLE001
             out.say(f"   ❌ Login failed: {exc}")
             if not interactive:
@@ -375,6 +413,11 @@ def run_setup_huly(
                                   email=email, attempts=attempts, message=str(exc), **common)
             out.say("   Please try again (Ctrl+C to stop).")
             password = None
+            otp = None
+        finally:
+            if used_env_otp:
+                clear_env_otp(workspace_path)
+                used_env_otp = False
 
     c = client.credentials
     update_env_values(workspace_path, {
@@ -427,6 +470,7 @@ def cmd_setup_huly(args: argparse.Namespace) -> int:
         url=getattr(args, "url", None),
         email=getattr(args, "email", None),
         password=password,
+        otp=getattr(args, "otp", None),
         reset=getattr(args, "reset", False),
         as_json=getattr(args, "json", False),
         interactive=False if getattr(args, "password_stdin", False) else None,

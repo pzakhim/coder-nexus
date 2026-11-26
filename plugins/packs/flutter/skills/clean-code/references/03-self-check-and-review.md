@@ -15,7 +15,7 @@ dart format --output=none --set-exit-if-changed lib test
 # 2. Static analyzer (very_good_analysis / flutter_lints)
 flutter analyze
 
-# 3. Code complexity, size thresholds (C6), and dead code (C2) via dart_code_linter
+# 3. Code complexity, size thresholds (C6), and dead code (C2) via dart_code_linter (when configured)
 dart run dart_code_linter:metrics analyze lib
 dart run dart_code_linter:metrics check-unused-code lib
 dart run dart_code_linter:metrics check-unused-files lib
@@ -38,7 +38,7 @@ Reviewers and authors grade all code findings using the single unified scale def
 
 | Severity | Definition | Impact on Review Verdict |
 |---|---|---|
-| **`BLOCKER`** | 1. **Failed CLI Tool Gate (`FAIL`)**: `flutter analyze`, `dart_code_linter`, `dart format`, or `flutter test` exits non-zero.<br>2. **Mandatory Design / Runtime Safety Violation**: Pass-through wrapper or duplicate foundation widget (**C1**), dead/debug code (**C2, C3**), swallowed exception (**C4**), unchecked bang operator `!` risking `NullCheckError` (**C9**), broken workspace foundation contract (**C11**), side effect inside `build()` (**C12**), in-place state mutation (**C13**), skipped self-check (**C14**), exposed internal helper or `utils.dart` bucket (**C16**), undisposed controller/stream (**C17**), or barrel exporting `src/` internals (**C18**).<br>3. **Behavioral / Security Defect**: Broken `AC-NN`, crash, memory leak, or security leak. | **`CHANGES_REQUESTED`** (blocks approval). |
+| **`BLOCKER`** | 1. **Failed CLI Tool Gate (`FAIL`)**: `flutter analyze`, `dart_code_linter` *(when configured)*, `dart format`, or `flutter test` exits non-zero.<br>2. **Mandatory Design / Runtime Safety Violation**: Pass-through wrapper or duplicate foundation widget (**C1**), dead/debug code (**C2, C3**), swallowed exception (**C4**), unchecked bang operator `!` risking `NullCheckError` (**C9**), broken workspace foundation contract (**C11**), side effect inside `build()` (**C12**), in-place state mutation (**C13**), skipped self-check (**C14**), exposed internal helper or `utils.dart` bucket (**C16**), undisposed controller/stream (**C17**), or barrel exporting `src/` internals (**C18**).<br>3. **Behavioral / Security Defect**: Broken `AC-NN`, crash, memory leak, or security leak. | **`CHANGES_REQUESTED`** (blocks approval). |
 | **`MAJOR`** | Maintainability or structural smell not already blocked by CLI linters: vague identifier naming (**C5**), `_buildX()` helper method returning `Widget` instead of a `StatelessWidget` class (**C6**), oversized `build()`/method/file (**C6**), hardcoded colors/magic numbers (**C7**), drive-by edits outside task scope (**C10**), missing `const` constructor (**C15**), or barrel `export` without `show` (**C18**). | Must be fixed in the same revision when inside the phase's `Scope / Files`; triggers `CHANGES_REQUESTED` if left unaddressed in touched files. |
 | **`MINOR`** | Redundant "what" comment (**C8**) or optional readability polish. | Non-blocking (`Optional`); never blocks `APPROVED`. |
 

@@ -23,7 +23,7 @@ When reviewing a `PHASE-00` that only prepares `mocks/<feature>_mockoon.json`:
 1. Confirm `phases/phase-00-prepare.md` is ticked **`[x] PREPARED / COMPLETED`** when Mockoon is used.
 2. Read `architecture_profile.mode` (`imespro`, `external-structured`, or `external-standard`) from the approved `design.md` (or `brief.md` for phase-free items) and call `validate_architecture_code` on each changed Dart file with its layer and explicit `architecture_profile`.
    - Any `status: error`, `valid: false`, or violation of severity `ERROR` **strictly blocks approval (`CHANGES_REQUESTED`)**.
-   - `gate_status: UNVERIFIED` means the lexical validator cannot prove syntax or cross-file inheritance; run the Client analyzer (`flutter analyze` and `dart run dart_code_linter:metrics analyze lib` when configured) on the same revision, inspect `unsupported_checks` in context, and record the resolution in the report.
+   - `gate_status: UNVERIFIED` means the lexical validator cannot prove syntax or cross-file inheritance; run the Client analyzer (`flutter analyze`, and `dart run dart_code_linter:metrics analyze lib` *(when configured)*) on the same revision, inspect `unsupported_checks` in context, and record the resolution in the report.
 
 ### 2.3 Gate 2 — Integrated Module & Cross-Branch Check
 1. Pass the same explicit `architecture_profile` to `validate_module_architecture` when a complete module is affected (`FAILED` blocks; for a scoped UI-only phase, record `N/A` with reason and do not demand empty Domain/Data/DI boilerplate).

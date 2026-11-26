@@ -45,7 +45,7 @@ flowchart LR
 | Gate 1 (Spec & Screens/Workflows) | `G-NN`, `AC-NN`, `S-NN`, `W-NN` | `<SPEC_REVISION>` | `requirements.md`, `codebase-notes.md` | `APPROVED` |
 | Gate 2 & 3 (Design & Plan) | Architecture & Phase plan | `<PLAN_REVISION>` | `design.md`, `implementation-plan.md` | `APPROVED_FOR_BUILD` |
 | `PHASE-01` | `<phase summary / AC-NN>` | `<REVIEW_REVISION>` | `reviews/review_PHASE-01_<REVIEW_REVISION>.md` | `APPROVED` |
-| `final_qa` | All `Scope in` `AC-NN` | `<FINAL_REVISION>` | `evidence/final_qa/<FINAL_REVISION>/` | `ACCEPTED` |
+| `final_qa` | All `Scope in` `AC-NN` | `<FINAL_REVISION>` | `evidence/final_qa/<FINAL_REVISION>/acceptance-report.md` | `ACCEPTED` |
 
 ---
 

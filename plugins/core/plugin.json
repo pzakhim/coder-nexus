@@ -1,5 +1,15 @@
 {
-  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "coder-nexus",
-  "description": "Coder Nexus delivery plugin for Client and service work items: Huly intake, specification, planning, implementation, documentation, code review, and verification, with stack packs"
+  "displayName": "Coder Nexus",
+  "description": "Coder Nexus delivery plugin for Client and service work items: Huly and visual intake (Figma or HTML sitemap), specification, planning, implementation, code review, documentation, and verification, with stack packs.",
+  "author": "IMP-AIFactory",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pzakhim/coder-nexus"
+  },
+  "suggestedPrompts": [
+    "Start a new feature work item with dev-team (from a Huly task, Figma link, HTML sitemap, or request)",
+    "Triage and fix a bug with bug-squad (L1 quick fix, L2 module fix, or L3 escalation)",
+    "Run a read-only debug investigation or feature acceptance test scenario"
+  ]
 }

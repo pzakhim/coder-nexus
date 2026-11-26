@@ -197,6 +197,50 @@ def _normalize_sc_id(token: str) -> str:
     return f"{m.group(1).upper()}-{int(m.group(2)):02d}"
 
 
+def _strip_fenced_code_blocks(text: str) -> str:
+    return re.sub(r"```[\s\S]*?```", "", text)
+
+
+def _is_filled_cell(cell: str) -> bool:
+    return _has_content(cell) and cell.strip().upper() not in {"-", "—", "--", "N/A", "NONE", "TBD"}
+
+
+def design_ui_components(design_text: str) -> set[str]:
+    """Collect Gate 2 `C-NN` (`CORE_GAP` / `NEW COMPONENT`) IDs declared in `design.md`."""
+    cleaned = _strip_fenced_code_blocks(_strip_html_comments(design_text))
+    found = {
+        _normalize_sc_id(c)
+        for c in re.findall(r"(?<![A-Za-z0-9_-])C-\d+\b", cleaned, re.IGNORECASE)
+    }
+    for section_title in ("UI/UX mapping", "Foundation reuse", "Core usage", "Client Core Mapping", "UI design system"):
+        section = _section_body(cleaned, section_title)
+        if section:
+            found |= {_normalize_sc_id(cid) for cid in _table_rows(section, r"C-?\d+")}
+    return found
+
+
+def _mapped_uiux_items(mapping_body: str) -> set[str]:
+    """Extract `S-NN` and `C-NN` IDs that have a populated mapping row in `## UI/UX mapping`."""
+    mapped: set[str] = set()
+    for line in mapping_body.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        cells = [c.strip().strip("*`").strip() for c in stripped.strip("|").split("|")]
+        if len(cells) < 3 or all(re.fullmatch(r"[:\-\s]+", c) for c in cells if c):
+            continue
+        row_ids = [
+            _normalize_sc_id(m)
+            for m in re.findall(r"(?<![A-Za-z0-9_-])[SC]-?\d+\b", cells[0], re.IGNORECASE)
+        ]
+        if not row_ids:
+            continue
+        required_filled = min(3, len(cells) - 1)
+        if sum(_is_filled_cell(c) for c in cells[1:]) >= required_filled:
+            mapped.update(row_ids)
+    return mapped
+
+
 def requirements_ui_summary(requirements_text: str) -> dict[str, Any]:
     """Extract UI screens (`S-NN`), workflows (`W-NN`), and components (`C-NN`) from `requirements.md`."""
     cleaned = _strip_html_comments(requirements_text)
@@ -212,7 +256,10 @@ def requirements_ui_summary(requirements_text: str) -> dict[str, Any]:
             status_val = cells[4].upper()
         screens[norm_sid] = status_val or "NEW"
     workflow_rows = _table_rows(workflows_body, r"W-\d+")
-    components = {_normalize_sc_id(c) for c in re.findall(r"\bC-?\d+\b", screens_body + "\n" + workflows_body, re.IGNORECASE)}
+    components = {
+        _normalize_sc_id(c)
+        for c in re.findall(r"(?<![A-Za-z0-9_-])C-?\d+\b", screens_body + "\n" + workflows_body, re.IGNORECASE)
+    }
     return {
         "has_screens_section": bool(screens_body),
         "has_workflows_section": bool(workflows_body),
@@ -222,8 +269,18 @@ def requirements_ui_summary(requirements_text: str) -> dict[str, Any]:
     }
 
 
-def uiux_summary(version_dir: Path) -> Optional[dict[str, Any]]:
-    """Legacy `design-uiux/uiux.md` or `requirements.md` UI summary for a work-item version."""
+def uiux_summary(version_dir: Path, design_text: Optional[str] = None) -> Optional[dict[str, Any]]:
+    """Legacy `design-uiux/uiux.md` or `requirements.md` UI summary for a work-item version.
+
+    When `design_text` is provided (or a sibling `design.md` exists on disk), Gate 2 `C-NN`
+    (`CORE_GAP`) component IDs from `design.md` are unioned with Gate 1 components.
+    """
+    if design_text is None:
+        design_path = version_dir / "design.md"
+        if design_path.is_file():
+            design_text = design_path.read_text(encoding="utf-8")
+    design_components = design_ui_components(design_text) if design_text else set()
+
     path = version_dir / "design-uiux" / "uiux.md"
     if path.is_file():
         text = _strip_html_comments(path.read_text(encoding="utf-8"))
@@ -233,18 +290,22 @@ def uiux_summary(version_dir: Path) -> Optional[dict[str, Any]]:
             "revision": _document_field(text, "Revision"),
             "workflows": set(_table_rows(_section_body(text, "Workflows"), r"W-\d+")),
             "screens": {_normalize_sc_id(sid): (cells[4].upper() if len(cells) > 4 else "") for sid, cells in screens.items()},
-            "components": {_normalize_sc_id(cid) for cid in _table_rows(_section_body(text, "New components"), r"C-?\d+")},
+            "components": {_normalize_sc_id(cid) for cid in _table_rows(_section_body(text, "New components"), r"C-?\d+")} | design_components,
+            "source": "design-uiux/uiux.md",
         }
     req_path = version_dir / "requirements.md"
     if req_path.is_file():
-        summary = requirements_ui_summary(req_path.read_text(encoding="utf-8"))
-        if summary["screens"] or summary["workflows"]:
+        req_text = req_path.read_text(encoding="utf-8")
+        summary = requirements_ui_summary(req_text)
+        components = summary["components"] | design_components
+        if summary["screens"] or summary["workflows"] or components:
             return {
-                "status": "APPROVED",
-                "revision": _document_field(req_path.read_text(encoding="utf-8"), "Version"),
+                "status": _document_field(req_text, "Status").upper(),
+                "revision": _document_field(req_text, "Version"),
                 "workflows": set(summary["workflows"]),
                 "screens": summary["screens"],
-                "components": summary["components"],
+                "components": components,
+                "source": "requirements.md",
             }
     return None
 
@@ -863,7 +924,7 @@ class SpecValidator:
             ("Architectural decision", ("Architectural decision", "Target Architecture", "Quyết Định Kiến Trúc", "Kiến Trúc Mục Tiêu")),
             ("Module and folder diff", ("Module and folder diff", "Target Directory Tree", "Sơ Đồ Kiến Trúc", "Cấu Trúc Thư Mục")),
             ("Behavior, data, and state", ("Behavior, data, and state", "State Management", "Hợp Đồng Dữ Liệu")),
-            ("UI design system", ("UI design system", "Core Usage", "Tái Sử Dụng")),
+            ("UI design system", ("UI design system", "UI/UX mapping", "Core Usage", "Tái Sử Dụng")),
             ("Integration, errors, and risks", ("Integration, errors, and risks", "Backend API", "UX Error Handling", "Khảo Sát Xung Đột")),
             ("Verification strategy", ("Verification strategy", "Ma Trận Kiểm Thử", "Target Test Matrix")),
             ("Gate 2 approval", ("Gate 2 approval", "Cổng Phê Duyệt Gate 2")),
@@ -963,18 +1024,22 @@ class SpecValidator:
     @staticmethod
     def _check_uiux_mapping(cleaned: str, version_dir: Path, violations: list[SpecViolation]) -> None:
         """DESIGN-008: when UI screens/components are in scope, design.md maps every non-EXISTING S-NN and every C-NN."""
-        uiux = uiux_summary(version_dir)
+        uiux = uiux_summary(version_dir, design_text=cleaned)
         if uiux is None:
-            return
-        if uiux["status"] != "APPROVED":
-            violations.append(SpecViolation(
-                "DESIGN-008-UIUX-NOT-APPROVED", "ERROR", None,
-                f"design-uiux/uiux.md is {uiux['status'] or 'missing a Status'}; design.md maps only an approved UI/UX revision.",
-                "Get the Gate 1 specification approved first.",
-            ))
-        needed = {sid for sid, kind in uiux["screens"].items() if kind != "EXISTING"} | uiux["components"]
-        if not needed and not (version_dir / "design-uiux" / "uiux.md").is_file():
-            return
+            needed = design_ui_components(cleaned)
+            if not needed:
+                return
+        else:
+            if uiux["status"] != "APPROVED":
+                source = uiux.get("source", "design-uiux/uiux.md")
+                violations.append(SpecViolation(
+                    "DESIGN-008-UIUX-NOT-APPROVED", "ERROR", None,
+                    f"{source} is {uiux['status'] or 'missing a Status'}; design.md maps only an approved UI/UX revision.",
+                    "Get the Gate 1 specification approved first.",
+                ))
+            needed = {sid for sid, kind in uiux["screens"].items() if kind != "EXISTING"} | uiux["components"]
+            if not needed and not (version_dir / "design-uiux" / "uiux.md").is_file():
+                return
         body = _section_body(cleaned, "UI/UX mapping")
         if not body:
             violations.append(SpecViolation(
@@ -982,7 +1047,7 @@ class SpecValidator:
                 "Map each S-NN to its screen/route and each C-NN to a component in '## UI/UX mapping'.",
             ))
             return
-        mapped = {_normalize_sc_id(m) for m in re.findall(r"\b[SC]-?\d+\b", body, re.IGNORECASE)}
+        mapped = _mapped_uiux_items(body)
         missing = sorted(needed - mapped)
         if missing:
             violations.append(SpecViolation(

@@ -56,21 +56,21 @@ This table is the single source of truth for both `mocks/<feature>_mockoon.json`
 
 ### 4.1 Sequential Reuse Ladder
 For every UI element in `requirements.md`, evaluate in strict order:
-1. **Approved Profile Design System / UI Kit** (see active profile guide: `app_ui_kit` / `app_core` in `imespro`, or client design system in `external-structured`). If multiple kit components fit, ask the user via `ask_question` (2–3 options, recommended first).
+1. **Approved Profile Design System / UI Kit** (per the active workspace profile guide in `SKILL.md`). If multiple kit components fit, ask the user via `ask_question` (2–3 options, recommended first).
 2. **Shared Client Widgets** (`lib/commons/widgets/` or `lib/shared/widgets/`).
 3. **Composition** of existing verified components.
 4. **Feature-Private Widget** (`lib/modules/<feature>/presentation/widgets/`), recording a justified `Core gap` row in `## Foundation reuse` (promote to shared only when 2+ modules need it).
 - When deviating from an approved foundation component, add an optional `### Complexity justifications` table under `## Foundation reuse` citing `D-NN` (`Violation`, `Why needed`, `Simpler alternative rejected because`).
 
 ### 4.2 Four Mandatory Visual States
-Every screen and primary data view in `## UI design system` must specify:
+Every screen and primary data view in `## UI/UX mapping` must specify:
 1. **Loading State:** Skeleton/shimmer or loading indicator component.
 2. **Content State:** Populated layout and interactive elements.
 3. **Empty State:** Empty illustration/message and optional CTA (or `N/A` with reason if impossible).
 4. **Error State:** Inline vs full-screen error presentation, message source, and retry action calling the state holder.
 
 ### 4.3 `## UI/UX mapping` (When Non-`EXISTING` Screens or New Components Exist)
-When `requirements.md` (`## Screens & Visual Sources`) contains any non-`EXISTING` screen (`NEW` or `CHANGED`) or new/custom components (`C-NN`), audit the extracted Figma tokens/tree (`tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png`) or codebase tokens (`CODEBASE_ONLY`) via `{{slot:ui-kit-mapping}}`, and include `## UI/UX mapping` mapping every `S-NN` (except `EXISTING`) and every `C-NN` to its target screen/widget class, kit mapping (`{{slot:ui-kit-mapping}}`), and owning phase/task (`DESIGN-008`). Delete the section when `UI Impact: NO_UI_IMPACT` and no non-`EXISTING` screens exist.
+When `requirements.md` (`## Screens & Visual Sources`) contains any non-`EXISTING` screen (`NEW` or `CHANGED`) or new/custom components (`C-NN`), audit the extracted Figma tokens/tree (`figma/tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png`), extracted interactive HTML sitemap (`sitemap/screens/*.png`, `*.spec.json`), or codebase tokens (`CODEBASE_ONLY`) via `{{slot:ui-kit-mapping}}`, and include `## UI/UX mapping` mapping every `S-NN` (except `EXISTING`) and every `C-NN` to its target screen/widget class, kit mapping (`{{slot:ui-kit-mapping}}`), and owning phase/task (`DESIGN-008`). Delete the section when `UI Impact: NO_UI_IMPACT` and no non-`EXISTING` screens exist.
 
 ---
 

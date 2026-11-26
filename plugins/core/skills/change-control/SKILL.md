@@ -16,7 +16,7 @@ An approved plan can be wrong in a detail or in a decision. This skill keeps bot
 | A mapped / reused component does not fit the task | The component's real contract against what the task needs | Code Writer |
 | The code (existing or required) contradicts a `D-NN`, a Global constraint or the design | The `D-NN` text beside the code location | Code Writer, Code Reviewer |
 | A needed file lies outside the task's **Scope / Files** | The file and why the task cannot work without it | Code Writer |
-| A finding whose right fix touches the plan (`PLAN_CONFLICT`), or **file bloat requiring a structural file split (`FILE_BLOAT_SPLIT`)** | The finding row, file line count / mixed responsibilities, proposed decomposition, and the approved `design.md` / `implementation-plan.md` directory tree it changes | Code Reviewer, Code Writer, Test Runner |
+| A finding whose right fix touches the plan (`PLAN_CONFLICT`), or **a cross-boundary file split (`FILE_BLOAT_SPLIT`)** | The finding row, file line count (`build()` > 50 or file > 300), proposed decomposition crossing module boundaries, shared public APIs, or plan/phase ownership (routine same-module internal widget/helper extraction needs no `PCR-NN`) | Code Reviewer, Code Writer, Test Runner |
 | The cause found by `{{slot:root-cause-debugging}}` lies in the plan, or 3 review rounds end without `APPROVED` for a plan reason | The debugging report or the round history | Code Writer, Code Reviewer |
 
 Not a plan change: a code defect (`CODE_WRONG` → `{{slot:root-cause-debugging}}`), a missing environment or service (`BLOCKED`), information the approved documents already contain (`NEEDS_CONTEXT`). Reason: routing a code bug to Planning moves the fix to the wrong owner.
@@ -24,7 +24,7 @@ Not a plan change: a code defect (`CODE_WRONG` → `{{slot:root-cause-debugging}
 ## 2. Rules for the raiser
 
 - **Stop at the task.** Leave it unticked; keep earlier ticked tasks as they are. Reason: a half-built workaround becomes the design nobody approved.
-- **No workaround**: no local alternative component, no extra file, no unilateral file split, no edited check, test or **Expected**, no fallback or fake data to get past the gap.
+- **No workaround**: no local alternative component, no extra cross-boundary file, no unilateral cross-module/shared-API file split (routine internal helper/widget extraction inside the same module to meet LOC limits `build()` ≤ 50 / file ≤ 300 is allowed without a `PCR-NN`), no edited check, test or **Expected**, no fallback or fake data to get past the gap.
 - **Code Writer**: write `plan-changes/PCR-NN.md` from [templates/change-control.md.tpl](templates/change-control.md.tpl) and return `BLOCKED` naming `PCR-NN`.
 - **Code Reviewer or Test Runner**: stay read-only. Record the conflict as a `PLAN_CONFLICT` row in your own report (plan line, finding, evidence, options / proposed file decomposition) and return your verdict; the coordinator writes `plan-changes/PCR-NN.md` from that row and gives it the next number. Reason: the roles that judge the work never write the documents they judge (`work-item-contract` (`references/handoff-and-status.md` §2)).
 - Give options, at most three, with one recommendation and its cost. Reason: Planning and the user decide faster on a concrete choice, but the raiser never applies it.
@@ -33,8 +33,8 @@ Not a plan change: a code defect (`CODE_WRONG` → `{{slot:root-cause-debugging}
 
 | Class | Touches | Decided by | Planning answers |
 |---|---|---|---|
-| `TASK_DETAIL` | A broken check command, task order inside a phase with no broken **Consumes** edge, splitting a task description (without splitting/adding source files or changing the approved directory tree), a task's Acceptance Criteria or Expected brought into line with an unchanged approved source (cite it) | Planning alone | `AMENDED` |
-| `DESIGN_CHANGE` | **Splitting a bloated file into multiple smaller files or a sub-package (`FILE_BLOAT_SPLIT` — changes the user-approved architecture / target directory tree)**, `design.md`, a `D-NN`, Global constraints, Review focus, the phase list or a phase outcome, the AC → phase mapping | User at Gate 2 / Gate 3 (`planning` MUST present the new file structure to the User via `ask_question` first and obtain user approval before re-planning and authorizing `code_writer` to split the code) | `ESCALATED` |
+| `TASK_DETAIL` | A broken check command, task order inside a phase with no broken **Consumes** edge, splitting a task description (or clarifying same-module internal helper/widget files without altering shared APIs or module boundaries), a task's Acceptance Criteria or Expected brought into line with an unchanged approved source (cite it) | Planning alone | `AMENDED` |
+| `DESIGN_CHANGE` | **Splitting a bloated file across module boundaries, shared public APIs, or approved phase ownership (`FILE_BLOAT_SPLIT`)**, `design.md`, a `D-NN`, Global constraints, Review focus, the phase list or a phase outcome, the AC → phase mapping | User at Gate 2 / Gate 3 (`planning` presents the proposed file structure in session chat and obtains user confirmation via Coordinator Main-Chat `ask_question` before re-planning) | `ESCALATED` |
 | `SCOPE_CHANGE` | A goal, `BR-NN` or `AC-NN` | User at Gate 1, through the Spec Writer | `ESCALATED` |
 
 In doubt, choose the higher class. Reason: an amendment that should have been a decision is self-approval.
@@ -51,14 +51,14 @@ A conflict between the approved spec and what the Test Runner observes the spec 
 
 Planning never edits code, never waives a finding and never marks a request resolved on the raiser's behalf.
 
-## 5. Who tells the user
+## 5. Who tells the user (`ask_question` Main-Chat Ownership & 2-Channel Short Asking)
 
-Only the coordinator speaks to the user.
+Direct `ask_question` belongs ONLY to the active user-facing conversation (Main Chat). When running subagents or in Hybrid `/swarm` mode, only the Coordinator (`@coordinator`) relays user escalations in Main Chat (never require the user to switch subagent threads):
 
 | Answer | When the user hears | How |
 |---|---|---|
-| `AMENDED` | At the next phase checkpoint (the existing "continue?" question) | The new log rows, one line each |
-| `ESCALATED` | At once; the affected phase pauses | `ask_question` with the `Q-NN`, options and recommendation; approval follows the normal gate |
+| `AMENDED` | At the next phase checkpoint (the existing "continue?" prompt) | Summarize the new `## Plan change log` rows in session chat, one line each |
+| `ESCALATED` | At once; the affected phase pauses | Follow **2-Channel Grilling** (`grilling` Law 4): explain the `Q-NN`, options, and trade-offs in session chat (`content`), then call 1 short 1-line `ask_question` with `(Recommended)` first; approval follows the normal gate |
 
 ## 6. Waiting and resuming
 

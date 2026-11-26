@@ -24,12 +24,13 @@ Not sure? A wrong behavior is a bug (`bug-squad`); a wanted change of behavior i
 3. **Optional sources**:
    - Huly tickets: `coder-nexus setup huly` (read-only access). Then a request can be just the ticket ID.
    - Figma: add `FIGMA_TOKEN=…` to `.env`; linked frames are downloaded with `coder-nexus task-detail <ID> --download` or `coder-nexus figma fetch "<frame URL>"`.
+   - Interactive HTML sitemap: extract per-screen `.png` and `.spec.json` files with `coder-nexus sitemap extract "<html-path>" --out ".superpowers/sources/<ID>/sitemap"`.
    - Keep `.env` in `.gitignore`; credentials never go into Git.
 4. **Your own team rules** (optional): skills generated with `skill-factory get …` into `.agents/skills/` override the plugin skills on the same topic.
 
 ## 3. Build a feature: `dev-team`
 
-**What to give**: the request in your words, plus whatever you have — a Huly ticket ID, a spec file (`spec.md`, `<feature>_spec.md`), a Figma link or exported screens, and the API source. More input means fewer questions; nothing is invented to fill a gap.
+**What to give**: the request in your words, plus whatever you have — a Huly ticket ID, a spec file (`spec.md`, `<feature>_spec.md`), a Figma link, an interactive HTML sitemap, exported screens, and the API source. More input means fewer questions; nothing is invented to fill a gap.
 
 **API source** (you will be asked if it is unclear):
 
@@ -41,11 +42,11 @@ Not sure? A wrong behavior is a bug (`bug-squad`); a wanted change of behavior i
 
 **Flow and what you are asked**:
 
-1. **Spec & Figma Intake (Gate 1)** — Spec Writer reads every source, fetches any linked Figma frames (`tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png`), extracts screens (`S-NN`) and UI/UX workflows (`W-NN`) via `figma-intake` (or classifies a no-Figma edge case as `CODEBASE_ONLY` minor adjustment on existing screens or `NO_UI_IMPACT`), asks the goal question first, then drafts `requirements.md` and `codebase-notes.md` and asks the remaining questions **one at a time**. You approve the spec.
-2. **Technical design & UI Kit Mapping (Gate 2)** — Planning scans the code, resolves the architecture profile, audits `tokens.json` and `<stem>.spec.json` against the codebase Design System (`app_ui_kit`, `AppColor`, `Text12`–`Text34` in `imespro`) via `ui-kit-mapping`, surfaces any new widget (`C-NN` / `Core gap`), and writes `design.md` (`## UI/UX mapping`). Trade-offs come to you as one question with a recommended option.
-3. **Plan (Gate 3)** — Planning splits the work into `PHASE-00` (readiness) and behavior phases with small tasks. You approve the plan.
-4. **Build, phase by phase** — Code Writer → Code Reviewer for each phase. After each phase you get a summary and decide whether to continue; Gate 3 does not run all phases at once.
-5. **Acceptance & As-Built Record** — Test Runner tests the approved acceptance criteria on the reviewed code and gives a verdict; once `ACCEPTED`, Docs Writer records `as-built.md` once for the feature.
+1. **Spec & Visual Intake (Gate 1)** — Spec Writer reads every source, extracts linked Figma frames (`FIGMA_PROVIDED`: `tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png`) or interactive HTML sitemaps (`HTML_SITEMAP_PROVIDED`: `sitemap/screens/*.png`, `*.spec.json`), catalogs screens (`S-NN`) and workflows (`W-NN`) via `figma-intake` (or classifies `CODEBASE_ONLY` / `NO_UI_IMPACT`), drafts `requirements.md` and `codebase-notes.md`, and clarifies open points concisely. You approve the spec.
+2. **Technical design & UI Kit Mapping (Gate 2)** — Planning scans the code, resolves the architecture profile, audits Figma (`tokens.json`, `<stem>.spec.json`) or HTML sitemap (`sitemap/screens/*.png`, `*.spec.json`) against the active Design System via `ui-kit-mapping`, surfaces any new widget (`C-NN` / `Core gap`), and writes `design.md` (`## UI/UX mapping`). Trade-offs come to you with a recommended option.
+3. **Plan (Gate 3)** — Planning splits the work into `PHASE-00` (readiness) and vertical behavior phases with small tasks, plus `test-plan.md` choosing live `E2E-01..N` only or **Hybrid E2E** (adding optional local `integration_test/` tasks for Code Writer). You approve the plan.
+4. **Build, phase by phase (Standard or Hybrid `/swarm` Phases 3–5)** — Code Writer → Code Reviewer for each phase (with mandatory side-by-side multimodal `read_file` visual checks against Figma or HTML sitemap renders on every UI phase end and `[REVIEW_CHECKPOINT]`). After Gate 3 approval, you can run Phases 3–5 step-by-step in main chat or opt into **Hybrid `/swarm`** for parallel peer-to-peer `code-writer ↔ code-reviewer ↔ test-runner` execution while Gates 1–3 stay in main chat.
+5. **Hybrid E2E Acceptance & As-Built Record** — Test Runner runs any approved local `integration_test/` regression suites plus independent live `E2E-01..N` checks (using Antigravity's builtin `browser` subagent / `chrome-devtools` MCP on Web, or native simulator/emulator capture) and writes `acceptance-report.md` (`final_qa` failures route to `bug_fixer` Mode C). Once `ACCEPTED`, Docs Writer records `as-built.md` and updates `.superpowers/ux/` once for the feature.
 
 **Where results are**: `.superpowers/work-items/<slug>/vN/` (spec, design, plan, phases, reviews, evidence). The branch is created after Gate 1; agents never merge to `main`, tag or deploy.
 
@@ -105,10 +106,10 @@ No code review is needed: it tests the current code and records the revision, in
 
 | Folder | Created by | Contains |
 |---|---|---|
-| `work-items/<slug>/vN/` | `dev-team` | Spec (`requirements.md` with `S-NN` & `W-NN`), technical design (`design.md` with `## UI/UX mapping`), plan and phases, reviews, evidence, as-built records. A later change opens `vN+1`. |
+| `work-items/<slug>/vN/` | `dev-team` | Spec (`requirements.md` with `S-NN` & `W-NN`), technical design (`design.md` with `## UI/UX mapping`), plan and phases, reviews, `evidence/` (including `final_qa/<sha>/acceptance-report.md` and `visual/`), and `as-built.md`. A later change opens `vN+1`. |
 | `debug/<slug>/` | `bug-squad`, `debug-investigation` | Bug brief, fixing plan, review reports, escalation report or diagnosis, evidence. |
 | `test-runs/<slug>/` | `feature-testing` | Your scenario, the test plan, the report and its evidence. |
-| `sources/<ISSUE-ID>/`, `sources/figma/` | `task-detail --download`, `figma fetch` | Downloaded ticket attachments and linked design frames (`tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png`, `<stem>.json`). |
+| `sources/<ISSUE-ID>/`, `sources/figma/` | `task-detail --download`, `figma fetch`, `sitemap extract` | Downloaded ticket attachments, Figma design frames (`figma/tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png`), and extracted interactive HTML sitemaps (`sitemap/screens/*.png`, `*.spec.json`). |
 | `ux/` | `docs_writer` | Screen catalog (`.superpowers/ux/screen-catalog.md`) and verified app screenshots. |
 
 These folders belong to your project. `.agents/plugins/coder-nexus/` (including this guide) is replaced on every sync.

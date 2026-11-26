@@ -12,7 +12,7 @@ Read the phase file task by task (field names in `work-item-contract` (`referenc
 |---|---|---|
 | **Ticked = built** | Does every ticked task have its code in the diff? | A ticked task with no matching hunk, or a listed file the diff never touches → `Missing` |
 | **Nothing Missing** | Is every behaviour the task and its AC promise present? | A promised behaviour, error path or state absent or stubbed → `Missing` |
-| **Nothing Extra** | Is every changed file inside some task's Scope / Files? Does every change serve an approved `G-NN`? | Out-of-scope file, unrequested feature, speculative hook or option → `Extra` |
+| **Nothing Extra** | Is every changed file inside some task's Scope / Files? Does every change serve an approved `G-NN`? | Out-of-scope file (excluding routine same-module internal widget/helper extractions to stay within LOC limits `build()` ≤ 50 / file ≤ 300), unrequested feature, speculative hook or option → `Extra` |
 | **Nothing Misunderstood** | Does the code produce the task's Expected result and satisfy the AC, not just something nearby? | Right feature built the wrong way, or Expected only met by a weakened check → `Misunderstood` |
 | **Consumes / Produces** | Does each produced signature, type, route or key match what the plan says, and does each consumer use exactly what an earlier task produced? | Renamed, reshaped or nullable-where-not-promised contract → `Contract` |
 | **Reused Components** | Is each mapped component used instead of a private re-implementation? | Raw substitute for a mapped component → `Contract` |

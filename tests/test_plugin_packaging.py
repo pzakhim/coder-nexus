@@ -19,17 +19,33 @@ PLUGIN_DIR = REPO_ROOT / "plugins"
 
 
 def test_plugin_json_structure():
-    """Verify plugin.json exists, is valid JSON, and contains expected metadata."""
+    """Verify source plugin.json matches Antigravity schema without deprecated $schema or duplicated version."""
     manifest_file = PLUGIN_DIR / "core" / "plugin.json"
     assert manifest_file.exists(), f"Missing plugin.json at {manifest_file}"
 
     with open(manifest_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    assert data.get("name") in {"coder-nexus-fe", "coder-nexus"}
-    assert data.get("$schema") == "https://antigravity.google/schemas/v1/plugin.json"
-    assert "description" in data
-    assert set(data) == {"$schema", "name", "description"}
+    allowed_fields = {
+        "name",
+        "displayName",
+        "description",
+        "logo",
+        "suggestedPrompts",
+        "version",
+        "author",
+        "homepage",
+        "repository",
+        "disabled",
+    }
+    assert set(data) <= allowed_fields, f"Unsupported plugin.json fields: {set(data) - allowed_fields}"
+    assert "$schema" not in data, "Deprecated $schema field is silently dropped by Antigravity"
+    assert "version" not in data, "Keep version SSOT in bundle_manifest.json + package.json; plugin_build injects it"
+    assert data.get("name") == "coder-nexus"
+    assert data.get("displayName") == "Coder Nexus"
+    assert isinstance(data.get("description"), str) and data["description"].strip()
+    prompts = data.get("suggestedPrompts")
+    assert isinstance(prompts, list) and len(prompts) == 3 and all(isinstance(p, str) and p.strip() for p in prompts)
 
 
 def test_extension_sync_requires_an_explicit_command():
@@ -608,3 +624,181 @@ def test_install_plugin_reads_workspace_setup_profile(tmp_path, monkeypatch):
     assert (clean_code_dir / "references" / "foundation-contracts.md").is_file()
     assert not (clean_code_dir / "profiles").exists()
     assert "**[Profile: `imespro`]**" in (clean_code_dir / "SKILL.md").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("layout,plugin_rel", [
+    ("workspace", ".agents/plugins/coder-nexus"),
+    ("global", "coder-nexus"),
+])
+@pytest.mark.parametrize("stack", ["flutter", "backend"])
+def test_built_projection_injects_plugin_version_and_copies_hooks_json(tmp_path, layout, plugin_rel, stack):
+    """Built projections inject SSOT plugin_version into plugin.json and ship valid hooks.json at plugin root."""
+    manifest = json.loads((PLUGIN_DIR / "core" / "bundle_manifest.json").read_text(encoding="utf-8"))
+    target = build_variant(stack, layout, tmp_path)
+    spec = json.loads((target / "projection.json").read_text(encoding="utf-8"))
+    assert spec["problems"] == []
+
+    plugin_root = target / "files" / plugin_rel
+    built_plugin_json = json.loads((plugin_root / "plugin.json").read_text(encoding="utf-8"))
+    assert built_plugin_json["version"] == manifest["plugin_version"]
+    assert "$schema" not in built_plugin_json
+    assert built_plugin_json["displayName"] == "Coder Nexus"
+
+    built_hooks_json = plugin_root / "hooks.json"
+    assert built_hooks_json.is_file()
+    hooks = json.loads(built_hooks_json.read_text(encoding="utf-8"))
+    assert {"protect-imespro-packages", "protect-git-branches"} <= set(hooks)
+
+    built_manifest = json.loads((plugin_root / "bundle_manifest.json").read_text(encoding="utf-8"))
+    assert "hooks.json" in built_manifest["required_resources"]
+
+
+def test_plugin_build_preserves_rule_yaml_frontmatter_and_rewrites_links(tmp_path):
+    """Rules with Antigravity trigger: always_on YAML frontmatter keep valid frontmatter and rewritten links."""
+    import yaml
+
+    plugins = tmp_path / "plugins"
+    shutil.copytree(PLUGIN_DIR, plugins, ignore=shutil.ignore_patterns("dist"))
+
+    frontmatter = "---\ntrigger: always_on\ndescription: Always-on stack clean architecture rules.\n---\n\n"
+    for rule_path in (
+        plugins / "packs" / "flutter" / "rules" / "clean_architecture_rules.md",
+        plugins / "packs" / "backend" / "rules" / "backend_clean_architecture_rules.md",
+    ):
+        text = rule_path.read_text(encoding="utf-8")
+        if not text.startswith("---\n"):
+            rule_path.write_text(frontmatter + text, encoding="utf-8")
+
+    for stack, rule_name in (
+        ("flutter", "clean_architecture_rules.md"),
+        ("backend", "backend_clean_architecture_rules.md"),
+    ):
+        for layout, plugin_rel in (("workspace", ".agents/plugins/coder-nexus"), ("global", "coder-nexus")):
+            built = build_variant(stack, layout, tmp_path / f"out-{layout}-{stack}", plugins)
+            spec = json.loads((built / "projection.json").read_text(encoding="utf-8"))
+            assert spec["problems"] == [], (stack, layout, spec["problems"])
+            out_rule = built / "files" / plugin_rel / "rules" / rule_name
+            rendered = out_rule.read_text(encoding="utf-8")
+            assert rendered.startswith("---\n")
+            parsed = yaml.safe_load(rendered.split("---", 2)[1])
+            assert parsed["trigger"] == "always_on"
+            for link in re.findall(r"\]\(([^)#\s]+)", rendered):
+                if "://" not in link:
+                    assert (out_rule.parent / link).is_file(), (stack, layout, link)
+
+
+def test_frontend_layer_ui_kit_mapping_slot_does_not_leak_to_backend(tmp_path):
+    """Adding {{slot:ui-kit-mapping}} to frontend layer agents expands in Flutter only and never leaks to Backend."""
+    plugins = tmp_path / "plugins"
+    shutil.copytree(PLUGIN_DIR, plugins, ignore=shutil.ignore_patterns("dist"))
+
+    for agent_name in ("code_writer.md", "code_reviewer.md"):
+        overlay = plugins / "layers" / "frontend" / "agents" / agent_name
+        text = overlay.read_text(encoding="utf-8")
+        if "{{slot:ui-kit-mapping}}" not in text:
+            text = text.replace(
+                "  - {{slot:visual-quality}}\n",
+                "  - {{slot:visual-quality}}\n  - {{slot:ui-kit-mapping}}\n",
+                1,
+            )
+            overlay.write_text(text, encoding="utf-8")
+
+    flutter_built = build_variant("flutter", "workspace", tmp_path / "out-flutter", plugins)
+    assert json.loads((flutter_built / "projection.json").read_text(encoding="utf-8"))["problems"] == []
+    for agent_name in ("code_writer.md", "code_reviewer.md"):
+        agent_text = (flutter_built / "files" / ".agents" / "agents" / agent_name).read_text(encoding="utf-8")
+        assert "- flutter-ui-kit-mapping" in agent_text
+        assert "{{slot:" not in agent_text
+
+    backend_built = build_variant("backend", "workspace", tmp_path / "out-backend", plugins)
+    assert json.loads((backend_built / "projection.json").read_text(encoding="utf-8"))["problems"] == []
+    for agent_name in ("code_writer.md", "code_reviewer.md"):
+        agent_text = (backend_built / "files" / ".agents" / "agents" / agent_name).read_text(encoding="utf-8")
+        assert "ui-kit-mapping" not in agent_text
+        assert "flutter-" not in agent_text
+
+
+def test_hooks_json_commands_enforce_imespro_and_git_branch_guards(tmp_path):
+    """Execute plugins/core/hooks.json PreToolUse commands with mocked Antigravity stdin payloads."""
+    import subprocess
+
+    hooks = json.loads((PLUGIN_DIR / "core" / "hooks.json").read_text(encoding="utf-8"))
+    pkg_cmd = hooks["protect-imespro-packages"]["PreToolUse"][0]["hooks"][0]["command"]
+    git_cmd = hooks["protect-git-branches"]["PreToolUse"][0]["hooks"][0]["command"]
+
+    def run_hook(command: str, payload: dict) -> dict:
+        proc = subprocess.run(
+            ["sh", "-c", command],
+            input=json.dumps(payload),
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return json.loads(proc.stdout)
+
+    client_ws = tmp_path / "imespro-client"
+    client_ws.mkdir()
+    for pkg in ("app-core", "app-util", "app-ui-kit"):
+        (tmp_path / pkg).mkdir()
+
+    # 1. Sibling iMESPro package edits are denied from a Client workspace (relative & absolute paths)
+    for raw_path in (
+        "../app-core/lib/src/base_screen.dart",
+        str(tmp_path / "app-ui-kit" / "lib" / "app_button.dart"),
+        str(tmp_path / "app-util" / "guidance" / "GUIDE.md"),
+    ):
+        res = run_hook(pkg_cmd, {
+            "hookEventName": "PreToolUse",
+            "cwd": str(client_ws),
+            "toolCall": {"id": "t1", "name": "edit_file", "args": {"Path": raw_path}},
+        })
+        assert res["decision"] == "deny", (raw_path, res)
+        assert "reason" in res and res["reason"]
+
+    # 2. Normal Client edits (including filenames mentioning app_core) are allowed
+    res_ok = run_hook(pkg_cmd, {
+        "hookEventName": "PreToolUse",
+        "cwd": str(client_ws),
+        "toolCall": {"id": "t2", "name": "write_file", "args": {"Path": str(client_ws / "lib/app_core_adapter.dart")}},
+    })
+    assert res_ok["decision"] == "allow"
+
+    # 3. Working directly inside app-core itself is not blocked (no false positive for global plugin)
+    res_self = run_hook(pkg_cmd, {
+        "hookEventName": "PreToolUse",
+        "cwd": str(tmp_path / "app-core"),
+        "toolCall": {"id": "t3", "name": "edit_file", "args": {"Path": "lib/src/base_screen.dart"}},
+    })
+    assert res_self["decision"] == "allow"
+
+    # 4. Direct git commit on protected branches (main, develop, release/*) is denied; work branch is allowed
+    repo = tmp_path / "demo-repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True)
+
+    def git_hook(cmd_line: str) -> dict:
+        return run_hook(git_cmd, {
+            "hookEventName": "PreToolUse",
+            "cwd": str(repo),
+            "toolCall": {"id": "g1", "name": "run_command", "args": {"CommandLine": cmd_line}},
+        })
+
+    assert git_hook('git commit -m "direct on main"')["decision"] == "deny"
+    assert git_hook('git status && git commit -m "chained"')["decision"] == "deny"
+    assert git_hook('grep "git commit" README.md')["decision"] == "allow"
+    assert git_hook("git push --all")["decision"] == "deny"
+    assert git_hook("git push --tags")["decision"] == "deny"
+    assert git_hook("git push --force origin main")["decision"] == "deny"
+    assert git_hook("git push -f origin HEAD:develop")["decision"] == "deny"
+    assert git_hook("git push --atomic origin main refs/tags/v3.4.0")["decision"] == "allow"
+
+    subprocess.run(["git", "checkout", "-b", "develop"], cwd=repo, check=True, capture_output=True)
+    assert git_hook('git commit -m "direct on develop"')["decision"] == "deny"
+
+    subprocess.run(["git", "checkout", "-b", "release/3.4.0"], cwd=repo, check=True, capture_output=True)
+    assert git_hook('git commit -m "direct on release"')["decision"] == "deny"
+
+    subprocess.run(["git", "checkout", "-b", "feature/imes-123-auth"], cwd=repo, check=True, capture_output=True)
+    assert git_hook('git commit -m "work branch commit"')["decision"] == "allow"
+    assert git_hook("git push --force origin feature/imes-123-auth")["decision"] == "allow"
+    assert git_hook("git push -f origin main")["decision"] == "deny"

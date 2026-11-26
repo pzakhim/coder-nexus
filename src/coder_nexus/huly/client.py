@@ -2,13 +2,15 @@
 
 import asyncio
 import base64
+import html
+from html.parser import HTMLParser
 import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
 import re
 import urllib.parse
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 import httpx
 
 from .markup import Markup, blob_id_from_url, file_name_from_url, parse_markup
@@ -81,7 +83,8 @@ def _format_priority(raw_priority: Any) -> str:
 NO_PARENT = "tracker:ids:NoParent"
 CLOSED_STATUSES = {"DONE", "COMPLETED", "CANCELLED", "CANCELED", "CLOSED", "ARCHIVED"}
 CLOSED_CATEGORIES = {"WON", "LOST"}
-MAX_DOWNLOAD_BYTES = 30 * 1024 * 1024
+MAX_DOWNLOAD_BYTES = 150 * 1024 * 1024
+DOWNLOAD_TIMEOUT_SECONDS = 120.0
 DOC_TEXT_LIMIT = 20000
 MAX_SUB_ISSUES = 100
 
@@ -192,6 +195,150 @@ def extract_acceptance_criteria(description: str) -> tuple[list[str], str]:
     return [], "none"
 
 
+class HulyOtpRequiredError(ValueError):
+    """Raised when Keycloak/Huly requires a 2FA Authenticator OTP code and none was provided."""
+
+
+class _KeycloakFormParser(HTMLParser):
+    """Minimal HTML form parser for Keycloak login and OTP pages."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.forms: list[dict[str, Any]] = []
+        self._current: Optional[dict[str, Any]] = None
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]) -> None:
+        t = tag.lower()
+        attr_map = {k.lower(): (v if v is not None else "") for k, v in attrs}
+        if t == "form":
+            self._current = {
+                "id": attr_map.get("id", ""),
+                "action": attr_map.get("action", ""),
+                "inputs": [],
+            }
+            self.forms.append(self._current)
+        elif t == "input" and self._current is not None:
+            self._current["inputs"].append({
+                "type": attr_map.get("type", "text").lower(),
+                "name": attr_map.get("name", ""),
+                "value": attr_map.get("value", ""),
+                "checked": any(k.lower() == "checked" for k, _ in attrs),
+            })
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.lower() == "form":
+            self._current = None
+
+
+def _parse_keycloak_forms(html_text: str) -> list[dict[str, Any]]:
+    parser = _KeycloakFormParser()
+    parser.feed(html_text or "")
+    return parser.forms
+
+
+def _is_keycloak_totp_setup_page(html_text: str) -> bool:
+    for form in _parse_keycloak_forms(html_text):
+        if form["id"] == "kc-totp-settings-form":
+            return True
+        if any(inp["name"] == "totpSecret" for inp in form["inputs"]):
+            return True
+    return False
+
+
+def _extract_keycloak_form_action(
+    html_text: str, page_url: str, preferred_ids: tuple[str, ...] = ()
+) -> Optional[str]:
+    forms = _parse_keycloak_forms(html_text)
+    if preferred_ids:
+        for form in forms:
+            if form["id"] in preferred_ids and form["action"]:
+                return urllib.parse.urljoin(page_url, form["action"])
+    for form in forms:
+        if form["action"]:
+            return urllib.parse.urljoin(page_url, form["action"])
+    match = re.search(r'action="([^"]+)"', html_text or "")
+    if match:
+        return urllib.parse.urljoin(page_url, html.unescape(match.group(1)))
+    return None
+
+
+def _extract_keycloak_otp_form(html_text: str, page_url: str) -> Optional[tuple[str, dict[str, str], str]]:
+    """Detect Keycloak's OTP verification form (`login-otp.ftl`).
+
+    Returns (action_url, base_fields, otp_field_name) or None if the page is not an OTP prompt.
+    """
+    for form in _parse_keycloak_forms(html_text):
+        if form["id"] == "kc-totp-settings-form" or any(inp["name"] == "totpSecret" for inp in form["inputs"]):
+            continue
+        otp_inputs = [
+            inp["name"]
+            for inp in form["inputs"]
+            if inp["type"] != "hidden" and inp["name"] in ("otp", "totp")
+        ]
+        if form["id"] != "kc-otp-login-form" and not otp_inputs:
+            continue
+        if not form["action"]:
+            continue
+        action_url = urllib.parse.urljoin(page_url, form["action"])
+        base_fields: dict[str, str] = {}
+        selected_cred: Optional[str] = None
+        first_cred: Optional[str] = None
+        for inp in form["inputs"]:
+            if inp["type"] == "hidden" and inp["name"]:
+                base_fields[inp["name"]] = inp["value"]
+            elif inp["type"] == "radio" and inp["name"] == "selectedCredentialId" and inp["value"]:
+                if first_cred is None:
+                    first_cred = inp["value"]
+                if inp["checked"] and selected_cred is None:
+                    selected_cred = inp["value"]
+        if selected_cred or first_cred:
+            base_fields["selectedCredentialId"] = selected_cred or first_cred  # type: ignore[assignment]
+        otp_field = "otp" if "otp" in otp_inputs else (otp_inputs[0] if otp_inputs else "otp")
+        return action_url, base_fields, otp_field
+    return None
+
+
+def _extract_keycloak_error(html_text: str) -> Optional[str]:
+    """Extract a human-readable Keycloak error message across classic and PatternFly v5 themes."""
+    patterns = (
+        r'class="[^"]*\bkc-feedback-text\b[^"]*"[^>]*>(.*?)</span>',
+        r'id="input-error-otp-code"[^>]*>(.*?)</(?:span|div|p)>',
+        r'id="input-error"[^>]*>(.*?)</(?:span|div|p)>',
+        r'class="[^"]*\bpf-v5-c-alert__title\b[^"]*"[^>]*>(.*?)</(?:span|div|h\d)>',
+    )
+    for pattern in patterns:
+        match = re.search(pattern, html_text or "", re.IGNORECASE | re.DOTALL)
+        if match:
+            cleaned = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", match.group(1))).split())
+            if cleaned:
+                return cleaned
+    return None
+
+
+def _extract_token_from_url(url: str) -> Optional[str]:
+    unquoted = urllib.parse.unquote(url or "")
+    match = re.search(r"(?:[?&#]|^)token=([a-zA-Z0-9_\.\-]+)", unquoted)
+    return match.group(1) if match else None
+
+
+async def _follow_keycloak_redirects(
+    http: httpx.AsyncClient, resp: httpx.Response, max_hops: int = 6
+) -> tuple[Optional[str], httpx.Response]:
+    """Follow Keycloak/Huly redirects until a Huly `token=` redirect is found or a non-redirect page arrives."""
+    for _ in range(max_hops):
+        if resp.status_code not in (301, 302, 303, 307, 308):
+            break
+        loc = resp.headers.get("location")
+        if not loc:
+            break
+        token = _extract_token_from_url(loc)
+        if token:
+            return token, resp
+        next_url = urllib.parse.urljoin(str(resp.url), loc)
+        resp = await http.get(next_url)
+    return _extract_token_from_url(str(resp.url)), resp
+
+
 class HulyClient:
     """Read-Only client for interacting with Huly Platform Transactor API.
     
@@ -209,9 +356,20 @@ class HulyClient:
         creds = load_client_credentials(workspace_path)
         return cls(credentials=creds, timeout=timeout)
 
-    async def _try_keycloak_login(self, base_url: str, username: str, password: str) -> Optional[tuple[str, Optional[str]]]:
+    async def _try_keycloak_login(
+        self,
+        base_url: str,
+        username: str,
+        password: str,
+        *,
+        otp: Optional[str] = None,
+        otp_provider: Optional[Callable[[Optional[str]], str]] = None,
+        max_otp_attempts: int = 3,
+    ) -> Optional[tuple[str, Optional[str]]]:
         """Detect and authenticate via Keycloak OpenID flow for self-hosted Huly instances.
-        
+
+        Supports optional 2FA Authenticator (TOTP/OTP) verification when Keycloak returns
+        `login-otp.ftl` after password submission.
         Returns (session_token, workspace_id) if successful, None if not Keycloak.
         """
         clean_url = base_url.rstrip("/")
@@ -240,45 +398,95 @@ class HulyClient:
             kc_auth_url = init_resp.headers.get("location")
             if not kc_auth_url:
                 return None
+            kc_auth_url = urllib.parse.urljoin(str(init_resp.url), kc_auth_url)
 
             # 4. Fetch Keycloak login page
             kc_page = await http.get(kc_auth_url)
-            action_match = re.search(r'action="([^"]+)"', kc_page.text)
-            if not action_match:
+            action1 = _extract_keycloak_form_action(kc_page.text, str(kc_page.url), ("kc-form-login",))
+            if not action1:
                 return None
-            action1 = action_match.group(1).replace("&amp;", "&")
 
             # Detect 1-step vs 2-step Keycloak form
-            if 'name="password"' in kc_page.text:
+            if 'name="password"' in kc_page.text or "name='password'" in kc_page.text:
                 post_resp = await http.post(action1, data={"username": username, "password": password})
             else:
                 # 2-step flow: submit username first
                 u_resp = await http.post(action1, data={"username": username})
                 if u_resp.status_code != 200:
                     return None
-                p_match = re.search(r'action="([^"]+)"', u_resp.text)
-                if not p_match:
+                action2 = _extract_keycloak_form_action(u_resp.text, str(u_resp.url), ("kc-form-login",))
+                if not action2:
                     return None
-                action2 = p_match.group(1).replace("&amp;", "&")
                 post_resp = await http.post(action2, data={"password": password})
 
-            if post_resp.status_code not in (302, 303):
-                err_match = re.search(r'class="kc-feedback-text"[^>]*>(.*?)</span>', post_resp.text)
-                err = err_match.group(1).strip() if err_match else "Keycloak credentials rejected"
-                raise ValueError(f"Keycloak authentication failed: {err}")
+            # 5. Follow redirects toward Huly callback, or handle Keycloak 2FA OTP step
+            account_token, resp = await _follow_keycloak_redirects(http, post_resp)
 
-            cb_url = post_resp.headers.get("location")
-            if not cb_url:
-                return None
+            if not account_token:
+                if _is_keycloak_totp_setup_page(resp.text):
+                    raise ValueError(
+                        "Keycloak requires setting up an Authenticator app (2FA) first. "
+                        "Log in once via your browser to finish 2FA setup, then retry."
+                    )
 
-            # 5. Follow callback into Huly
-            huly_cb_resp = await http.get(cb_url)
-            login_auth_url = huly_cb_resp.headers.get("location", "")
-            unquoted = urllib.parse.unquote(login_auth_url)
-            match = re.search(r"token=([a-zA-Z0-9_\.\-]+)", unquoted)
-            if not match:
-                return None
-            account_token = match.group(1)
+                if _extract_keycloak_otp_form(resp.text, str(resp.url)) is not None:
+                    pending_otp = otp
+                    prev_error: Optional[str] = None
+                    for _ in range(max_otp_attempts):
+                        otp_form = _extract_keycloak_otp_form(resp.text, str(resp.url))
+                        if otp_form is None:
+                            raise ValueError(
+                                f"Keycloak OTP authentication failed: {prev_error or 'OTP form is no longer available.'}"
+                            )
+                        otp_action, base_fields, otp_field = otp_form
+
+                        if pending_otp is not None and pending_otp.strip():
+                            code = pending_otp
+                            pending_otp = None
+                        elif otp_provider is not None:
+                            code = otp_provider(prev_error)
+                        else:
+                            raise HulyOtpRequiredError(
+                                "Keycloak requires a 6-digit Authenticator OTP code. "
+                                "Pass --otp <6-digit-code> or run 'coder-nexus setup huly' in your terminal."
+                            )
+
+                        code = re.sub(r"\s+", "", code or "")
+                        if not code:
+                            if otp_provider is None:
+                                raise HulyOtpRequiredError(
+                                    "Keycloak requires a 6-digit Authenticator OTP code. "
+                                    "Pass --otp <6-digit-code> or run 'coder-nexus setup huly' in your terminal."
+                                )
+                            prev_error = "Authenticator code cannot be empty."
+                            continue
+
+                        otp_resp = await http.post(otp_action, data={**base_fields, otp_field: code})
+                        account_token, resp = await _follow_keycloak_redirects(http, otp_resp)
+                        if account_token:
+                            break
+
+                        if _is_keycloak_totp_setup_page(resp.text):
+                            raise ValueError(
+                                "Keycloak requires setting up an Authenticator app (2FA) first. "
+                                "Log in once via your browser to finish 2FA setup, then retry."
+                            )
+                        prev_error = _extract_keycloak_error(resp.text) or "Invalid authenticator code."
+                        if _extract_keycloak_otp_form(resp.text, str(resp.url)) is None:
+                            raise ValueError(f"Keycloak OTP authentication failed: {prev_error}")
+                        if otp_provider is None:
+                            raise ValueError(f"Keycloak OTP verification failed: {prev_error}")
+
+                    if not account_token:
+                        raise ValueError(
+                            f"Keycloak OTP verification failed after {max_otp_attempts} attempts: "
+                            f"{prev_error or 'Invalid authenticator code.'}"
+                        )
+                else:
+                    if resp.status_code in (302, 303):
+                        return None
+                    err = _extract_keycloak_error(resp.text) or "Keycloak credentials rejected"
+                    raise ValueError(f"Keycloak authentication failed: {err}")
 
             # 6. Call selectWorkspace to exchange for workspace session token and workspace ID
             workspace_id = None
@@ -301,6 +509,9 @@ class HulyClient:
         email: Optional[str] = None,
         password: Optional[str] = None,
         workspace_path: Optional[str] = None,
+        *,
+        otp: Optional[str] = None,
+        otp_provider: Optional[Callable[[Optional[str]], str]] = None,
     ) -> str:
         """Authenticate with Huly, obtain a session token, and persist to client workspace .env."""
         url = workspace_url or self.credentials.workspace_url or "https://huly.app"
@@ -311,7 +522,9 @@ class HulyClient:
             raise ValueError("Email and password are required to login to Huly.")
 
         # 1. Try Keycloak / Self-hosted OpenID first if available
-        kc_result = await self._try_keycloak_login(url, user_email, user_pass)
+        kc_result = await self._try_keycloak_login(
+            url, user_email, user_pass, otp=otp, otp_provider=otp_provider
+        )
         if kc_result:
             token, ws_id = kc_result
             self.credentials.session_token = token
@@ -690,9 +903,12 @@ class HulyClient:
         if issue.get("attachments"):
             try:
                 for att in await self._find_all(http, workspace_id, "attachment:class:Attachment", {"attachedTo": issue.get("_id")}, limit=100):
+                    raw_size = att.get("size")
+                    size_bytes = raw_size if isinstance(raw_size, int) and raw_size > 0 else None
                     add(HulySource(kind="attachment", title=att.get("name") or att.get("file"), origin="attachments",
                                    mime=att.get("type"), status="AVAILABLE", blob_id=att.get("file"),
-                                   note=f"{att.get('size')} bytes" if att.get("size") else None), att.get("file"))
+                                   size_bytes=size_bytes,
+                                   note=f"{size_bytes} bytes" if size_bytes else None), att.get("file"))
             except Exception as exc:  # noqa: BLE001
                 logger.warning("Could not list attachments: %s", exc)
         for comment, markup, row in comments:
@@ -701,8 +917,12 @@ class HulyClient:
             if row.get("attachments"):
                 try:
                     for att in await self._find_all(http, workspace_id, "attachment:class:Attachment", {"attachedTo": row.get("_id")}, limit=50):
+                        raw_size = att.get("size")
+                        size_bytes = raw_size if isinstance(raw_size, int) and raw_size > 0 else None
                         add(HulySource(kind="attachment", title=att.get("name") or att.get("file"), origin=origin,
-                                       mime=att.get("type"), status="AVAILABLE", blob_id=att.get("file")), att.get("file"))
+                                       mime=att.get("type"), status="AVAILABLE", blob_id=att.get("file"),
+                                       size_bytes=size_bytes,
+                                       note=f"{size_bytes} bytes" if size_bytes else None), att.get("file"))
                 except Exception as exc:  # noqa: BLE001
                     logger.warning("Could not list comment attachments: %s", exc)
         return sources
@@ -722,6 +942,18 @@ class HulyClient:
             used.add(candidate.lower())
             return candidate
 
+        def is_html_source(title: str, mime: Optional[str]) -> bool:
+            return Path(title).suffix.lower() in {".html", ".htm"} or "html" in (mime or "").lower()
+
+        def manual_drop_hint(title: str, mime: Optional[str], expected_path: Path, prefix: str) -> str:
+            if is_html_source(title, mime):
+                sitemap_out = target / "sitemap"
+                return (
+                    f"{prefix} Ask the user to supply '{title}' manually or place it at '{expected_path}', "
+                    f"then run: coder-nexus sitemap extract \"{expected_path}\" --out \"{sitemap_out}\""
+                )
+            return f"{prefix} Ask the user to supply '{title}' manually or place it at '{expected_path}'."
+
         for src in sources:
             if src.kind == "document" and src.status == "READ" and src.text:
                 path = target / safe_name(f"{src.title}.md")
@@ -730,13 +962,38 @@ class HulyClient:
                 continue
             if not src.blob_id or src.status != "AVAILABLE":
                 continue
+            if src.size_bytes and src.size_bytes > MAX_DOWNLOAD_BYTES:
+                expected_path = target / safe_name(src.title)
+                size_mb = src.size_bytes / (1024 * 1024)
+                limit_mb = MAX_DOWNLOAD_BYTES / (1024 * 1024)
+                src.status = "UNREACHABLE"
+                src.note = manual_drop_hint(
+                    src.title,
+                    src.mime,
+                    expected_path,
+                    f"Skipped: {size_mb:.1f} MB ({src.size_bytes} bytes) exceeds the {limit_mb:.0f} MB auto-download limit.",
+                )
+                continue
             try:
                 res = await self._fetch_blob(http, workspace_id, src.blob_id)
                 if res.status_code != 200:
-                    src.status, src.note = "UNREACHABLE", f"Download returned HTTP {res.status_code}"
+                    expected_path = target / safe_name(src.title)
+                    src.status = "UNREACHABLE"
+                    src.note = manual_drop_hint(
+                        src.title, src.mime, expected_path, f"Download returned HTTP {res.status_code}."
+                    )
                     continue
                 if len(res.content) > MAX_DOWNLOAD_BYTES:
-                    src.note = f"Skipped: {len(res.content)} bytes exceeds {MAX_DOWNLOAD_BYTES}"
+                    expected_path = target / safe_name(src.title)
+                    size_mb = len(res.content) / (1024 * 1024)
+                    limit_mb = MAX_DOWNLOAD_BYTES / (1024 * 1024)
+                    src.status = "UNREACHABLE"
+                    src.note = manual_drop_hint(
+                        src.title,
+                        src.mime or res.headers.get("content-type"),
+                        expected_path,
+                        f"Skipped: {size_mb:.1f} MB ({len(res.content)} bytes) exceeds the {limit_mb:.0f} MB auto-download limit.",
+                    )
                     continue
                 name = src.title
                 if "." not in name and res.headers.get("content-type", "").startswith("image/"):
@@ -745,8 +1002,12 @@ class HulyClient:
                 path.write_bytes(res.content)
                 src.local_path, src.status = str(path), "DOWNLOADED"
                 src.mime = src.mime or res.headers.get("content-type")
+                if is_html_source(path.name, src.mime):
+                    _maybe_extract_sitemap_source(path, src, target)
             except httpx.HTTPError as exc:
-                src.status, src.note = "UNREACHABLE", f"Download failed: {exc}"
+                expected_path = target / safe_name(src.title)
+                src.status = "UNREACHABLE"
+                src.note = manual_drop_hint(src.title, src.mime, expected_path, f"Download failed: {exc}.")
 
     # ------------------------------------------------------------------ public
 
@@ -766,7 +1027,8 @@ class HulyClient:
         ref = parse_task_ref(task_id)
         workspace_id = await self._ensure_session(workspace_path)
 
-        async with httpx.AsyncClient(timeout=max(self.timeout, 20.0), follow_redirects=True) as http:
+        client_timeout = max(self.timeout, DOWNLOAD_TIMEOUT_SECONDS if download_dir else 20.0)
+        async with httpx.AsyncClient(timeout=client_timeout, follow_redirects=True) as http:
             target = await self._find_issue(http, workspace_id, ref)
             description = await self._fetch_markup(http, workspace_id, target.get("description"))
             text = description.text
@@ -839,6 +1101,40 @@ async def _fetch_figma_source(sources: list[HulySource], figma_url: str, target:
         src.note = f"Saved to {target}: {saved}" + (f" ({result.note})" if result.note else "")
         text = Path(result.summary_path).read_text(encoding="utf-8")
         src.text = text[:DOC_TEXT_LIMIT] + ("\n…[truncated]" if len(text) > DOC_TEXT_LIMIT else "")
+
+
+def _maybe_extract_sitemap_source(html_path: Path, src: HulySource, target: Path) -> None:
+    """Auto-extract an interactive HTML sitemap attachment so agents read clean index/specs instead of raw multi-MB HTML."""
+    from ..sitemap import AUTO_EXTRACT_ALL_MAX_SCREENS, extract_sitemap, inspect_sitemap, is_interactive_sitemap_html
+
+    if not is_interactive_sitemap_html(html_path):
+        return
+    sitemap_dir = target / "sitemap"
+    probe = inspect_sitemap(html_path)
+    if probe.status != "READ":
+        return
+    index_only = probe.total_screens > AUTO_EXTRACT_ALL_MAX_SCREENS
+    result = extract_sitemap(html_path, sitemap_dir, index_only=index_only)
+    if result.status != "READ" or not result.index_md_path:
+        return
+    src.kind = "sitemap"
+    src.status = "READ"
+    src.local_path = result.index_md_path
+    src.mime = "text/markdown"
+    if index_only:
+        src.note = (
+            f"Interactive HTML sitemap ({result.total_stages} stages, {result.total_screens} screens). "
+            f"Raw HTML saved at '{html_path}'; index written to '{result.index_md_path}'. "
+            f"Do NOT read the raw HTML directly — unpack in-scope screens with: "
+            f"coder-nexus sitemap extract \"{html_path}\" --out \"{sitemap_dir}\" --stage <STAGE_ID> | --screens <CODE1,CODE2> --include-neighbors"
+        )
+    else:
+        src.note = (
+            f"Interactive HTML sitemap ({result.total_stages} stages, {result.extracted_screens} screens extracted with PNGs & specs) "
+            f"in '{sitemap_dir}' (raw HTML at '{html_path}')."
+        )
+    index_text = Path(result.index_md_path).read_text(encoding="utf-8")
+    src.text = index_text[:DOC_TEXT_LIMIT] + ("\n…[truncated]" if len(index_text) > DOC_TEXT_LIMIT else "")
 
 
 def _iso_datetime(ms: Any) -> Optional[str]:

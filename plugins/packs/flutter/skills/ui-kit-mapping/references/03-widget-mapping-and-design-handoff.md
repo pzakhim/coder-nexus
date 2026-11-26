@@ -47,7 +47,7 @@ When auditing `<stem>.spec.json` and `<stem>-SNN.png` against the active profile
 - Never silently deviate from either the kit or the Figma spec without a confirmed `D-NN`.
 
 ### Case C — New Widget / Missing Kit Capability (`C-NN` / `Core gap`)
-- **Condition**: A Figma component (`screens[i].components`) or custom visual subtree in `screens[i].tree` has **no matching widget** in the profile's UI kit (`app_ui_kit` / `lib/shared/` / standard Material 3), or a required utility/base helper is missing from core packages.
+- **Condition**: A visual component (`screens[i].components` / `elements[]`) or custom subtree has **no matching widget** in the active workspace profile's UI kit or shared catalog (`<!-- {{profile_references}} -->`), or a required utility/base helper is missing from core packages.
 - **Action at Gate 2 (`planning` → `design.md`)**:
   1. Assign a deterministic component ID: **`C-01`**, **`C-02`**...
   2. Record an explicit **`Core gap`** row in **both** `## UI/UX mapping` and `## Core usage` / `## Client Core Mapping` in `design.md`:
@@ -57,9 +57,9 @@ When auditing `<stem>.spec.json` and `<stem>-SNN.png` against the active profile
   3. Confirm the `Core gap` with the user (`Q-NN` → `D-NN`) before locking Gate 2, and create an explicit task to build `C-NN` at Gate 3 (`implementation-plan.md`).
 
 ### Case D — Enforcement During Build, Review & QA (`code_writer`, `code_reviewer`, `test_runner`)
-- **`code_writer`**: If an unmapped UI element is discovered mid-implementation that was not approved in `design.md`, stop and return **`BLOCKED`** with a `Q-NN` — never invent an unapproved custom widget or edit external kit packages.
-- **`code_reviewer` & `test_runner`**:
-  - Report any approved `KIT_OVERRIDE (D-NN)` or `CORE_GAP (D-NN)` as **`ACCEPTED (D-NN)`** in the review/verification report.
+- **`code_writer`**: Binds and consults `ui-kit-mapping`, `design.md` (`## UI/UX mapping`), and the active profile contract while implementing every UI screen and `C-NN` widget. If an unmapped UI element is discovered mid-implementation that was not approved in `design.md`, stop and return **`BLOCKED`** with a `Q-NN` — never invent an unapproved custom widget or edit external kit packages.
+- **`code_reviewer` & `test_runner`**: Bind `ui-kit-mapping` alongside `{{slot:visual-quality}}` during per-phase / `[REVIEW_CHECKPOINT]` review (`code_reviewer`) and `final_qa` (`test_runner`):
+  - Report any approved `KIT_OVERRIDE (D-NN)` or `CORE_GAP (D-NN)` as **`ACCEPTED (D-NN)`** in `## Visual Comparison` / `acceptance-report.md`.
   - Flag any custom widget built without an approved `Core gap` (`D-NN`), or any bypassed kit widget, as **`BLOCKER`** (`FAIL`).
 
 ---
@@ -68,9 +68,9 @@ When auditing `<stem>.spec.json` and `<stem>-SNN.png` against the active profile
 
 Whenever `requirements.md` has non-`EXISTING` `S-NN` screens in `## Screens & Visual Sources`, `design.md` must include `## UI/UX mapping` covering every non-`EXISTING` `S-NN`, key mapped kit widgets/tokens, and every `C-NN` new component (validated by `validate_proposal_spec` rule `DESIGN-008`):
 
-| Screen / Component ID | Figma / Source Ref (`<stem>.spec.json` / `S-NN`) | Kind (`NEW` \| `CHANGED` \| `KIT_WIDGET` \| `NEW COMPONENT`) | Target Flutter Class / Widget & Route | Target File Path / Package | Phase & Status (`MAPPED` \| `KIT_OVERRIDE (D-NN)` \| `CORE_GAP (D-NN)`) |
+| Screen / Component ID | Figma / HTML Sitemap Source Ref (`S-NN`) | Kind (`NEW` \| `CHANGED` \| `KIT_WIDGET` \| `NEW COMPONENT`) | Target Flutter Class / Widget & Route | Target File Path / Package | Phase & Status (`MAPPED` \| `KIT_OVERRIDE (D-NN)` \| `CORE_GAP (D-NN)`) |
 |---|---|---|---|---|---|
-| `S-01` | `Figma 1150:10051` (`work-orders.spec.json`, `work-orders-S01.png`) | `NEW` | `<Feature>ListScreen` (`/work-orders`) | `lib/modules/<feature>/presentation/screens/...` | `PHASE-01` · `MAPPED` |
+| `S-01` | `Figma 1150:10051` (`figma/work-orders-S01.png`) or `sitemap/screens/01_work_orders.png` | `NEW` | `<Feature>ListScreen` (`/work-orders`) | `lib/modules/<feature>/presentation/screens/...` | `PHASE-01` · `MAPPED` |
 | `button` / `search` | `S-01`, `S-02` (`Instance: PrimaryButton`, `SearchBar`) | `KIT_WIDGET` | `<Profile Button & Search Widgets>` | `<Package or Shared Path>` | `PHASE-01` · `MAPPED` |
 | `C-01` | `S-02` (`Node 1150:10200` `GanttTimelineBar`) | `NEW COMPONENT` | `GanttTimelineBarWidget` | `lib/modules/<feature>/presentation/widgets/gantt_timeline_bar_widget.dart` | `PHASE-02` · `CORE_GAP (D-04)` — not in kit; approved at Gate 2 |
 
