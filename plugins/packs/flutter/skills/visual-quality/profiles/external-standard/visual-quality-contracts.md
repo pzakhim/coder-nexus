@@ -8,7 +8,7 @@ This reference is auto-injected when `.superpowers/setup.json` sets `"architectu
 
 ## 1. Verifying Standard Flutter UI & 4 Visual States
 
-During runtime visual inspection (`01-references-matrix-and-capture.md`) and golden review (`02-golden-screenshot-workflow.md`), verify the rendered UI against `design.md` (`## UI/UX mapping`) and extracted Figma per-screen `.png` renders:
+During runtime visual inspection (`01-references-matrix-and-capture.md`) and golden review (`02-golden-screenshot-workflow.md`), compare the rendered UI side-by-side via multimodal `read_file` against `design.md` (`## UI/UX mapping`) and extracted Figma per-screen `.png` renders (`.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png`) OR extracted HTML sitemap renders (`.superpowers/sources/<ISSUE-ID>/sitemap/screens/<id>_<code>.png` + `*.spec.json`):
 
 | Verification Area | Visual Check (`BLOCKER` on violation) |
 |---|---|

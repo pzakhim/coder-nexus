@@ -40,7 +40,7 @@ Every constant or constraint repeated in `implementation-plan.md` or `phases/*.m
 
 ## P6. Pass 3 — Cold-Reader Subagent Check (Reader Plays `code_writer`)
 
-After Pass 1 (`PASS`) and Pass 2 (`0 BLOCKER`, `0 MAJOR`), spawn one fresh read-only subagent with this exact prompt:
+After Pass 1 (`PASS`) and Pass 2 (`0 BLOCKER`, `0 MAJOR`), spawn one fresh read-only cold-reader via **`invoke_subagent`** (standard mode) or **`swarm{action:"add", name:"cold-reader", brief:...}`** without `fork` (`/swarm` mode; self-read only as explicit degraded fallback if the host cannot spawn subagents — see [`SKILL.md` §5](../SKILL.md#5-pass-3--fresh-cold-reader-subagent-check)) with this exact prompt:
 
 ```text
 You are the Code Writer of this team. You have been handed the implementation

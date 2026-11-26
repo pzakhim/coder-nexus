@@ -14,6 +14,9 @@ from coder_nexus.huly.auth import (
 from coder_nexus.huly.models import HulyCredentials, HulyTaskSummary, HulyTaskDetail
 from coder_nexus.huly.client import (
     HulyClient,
+    HulyOtpRequiredError,
+    _extract_keycloak_error,
+    _extract_keycloak_otp_form,
     _extract_text_from_tiptap,
     _format_status,
     _format_priority,
@@ -260,5 +263,216 @@ class TestIssueReferenceAndCriteria:
     def test_prose_is_not_turned_into_criteria(self):
         from coder_nexus.huly.client import extract_acceptance_criteria
         assert extract_acceptance_criteria("Build the login screen.\nUse the design system.") == ([], "none")
+
+
+class TestKeycloakOtpLogin:
+    """Tests for Keycloak 2FA Authenticator (TOTP/OTP) login flow."""
+
+    @staticmethod
+    def _mock_keycloak_server(
+        *,
+        valid_otp: str = "654321",
+        redirect_to_otp: bool = False,
+        require_totp_setup: bool = False,
+        multiple_creds: bool = False,
+    ):
+        state = {"otp_posts": []}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            url = str(request.url)
+            if url == "https://huly.example.com/config.json":
+                return httpx.Response(200, json={"ACCOUNTS_URL": "https://huly.example.com/_accounts"})
+            if url == "https://huly.example.com/_accounts/providers":
+                return httpx.Response(200, json=["openid"])
+            if url == "https://huly.example.com/_accounts/auth/openid":
+                return httpx.Response(
+                    302,
+                    headers={"location": "https://sso.example.com/realms/acme/protocol/openid-connect/auth?state=s1"},
+                )
+            if url.startswith("https://sso.example.com/realms/acme/protocol/openid-connect/auth"):
+                return httpx.Response(
+                    200,
+                    text=(
+                        '<form id="kc-form-login" action="https://sso.example.com/realms/acme/login-actions/authenticate?step=pw&amp;tab=1" method="post">'
+                        '<input name="username" type="text"/><input name="password" type="password"/>'
+                        "</form>"
+                    ),
+                )
+            if "step=pw" in url and request.method == "POST":
+                body = request.content.decode()
+                if "password=good-pass" not in body:
+                    return httpx.Response(
+                        200,
+                        text='<span class="kc-feedback-text">Invalid username or password.</span>',
+                    )
+                if require_totp_setup:
+                    return httpx.Response(
+                        200,
+                        text='<form id="kc-totp-settings-form" action="/setup"><input type="hidden" name="totpSecret" value="ABC"/></form>',
+                    )
+                if redirect_to_otp:
+                    return httpx.Response(
+                        302,
+                        headers={"location": "/realms/acme/login-actions/authenticate?step=otp&tab=1"},
+                    )
+                return self_otp_page(multiple_creds=multiple_creds)
+            if "step=otp" in url and request.method == "GET":
+                return self_otp_page(multiple_creds=multiple_creds)
+            if "step=otp" in url and request.method == "POST":
+                form = dict(item.split("=", 1) for item in request.content.decode().split("&") if "=" in item)
+                state["otp_posts"].append(form)
+                if form.get("otp") == valid_otp:
+                    return httpx.Response(
+                        302,
+                        headers={"location": "https://huly.example.com/_accounts/auth/openid/callback?code=c1&state=s1"},
+                    )
+                return self_otp_page(
+                    multiple_creds=multiple_creds,
+                    error_html='<span id="input-error-otp-code">Invalid authenticator code.</span>',
+                    step_suffix="2",
+                )
+            if url.startswith("https://huly.example.com/_accounts/auth/openid/callback"):
+                return httpx.Response(
+                    302,
+                    headers={"location": "https://huly.example.com/login/auth?token=acct.jwt.token"},
+                )
+            if url == "https://huly.example.com/_accounts/" and request.method == "POST":
+                assert request.headers.get("authorization") == "Bearer acct.jwt.token"
+                return httpx.Response(
+                    200,
+                    json={"result": {"token": "ws.jwt.session", "workspace": "ws-uuid-99"}},
+                )
+            return httpx.Response(404, text=f"Unhandled {request.method} {url}")
+
+        def self_otp_page(*, multiple_creds: bool = False, error_html: str = "", step_suffix: str = "1") -> httpx.Response:
+            radios = ""
+            if multiple_creds:
+                radios = (
+                    '<input type="radio" name="selectedCredentialId" value="cred-old"/>'
+                    '<input type="radio" name="selectedCredentialId" value="cred-phone" checked="checked"/>'
+                )
+            html_body = (
+                f'<form id="kc-otp-login-form" action="/realms/acme/login-actions/authenticate?step=otp&amp;try={step_suffix}" method="post">'
+                '<input type="hidden" name="session_code" value="sc-1"/>'
+                f"{radios}"
+                '<input id="otp" name="otp" autocomplete="one-time-code" type="text"/>'
+                f"{error_html}"
+                "</form>"
+            )
+            return httpx.Response(200, text=html_body)
+
+        return httpx.MockTransport(handler), state
+
+    def test_extract_otp_form_preserves_hidden_and_checked_credential(self):
+        html_doc = (
+            '<form id="kc-otp-login-form" action="/login-actions/authenticate?code=1&amp;tab=2" method="post">'
+            '<input type="hidden" name="csrf" value="tok"/>'
+            '<input type="radio" name="selectedCredentialId" value="cred-1"/>'
+            '<input type="radio" name="selectedCredentialId" value="cred-2" checked/>'
+            '<input id="otp" name="otp" type="text"/>'
+            "</form>"
+        )
+        parsed = _extract_keycloak_otp_form(html_doc, "https://sso.example.com/realms/r/auth")
+        assert parsed is not None
+        action, fields, field_name = parsed
+        assert action == "https://sso.example.com/login-actions/authenticate?code=1&tab=2"
+        assert fields == {"csrf": "tok", "selectedCredentialId": "cred-2"}
+        assert field_name == "otp"
+
+    def test_extract_keycloak_error_supports_patternfly_v5(self):
+        assert _extract_keycloak_error('<span id="input-error-otp-code">Invalid authenticator code.</span>') == (
+            "Invalid authenticator code."
+        )
+
+    def test_keycloak_otp_direct_code_with_spaces_and_selected_credential(self, monkeypatch):
+        transport, state = self._mock_keycloak_server(multiple_creds=True)
+        real_client = httpx.AsyncClient
+        monkeypatch.setattr(httpx, "AsyncClient", lambda *a, **kw: real_client(*a, transport=transport, **kw))
+
+        client = HulyClient()
+        token = asyncio.run(
+            client.login(
+                workspace_url="https://huly.example.com",
+                email="dev@example.com",
+                password="good-pass",
+                otp="654 321",
+            )
+        )
+        assert token == "ws.jwt.session"
+        assert client.credentials.workspace_id == "ws-uuid-99"
+        assert state["otp_posts"] == [
+            {"session_code": "sc-1", "selectedCredentialId": "cred-phone", "otp": "654321"}
+        ]
+
+    def test_keycloak_otp_after_redirect_and_interactive_retry(self, monkeypatch):
+        transport, state = self._mock_keycloak_server(redirect_to_otp=True)
+        real_client = httpx.AsyncClient
+        monkeypatch.setattr(httpx, "AsyncClient", lambda *a, **kw: real_client(*a, transport=transport, **kw))
+
+        seen_errors: list[object] = []
+        codes = iter(["000000", "654321"])
+
+        def provider(err):
+            seen_errors.append(err)
+            return next(codes)
+
+        client = HulyClient()
+        token = asyncio.run(
+            client.login(
+                workspace_url="https://huly.example.com",
+                email="dev@example.com",
+                password="good-pass",
+                otp_provider=provider,
+            )
+        )
+        assert token == "ws.jwt.session"
+        assert seen_errors == [None, "Invalid authenticator code."]
+        assert [p["otp"] for p in state["otp_posts"]] == ["000000", "654321"]
+
+    def test_keycloak_otp_missing_raises_typed_error(self, monkeypatch):
+        transport, _ = self._mock_keycloak_server()
+        real_client = httpx.AsyncClient
+        monkeypatch.setattr(httpx, "AsyncClient", lambda *a, **kw: real_client(*a, transport=transport, **kw))
+
+        client = HulyClient()
+        with pytest.raises(HulyOtpRequiredError, match="Authenticator OTP"):
+            asyncio.run(
+                client.login(
+                    workspace_url="https://huly.example.com",
+                    email="dev@example.com",
+                    password="good-pass",
+                )
+            )
+
+    def test_keycloak_otp_wrong_non_interactive_fails_fast(self, monkeypatch):
+        transport, _ = self._mock_keycloak_server()
+        real_client = httpx.AsyncClient
+        monkeypatch.setattr(httpx, "AsyncClient", lambda *a, **kw: real_client(*a, transport=transport, **kw))
+
+        client = HulyClient()
+        with pytest.raises(ValueError, match="Invalid authenticator code"):
+            asyncio.run(
+                client.login(
+                    workspace_url="https://huly.example.com",
+                    email="dev@example.com",
+                    password="good-pass",
+                    otp="111111",
+                )
+            )
+
+    def test_keycloak_totp_setup_required_surfaces_clear_message(self, monkeypatch):
+        transport, _ = self._mock_keycloak_server(require_totp_setup=True)
+        real_client = httpx.AsyncClient
+        monkeypatch.setattr(httpx, "AsyncClient", lambda *a, **kw: real_client(*a, transport=transport, **kw))
+
+        client = HulyClient()
+        with pytest.raises(ValueError, match="setting up an Authenticator app"):
+            asyncio.run(
+                client.login(
+                    workspace_url="https://huly.example.com",
+                    email="dev@example.com",
+                    password="good-pass",
+                )
+            )
 
 

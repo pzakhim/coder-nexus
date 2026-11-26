@@ -18,7 +18,7 @@ Run these checks before handoff or review. Each tool gate produces a binary **`P
 | **File-level architecture validator** | `validate_architecture_code` (per changed Dart file, with explicit `layer` and `architecture_profile`) | `PASS` / `FAIL` (`UNVERIFIED` requires analyzer run) |
 | **Module-level architecture validator** | `validate_module_architecture` (when a full module is added or restructured) | `PASS` / `FAIL` |
 | **Static analyzer (`very_good_analysis` / `flutter_lints`)** | `flutter analyze` | `PASS` / `FAIL` |
-| **Structural metrics (`dart_code_linter`)** | `dart run dart_code_linter:metrics analyze lib` | `PASS` / `FAIL` |
+| **Structural metrics (`dart_code_linter`) *(when configured)*** | `dart run dart_code_linter:metrics analyze lib` | `PASS` / `FAIL` |
 | **Domain purity boundary check (`rg`)** | `rg -n "import 'package:flutter/|/data/|/presentation/" lib/modules/*/domain/` (expect 0 matches) | `PASS` / `FAIL` |
 | **Presentation → Data isolation check (`rg`)** | `rg -n "/data/(data_sources|models|mappers|repo_impl)/" lib/modules/*/presentation/` (expect 0 matches) | `PASS` / `FAIL` |
 
@@ -39,7 +39,7 @@ All 10 architectural principles are **mandatory compliance** when designing, wri
 | **A7** | **Explicit Cross-Module Boundaries** | A feature module may consume another module's published Domain UseCase or Entity through the approved dependency contract. Never import another module's private Cubit, State, DataSource, DTO Model, or Repository implementation | [02 — Dependencies, DI & Contracts](references/02-dependencies-di-and-contracts.md) |
 | **A8** | **Explicit Data Fetching & Parse Fail-Fast** | DataSources use verified endpoint constants and explicit query/pagination parameters. DTO parsing validates mandatory fields and fails explicitly — never mask missing required API fields with `0`, `""`, `[]`, or fabricated fallback records | [02 — Dependencies, DI & Contracts](references/02-dependencies-di-and-contracts.md) |
 | **A9** | **Proportional Layers (Ponytail Minimalism)** | Distinguish `INIT` from `EXTEND`. Create only the layers and DI registrations required by the approved phase behavior; a scoped UI-only extension does not create empty Domain, Data, or DI classes | [01 — Layout & Layer Roles](references/01-layout-and-layer-roles.md), [03 — Screens, Adding & Splitting](references/03-screens-adding-and-splitting.md) |
-| **A10** | **Scope & Cohesive Splitting** | Split files when a single file mixes layers or exceeds structural limits (`{{slot:clean-code}}` C6: ~300 LOC / ~200 LOC per class). Extract cohesive sub-widgets to `presentation/widgets/` rather than stacking helper methods (`_build*`) inside a screen | [03 — Screens, Adding & Splitting](references/03-screens-adding-and-splitting.md) |
+| **A10** | **Scope & Cohesive Splitting** | Enforce unified `{{slot:clean-code}}` C6 limits (`build()` ≤ 50 lines, file ≤ 300 lines, class ≤ 200 lines). Extract cohesive sub-widgets to `presentation/widgets/` directly within the module; escalate via `PCR-NN` only when splitting crosses module boundaries, shared APIs, or plan ownership | [03 — Screens, Adding & Splitting](references/03-screens-adding-and-splitting.md) |
 
 ---
 

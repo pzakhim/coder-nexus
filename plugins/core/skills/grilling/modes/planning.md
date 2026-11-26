@@ -4,9 +4,9 @@ Use with [`SKILL.md`](../SKILL.md), [`01 — Solution Options & Divergent Pass`]
 
 ## 1. Zero-Re-Ask Precondition (Before Queuing Any `Q-NN`)
 
-1. Read `requirements.md`, extracted Figma outputs (`.superpowers/sources/<ISSUE-ID>/figma/` `tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png` when present), and `codebase-notes.md` (`## 0A. Source Inventory`, `## 1. Decision Log (D-NN)`, `## 2. Glossary`, `## 3. Verified Baseline Facts`).
+1. Read `requirements.md`, extracted visual outputs (`.superpowers/sources/<ISSUE-ID>/figma/` `tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png` for `FIGMA_PROVIDED`, or `.superpowers/sources/<ISSUE-ID>/sitemap/screens/*.png` and `sitemap/*.spec.json` for `HTML_SITEMAP_PROVIDED`, when present), and `codebase-notes.md` (`## 0A. Source Inventory`, `## 1. Decision Log (D-NN)`, `## 2. Glossary`, `## 3. Verified Baseline Facts`).
 2. **Never re-ask a locked `D-NN`**, business rule (`BR-NN`), acceptance criterion (`AC-NN`), or UI workflow/screen decision from Gate 1.
-3. Run the read-only codebase intelligence scan defined in `{{slot:architecture-design}}` and record all discovered paths, classes, DI bindings, and routes in `codebase-notes.md` → `## 3`. Codebase facts are looked up, never asked (`SKILL.md` §4).
+3. Run the read-only codebase intelligence scan defined in `{{slot:architecture-design}}` and record all discovered paths, classes, DI bindings, and routes in `codebase-notes.md` → `## 3`. Codebase facts are looked up, never asked (`SKILL.md` §1, Law 2).
 
 ## 2. Technical Topics Owned by `planning`
 
@@ -44,7 +44,7 @@ Compare candidate designs across 5 engineering criteria:
 | **Profile Fit** | Does it comply with `{{slot:clean-architecture}}` and the active workspace profile (`architecture_profile.mode`)? |
 | **Reversibility** | How costly is it to reverse or replace this choice later? |
 
-Keep the **2–3 strongest options**, put `(Recommended)` first, ask as one `Q-NN`, log all options in `Options Considered` (`D-NN`), and write **only** the confirmed choice into `design.md` (`## Architectural decision`). Significant long-lived decisions may later be promoted via [`architecture-decision-records`](../../architecture-decision-records/SKILL.md).
+Keep the **2–3 strongest options**, present the full comparison in Session chat (Channel 1) and ask as one 1-line `ask_question` with `(Recommended)` prefixed on option 1 (Channel 2), log all options in `Options Considered` (`D-NN`), and write **only** the confirmed choice into `design.md` (`## Architectural decision`). Significant long-lived decisions may later be promoted via [`architecture-decision-records`](../../architecture-decision-records/SKILL.md).
 
 ## 4. Test Data Convention (One `D-NN` per Work Item)
 

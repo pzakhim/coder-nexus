@@ -27,10 +27,10 @@ Before `PHASE-01` implementation begins, `PHASE-00` (`phases/phase-00-prepare.md
 
 ## 3. Flutter Delivery Conventions for Downstream Roles
 
-- **Code Writer (`incremental-implementation`):** Implements one phase at a time following `{{slot:clean-architecture}}`, `{{slot:clean-code}}`, and the active profile's foundation mapping in `design.md`. Writes AAA developer unit and cubit tests (`{{slot:unit-testing}}`) covering both Pass/Default and Fail/Empty scenarios under `test/unit/` (or `test/modules/<feature>/`), then runs `dart format --output=none --set-exit-if-changed`, `flutter analyze`, and `flutter test`.
-- **Code Reviewer (`{{slot:code-review}}`):** Runs `{{slot:bug-hunt}}` cold, executes Hub MCP validators (`validate_architecture_code`, `validate_module_architecture` with explicit `architecture_profile`) and `flutter analyze`, audits `test/` for happy-path bias and `TEST-TAMPER-001`, and inspects runtime visual screenshots/golden baselines (`{{slot:visual-quality}}`) against Visual AC.
-- **Test Runner (`{{slot:verification}}`):** Runs widget and integration test suites (`flutter test`) and runtime visual acceptance on the approved revision after `APPROVED`.
-- **Docs Writer (`user-documentation`):** Documents real shipped routes, UI states, and setup only where relevant to the reader's task.
+- **Code Writer (`incremental-implementation`):** Implements one phase at a time following `{{slot:clean-architecture}}`, `{{slot:clean-code}}`, `{{slot:ui-kit-mapping}}`, and the active profile's foundation mapping in `design.md`. Writes AAA developer unit and cubit tests (`{{slot:unit-testing}}`) covering Pass/Default and Fail/Empty scenarios under `test/modules/<feature>/` (plus optional `integration_test/<feature>_e2e_test.dart` when approved in Gate 3 plan), captures revision-bound 4-state UI screenshots into `evidence/<phase-id>/<REVIEW_REVISION>/visual/`, and runs `dart format --output=none --set-exit-if-changed`, `flutter analyze`, and `flutter test`.
+- **Code Reviewer (`{{slot:code-review}}`):** Runs `{{slot:bug-hunt}}` cold, executes Hub MCP validators (`validate_architecture_code`, `validate_module_architecture` with explicit `architecture_profile`) and `flutter analyze` (`dart_code_linter` *(when configured)*), audits `test/` for happy-path bias and `TEST-TAMPER-001`, and performs mandatory side-by-side multimodal `read_file` visual inspection (`{{slot:visual-quality}}`, `{{slot:ui-kit-mapping}}`) on every UI phase end and `[REVIEW_CHECKPOINT]` against Figma or HTML sitemap renders (`## Visual Comparison`).
+- **Test Runner (`{{slot:verification}}`):** Runs strictly read-only Hybrid E2E acceptance after `APPROVED` — executing any existing `integration_test/` regression suite + independent live `E2E-01..N` and 4-state visual capture (`acceptance-report.md`).
+- **Docs Writer (`user-documentation`):** Documents real shipped routes, UI states, and setup in `as-built.md` and owns `.superpowers/ux/` after `ACCEPTED`.
 
 ---
 
@@ -108,11 +108,11 @@ architecture_profile:
 
 - **Gotchas affecting this design**: {{GuideGotchasOrNone}}
 
-## UI design system
+## UI/UX mapping
 
-### UI Component Mapping
-| UI Element / AC | Component | Source Package | Variant / Props | Rationale |
-|---|---|---|---|---|
+### Screen & Component Mapping (`DESIGN-008`)
+| Screen / Component ID | Figma / HTML Sitemap Source Ref (`S-NN`) | Kind (`NEW` \| `CHANGED` \| `KIT_WIDGET` \| `NEW COMPONENT`) | Target Flutter Class / Widget & Route | Target File Path / Package | Phase & Status (`MAPPED` \| `KIT_OVERRIDE (D-NN)` \| `CORE_GAP (D-NN)`) |
+|---|---|---|---|---|---|
 {{UiComponentRows}}
 
 ### Four Mandatory Visual States

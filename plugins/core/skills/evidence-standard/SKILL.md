@@ -28,14 +28,14 @@ One kind of check never stands in for another:
 | Tests pass | Test run of the named scope: exit 0, 0 failures, skip count read | An earlier run, a narrower scope, "no errors shown" |
 | Build passes | Build command exit 0 | Tests or analyzer passing |
 | Analyzer / lint clean | Analyzer run: 0 errors, warnings read | Build passing, editor showing no red |
-| Behaviour works | The behaviour exercised on the real path (request, UI action, CLI) with the observed result | Unit tests alone; a fixture or mock run |
+| Behaviour works | The behaviour exercised on the real path — live API/CLI command, Antigravity builtin `browser` subagent / `chrome-devtools` MCP (for web), or native simulator/emulator run (for mobile/desktop) — with the observed result | Unit tests alone; a fixture or mock run |
 | Live integration works | A run against the real service in the agreed environment | A stub, fake, recorded response or mock server |
 | Bug fixed | The original reproduction now passes | Code changed, a new test passes |
 | Regression test guards the bug | Red with the fix undone, green with it (both runs recorded) | The test passes once |
 | Task done | Its check output matches **Expected** (triage `MATCH`) | Check exit 0 with a different output |
 | Phase or feature done | Plan and AC list re-read line by line, each item with its own row | "All tests pass" |
 | Another agent's work is done | Diff and checks inspected on that revision yourself | Its status message |
-| UI matches the design | Revision-bound capture per `{{slot:visual-quality}}` | Reading the UI code |
+| UI matches the design | Revision-bound captured `.png` screenshots inspected via Antigravity multimodal `read_file` against approved Figma (`figma/<stem>-SNN.png`) OR HTML sitemap (`sitemap/screens/*.png`) references (`{{slot:visual-quality}}`) | Reading the UI code or trusting another agent's description |
 
 A fixture, mock or stubbed run is labelled as such in the row and never reported as a live run.
 

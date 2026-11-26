@@ -19,8 +19,8 @@ The work is done by **`bug_fixer`** in investigation mode: it observes, proves w
 
 ## 2. Disciplined Investigation Workflow (Observe, Prove, Clean Up)
 
-1. **Reproduce or Run Scenario**: Execute the scenario on a test runner or live runtime target (browser console/network/DOM inspection, mobile/desktop emulator or device, or in-process API/service runner and read-only dev/test database query plan inspection per the stack's `bug_fixer` rules and `{{slot:root-cause-debugging}}`).
-2. **Git Forensics & Call-Graph Tracing**: Use `git log -S`, `git log -L`, `git blame -L`, `git diff`, and `gitnexus` MCP (`impact`, `context`, `query`, `detect_changes`) + `rg -n` to trace code history and affected callers/consumers (`diagnosis.md` -> `## 6. Impact`).
+1. **Reproduce or Run Scenario**: Execute the scenario on a test runner or live runtime target — Antigravity builtin `browser` subagent (or `chrome-devtools` MCP *(when configured)*) for web console/network/DOM inspection, mobile/desktop emulator or device (with multimodal `read_file` screenshot inspection), or in-process API/service runner and read-only dev/test database query plan inspection per the stack's `bug_fixer` rules and `{{slot:root-cause-debugging}}`.
+2. **Git Forensics & Call-Graph Tracing**: Use `git log -S`, `git log -L`, `git blame -L`, `git diff`, and `gitnexus` MCP *(when configured)* (`impact`, `context`, `query`, `detect_changes`) + `rg -n` to trace code history and affected callers/consumers (`diagnosis.md` -> `## 6. Impact`).
 3. **Tagged Temporary Instrumentation (`[DBG-<slug>]`)**: When existing logs are insufficient, add minimal temporary logs/traces tagged with `DBG-<slug>` (masking secrets, tokens, and PII), re-run the scenario, and save captured output under `evidence/`.
 4. **Mandatory Zero-Residue Cleanup Before `DIAGNOSED`**: Remove every `DBG-<slug>` line and any temporary reproduction test; prove clean state in `diagnosis.md` -> `## 3` via `rg -n "DBG-<slug>"`, the stack's print/analyzer check (`{{slot:verification}}`), and `git status --short` / `git diff` matching the starting baseline.
 

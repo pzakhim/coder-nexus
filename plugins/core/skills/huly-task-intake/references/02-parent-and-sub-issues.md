@@ -16,7 +16,7 @@ Children often cover only part of the parent issue. Before drafting `requirement
 
 1. List the parent's functional parts from every readable source: description text, downloaded images/diagrams, and readable PO documents in `.superpowers/sources/<ISSUE-ID>/`.
 2. Map each part to the child issue that covers it, or to `NO CHILD`.
-3. Show the user one table (`| Parent part | Covered by | Status |`) and ask once with `ask_question`: which `NO CHILD` parts belong to this work item, and which are out of scope or tracked elsewhere. Record the confirmed answer as `D-NN` in `codebase-notes.md`.
+3. Present the coverage table (`| Parent part | Covered by | Status |`) in session chat (Channel 1), then ask once with a 1-line `ask_question` (using **`is_multi_select: true`** when multiple `NO CHILD` parts exist, unnumbered options, no manual `"Other"`): which `NO CHILD` parts belong to this work item. Record both included and excluded parts as `D-NN` in `codebase-notes.md`.
 
 Never silently drop a `NO CHILD` part, and never invent a child ticket for it.
 
@@ -25,7 +25,7 @@ Never silently drop a `NO CHILD` part, and never invent a child ticket for it.
 - **Closed children** (`is_closed: true`, `DONE` or `CANCELLED`): list them as `Out of scope — already closed in Huly`. Do not write `AC-NN` for them and do not reopen them.
 - **Many or unrelated children** (more than 8 open, or children that belong to different features): ask the user whether the current `vN` batch covers all open children or a named subset before drafting. Record the rest as out of scope for this `vN`.
 - **Child without explicit AC** (`acceptance_criteria_source: none`): queue a `Q-NN` for that child. Never turn description prose into acceptance criteria without user confirmation.
-- **Conflicting AC** between parent and child, or between siblings: queue a `Q-NN` (`grilling` + `solution-options`). Never pick one silently.
+- **Conflicting AC** between parent and child, or between siblings: queue a `Q-NN` ([`grilling`](../../grilling/SKILL.md) → [01 — Solution Options & Divergent Pass](../../grilling/references/01-solution-options-and-divergent-pass.md)). Never pick one silently.
 - **Deeper levels** (`sub_issue_count > 0`): only one level is expanded automatically. List the nested count and ask whether those grandchildren are in scope; if yes, fetch each with `huly_get_task_detail(..., download: true)`.
 - **Child assigned to someone else**: keep it in the spec when it is in scope and note `assignee_name`. Ownership is a planning concern, not a reason to drop requirements.
 

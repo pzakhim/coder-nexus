@@ -1,6 +1,6 @@
 # Mode: Design — Gate 2 Pre-Gate Verification (`planning` in `dev-team`)
 
-Reviews `design.md` against the Gate 1 approved `requirements.md`, `codebase-notes.md`, and (when present) extracted Figma outputs (`.superpowers/sources/<ISSUE-ID>/figma/` `tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png`). Pass 1 (`validate_proposal_spec` on `design.md` = `PASS`, including `DESIGN-007` and `DESIGN-008`) must be clean before starting Pass 2. Findings use `GR-D-NN`.
+Reviews `design.md` against the Gate 1 approved `requirements.md`, `codebase-notes.md`, and (when present) extracted visual outputs (`.superpowers/sources/<ISSUE-ID>/figma/` `tokens.json`, `<stem>.spec.json`, `<stem>-SNN.png` for `FIGMA_PROVIDED`, or `.superpowers/sources/<ISSUE-ID>/sitemap/screens/*.png` and `sitemap/*.spec.json` for `HTML_SITEMAP_PROVIDED`). Pass 1 (`validate_proposal_spec` on `design.md` = `PASS`, including `DESIGN-007` and `DESIGN-008`) must be clean before starting Pass 2. Findings use `GR-D-NN`.
 
 ---
 
@@ -37,7 +37,7 @@ Verify that every boundary where two tasks or layers could diverge — shared en
 
 ## D6. Pass 3 — Cold-Reader Subagent Check (Reader Plays `code_writer`)
 
-After Pass 1 (`PASS`) and Pass 2 (`0 BLOCKER`, `0 MAJOR`), spawn one fresh read-only subagent with this exact prompt:
+After Pass 1 (`PASS`) and Pass 2 (`0 BLOCKER`, `0 MAJOR`), spawn one fresh read-only cold-reader via **`invoke_subagent`** (standard mode) or **`swarm{action:"add", name:"cold-reader", brief:...}`** without `fork` (`/swarm` mode; self-read only as explicit degraded fallback if the host cannot spawn subagents — see [`SKILL.md` §5](../SKILL.md#5-pass-3--fresh-cold-reader-subagent-check)) with this exact prompt:
 
 ```text
 You are the Code Writer of this team. You have been handed the technical

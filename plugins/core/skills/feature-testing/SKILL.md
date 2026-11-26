@@ -12,9 +12,9 @@ The work is done by **`test_runner`**; the coordinator never edits code, tests, 
 ## 1. Intake & Scenario Lock
 
 1. Create `.superpowers/test-runs/<slug>/` and save the user's scenario in `scenario.md` exactly as given (or the path of the supplied file). Offer `templates/test-scenario.md.tpl` only when the user asks how to write one.
-2. When the scenario does not name them, ask for the target (device, emulator, browser, or API), the environment (`DEV` / `STG` / `PROD`), and the account/role, one question at a time.
+2. When the scenario does not name them, summarize what is missing in session chat and ask 1 short `ask_question` (or plain-text question) at a time for the target (device, emulator, browser, or API), the environment (`DEV` / `STG` / `PROD`), and the account/role.
 3. Run `git-preflight` Step A (read-only) to record the branch and revision under test.
-4. Start `test_runner` with the folder and target. It writes `test-plan.md` (applying default checks labeled `expected inferred` when no expected outcome is stated), asks the coordinator for any business outcome it cannot infer (relay to the user), executes the cases on the real app, browser, or API target (using the stack's runtime/browser/API tools per `quality-acceptance` and workspace `quality-*` skills), writes `test-run-report.md` with captured evidence in `evidence/`, and returns one status.
+4. Start `test_runner` with the folder and target. Staying strictly read-only toward code and tests, it writes `test-plan.md` (applying default checks labeled `expected inferred` when no expected outcome is stated), asks the coordinator for any business outcome it cannot infer (relay to the user), executes relevant existing local `integration_test/` suites if present in the repo AND runs the live scenario on the real target — using Antigravity's builtin `browser` subagent or `chrome-devtools` MCP (for web), native simulator/emulator capture + multimodal `read_file` visual verification (for mobile/desktop), or live API calls (`quality-acceptance` and `{{slot:verification}}` / `{{slot:visual-quality}}`) — writes `.superpowers/test-runs/<slug>/test-run-report.md` (distinct from `dev-team`'s `vN/evidence/final_qa/<revision>/acceptance-report.md`) with captured evidence in `evidence/`, and returns one status.
 
 ## 2. Routing & Zero-Re-Ask Handoff to bug-squad (coordinator only)
 

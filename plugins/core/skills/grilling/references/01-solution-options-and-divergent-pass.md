@@ -1,6 +1,6 @@
 # 01 — Solution Options & Divergent Pass (`Q-NN` Trade-Offs → `D-NN`)
 
-Your first idea is rarely the only good one, and the user cannot reject an approach they never saw. Whenever a `Q-NN` row has **more than one materially different, viable way** to meet the confirmed `G-NN` goals, use this guide to construct 2–3 real options, present them as a single `ask_question` call with `(Recommended)` first, and record the rejected options in the `Options Considered` column of `## 1. Decision Log (D-NN)`.
+Your first idea is rarely the only good one, and the user cannot reject an approach they never saw. Whenever a `Q-NN` row has **more than one materially different, viable way** to meet the confirmed `G-NN` goals, use this guide to construct 2–3 real options, present the full comparison in **Session chat (`content`)**, ask a single 1-line `ask_question` with `(Recommended)` prefixed on option 1 and concise option names only, and record the rejected options in the `Options Considered` column of `## 1. Decision Log (D-NN)`.
 
 ## 1. When to Build 2–3 Options (vs. Fact vs. Simple Inference)
 
@@ -36,9 +36,11 @@ Write 4–6 one-line candidates in your working notes using the lenses that fit:
 
 ---
 
-## 3. Describing & Presenting the 2–3 Options
+## 3. Describing & Presenting the 2–3 Options (2-Channel Split)
 
-Ground every option in the read sources, `## 1. Decision Log (D-NN)`, and verified codebase facts (`## 3`). Evaluate each option across the same 5 fields:
+Ground every option in the read sources, `## 1. Decision Log (D-NN)`, and verified codebase facts (`## 3`). Strictly separate comparison details from the selection prompt (`grilling` Law 4):
+
+- **Channel 1 — Session chat (`content`)**: Present the full **5-field option comparison matrix** (and a conditional Mermaid/ASCII diagram only when flow branching or architectural boundaries need visual clarity):
 
 | Field | Content |
 |---|---|
@@ -48,7 +50,8 @@ Ground every option in the read sources, `## 1. Decision Log (D-NN)`, and verifi
 | **Costs / Trade-offs** | What it makes harder, slower, riskier, or harder to reverse |
 | **Evidence** | The source, `D-NN`, or `file:line` supporting the claims |
 
-- **Recommend one (`(Recommended)` first)**: Place the recommended option first in `ask_question` and state in one line why it wins (tied to a `G-NN` or codebase evidence).
+- State in one line inside Channel 1 why the recommended option wins (tied to a `G-NN` or codebase evidence).
+- **Channel 2 — `ask_question` tool**: Send **only** 1 short decision line referencing the comparison matrix above plus **short, unnumbered option names** (no 5-field prose, no manual numbering, no manual `"Other"` option), with **`(Recommended)` as a prefix** on option 1 (e.g., `(Recommended) Keep draft locally on error` vs `Discard draft with retry banner`).
 - **Only one sensible way after converging?** State in one line why alternatives do not fit and ask it as a standard confirmation `Q-NN`.
 
 ---

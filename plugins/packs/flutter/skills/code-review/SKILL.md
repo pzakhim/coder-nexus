@@ -18,7 +18,7 @@ Rerun applicable checks independently on `REVIEW_REVISION` (`R6`). `NOT_RUN`, `B
 | **Static Analyzer** | `flutter analyze` | `PASS` (`exit 0`, zero errors/warnings on `REVIEW_REVISION`) |
 | **Code Metrics / Lint** | `dart run dart_code_linter:metrics analyze lib` *(when configured)* | `PASS` (`exit 0`) |
 | **Developer Unit & Cubit Tests** | `flutter test test/unit/` (or affected test files) | `PASS` (happy + negative/error paths green) |
-| **Runtime Visual Gate** | `{{slot:visual-quality}}` (when phase has UI impact) | `PASS` (real target screenshot/logs match Visual AC) |
+| **Runtime Visual Gate** | `{{slot:visual-quality}}` + `{{slot:ui-kit-mapping}}` (mandatory on **every UI phase end and `[REVIEW_CHECKPOINT]`**) | `PASS` (parallel multimodal `read_file` comparison of `writer-handoff.md` `Visual Artifacts:` PNGs vs Figma `figma/<stem>-SNN.png` OR HTML sitemap `sitemap/screens/*.png`, graded in `## Visual Comparison`) |
 
 ## 2. Order of Passes
 

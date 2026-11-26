@@ -18,6 +18,7 @@ INIT_ENV_KEYS: tuple[str, ...] = (
     "HULY_WORKSPACE_URL",
     "HULY_EMAIL",
     "HULY_PASSWORD",
+    "HULY_OTP",
     "HULY_SESSION_TOKEN",
     "HULY_WORKSPACE_ID",
     "FIGMA_TOKEN",
@@ -82,6 +83,27 @@ def load_client_credentials(workspace_path: Optional[str] = None) -> HulyCredent
         session_token=get_var("HULY_SESSION_TOKEN"),
         workspace_id=get_var("HULY_WORKSPACE_ID"),
     )
+
+
+def load_env_otp(workspace_path: Optional[str] = None) -> Optional[str]:
+    """Load optional one-time Authenticator code (`HULY_OTP`) from `.env`, falling back to os.environ."""
+    env_file = _resolve_env_file(workspace_path)
+    val = parse_env_file(env_file).get("HULY_OTP")
+    if val is not None and val.strip() != "":
+        return val.strip()
+    env_val = os.getenv("HULY_OTP")
+    if env_val is not None and env_val.strip() != "":
+        return env_val.strip()
+    return None
+
+
+def clear_env_otp(workspace_path: str) -> None:
+    """Clear `HULY_OTP` in `.env` (reset to empty) when non-empty, so one-time codes never linger."""
+    env_file = _resolve_env_file(workspace_path)
+    if not env_file.exists():
+        return
+    if parse_env_file(env_file).get("HULY_OTP"):
+        update_env_values(workspace_path, {"HULY_OTP": ""})
 
 
 def update_env_values(workspace_path: str, values: dict[str, str]) -> Path:
@@ -156,6 +178,8 @@ def init_env_file(workspace_path: Optional[str] = None) -> tuple[Path, list[str]
         block_lines.extend(DEV_ENV_HEADER.rstrip("\n").split("\n"))
     block_lines.append("# Fill Huly credentials with `coder-nexus setup huly` or edit below (e.g. https://huly.app)")
     for key in missing_keys:
+        if key == "HULY_OTP":
+            block_lines.append("# Optional: 6-digit Authenticator code for `coder-nexus setup huly` (auto-cleared after login)")
         if key == "FIGMA_TOKEN" and any(k.startswith("HULY_") for k in missing_keys):
             block_lines.append("")
             block_lines.append("# Optional: Figma Personal Access Token for read-only frame extraction")

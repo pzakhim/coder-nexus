@@ -19,7 +19,7 @@ When a work item has `FIGMA_PROVIDED` visual sources in `.superpowers/sources/<I
    - **`screens[]`**: Each screen (`S01`, `S02`...) provides `suggested_id`, `name`, `node_id`, `bounds` (`width`, `height`), `image_path` (`<stem>-SNN.png`), `sections[]`, `components[]` (with `pattern_hint`), `texts_reading_order[]`, `interactions[]`, and the recursive Framelink-style **`tree`**.
    - **`screens[i].tree`**: Normalized hierarchy where each node carries `layout` (`mode: row | column | none`, `positioning`, `constraints`, `scrollDirection`, `scrollBehavior`, `minMax`, `gap`, `padding`, `alignItems`, `justifyContent`, `sizing`), `tokens` referencing `{color.*}`, `{typography.*}`, and `{dimension.*}`, `textMeta` (`maxLines`, `truncation`, `autoResize`, `align`), `component` (`INSTANCE` / `COMPONENT` metadata + `patternHint`), and `repeatCount` + `repeatedSamples` on deduplicated list/table runs.
    - **`design_tokens.component_catalog` & `icon_svg_paths`**: Catalog of frame-level components with `pattern_hint`, plus exported `.svg` icon paths in `.superpowers/sources/<ISSUE-ID>/figma/icons/*.svg` when fetched with `--export-icons`.
-   - **Mandatory Visual Cross-Check**: Open every `<stem>-SNN.png` via `view_file` while reading `screens[i].tree` so visual hierarchy, density, and overlay states match the structural tree.
+   - **Mandatory Visual Cross-Check**: Load every `<stem>-SNN.png` via multimodal `read_file` while reading `screens[i].tree` so visual hierarchy, density, and overlay states match the structural tree.
 
 ---
 
@@ -38,6 +38,23 @@ Compare the tokens, pattern hints, list runs, and icons in `tokens.json` and `<s
 4. **Token Audit & Mismatch Handling (`{color.*}`, `{typography.*}`, `{dimension.*}`)**:
    - Map DTCG tokens to the active profile's semantic color, typography, and spacing/radius tokens defined in `<!-- {{profile_references}} -->` (never hardcode raw `Color(0xFF...)` or `TextStyle(fontSize: ...)` literals in feature screens).
    - If `tokens.json` introduces an unlinked token (`{color.unlinked.*}`, `{typography.unlinked.*}`) or off-scale value absent from the profile's Design System tokens, queue a `Q-NN` (`Owner: planning`) asking the user whether to snap to the nearest existing Design System token (`KIT_OVERRIDE (D-NN)`, Recommended) or register a new semantic token (`D-NN`).
+
+---
+
+## 2B. Inspecting Extracted Interactive HTML Sitemaps (`HTML_SITEMAP_PROVIDED`) (`K1`, `K2`, `K4`, `K5`)
+
+When `Visual Source Mode` is `HTML_SITEMAP_PROVIDED` (extracted into `.superpowers/sources/<ISSUE-ID>/sitemap/` via `coder-nexus sitemap extract`):
+
+1. **Read Extracted Per-Screen Specs & Inspect Full-Res `.png` Renders**:
+   - Inspect each in-scope `sitemap/screens/<id>_<code>.spec.json` (`viewport`, `role`, `parents`/`children`, `overview`, `elements[]` with `name`, `pattern_hint`, `behavior`, `business_logic`, `bbox`) and load `sitemap/screens/<id>_<code>.png` via multimodal `read_file`. Never open the raw multi-MB `.html` directly.
+2. **Map Elements Without `tokens.json` (Profile-First Token Alignment)**:
+   - Interactive HTML sitemaps do **not** emit a W3C DTCG `tokens.json` file — do **not** treat missing `tokens.json` as `BLOCKED`.
+   - Match each element's `pattern_hint` and visual appearance in the `.png` directly against the active workspace profile's widget catalog and semantic tokens (`<!-- {{profile_references}} -->`).
+   - If the screenshot's color/spacing styling differs from the standard profile kit widget, confirm via `Q-NN` → `D-NN` whether to snap to the standard kit styling (`KIT_OVERRIDE (D-NN)`, Recommended) or build a custom widget (`C-NN` / `CORE_GAP (D-NN)`).
+3. **Verify Unverified Technical Hints from HTML**:
+   - Sitemap overview/element prose may mention author-assumed libraries, storage engines, route strings, or raw Material widget names (logged as *unverified spec hints* in `codebase-notes.md`). Always verify against `pubspec.yaml`, `lib/`, and the active `architecture_profile` (screen base, state holder, UI kit, DI, Router) before locking `design.md` — never copy unverified spec hints blindly.
+4. **Viewport & Responsive Check (`K2`)**:
+   - Read `viewport` (`width × height`, e.g., `2560×1600` tablet landscape) from `<id>_<code>.spec.json` and check whether `requirements.md` also requires mobile or portrait layouts; specify responsive layout overrides in `design.md` per the active profile contract.
 
 ---
 

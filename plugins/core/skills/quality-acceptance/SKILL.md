@@ -14,13 +14,14 @@ Answer one question: **does the reviewed revision do what the user approved, obs
 | `test-plan.md` (Gate 3 approved `E2E-01..E2E-N` scenarios) | Mandatory sequential execution checklist (`- [ ] **E2E-01**` .. `- [ ] **E2E-N**`) |
 | `requirements.md` → `## 1.` **Scope in** / **Scope out** (`brief.md` → `## Scope and contracts` for a phase-free item), `requirements.md` (`G-NN`, `BR-NN`, `AC-NN`, `## Workflows` `W-NN`, Given/When/Then) | What must be true, and what must not change |
 | `codebase-notes.md` Decision Log (`D-NN`), Glossary | Why, and the exact meaning of words |
-| `design.md` state matrix, `requirements.md` screens `S-NN` & extracted Figma screen renders (`.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png` when present) | States and the visual reference |
+| `design.md` state matrix, `requirements.md` screens `S-NN` & extracted visual renders (Figma `.superpowers/sources/<ISSUE-ID>/figma/<stem>-SNN.png` / `tokens.json` / `<stem>.spec.json` **OR** HTML sitemap `.superpowers/sources/<ISSUE-ID>/sitemap/screens/*.png` / `sitemap/*.spec.json` when present) | States and the visual reference |
 | `implementation-plan.md` → `## Global constraints`, `## Review focus` only | Extra cases the plan froze at Gate 3 |
 | `phases/phase-00-prepare.md`, the Code Review report (`APPROVED`, same tree) | Readiness, the revision to test |
 
 Formats (evidence row, statuses, hand-offs) live in `work-item-contract` (`references/plan-and-task-contract.md` §5) and `work-item-contract` (`references/handoff-and-status.md` §7). This skill uses them; it does not redefine them.
 
-- **Read-only toward code, tests and plan documents** (except ticking `- [x] **E2E-i**` and `Evidence:` in `vN/test-plan.md` as scenarios pass). Never fix code, edit tests, weaken or alter any `E2E-01..E2E-N` scenario in `test-plan.md`, update a reviewed visual baseline, adjust an expectation or write `plan-changes/`. A tester who fixes code or alters test cases is no longer independent.
+- **Read-only toward code, tests and plan documents** (except ticking `- [x] **E2E-i**` and `Evidence:` in `vN/test-plan.md` as scenarios pass). Never fix code, edit/author tests, weaken or alter any `E2E-01..E2E-N` scenario in `test-plan.md`, update a reviewed visual baseline, adjust an expectation or write `plan-changes/`. A tester who fixes code or alters test cases is no longer independent.
+- **Hybrid E2E Execution (Read-Only):** Run any existing local `integration_test/` suites present in the repository (authored by `code_writer` when scheduled in Gate 3) as automated E2E regression, **AND** execute live `E2E-01..E2E-N` flows via Antigravity's builtin `browser` subagent or `chrome-devtools` MCP (for web targets), or native simulator/emulator capture + multimodal `read_file` visual verification (for mobile/desktop) against Figma or HTML sitemap renders (`{{slot:visual-quality}}`).
 - **Huly is read-only**; source context comes from `codebase-notes.md`, never a new query.
 - Read the implementation only to find targets (routes, entry points, selectors), never to choose an expected result.
 
@@ -30,8 +31,8 @@ Formats (evidence row, statuses, hand-offs) live in `work-item-contract` (`refer
 |---|---|---|
 | 1. Plan & Verify | [modes/plan.md](modes/plan.md) | `vN/test-plan.md` (`E2E-01..E2E-N`) is verified for 100% two-way traceability against `AC-NN` / `BR-NN` / `W-NN` / Review focus / guards |
 | 2. Environment | [modes/environment.md](modes/environment.md) | Stack runs the reviewed revision, migrations applied, data and per-role accounts isolated, environment record written |
-| 3. Execute (`FAIL-FAST`) | [modes/execution.md](modes/execution.md) | `E2E-01..E2E-N` executed sequentially; stops immediately on first `FAIL` (`FAILED_AT: E2E-i`) or ticks all `- [x] **E2E-i**` with fresh evidence |
-| 4. Report | [modes/reporting.md](modes/reporting.md) | Report under `vN/evidence/`, verdict computed mechanically, failures handed to `bug_fixer` (↔ `planning` for `L3`) |
+| 3. Execute (`FAIL-FAST`) | [modes/execution.md](modes/execution.md) | Existing local `integration_test/` (if present) + `E2E-01..E2E-N` executed in strict sequential order; stops immediately on first `FAIL` (`FAILED_AT: E2E-i`) or ticks all `- [x] **E2E-i**` with fresh evidence |
+| 4. Report | [modes/reporting.md](modes/reporting.md) | Canonical `acceptance-report.md` written under `vN/evidence/final_qa/<revision>/` (or `vN/evidence/<phase-id>/<revision>/`), verdict computed mechanically, failures handed to `bug_fixer` (↔ `planning` → `code_writer` for `L3`) |
 
 Re-test (after `bug_fixer` / `planning` completes a fix on a new revision) restarts at step 2 and **re-runs `E2E-01` through `E2E-N` from start to finish**.
 
@@ -50,9 +51,9 @@ An AC is `PASS` only when all its cases pass; any `FAIL` makes it `FAIL`; otherw
 
 The one per-AC table; the report ([modes/reporting.md](modes/reporting.md)), the hand-off and the coordinator use it as is:
 
-| AC-NN | Owning phase | Cases | Result | Evidence |
+| AC-NN | Owning phase | Scenarios (`E2E-NN`) | Result | Evidence |
 |---|---|---|---|---|
-| `AC-03` | `PHASE-02` | `TC-07`, `TC-08` | `FAIL` | `evidence/final_qa/<revision>/TC-07/` |
+| `AC-03` | `PHASE-02` | `E2E-07`, `E2E-08` | `FAIL` | `evidence/final_qa/<revision>/acceptance-report.md` (`E2E-07`) |
 
 Owning phase comes from `implementation-plan.md` → `## AC coverage`. Live and stubbed (UI/contract) runs of the same AC are separate rows. The report puts the verdict first, above this table.
 
@@ -73,10 +74,10 @@ Never write a result you did not observe in this run. For every claim: identify 
 ## Failures and the Fail-Fast fix loop (`test_runner` ↔ `bug_fixer` ↔ `planning`)
 
 1. **Strict Anti-Test-Tampering & Fail-Fast Rule**: Execute `E2E-01` → `E2E-02` → ... → `E2E-N` in `vN/test-plan.md` sequentially, one scenario at a time. Never alter, weaken, or skip any `E2E-01..E2E-N` scenario to make a check pass. The instant any `E2E-i` fails, **stop immediately (`FAIL-FAST`)**, record the defect (`FAILED_AT: E2E-i`, reproduction steps, expected vs actual, evidence, and owning phase) in `vN/evidence/final_qa/<revision>/acceptance-report.md` ([modes/reporting.md](modes/reporting.md#defect-report)), and return `CHANGES_REQUESTED`.
-2. **Coordinator routes to `bug_fixer` (Mode C — In-Flight E2E QA Bug Resolution)**:
-   - **`L1` localized implementation bug** (1–2 files inside the owning phase's Scope / Files, 0 stack L3 floors hit): `bug_fixer` writes a Red-to-Green regression test, fixes the production code, runs verification + self `{{slot:bug-hunt}}` (`quick`), commits the new revision, and returns `READY_FOR_TEST` directly to `test_runner`.
+2. **Route to `bug_fixer` (Mode C — In-Flight E2E QA Bug Resolution; via coordinator in standard mode or `@bug-fixer` in `/swarm` mode)**:
+   - **`L1` localized implementation bug** (1–2 files inside the owning phase's Scope / Files, 0 stack L3 floors hit): `bug_fixer` writes a Red-to-Green regression test, fixes the production code, runs verification + self `{{slot:bug-hunt}}` (`quick`), commits the new revision, and returns `READY_FOR_TEST` directly to `test_runner`. **Cap: max 3 L1 rounds** before mandatory `L3` escalation (matching `bug-squad`).
    - **`L2` multi-file / cross-layer bug** (0 stack L3 floors hit): `bug_fixer` fixes the production code with a regression test and returns `READY_FOR_REVIEW` so `code_reviewer` audits and returns `APPROVED` before `test_runner` resumes (`work-item-contract` → `references/handoff-and-status.md` §2). The owning phase's 3-review-round cap counts.
-   - **`L3` architectural / design / plan flaw (`PLAN_WRONG` / `DESIGN_CHANGE` / `SCOPE_CHANGE` or stack L3 floor hit)**: `bug_fixer` writes `plan-changes/PCR-NN.md` (`change-control`) and returns `ESCALATED` so the coordinator invokes **`planning`** to review and amend `design.md` / `implementation-plan.md` (asking the user at Gate 2 or Gate 1 if a frozen item changes).
+   - **`L3` architectural / design / plan flaw (`PLAN_WRONG` / `DESIGN_CHANGE` / `SCOPE_CHANGE`, stack L3 floor hit, or L1 3-round cap hit)**: `bug_fixer` writes `plan-changes/PCR-NN.md` (`change-control`) and returns `ESCALATED` so **`planning`** amends `design.md` / `implementation-plan.md` (with user re-approval if frozen), **`code_writer`** implements the updated task(s), and `code_reviewer` returns `APPROVED` before `test_runner` resumes.
 3. **Full End-to-End Re-Verification (`E2E-01` → `E2E-N`)**: Once the fix is committed (and `APPROVED` by `code_reviewer` for `L2`/`L3`), earlier evidence is superseded and `test_runner` **re-runs all scenarios from start to finish (`E2E-01` → `E2E-N`)** on the new revision until 100% pass (`ACCEPTED`).
 4. When `test_runner` itself spots a conflict with the plan or approved spec before execution, record a `PLAN_CONFLICT` or `SCOPE_CHANGE` row in the report; you stay read-only and the coordinator routes `plan-changes/PCR-NN.md` to `planning` (`change-control`).
 

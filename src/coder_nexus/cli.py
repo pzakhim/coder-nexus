@@ -17,6 +17,7 @@ def _add_huly_login_args(parser: argparse.ArgumentParser, path_flag: str) -> Non
     pw = parser.add_mutually_exclusive_group()
     pw.add_argument("--password", help="Huly user password (prefer --password-stdin: argv is visible in ps/history)")
     pw.add_argument("--password-stdin", action="store_true", help="Read the password from the first line of stdin (non-interactive)")
+    parser.add_argument("--otp", default=None, help="6-digit Authenticator (2FA/TOTP) code if required by Keycloak")
     parser.add_argument("--reset", action="store_true", help="Ignore saved .env values and ask for URL and account again")
     parser.add_argument("--json", action="store_true", help="Print one JSON result on stdout (for agents); progress goes to stderr")
     parser.add_argument(path_flag, dest="workspace_path", help="Path to client project workspace containing .env")
@@ -93,6 +94,10 @@ def build_parser() -> argparse.ArgumentParser:
     # figma (read-only frame extraction)
     from .figma.commands import add_figma_parser
     add_figma_parser(subparsers)
+
+    # sitemap (read-only interactive HTML sitemap extraction)
+    from .sitemap.commands import add_sitemap_parser
+    add_sitemap_parser(subparsers)
 
     # serve
     subparsers.add_parser("serve", help="Start the AIFactory MCP Server listening on stdio")
@@ -187,6 +192,11 @@ def _cmd_figma(args: argparse.Namespace) -> int:
     return cmd_figma(args)
 
 
+def _cmd_sitemap(args: argparse.Namespace) -> int:
+    from .sitemap.commands import cmd_sitemap
+    return cmd_sitemap(args)
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
     """Handle `coder_nexus serve` command to start MCP server over stdio."""
     from .server import run_server
@@ -217,6 +227,7 @@ def main() -> int:
         "serve": cmd_serve,
         "huly-debug": cmd_huly_debug,
         "figma": _cmd_figma,
+        "sitemap": _cmd_sitemap,
         "install-plugin": cmd_install_plugin,
     }
 

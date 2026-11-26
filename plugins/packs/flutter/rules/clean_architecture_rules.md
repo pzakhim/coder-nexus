@@ -1,3 +1,8 @@
+---
+trigger: always_on
+description: Always-on Clean Architecture, approval-gate, evidence, and verification guardrails for Flutter workspaces.
+---
+
 # Clean Architecture & Delivery Rules for Flutter Workspaces
 
 Apply the active workspace profile from `.superpowers/setup.json` (`profile` / `architecture_profile`) and the profile-activated references in [clean-architecture](../skills/clean-architecture/SKILL.md).

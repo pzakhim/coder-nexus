@@ -14,8 +14,8 @@ This skill governs the two documentation responsibilities owned by `docs_writer`
 | Dimension | Mode 1 — Final As-Built Record (`vN/as-built.md`) | Mode 2 — Reader-Facing Documentation |
 |---|---|---|
 | **When triggered** | Once after `Test Runner` returns `ACCEPTED` in `final_qa` (or at closure of a pure `documentation` work item). Never between intermediate code phases. | When a work item's approved scope requires creating or updating user guides, runbooks, `README.md`, or API docs from implemented source. |
-| **Primary inputs** | Approved `requirements.md`, `design.md`, `implementation-plan.md`, `codebase-notes.md`, phase review reports (`reviews/review_PHASE-NN_<rev>.md`), and `final_qa` report (`evidence/final_qa/<rev>/`). | Approved `requirements.md` / `brief.md`, `design.md`, and the actual implemented source, configuration, and tests on the current revision. |
-| **Owned outputs** | `.superpowers/work-items/<slug>/vN/as-built.md`, plus `.superpowers/ux/screen-catalog.md` (when UI screens shipped) and user-confirmed ADRs in `docs/adr/`. | Bounded reader-facing Markdown paths (`docs/`, `README.md`, runbooks) named in the work item's **Scope in**. |
+| **Primary inputs** | Approved `requirements.md`, `design.md`, `implementation-plan.md`, `codebase-notes.md`, phase review reports (`reviews/review_PHASE-NN_<rev>.md`), and canonical `final_qa` report (`evidence/final_qa/<rev>/acceptance-report.md`). | Approved `requirements.md` / `brief.md`, `design.md`, and the actual implemented source, configuration, and tests on the current revision. |
+| **Owned outputs** | `.superpowers/work-items/<slug>/vN/as-built.md`, **exclusive ownership of `.superpowers/ux/`** (`.superpowers/ux/screen-catalog.md` and verified current screen snapshots when UI screens shipped — no other role writes to `.superpowers/ux/`), and user-confirmed ADRs in `docs/adr/`. | Bounded reader-facing Markdown paths (`docs/`, `README.md`, runbooks) named in the work item's **Scope in**. |
 | **Return status** | `RECORDED` or `BLOCKED` | `READY_FOR_REVIEW` or `BLOCKED` |
 
 ---
@@ -40,15 +40,15 @@ Write `.superpowers/work-items/<slug>/vN/as-built.md` **once** using the canonic
 | Gate 1 (Spec & Screens/Workflows) | `G-NN`, `AC-NN`, `S-NN`, `W-NN` | `<SPEC_REVISION>` | `requirements.md`, `codebase-notes.md` | `APPROVED` |
 | Gate 2 & 3 (Design & Plan) | Architecture & Phase plan | `<PLAN_REVISION>` | `design.md`, `implementation-plan.md` | `APPROVED_FOR_BUILD` |
 | `PHASE-01` | `<phase summary / AC-NN>` | `<REVIEW_REVISION>` | `reviews/review_PHASE-01_<REVIEW_REVISION>.md` | `APPROVED` |
-| `final_qa` | All `Scope in` `AC-NN` | `<FINAL_REVISION>` | `evidence/final_qa/<FINAL_REVISION>/` | `ACCEPTED` |
+| `final_qa` | All `Scope in` `AC-NN` | `<FINAL_REVISION>` | `evidence/final_qa/<FINAL_REVISION>/acceptance-report.md` | `ACCEPTED` |
 
    - Copy every revision, path, and verdict directly from real approved reports per `evidence-standard`. Never invent rows, cite a chat status message as evidence, or round `NOT_RUN`, `BLOCKED`, or `UNVERIFIED` into `PASS`.
 5. **Deviations, Plan Changes & Known Limitations**:
    - List approved plan changes (`PCR-NN` with 1-line summary and path `plan-changes/PCR-NN.md`, or `None`), runtime/fixture limitations recorded in `final_qa`, and updated reader docs or catalog paths.
 
-### Screen Catalog & ADR Updates
+### Screen Catalog (`.superpowers/ux/` — Exclusive `docs_writer` Ownership) & ADR Updates
 
-- **Screen Catalog (`.superpowers/ux/screen-catalog.md`)**: When a verified UI work item delivers new or modified screens, update each delivered screen entry (`NEW` -> `EXISTING`), record the Figma node/source reference, and link the current verified screenshot path.
+- **Exclusive `.superpowers/ux/` Ownership**: `docs_writer` is the **sole writer** to `.superpowers/ux/` (including `.superpowers/ux/screen-catalog.md` and verified current visual snapshots after `ACCEPTED`; `code_writer`, `code_reviewer`, and `test_runner` write only under `vN/evidence/`). When a verified UI work item delivers new or modified screens, update each delivered screen entry (`NEW` -> `EXISTING`), record the visual source reference (Figma `figma/<stem>-SNN.png` or HTML sitemap `sitemap/screens/*.png`), and link the current verified screenshot path.
 - **Architecture Decision Records (`docs/adr/`)**: When delivered work carries a user-confirmed, hard-to-reverse `D-NN` in `codebase-notes.md` worth a permanent record, follow `architecture-decision-records`. Never write an ADR without explicit user confirmation.
 
 ---
@@ -71,4 +71,4 @@ Write `.superpowers/work-items/<slug>/vN/as-built.md` **once** using the canonic
 
 - **Strictly read-only toward runtime and specification artifacts**: Never edit runtime application source code, test files, fixtures, baselines, or approved work-item specs/plans (`requirements.md`, `design.md`, `implementation-plan.md`, `phases/`, `codebase-notes.md`).
 - **Self-contained skill references**: Reference companion skills by name (`work-item-contract`, `evidence-standard`, `architecture-decision-records`, `review-resolution`) and slot placeholders (`{{slot:architecture-design}}`, `{{slot:clean-architecture}}`) without fragile cross-skill relative directory links.
-- **Honest status reporting**: Return `BLOCKED` whenever a required review report, `final_qa` acceptance report, or revision reference is missing or inconsistent.
+- **Honest status reporting**: Return `BLOCKED` whenever a required review report, `final_qa` `acceptance-report.md`, or revision reference is missing or inconsistent.

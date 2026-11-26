@@ -37,7 +37,7 @@ Before naming files or choosing a widget superclass, classify every UI component
 
 ## 3. Splitting Oversized Files (`A10`)
 
-Enforce structural budgets from `{{slot:clean-code}}` (`C6`: file ≤ 300 LOC, class ≤ 200 LOC, function/build method ≤ 50 LOC, parameters ≤ 4):
+Enforce unified structural limits from `{{slot:clean-code}}` (`C6`: **`build()` ≤ 50 lines, file ≤ 300 lines**, method ≤ 30 lines, class ≤ 200 lines, parameters ≤ 4). Routine internal widget/helper extraction inside the same module is performed **directly by `code_writer`** without a `PCR-NN`; escalate via `PCR-NN` (`PLAN_CONFLICT`) only when splitting crosses module boundaries, shared public APIs, or plan ownership.
 
 | Smell | How to Split |
 |---|---|

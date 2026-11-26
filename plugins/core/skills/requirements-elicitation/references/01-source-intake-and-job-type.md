@@ -33,7 +33,7 @@ Use the exact table heading and columns in the `codebase-notes.md` template:
   - `READ`: Opened and read directly.
   - `UNREACHABLE`: Exists or linked, but cannot be opened (permissions, broken link, network).
   - `NOT_PROVIDED`: Referenced or expected, but not supplied.
-- Each `UNREACHABLE` or `NOT_PROVIDED` row goes into the sufficiency summary's **Missing** line. If a missing source could change the goals, ask the user for it before confirming goals.
+- Each `UNREACHABLE` or `NOT_PROVIDED` row goes into the sufficiency summary's **Missing** line. If a missing source could change the goals, ask the user for it before confirming goals (use plain chat text when requesting an open-ended file drop path or pasted content, and a 1-line `ask_question` only when choosing between discrete options such as wait vs. proceed without it).
 - **Conflicts between sources**: Record every disagreement in the last column (FR doc vs ticket AC, comment vs description, parent vs child, sibling vs sibling). Never pick a side silently. A conflict that changes a goal is settled in the goal question; one that changes only a detailed rule becomes a `Q-NN`.
 
 ## 3. Parent & Child Tickets Coverage
@@ -42,7 +42,7 @@ Follow [`huly-task-intake` → 02 — Parent & Sub-Issues Traceability](../../hu
 - A **parent ticket** yields one work item built from the parent description plus every open child's AC (each tagged with its Huly ID).
 - A **child ticket** scopes the work item to that child only, with the parent recorded in `codebase-notes.md` as context.
 - **Closed children** (`is_closed: true`) are listed as `Out of scope — already closed in Huly`.
-- **Parent coverage check**: Before drafting goals for a parent ticket, list its functional parts from every readable source (text, diagrams, PO documents), map each to the covering child or `NO CHILD`, and ask the user once via `ask_question` which `NO CHILD` parts belong to this work item (`D-NN`).
+- **Parent coverage check**: Before drafting goals for a parent ticket, list its functional parts from every readable source (text, diagrams, PO documents), present the `| Parent part | Covered by | Status |` table in session chat (Channel 1), and ask once via a 1-line `ask_question` (using `is_multi_select: true` when multiple `NO CHILD` parts exist) which `NO CHILD` parts belong to this work item (`D-NN`).
 
 ## 4. Job Type Classification (Stage 1A-0)
 

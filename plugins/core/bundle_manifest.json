@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "plugin_version": "3.3.4",
+  "plugin_version": "3.4.0",
   "hub_version": "0.1.0",
   "source_revision_policy": "resolved_at_install",
   "public_skills": [
@@ -68,6 +68,7 @@
     "shared_contracts/flags_and_statuses.md",
     "core/plugin.json",
     "core/mcp_config.json",
+    "core/hooks.json",
     "packs/flutter/rules/clean_architecture_rules.md",
     "core/agents/spec_writer.md",
     "core/agents/planning.md",
@@ -100,6 +101,7 @@
     "core/skills/figma-intake/SKILL.md",
     "core/skills/figma-intake/references/01-screen-and-workflow-extraction.md",
     "core/skills/figma-intake/references/02-design-tokens-and-gap-handoff.md",
+    "core/skills/figma-intake/references/03-html-sitemap-intake.md",
     "core/skills/requirements-elicitation/SKILL.md",
     "core/skills/requirements-elicitation/references/01-source-intake-and-job-type.md",
     "core/skills/requirements-elicitation/references/02-goal-framing-and-question.md",

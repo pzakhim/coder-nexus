@@ -1,0 +1,30 @@
+{
+  "protect-imespro-packages": {
+    "PreToolUse": [
+      {
+        "matcher": "write_file|edit_file|write_to_file|replace_file_content|multi_replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c '\nimport json, sys\nfrom pathlib import Path\n\ndef emit(decision, reason=\"\"):\n    out = {\"decision\": decision}\n    if reason:\n        out[\"reason\"] = reason\n    print(json.dumps(out))\n    sys.exit(0)\n\ntry:\n    payload = json.load(sys.stdin)\nexcept Exception:\n    emit(\"allow\")\n\nargs = (payload.get(\"toolCall\") or {}).get(\"args\") or {}\nraw = next((args.get(k) for k in (\"Path\", \"TargetFile\", \"path\", \"file_path\") if isinstance(args.get(k), str) and args.get(k).strip()), \"\")\nif not raw:\n    emit(\"allow\")\n\ncwd = payload.get(\"cwd\") or \"\"\np = Path(raw).expanduser()\ntarget = (p if p.is_absolute() or not cwd else Path(cwd) / p).resolve()\ncwd_p = Path(cwd).expanduser().resolve() if cwd else None\nprotected = {\"app-core\", \"app-util\", \"app-ui-kit\"}\nfor anc in (target, *target.parents):\n    if anc.name in protected:\n        if cwd_p is not None and (cwd_p == anc or anc in cwd_p.parents):\n            break\n        emit(\"deny\", f\"Direct edits to sibling iMESPro package {anc.name} ({raw}) are forbidden by Coder Nexus rules. Keep changes inside the Client workspace and record a Core gap (C-NN) in design.md.\")\nemit(\"allow\")\n'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "protect-git-branches": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c '\nimport itertools, json, shlex, subprocess, sys\nfrom pathlib import Path\n\ndef emit(decision, reason=\"\"):\n    out = {\"decision\": decision}\n    if reason:\n        out[\"reason\"] = reason\n    print(json.dumps(out))\n    sys.exit(0)\n\ndef is_protected(branch):\n    return branch in {\"main\", \"develop\"} or branch.startswith(\"release/\")\n\ndef branch_of(repo_dir):\n    if not repo_dir:\n        return \"\"\n    for argv in ([\"git\", \"symbolic-ref\", \"--short\", \"HEAD\"], [\"git\", \"rev-parse\", \"--abbrev-ref\", \"HEAD\"]):\n        try:\n            res = subprocess.run(argv, cwd=repo_dir, capture_output=True, text=True, timeout=3)\n            if res.returncode == 0 and res.stdout.strip():\n                return res.stdout.strip()\n        except Exception:\n            return \"\"\n    return \"\"\n\ntry:\n    payload = json.load(sys.stdin)\nexcept Exception:\n    emit(\"allow\")\n\nargs = (payload.get(\"toolCall\") or {}).get(\"args\") or {}\ncmd = args.get(\"CommandLine\") or args.get(\"command\") or \"\"\ncwd = payload.get(\"cwd\") or \"\"\nif not isinstance(cmd, str) or \"git\" not in cmd:\n    emit(\"allow\")\n\ntry:\n    lx = shlex.shlex(cmd, posix=True, punctuation_chars=\";&|\\n\")\n    lx.whitespace = \" \\t\\r\"\n    lx.whitespace_split = True\n    lx.commenters = \"\"\n    toks = list(lx)\nexcept ValueError:\n    emit(\"allow\")\n\nops = {\";\", \"&&\", \"||\", \"|\", \"&\", \"\\n\"}\nval_flags = {\"-C\", \"-c\", \"--git-dir\", \"--work-tree\", \"--namespace\", \"--config-env\"}\ncur_cwd = cwd\nfor is_op, grp in itertools.groupby(toks, key=lambda t: t in ops):\n    if is_op:\n        continue\n    seg = list(grp)\n    while seg and \"=\" in seg[0] and not seg[0].startswith(\"-\"):\n        seg.pop(0)\n    if not seg:\n        continue\n    if seg[0] == \"cd\" and len(seg) >= 2 and not seg[1].startswith(\"-\"):\n        cand = Path(seg[1]).expanduser()\n        cur_cwd = str(cand if cand.is_absolute() or not cur_cwd else Path(cur_cwd) / cand)\n        continue\n    if Path(seg[0]).name != \"git\":\n        continue\n    git_dir = cur_cwd\n    i = 1\n    while i < len(seg) and seg[i].startswith(\"-\"):\n        if seg[i] == \"-C\" and i + 1 < len(seg):\n            cand = Path(seg[i + 1]).expanduser()\n            git_dir = str(cand if cand.is_absolute() or not cur_cwd else Path(cur_cwd) / cand)\n            i += 2\n        elif seg[i] in val_flags and i + 1 < len(seg):\n            i += 2\n        else:\n            i += 1\n    if i >= len(seg):\n        continue\n    sub, rest = seg[i], seg[i + 1:]\n    if sub == \"commit\":\n        b = branch_of(git_dir)\n        if is_protected(b):\n            emit(\"deny\", f\"Direct git commit on protected branch {b} is blocked by Coder Nexus Git Flow rules. Switch to a work branch (feature/*, fix/*, refactor/*, hotfix/*) first.\")\n    elif sub == \"push\":\n        if \"--all\" in rest or \"--tags\" in rest:\n            emit(\"deny\", \"Blocked by Coder Nexus Git Flow rules: do not use git push --all or git push --tags. Push explicit refs instead.\")\n        forced = any(a in {\"--force\", \"--force-with-lease\"} or a.startswith(\"--force-with-lease=\") or (a.startswith(\"-\") and not a.startswith(\"--\") and \"f\" in a[1:]) for a in rest)\n        if forced:\n            pos = [a for a in rest if not a.startswith(\"-\")]\n            refs = pos[1:] if len(pos) >= 2 else []\n            targets = []\n            for ref in refs:\n                t = ref.split(\":\", 1)[-1].lstrip(\"+\")\n                if t.startswith(\"refs/heads/\"):\n                    t = t[11:]\n                if t in (\"HEAD\", \"\"):\n                    t = branch_of(git_dir)\n                targets.append(t)\n            if not targets:\n                targets = [branch_of(git_dir)]\n            for t in targets:\n                if is_protected(t):\n                    emit(\"deny\", f\"Force-pushing protected branch {t} is blocked by Coder Nexus Git Flow rules.\")\nemit(\"allow\")\n'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

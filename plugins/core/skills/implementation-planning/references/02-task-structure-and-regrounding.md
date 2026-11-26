@@ -46,7 +46,7 @@ Inside each phase file (`phases/phase-NN-*.md`), break `## Tasks` into an ordere
   6. **Expected**: Falsifiable observable output sourced from approved documents (exit code, named unit test count passed `N passed`, exact error text, HTTP status, or generated artifact path — never *"works"* or unverified current output).
 - **Context-Driven `[REVIEW_CHECKPOINT]` Placement Inside `## Tasks` (Especially for FE / UI / UX)**:
   - Do **not** follow a rigid task-count formula for review. Instead, evaluate where inside the phase a **Screen (`S-NN`), custom Component (`C-NN`), UI modification, or self-contained sub-feature** actually materializes on UI (whether after a single UI task or after 2–3 tasks that wire state + widget + screen together) and warrants an immediate visual/code review before subsequent tasks build on top of it.
-  - Place `- [ ] **[REVIEW_CHECKPOINT: <Screen / Component / Feature unit>]**: <what materialized on UI and what must be reviewed now>` right after that task in `## Tasks`, and confirm the checkpoint placement with the user during the interactive phase planning loop.
+  - Place `- [ ] **[REVIEW_CHECKPOINT: <Screen / Component / Feature unit>]**: <what materialized on UI and what must be reviewed now>` right after that task in `## Tasks`. Ask the user via 2-Channel `ask_question` in Gate 3 Step 2 only if a checkpoint placement carries a genuine trade-off, and include all checkpoint placements in the Step 3 Master Plan Report.
 
 ---
 
@@ -93,15 +93,15 @@ Code blocks are allowed only for a non-obvious algorithm that signature + test d
 
 ## 5. Mandatory Task-by-Task Plan Re-Grounding Loop & Commit Checkpoints
 
-### Anti-Bulk Coding Re-Grounding Loop (`incremental-implementation`)
-Tasks must be structured so `code_writer` executes them one by one using the strict re-grounding loop defined in `work-item-contract` → `references/plan-and-task-contract.md` §3:
+### Ordered Re-Grounding Loop (`incremental-implementation`)
+Tasks must be structured so `code_writer` executes them in order using the re-grounding loop defined in `work-item-contract` → `references/plan-and-task-contract.md` §3:
 1. Confirm all preceding tasks in `phases/phase-NN-*.md` are ticked `- [x]`.
-2. Implement only the current task's **Scope / Files** and run its **Acceptance Criteria** command from the stated `cwd`.
+2. Implement the active task's **Scope / Files** (tightly coupled sub-tasks inside the same file or atomic compile unit may be implemented together before checking and ticking each covered task) and run every active task's **Acceptance Criteria** command from its stated `cwd`.
 3. Triage the real output against **Expected**:
-   - `MATCH`: Record the evidence row for `writer-handoff.md` (`evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md`), return to `phases/phase-NN-*.md` to tick `- [x]`, and **re-read the phase plan and next task specification** before writing any code for the next task.
+   - `MATCH`: Record the evidence row for `writer-handoff.md` (`evidence/<phase-id>/<REVIEW_REVISION>/writer-handoff.md`), return to `phases/phase-NN-*.md` to tick `- [x]` on each verified task, and **re-read the phase plan and next task specification** before writing code for the next task.
    - `CODE_WRONG`: Diagnose and fix via `{{slot:root-cause-debugging}}`; never tick `- [x]` on a partial match.
    - `PLAN_WRONG`: Stop immediately and file a plan change request (`plan-changes/PCR-NN.md`) via `change-control`; never alter the task check or **Expected** line to match broken output.
-4. Executing multiple tasks in a single unverified pass without returning to re-read and tick `phases/phase-NN-*.md` between tasks is prohibited.
+4. Bulk-coding unrelated tasks across a phase or crossing an unticked `[REVIEW_CHECKPOINT]` without verifying and ticking `phases/phase-NN-*.md` is prohibited.
 
 ### Branch & Phase Commit Checkpoints (`git-preflight`)
 - Copy the confirmed branch decision (`D-NN`: work branch, base branch, merge targets) recorded by `git-preflight` into `implementation-plan.md` → `## Checkpoints and shared files`.

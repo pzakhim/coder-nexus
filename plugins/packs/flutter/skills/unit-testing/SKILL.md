@@ -13,13 +13,14 @@ All CLI test gates (`PASS` / `FAIL`) and review severities (`BLOCKER` / `MAJOR` 
 
 ## 1. CLI Test & Quality Gates (`PASS` / `FAIL`)
 
-Installed and verified via `coder-nexus setup tools --pack flutter` (`flutter_test`, `bloc_test`, `mocktail`, `flutter analyze`, `dart_code_linter`). Every command below is **binary (`exit 0` = `PASS`, `exit != 0` = `FAIL`)**:
+Installed and verified via `coder-nexus setup tools --pack flutter` (`flutter_test`, `bloc_test`, `mocktail`, `flutter analyze`, `dart_code_linter` *(when configured)*). Every command below is **binary (`exit 0` = `PASS`, `exit != 0` = `FAIL`)**:
 
 | Gate | Command | Purpose |
 |---|---|---|
 | **Focused Red / Green Run** | `flutter test test/modules/<feature>/<layer>/<file>_test.dart --plain-name "<test name>"` | Run one test case to verify red failure reason and green fix (**U12**, **U14**) |
-| **Module Unit Suite** | `flutter test test/modules/<feature>/` | Verify all unit tests for the touched feature module after a task |
-| **Full Unit Suite** | `flutter test` | Verify the full unit suite at phase end before hand-off |
+| **Module Unit Suite** | `flutter test test/modules/<feature>/` | Mandatory verification of all unit/widget tests for the touched feature module per task |
+| **Full Unit Suite** | `flutter test` | Verify the full unit/widget suite at phase end before hand-off |
+| **Optional Local `integration_test/` (Hybrid E2E)** | `flutter test integration_test/<feature>_e2e_test.dart` *(when approved in Gate 3 plan)* | Authored locally by `code_writer` when scheduled in Gate 3 plan or requested by the user; executed by `test_runner` as automated E2E regression (**U13**) |
 | **Static Analysis on Tests** | `dart format --output=none --set-exit-if-changed lib test && flutter analyze` | Enforce clean-code formatting and static analysis on test files (**U11**) |
 
 ---

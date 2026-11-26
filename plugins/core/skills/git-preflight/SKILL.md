@@ -20,7 +20,7 @@ Answer one question before any code is written: **is this work item on its own b
 | M7 | Never commit a secret. | Git history is copied everywhere and is hard to clean. |
 | M8 | Record the branch decision as a `D-NN` in `codebase-notes.md` (template in §4). | Planning, Code Writer and Reviewer need the same base and merge targets. |
 | M9 | After switching, re-check the "Verified Baseline Facts" when the base differs from the ref the spec was scanned on. | A bug on STG lives in `release/x.y.z`, which may differ from `develop`. |
-| M10 | **Verified Phase / Sub-Ticket Commit Checkpoints Only (no arbitrary WIP commits):** Never commit mid-phase (`wip`, `update`, `temp`). Create a commit only after a Huly sub-ticket or an approved `PHASE-NN` slice passes its verification gates (`PASS`) and phase acceptance/review, with explicit sub-ticket/phase traceability in the commit subject. | Every commit on the feature branch is a verified, auditable unit of delivery. |
+| M10 | **Verified Phase / `[REVIEW_CHECKPOINT]` Commit Checkpoints Before Review (No Unverified WIP Commits):** On feature/fix work branches, **DO commit** each verified phase, mid-phase `[REVIEW_CHECKPOINT]`, or review-fix round (once its verification gates return `PASS`) **before** handing off `READY_FOR_REVIEW` so `code_reviewer` and `test_runner` inspect an immutable `REVIEW_REVISION` commit SHA (never `+dirty`). Stage only explicit in-scope paths (`git add -- <paths>`, never `git add .`) with phase/ticket traceability in the commit subject. Never commit directly to protected branches (`main`/`develop`/`release/*`, M2) and never commit unverified or failing `wip`/`temp` states. | Gives Code Reviewer and Test Runner an exact, immutable `REVIEW_REVISION` SHA while keeping branch history clean and auditable. |
 
 ## 2. Step A — quick check when the task starts (read-only)
 
@@ -97,6 +97,6 @@ D-NN Branch: fix/ABC-142-<short-description>
 ## 5. Later roles
 
 - **Planning:** scan code on the item branch; copy branch, base and merge targets into `implementation-plan.md`; a PROD hotfix gets explicit tasks to bring the fix into the active `release/*` and `develop`.
-- **Code Writer:** before each phase, `git branch --show-current` must match the `D-NN` branch; commit only at verified sub-ticket / `PHASE-NN` checkpoints (M10) using explicit traceability (`<type>(<SUB-TICKET>): <summary> [parent: <PARENT-TICKET>, PHASE-NN]`, `<type>(<PARENT-TICKET>): [PHASE-NN] <summary>`, or `<type>(phase-NN): <summary>` when no ticket exists).
+- **Code Writer:** before each phase, `git branch --show-current` must match the `D-NN` branch; commit each verified `PHASE-NN`, mid-phase `[REVIEW_CHECKPOINT]`, or review-fix revision **before** returning `READY_FOR_REVIEW` (M10) using explicit `git add -- <paths>` (never `git add .`) and explicit traceability (`<type>(<SUB-TICKET>): <summary> [parent: <PARENT-TICKET>, PHASE-NN]`, `<type>(<PARENT-TICKET>): [PHASE-NN] <summary>`, or `<type>(phase-NN): <summary>` when no ticket exists).
 - **Code Reviewer:** the PR targets the `D-NN` merge target; no commit on a protected branch; a hotfix reaches every line listed; a breaking contract change is marked as such for versioning.
 - **Release and production:** prepare commands and a checklist (merge, tag, propagate, promote the tested artifact) for the user to run (M6).

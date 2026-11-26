@@ -1,6 +1,6 @@
 # 01 — Codebase Readiness, PHASE-00 & Vertical Phase Slicing
 
-> Topic: 3-input readiness verification, Huly sub-issue re-cutting, mandatory `PHASE-00` API & Mockoon strategy, vertical behavior slicing (`PHASE-01`+), and Gate 1 on-demand consultation.
+> Topic: 3-input readiness verification, Huly sub-issue re-cutting, mandatory `PHASE-00` API & Mockoon strategy, vertical behavior slicing (`PHASE-01`+), 3-step 2-Channel Gate 3 planning, and Gate 1 on-demand consultation.
 
 ## 1. Three Input Verification & Codebase Readiness Scan
 
@@ -74,27 +74,20 @@ Each feature phase (`PHASE-01`, `PHASE-02`...) delivers **one user-observable or
 - **UI-Only Phases Are Valid**: A phase that adds a layout refinement or new screen state without new Domain/Data work is a valid vertical slice.
 - **Mandatory In-Phase Unit Tests**: Every feature phase (`PHASE-01`+) must include its own developer unit tests (covering **Happy/Pass**, **Negative/Fail**, and **Edge/Empty** per the agreed test-data contract) inside the tasks that build the logic. Never create a horizontal "unit testing phase" at the end.
 
-### Interactive Phase-by-Phase Planning with the User (`ask_question`)
+### 3-Step 2-Channel Gate 3 Planning with the User (`ask_question`)
 
-`planning` must **never** write all phase files autonomously in a single silent pass. Instead, collaborate with the user in two explicit steps:
+`planning` collaborates with the user following **2-Channel Grilling** (`grilling` Law 4) using the **3-step formula** (`1 + N + 1`, where `N = 0, 1, 2...` genuine decisions) — never diving head-first into detailing all X phases before locking the roadmap, and never forcing `X` mechanical per-phase popups when a phase is already clear:
 
-1. **Step A — Master Phase Slicing Direction (`ask_question` Before Detailed Phase Planning)**:
-   - Present the proposed **Master Phase Roadmap** in chat:
-     - How many phases (`PHASE-00` + `PHASE-01..NN`), ordered from walking skeleton / highest risk to extensions.
-     - A summary table mapping each `PHASE-NN` to its `AC-NN` / `G-NN`, preliminary `Scope in` vs `Scope out`, and potential cross-phase conflicts (shared files, shared models/state, dependency order).
-   - Call `ask_question` (with `(Recommended)` first) to ask the user how they want to slice and sequence the plan. Record the confirmed phase strategy as a `D-NN` in `codebase-notes.md`.
-2. **Step B — Phase-by-Phase Interactive Planning Loop (`Plan PHASE-01` → User Check → `Plan PHASE-02` → ...)**:
-   - Plan one phase at a time (`i = 1..N`). For each `PHASE-i`:
-     1. **Report `PHASE-i` Execution Architecture, Scope & Conflicts in Chat**:
-        - **Why (Objective) & Vertical Behavior Slice**: Business/technical purpose (`AC-NN`, `G-NN`, `D-NN`) and observable `Input → Output`.
-        - **In-Phase Execution Architecture & Approach**: Exact components, classes, data/state flow, `[+]`/`[M]` files, and `Consumes` ↔ `Produces` contracts inside `PHASE-i`.
-        - **Explicit `Scope in` vs `Scope out` (Anti-Overlap)**:
-          - **Scope in**: What `PHASE-i` builds and tests.
-          - **Scope out**: What `PHASE-i` explicitly does **not** touch, naming the exact owning `PHASE-k` (or `Out of work item`) to prevent phase overlap or scope drift.
-        - **Cross-Phase Conflict Analysis**: Check `PHASE-i` against already-planned `PHASE-1..i-1` and upcoming `PHASE-(i+1)..N` (shared file edits, interface handoffs, state transitions) so no two phases collide or duplicate work.
-        - **Ordered Tasks, Mandatory In-Phase Unit Tests & Context-Driven `[REVIEW_CHECKPOINT]`**: Summarize the sequential tasks (`Task i.1`, `Task i.2`...), the concrete unit test files + named test cases (`Happy/Pass`, `Negative/Fail`, `Edge/Empty`) built inside `PHASE-i`, and where `planning` places any **`[REVIEW_CHECKPOINT: <Screen / Component / Feature unit>]`** flag inside `## Tasks` (placed right after the task(s) where a screen, component, or sub-feature materializes on UI and warrants review before continuing — never tied to a fixed task number).
-     2. **Confirm `PHASE-i` with the User (`ask_question`)**: Ask the user to approve or refine `PHASE-i`'s execution architecture, `Scope in / Scope out`, conflict handling, unit tests, and `[REVIEW_CHECKPOINT]` placement.
-     3. **Lock `phases/phase-0i-*.md` & Advance**: Once confirmed, write `phases/phase-0i-<behavior-slug>.md`. **Only after finishing the plan for `PHASE-i` do you move on to planning `PHASE-(i+1)` with the user.**
+1. **Step 1 — High-Level X-Phase Roadmap Lock FIRST (Channel 1 + 1 `ask_question`)**:
+   - Always present **only the high-level roadmap FIRST** in **Channel 1 session chat (`content`)**: *"Here is the X-phase roadmap"* — listing `PHASE-00` readiness mode + `PHASE-01..NN` (ordered from walking skeleton / highest risk to extensions), a brief summary of what each phase delivers (`AC-NN`, `G-NN`, observable `Input → Output`), explicit high-level **`Scope in` vs `Scope out`** (anti-overlap, naming the owning `PHASE-k` or `Out of work item`), and the **Hybrid E2E strategy choice**: **(a) Live `E2E-01..E2E-N` only** (read-only `test_runner`) **OR (b) Live `E2E-01..E2E-N` + optional local `integration_test/` authoring tasks** for `code_writer` inside the relevant phase(s).
+   - Call **1 short 1-line `ask_question`** (`(Recommended)` first, never dumping analysis prose into the modal) to lock the roadmap direction and Hybrid E2E strategy **before** authoring detailed per-phase specs. **Never dive head-first into detailing all X phases before the user confirms the big picture.**
+   - Record confirmed roadmap and Hybrid E2E choices as `D-NN` in `codebase-notes.md`.
+2. **Step 2 — Detail Each Phase & `test-plan.md` + Ask `N` Real Questions Only When Needed (`N = 0, 1, 2...`)**:
+   - After the user confirms the X-phase roadmap, author `implementation-plan.md`, all `phases/phase-NN-*.md` files, and `test-plan.md` (`E2E-01..E2E-N`):
+     - For every `PHASE-i`: `Why (Objective)` (`AC-NN`, `G-NN`, `D-NN`), `In-phase execution architecture & approach` (`[+]`/`[M]` files, `Consumes` ↔ `Produces`), explicit `Scope in` vs `Scope out`, `Cross-phase conflict & boundary check` (shared files, state keys, sequential handoffs across `PHASE-1..N`), ordered single-writer tasks with co-located mandatory in-phase unit tests (`Happy/Pass`, `Negative/Fail`, `Edge/Empty`, plus optional local `integration_test/` tasks when confirmed), and context-driven **`[REVIEW_CHECKPOINT: <Screen / Component / Feature unit>]`** placements right after a UI unit materializes.
+   - **Adaptive Grilling (`N = 0, 1, 2...` real questions)**: While detailing phases, ask a 2-Channel `ask_question` **only** when a genuine cross-phase conflict, technical trade-off, checkpoint trade-off, or risk requires a user decision (recording each decision as `D-NN` in `codebase-notes.md`). **Skip** mechanical per-phase confirmation stops (`X` ritual popups) whenever a phase is already clear.
+3. **Step 3 — Pre-Gate 3 Verification, Master Plan Report & Gate 3 Freeze (Channel 1 + 1 `ask_question`)**:
+   - Run the author self-check and 3-pass `gate-review` (`modes/plan.md`) until `0 OPEN Q-NN` remain, then present the consolidated **Master Plan Report** in Channel 1 session chat and call **1 short 1-line `ask_question`** to freeze Gate 3 (`03-ac-coverage-and-review-dod.md` §3).
 
 ### Phase File Contract (`validate_plan_slices` `PLAN-V-007`..`009` & Scope Contract)
 Every phase file under `phases/phase-NN-<behavior-slug>.md` is authored from `work-item-contract` → `templates/phase.md.tpl` and enforced by `validate_plan_slices` and `gate-review`:

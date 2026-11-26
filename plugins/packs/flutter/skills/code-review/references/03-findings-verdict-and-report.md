@@ -19,7 +19,7 @@ Every finding uses `RV-NN` (preserved across rounds) and the single 3-tier sever
 ## 2. No Reviewer Waivers & Plan Conflicts (`R7`)
 
 - **No Reviewer Waivers:** The Reviewer cannot excuse a validator `ERROR`, architecture boundary breach, missing negative unit test, or broken Visual AC with a technical argument.
-- **When a Finding Conflicts with the Plan (`PLAN_CONFLICT`):** If a real foundation/Client incompatibility orCore gap requires changing `design.md` (`Core usage` / `Client Core Mapping`), `requirements.md`, or locked `D-NN` decisions, mark the finding `PLAN_CONFLICT` in the report. The Reviewer stays read-only, and the coordinator routes `plan-changes/PCR-NN.md` to Planning (`change-control`).
+- **When a Finding Conflicts with the Plan (`PLAN_CONFLICT`):** If a real foundation/Client incompatibility or Core gap requires changing `design.md` (`Core usage` / `Client Core Mapping`), `requirements.md`, or locked `D-NN` decisions, mark the finding `PLAN_CONFLICT` in the report. The Reviewer stays read-only, and the coordinator routes `plan-changes/PCR-NN.md` to Planning (`change-control`).
 
 ---
 
@@ -27,7 +27,7 @@ Every finding uses `RV-NN` (preserved across rounds) and the single 3-tier sever
 
 | Verdict | Required Conditions |
 |---|---|
-| `APPROVED` | Every re-run gate (`validate_architecture_code`, `validate_module_architecture` or justified `N/A`, `flutter analyze`, unit tests) is `PASS`; every applicable phase AC is traced to code and evidence; `bug-hunt` left no `CONFIRMED` `BLOCKER` or `MAJOR`; zero rubric `BLOCKER` or `MAJOR` findings; runtime visual review is `PASS` when UI is affected (`{{slot:visual-quality}}`) |
+| `APPROVED` | Every re-run gate (`validate_architecture_code`, `validate_module_architecture` or justified `N/A`, `flutter analyze`, `dart_code_linter` *(when configured)*, unit tests) is `PASS`; every applicable phase AC is traced to code and evidence; `bug-hunt` left no `CONFIRMED` `BLOCKER` or `MAJOR`; zero rubric `BLOCKER` or `MAJOR` findings; mandatory `## Visual Comparison` via multimodal `read_file` against Figma (`figma/<stem>-SNN.png`) or HTML sitemap (`sitemap/screens/*.png`) is `PASS` on every UI phase end and `[REVIEW_CHECKPOINT]` (`{{slot:visual-quality}}`) |
 | `CHANGES_REQUESTED` | Any `CONFIRMED` `BLOCKER` or `MAJOR` finding, any validator `ERROR` / `FAILED` gate, `flutter analyze` failure, happy-path-only tests, `TEST-TAMPER-001`, material visual mismatch, or an open `PLAN_CONFLICT` |
 | `BLOCKED` | Missing Gate 1–3 approvals, unresolvable/moving revision, missing active Client base API, an analyzer/test/visual environment that cannot run, or a `PLAUSIBLE` `BLOCKER` awaiting external evidence |
 
@@ -39,9 +39,9 @@ Every finding uses `RV-NN` (preserved across rounds) and the single 3-tier sever
 - **3-Round Cap (`R11`):** Maximum 3 review rounds per phase. If round 3 is still not `APPROVED`, stop and escalate (`change-control` for plan conflicts, user/coordinator otherwise) with both positions stated.
 - **Revision-Bound Report (`R13`):** Write `.superpowers/work-items/<slug>/vN/reviews/review_<phase-id>_<REVIEW_REVISION>.md` containing:
   1. **Header:** Feature/version, phase ID, `BASE_REVISION`, `REVIEW_REVISION`, uncommitted scope, Gate 1–3 approval references, `architecture_profile`, round number, and overall verdict (`APPROVED` / `CHANGES_REQUESTED` / `BLOCKED`).
-  2. **Gate & Validator Evidence Rows:** `validate_architecture_code` per changed file, `validate_module_architecture` + `unsupported_checks` resolution, `flutter analyze` / `dart_code_linter` exit code, and `flutter test` exit code (`PASS` / `FAIL`).
+  2. **Gate & Validator Evidence Rows:** `validate_architecture_code` per changed file, `validate_module_architecture` + `unsupported_checks` resolution, `flutter analyze` and `dart_code_linter` *(when configured)* exit code, and `flutter test` exit code (`PASS` / `FAIL`).
   3. **Acceptance Criteria Traceability Table:** `AC ID` → `Implementation (path:line)` → `Unit/Widget Test or Visual Check` → `Evidence` → `Status`.
   4. **Pass 2 Bug-Hunt Summary & Findings:** `bug-hunt:` summary line and `RV-NN` defect rows.
   5. **Five-Axis Assessment & Rubric Findings:** Status per axis (`PASS` / `FAIL`), `Review focus` verification rows, and `RV-NN` compliance findings table.
-  6. **Runtime Visual Review Gate:** Visual verdict (`PASS` / `FAIL` / `BLOCKED` / `N/A`), target device/viewport, screenshot/recording path, Visual AC comparison, and runtime log summary.
+  6. **`## Visual Comparison` (Mandatory on Every UI Phase End & `[REVIEW_CHECKPOINT]`):** Visual verdict (`PASS` / `FAIL` / `BLOCKED` / `N/A`), target device/viewport, `writer-handoff.md` `Visual Artifacts:` `.png` paths compared via parallel multimodal `read_file` against Figma (`figma/<stem>-SNN.png`) or HTML sitemap (`sitemap/screens/*.png`), 10-dimension deviation table, `design.md` `## UI/UX mapping` compliance, and runtime log summary.
   7. **Hand-Off Action:** Pass exact revision to `{{slot:verification}}` on `APPROVED`, or return `RV-NN` findings to `incremental-implementation` on `CHANGES_REQUESTED`.
